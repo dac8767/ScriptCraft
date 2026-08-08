@@ -70,13 +70,14 @@ try {
 
   // ── #3 Map Options ────────────────────────────────────────────────
   const optBtn = await page.$('.locmap-mapopts-btn');
-  ok(optBtn !== null, '#3 "Map Options" sits on the + Add Pin row');
-  const sameRow = await page.evaluate(() => {
-    const a = document.querySelector('.locmap-addpin-btn').getBoundingClientRect();
-    const b = document.querySelector('.locmap-mapopts-btn').getBoundingClientRect();
-    return Math.abs(a.top - b.top) < 6;
+  ok(optBtn !== null, '#3 the "Options" button exists');
+  /* v6.38, Derek: moved INTO the window header (reversing v5.81) — so NOT
+     on the + Add Pin row anymore. */
+  const inHeader = await page.evaluate(() => {
+    const b = document.querySelector('.locmap-mapopts-btn');
+    return !!b && !!b.closest('.tool-inline-header, .tool-window-header, .tool-fs-header');
   });
-  ok(sameRow, '#3 on the same row as + Add Pin');
+  ok(inHeader, '#3 and it sits in the window header (v6.38)');
   await page.click('.locmap-mapopts-btn');
   await page.waitForSelector('.locmap-mapopts-menu');
   const items = await page.$$eval('.locmap-mapopts-menu button', (e) => e.map((x) => x.textContent.trim()));
@@ -119,18 +120,19 @@ try {
      row header's PIN-icon menu — same two actions, one gesture earlier. */
   await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Pin")');
+  await page.click('.locmap-rail-item-open .locmap-rail-menu-btn');
   await page.waitForSelector('.locmap-pin-menu');
   const tools = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
-  ok(tools.length === 2 && /Lock pin/.test(tools[0]) && tools[1] === 'Delete pin',
-    `#4 the pin menu carries the lock and the delete (${tools.join(' · ')})`);
+  /* v6.38: the ⋮ menu combines Map+Pin options; lock + delete close it. */
+  ok(tools.length === 4 && /Lock pin/.test(tools[2]) && tools[3] === 'Delete pin',
+    `#4 the ⋮ menu carries the lock and the delete (${tools.join(' · ')})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Lock pin")');
   await settle(page);
   await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Pin")');
+  await page.click('.locmap-rail-item-open .locmap-rail-menu-btn');
   await page.waitForSelector('.locmap-pin-menu');
-  ok(await page.$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => /Unlock pin/.test(e.textContent)),
+  ok(await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.some((x) => /Unlock pin/.test(x.textContent))),
     '#4 and it flips to Unlock once locked');
   await dismiss(page);
 

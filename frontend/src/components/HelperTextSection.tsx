@@ -75,7 +75,11 @@ function HelperRow({ entry }: { entry: HelperEntry }) {
 
   const commit = (raw: string) => {
     const v = raw.trim();
-    setOverride(entry.text, v === '' || v === entry.text ? null : v);
+    /* v6.38, Derek: a BLANK field is a real choice — "there is no helper
+       text for that item". Empty commits as an '' override (title/placeholder
+       go empty wherever the string appears); the reset button is the way
+       back to the app's own text. Only typing the default verbatim clears. */
+    setOverride(entry.text, v === entry.text ? null : v);
     setDraft(null);
   };
 

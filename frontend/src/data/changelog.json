@@ -1,5 +1,18 @@
 [
  {
+  "version": "6.38",
+  "date": "2026-08-08",
+  "changes": [
+   "Helper Text window: the standard window header — title, full-screen button, close button — like every other tool window.",
+   "Helper text can now be BLANK: clear a field and that item simply has no helper text. The reset button (↺) still restores the app's own wording. (The stray 'video' row is gone from the list — it was an internal accessibility label on embedded videos in Script Notes, not real helper text.)",
+   "Snippets: two buttons at the top — Cut selection to snippet and Copy selection — doing what ⌥⌘X/⌥⌘C already did, plus an insert button on every snippet card that places its text at the cursor exactly like dragging it in.",
+   "Outline: + Add Section (and + Add Beat) wear the standard blue button.",
+   "Locations ▸ Map: fixed — rotating the map could shrink it to a speck in a short window ('made it disappear'); the map now keeps a visible minimum size and scrolls instead. Rotation also recovers automatically from a transient image-load failure, and map images no longer reload on every redraw.",
+   "Locations ▸ Map: Map Options moved into the window header as 'Options'; the Grouped/Ungrouped toggle sits at the right edge of the pin row; and each sidebar item's Map / Pin / Group buttons are replaced by one ⋮ menu in the item header holding all their options.",
+   "Side panel: dragging the adjustment bar vertically now resizes the CONTENTS of the open tool window along with the row titles."
+  ]
+ },
+ {
   "version": "6.37",
   "date": "2026-08-08",
   "changes": [

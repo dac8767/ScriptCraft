@@ -1094,9 +1094,11 @@ export function OutlineTabActions() {
         </select>
       )}
       {beatArrangeMode === 'auto' ? (
-        <button className="beat-board-add-col-btn" onClick={handleAddColumn}>+ Add Section</button>
+        // v6.38, Derek: the standard blue primary look (fs-btn-primary) —
+        // both modes' add button, one slot.
+        <button className="beat-board-add-col-btn fs-btn-primary" onClick={handleAddColumn}>+ Add Section</button>
       ) : (
-        <button className="beat-board-add-col-btn" onClick={handleAddBeatFree}>+ Add Beat</button>
+        <button className="beat-board-add-col-btn fs-btn-primary" onClick={handleAddBeatFree}>+ Add Beat</button>
       )}
     </span>
   );

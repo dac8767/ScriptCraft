@@ -149,7 +149,7 @@ try {
     await page.waitForSelector('.locmap-rail-detail', { timeout: 5000 });
     await settle(page);
   }
-  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Map")');
+  await page.click('.locmap-rail-item-open .locmap-rail-menu-btn');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Connect to location…")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
@@ -163,7 +163,7 @@ try {
   /* v5.85: the lock lives in the row's PIN-icon menu now. */
   await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Pin")');
+  await page.click('.locmap-rail-item-open .locmap-rail-menu-btn');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Lock pin")');
   await settle(page);
@@ -225,7 +225,7 @@ try {
   await page.waitForSelector('.locmap-rail-detail', { timeout: 5000 });
   await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Map")');
+  await page.click('.locmap-rail-item-open .locmap-rail-menu-btn');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   const connectBtn = await page.$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.textContent.trim());
   ok(connectBtn === 'Connect to location…', `#1 the map menu leads with "${connectBtn}"`);
@@ -233,7 +233,7 @@ try {
      row's MAP-icon menu. */
   await dismiss(page);
   await settle(page);
-  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Map")');
+  await page.click('.locmap-rail-item-open .locmap-rail-menu-btn');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:text-is("Connect to location…")');
   await page.waitForSelector('.locmap-pin-menu', { timeout: 5000 });

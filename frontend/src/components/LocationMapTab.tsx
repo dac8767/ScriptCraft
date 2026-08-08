@@ -33,7 +33,7 @@ import { resolveImageUrl } from '../utils/imageAsset';
 import { AssetImage } from './CharacterAssetMedia';
 import { showToast } from './Toast';
 import LocationPinMenu from './LocationPinMenu';
-import LocationMapOptions, { importLocationMap } from './LocationMapOptions';
+import { importLocationMap } from './LocationMapOptions';
 import LocationMapRail from './LocationMapRail';
 import LocationsGroupToggle from './LocationsGroupToggle';
 import { renameLocationInScript } from '../utils/renameLocationInScript';
@@ -161,8 +161,21 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
     // stage still needs a box, so the placeholder has somewhere to render.
     const ratio = shownRatio || 4 / 3;
     const w = Math.min(availW, availH * ratio);
-    return { width: Math.round(w), height: Math.round(w / ratio) };
+    const h = w / ratio;
+    /* v6.38, Derek: "rotating the map ... made it disappear." A squeezed
+       canvas plus a quarter-turn's flipped ratio fit the stage down to a
+       ~20px speck (measured). The stage never drops below 160px on its
+       long side now — the map scales up instead and .locmap-scroll (which
+       exists for exactly this) scrolls it. Visible beats fully fitted. */
+    const long = Math.max(w, h);
+    const scaleUp = long < 160 ? 160 / long : 1;
+    return { width: Math.round(w * scaleUp), height: Math.round(h * scaleUp) };
   }, [shownRatio, canvasBox]);
+
+  /* v6.38: a transient bytes-read failure used to brand the map broken until
+     the image itself changed. A rotation is a fresh draw — clear the flag so
+     the map can come back on its own. */
+  React.useEffect(() => { setMapFailed(false); }, [rotation]);
 
   /** A quarter turn is drawn by rotating the image inside the stage and
    *  swapping its box — the stage itself already carries the rotated ratio. */
@@ -460,13 +473,16 @@ const LocationMapTab: React.FC<Props> = ({ locations, allLocations, onGoToScene,
                 aria-pressed={placing}
                 title={placing ? 'Click the map to set the pin, or press Escape' : 'Add a pin — it follows the cursor until you click'}
               >+ Add Pin</button>
-              <LocationMapOptions />
-              {/* v6.04, Derek: the same Ungrouped/Grouped pair the List view
-                  carries — here it folds/unfolds the sidebar's rows. */}
-              <LocationsGroupToggle />
+              {/* v6.38, Derek: Map Options moved into the WINDOW HEADER as
+                  "Options" (LocationsControls); the count stretches so the
+                  group toggle sits at the row's RIGHT edge. */}
               <span className="locmap-pin-count">
                 {placing ? 'Click the map to set the pin · Esc to cancel' : `${drawnPins.length} pinned`}
               </span>
+              {/* v6.04, Derek: the same Ungrouped/Grouped pair the List view
+                  carries — here it folds/unfolds the sidebar's rows.
+                  v6.38: aligned right. */}
+              <LocationsGroupToggle />
             </div>
             <div className="locmap-canvas" ref={canvasRef}>
               <div

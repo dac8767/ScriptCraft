@@ -32,12 +32,30 @@ import { ControlDropdown, ControlSearch, ToolActionRow } from './ToolControls';
 import { CircleMinusIcon, CirclePlusIcon } from './uiIcons';
 import { uuid } from '../utils/uuid';
 import { useHt } from '../utils/helperText';
+import { LuScissors, LuFileInput } from 'react-icons/lu';
+import { FaCopy } from 'react-icons/fa';
+import { showToast } from './Toast';
 
 
 
 /** Build a snippet card from editor text (used by the capture shortcuts). */
 export function makeSnippetCard(text: string): ShelfCard {
   return { id: uuid(), type: 'snippet', text, color: SHELF_DEFAULT_COLOR, createdAt: new Date().toISOString() };
+}
+
+/** Cut/copy the editor's current selection into a NEW snippet — ONE
+ *  implementation behind the ⌥⌘X/⌥⌘C shortcuts (ScreenplayEditor) and the
+ *  v6.38 window buttons. Returns false when nothing usable is selected. */
+export function captureSelectionSnippet(editor: Editor, mode: 'cut' | 'copy'): boolean {
+  const { from, to, empty } = editor.state.selection;
+  if (empty) return false;
+  const text = editor.state.doc.textBetween(from, to, '\n');
+  if (!text.trim()) return false;
+  useEditorStore.getState().addShelfCard(makeSnippetCard(text));
+  if (mode === 'cut' && editor.isEditable) {
+    editor.chain().focus().deleteSelection().run();
+  }
+  return true;
 }
 
 function useCardOps() {
@@ -55,7 +73,7 @@ function useCardOps() {
 
 /* ═══════════ Snippets list (drag reorder within the kind) ═══════════ */
 
-function SnippetList() {
+function SnippetList({ editor }: { editor: Editor | null }) {
   const { shelfCards, setShelfCards, update, remove } = useCardOps();
   const ht = useHt();
   const [dragId, setDragId] = useState<string | null>(null);
@@ -63,6 +81,23 @@ function SnippetList() {
   const [endArmed, setEndArmed] = useState(false);
 
   const visible = shelfCards.filter((c) => c.type === 'snippet');
+
+  /* v6.38, Derek: BUTTONS for the capture shortcuts — cut/copy the script
+     selection into a snippet — and, per card, the drag's insert without the
+     drag. Insertion goes through the editor's own paste pipeline
+     (view.pasteText), so a button-inserted snippet lands exactly like a
+     dropped one (incl. v6.20's fill-the-active-element behavior). */
+  const capture = (mode: 'cut' | 'copy') => {
+    if (!editor) return;
+    if (!captureSelectionSnippet(editor, mode)) {
+      showToast('Select some script text first — the selection becomes the snippet.', 'info');
+    }
+  };
+  const insertIntoScript = (text: string) => {
+    if (!editor || !text) return;
+    editor.chain().focus().run();
+    editor.view.pasteText(text);
+  };
 
   const dropOn = (targetId: string) => {
     if (!dragId || dragId === targetId) { setDragId(null); return; }
@@ -101,6 +136,18 @@ function SnippetList() {
 
   return (
     <div className="swn-scroll">
+      <ToolActionRow>
+        <button
+          className="fs-btn-primary"
+          title="Cut the selected script text into a new snippet (⌥⌘X)"
+          onClick={() => capture('cut')}
+        ><LuScissors /> Cut selection to snippet</button>
+        <button
+          className="fs-btn-primary"
+          title="Copy the selected script text into a new snippet (⌥⌘C)"
+          onClick={() => capture('copy')}
+        ><FaCopy /> Copy selection</button>
+      </ToolActionRow>
       {visible.length === 0 && <div className="swn-hint">{ht('Select text in the Editor and press ⌥⌘X to cut it here, or ⌥⌘C to copy it over.')}</div>}
       {dragId && visible.length > 0 && (
         <div
@@ -124,6 +171,13 @@ function SnippetList() {
           onDropHere={() => dropOn(card.id)}
           onUpdate={(p) => update(card.id, p)}
           onRemove={() => remove(card.id)}
+          headActions={(
+            <button
+              className="swn-x"
+              title="Insert this snippet into the script at the cursor"
+              onClick={() => insertIntoScript(card.text || '')}
+            ><LuFileInput /></button>
+          )}
         />
       ))}
       {dragId && visible.length > 0 && (
@@ -290,10 +344,10 @@ export function StickyNotesTool(_props: EditorToolProps) {
 
 /* ═══════════ Tool: Snippets ═══════════ */
 
-export function FragmentsTool(_props: EditorToolProps) {
+export function FragmentsTool({ editor }: EditorToolProps) {
   return (
     <div className="fs-sticky-tool">
-      <SnippetList />
+      <SnippetList editor={editor} />
     </div>
   );
 }

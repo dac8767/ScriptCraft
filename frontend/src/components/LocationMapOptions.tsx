@@ -53,7 +53,11 @@ export async function importLocationMap(file: File): Promise<boolean> {
   }
 }
 
-export default function LocationMapOptions() {
+/** v6.38, Derek: "move the button 'Map Options' into the header, and rename
+ *  it 'Options'" — reversing v5.81, which had moved it out of the header.
+ *  The header variant wears the header-control clothes; the menu is the
+ *  same either way. */
+export default function LocationMapOptions({ variant }: { variant?: 'header' } = {}) {
   const mapImage = useEditorStore((s) => s.locationMapImage);
   const setMapImage = useEditorStore((s) => s.setLocationMapImage);
   const currentProject = useProjectStore((s) => s.currentProject);
@@ -106,10 +110,13 @@ export default function LocationMapOptions() {
       <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
       <button
         ref={btnRef}
-        className={`locmap-add-btn locmap-mapopts-btn${pos ? ' open' : ''}`}
+        className={variant === 'header'
+          ? `tool-ctl locmap-mapopts-btn${pos ? ' open' : ''}`
+          : `locmap-add-btn locmap-mapopts-btn${pos ? ' open' : ''}`}
         title="Replace, rotate or delete the map"
         onClick={() => (pos ? setPos(null) : open())}
-      >Map Options</button>
+        onPointerDown={variant === 'header' ? (e) => e.stopPropagation() : undefined}
+      >{variant === 'header' ? <span className="tool-ctl-label">Options</span> : 'Options'}</button>
       {pos && createPortal(
         <>
           {/* A click anywhere else closes it — the menu is portalled to

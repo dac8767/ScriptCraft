@@ -24,6 +24,7 @@ import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterScen
 import { useSceneReorder } from '../utils/useSceneReorder';
 import { ControlDropdown, ControlSearch, PerRowStepper, ToolActionRow, type ToolChromeTab } from './ToolControls';
 import LocationsGroupToggle from './LocationsGroupToggle';
+import LocationMapOptions from './LocationMapOptions';
 import { usePopup } from '../hooks/usePopup';
 import { SceneReorderBar } from './IndexCards';
 import { LuLayoutGrid, LuList } from 'react-icons/lu';
@@ -1661,6 +1662,9 @@ export function LocationsControls() {
           { label: 'Map', active: view === 'map', onSelect: () => setView('map') },
         ]}
       />
+      {/* v6.38, Derek: "move the button 'Map Options' into the header, and
+          rename it 'Options'" (reversing v5.81's move out) — map view only. */}
+      {view === 'map' && <LocationMapOptions variant="header" />}
       {/* v5.81, Derek: the map's own actions moved OUT of the header, down
           beside + Add Pin as a "Map Options" button — see LocationMapOptions.
           v6.04, Derek: the v5.96 header Group button moved out too — it's

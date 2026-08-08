@@ -23,7 +23,9 @@ async function railOption(page, rowSel, title) {
   await page.locator(`${rowSel} .locmap-rail-name`).first().click();
   await page.waitForSelector('.locmap-rail-detail');
   await settle(page);
-  await page.click(`.locmap-rail-detail .locmap-detail-actions button:text-is("${title}")`);
+  // v6.38: ONE ⋮ menu holds what the Map/Pin buttons used to (title unused).
+  void title;
+  await page.click(`${rowSel} .locmap-rail-menu-btn`);
   await page.waitForSelector('.locmap-pin-menu');
   await settle(page);
 }
@@ -100,25 +102,23 @@ try {
     '#map the rail stands in the side panel (the scrapbook pattern)');
   await page.click('.locmap-rail-panel .locmap-rail-item:first-child .locmap-rail-name');
   await page.waitForSelector('.locmap-rail-detail');
-  /* v6.01, Derek: ONE leading row — "Map", "Pin", then "Group" (the old
-     "+ Connect to location"), inside the shared details block. */
+  /* v6.38, Derek: the Map/Pin/Group buttons are GONE from the details —
+     ONE ⋮ menu in the row header carries their options. */
   const btns = await page.$$eval('.locmap-rail-detail .locmap-detail-actions button', (e) => e.map((x) => x.textContent.trim()));
-  ok(JSON.stringify(btns) === JSON.stringify(['Map', 'Pin', 'Group']),
-    `#v601 the expanded row leads with Map · Pin · Group (${btns.join(' · ')})`);
-  /* v6.00, Derek: the List view's dropdown block IS the body — and it opens
-     with the actions row, so the buttons and the details cannot drift. */
+  ok(btns.length === 0,
+    `#v638 the expanded row shows NO action buttons (${btns.join(' · ') || 'none'})`);
+  /* v6.00, Derek: the List view's dropdown block IS the body. */
   const detailKids = await page.$eval('.locmap-rail-detail', (el) => [...el.children].map((c) => c.className.split(' ')[0]));
   ok(JSON.stringify(detailKids) === JSON.stringify(['locplace-details']),
     `#v600 the body IS the List view's details block (${detailKids.join(' · ')})`);
-  ok(await page.$eval('.locplace-details', (el) => el.firstElementChild?.className.includes('locmap-detail-actions')),
-    '#v601 which opens with the actions row');
-  ok(await page.$$eval('.locplace-details button', (els) => !els.some((b) => b.textContent.includes('Connect to location'))),
-    '#v601 no "+ Connect to location" button below — Group in the row replaced it');
-  await page.click('.locmap-rail-detail .locmap-detail-actions button:text-is("Map")');
+  ok(await page.$('.locmap-rail-item-open .locmap-rail-menu-btn') !== null,
+    '#v638 the row header carries the ⋮ menu button');
+  await page.click('.locmap-rail-item-open .locmap-rail-menu-btn');
   await page.waitForSelector('.locmap-pin-menu');
   const mapItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
-  ok(JSON.stringify(mapItems) === JSON.stringify(['Connect to location…', 'Hide from locations list']),
-    `#1 the map menu offers ${mapItems.join(' · ')}`);
+  ok(mapItems.length === 4 && mapItems[0] === 'Connect to location…'
+    && mapItems[1] === 'Hide from locations list' && mapItems[3] === 'Delete pin',
+    `#v638 the ⋮ menu holds the combined options (${mapItems.join(' · ')})`);
 
   // hide it — the row leaves the list, and the Filter brings it back
   const before = await page.$$eval('.locmap-rail-item', (e) => e.length);
@@ -152,14 +152,15 @@ try {
   // ── the pin menu ────────────────────────────────────────────────────
   await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin');
   const pinItems = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
-  ok(pinItems.length === 2 && /Lock pin/.test(pinItems[0]) && pinItems[1] === 'Delete pin',
-    `#2 the pin menu offers ${pinItems.join(' · ')}`);
+  ok(pinItems.length === 4 && /Lock pin/.test(pinItems[2]) && pinItems[3] === 'Delete pin',
+    `#2 the (v6.38 combined) menu ends with lock + delete (${pinItems.join(' · ')})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Lock pin")');
   await settle(page);
   ok(await page.evaluate(() => window.__scStore.getState().locationPlaces.some((p) => p.locked)), '#2 it locks the pin');
   await railOption(page, '.locmap-rail-item:has(.locmap-rail-icon-pinned)', 'Pin');
   const locked = await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.map((x) => x.textContent.trim()));
-  ok(/Unlock pin/.test(locked[0]), `#2 and then offers to unlock (${locked[0]})`);
+  // v6.38: the combined menu — the lock item sits third.
+  ok(/Unlock pin/.test(locked[2] ?? ''), `#2 and then offers to unlock (${locked[2]})`);
   await page.click('.locmap-pin-menu .locmap-pin-menu-item:has-text("Unlock pin")');
   await settle(page);
 
@@ -173,8 +174,9 @@ try {
 
   // a row with no pin says so rather than pretending
   await railOption(page, '.locmap-rail-item:not(:has(.locmap-rail-icon-pinned))', 'Pin');
-  ok(await page.$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.disabled),
-    '#2 an unpinned row offers the items disabled, not silently dead');
+  // v6.38: connect/hide stay live without a pin; the PIN items disable.
+  ok(await page.$$eval('.locmap-pin-menu .locmap-pin-menu-item', (e) => e.slice(-2).every((b) => b.disabled)),
+    '#2 an unpinned row offers the pin items disabled, not silently dead');
 } catch (e) { console.log('  ✗ SCRIPT ERROR:', e.message); fail++; }
 console.log(`\ncheck-v585: ${pass} passed, ${fail} failed`);
 await browser.close();
@@ -273,7 +275,7 @@ await browser.close();
       '#v599 no second "Locations" header — the row above is the label');
     await p2.click('.locmap-rail-panel .locmap-rail-row .locmap-rail-name');
     await p2.waitForSelector('.locmap-rail-panel .locmap-rail-detail');
-    ok(await p2.$('.locmap-rail-panel .locmap-rail-detail .locmap-detail-actions button:text-is("Map")') !== null,
+    ok(await p2.$('.locmap-rail-panel .locmap-rail-item-open .locmap-rail-menu-btn') !== null,
       '#v597-2 and its rows still open their option buttons');
     ok(await p2.$('.locmap-rail-panel .locplace-details .locmap-field-textarea') !== null,
       '#v600 the panel rail carries the List view\'s details — description and all');

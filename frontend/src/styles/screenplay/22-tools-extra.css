@@ -398,6 +398,13 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
+  /* v6.38, Derek: "pulling down on the adjustment bar changes the size of
+     the titles, but not the items inside the window (it should)" — the
+     panel's item-size drag (--dock-scale) now scales the OPEN tool too.
+     `zoom` is layout-aware (unlike transform) and WebKit/Chromium both
+     honor it. The Notebook keeps its own zoom bar on top of this
+     (24-notebook.css). */
+  zoom: var(--dock-scale, 1);
 }
 .tool-inline-body {
   display: flex;
@@ -1142,6 +1149,29 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .fs-sticky-tool .tool-action-row {
   padding: var(--dz-sticky-btnrow-pad-top, 6px) var(--dz-sticky-btnrow-pad-x, 8px) 6px;
+}
+
+/* v6.38 — THE standard primary button (Derek: "blue with white text, etc"):
+   one class, shared wherever a body action should read as primary — the
+   Outline's + Add Section (composed onto .beat-board-add-col-btn) and the
+   Snippets capture buttons. Same source, no drift. */
+.fs-btn-primary {
+  background: var(--fd-btn-bg);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--fd-btn-text);
+  font-size: 12px;
+  padding: 4px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.fs-btn-primary:hover {
+  background: var(--fd-btn-hover);
+  color: var(--fd-btn-text);
+  border-color: transparent;
 }
 
 /* Highlights window */

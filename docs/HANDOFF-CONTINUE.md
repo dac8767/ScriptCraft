@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.37 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.38 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,53 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.38 — Derek's ten-item batch (helper text, snippets, locations map, panel zoom)
+
+- Ten reports in one stream (several mid-turn). The load-bearing ones:
+- HELPER TEXT: the window wears the STANDARD tool-window header classes
+  (+ a local fullscreen toggle — htw-fsbtn); BLANK overrides are real now
+  (HelperTextSection.commit keeps '' — only typing the default verbatim
+  clears; the ↺ reset restores). The "video" row was ScriptNotes' iframe
+  a11y label — build-helper-catalog gained a NOT_HELPER_TEXT exclusion
+  set (regenerate after editing it).
+- SNIPPETS: captureSelectionSnippet (StickyNotes.tsx) is the ONE
+  implementation behind ⌥⌘X/⌥⌘C AND the new window buttons; per-card
+  insert uses editor.view.pasteText → the same paste pipeline as the
+  v6.21 drag (v6.20 fill-active-element applies). StickyCard gained
+  headActions (the card is still THE card). FragmentsTool now consumes
+  its editor prop.
+- LOCATIONS MAP, the rotation "disappear": REPRODUCED — a short canvas
+  + a quarter-turn's flipped ratio fit the stage to a ~20px speck. The
+  stage now keeps ≥160px on its long side and scrolls (the scroll
+  container existed for exactly this). Also: AssetImage re-fetched bytes
+  on EVERY parent re-render (onFailed, an inline arrow, sat in the
+  effect deps — now rides a ref) and a transient failure branded the map
+  broken until the image changed (mapFailed now resets on rotation).
+- LOCATIONS MAP chrome: Map Options → the WINDOW HEADER as "Options"
+  (LocationsControls, map view only — REVERSES v5.81; Derek's call);
+  the Grouped toggle sits at the action bar's RIGHT edge (count
+  stretches between); the rail rows' Map/Pin/Group buttons collapsed
+  into ONE ⋮ menu (locmap-rail-menu-btn) — Connect/Hide/Lock/Delete
+  (the old Group button WAS the connect flow; group create/join stays
+  in the details' Location Group field). LocationPlaceDetails gained
+  hideActionsRow (List view unchanged).
+- PANEL ITEM-SIZE (screenshots): --dock-scale scaled only dock rows.
+  `.tool-inline { zoom: var(--dock-scale, 1) }` scales the OPEN tool —
+  zoom is layout-aware and WebKit+Chromium both honor it. NOTE: a
+  zoomed container KEEPS its outer width (content lays out at
+  width/zoom) — measure INNER elements in checks. Notebook's
+  --nb-tree-scale default reverted to 1 (was defaulting to --dock-scale
+  → would have double-scaled).
+- + Add Section / + Add Beat wear the new shared `.fs-btn-primary`
+  (22-tools-extra.css) — THE standard blue; reuse it for future primary
+  body buttons instead of minting new ones.
+- CHECK UPDATES (superseded specs): v577 + v581 asserted the v5.81
+  "options OUT of the header" — flipped to v6.38; v578/v585 drove the
+  removed Map/Pin detail buttons — they drive the ⋮ menu now (v585's
+  railOption helper, one place). check-v638 (19) covers all ten;
+  check-v635 re-run green.
+- Gates: tsc 0, 1103 tests, build, checks 720/0.
+
 ### v6.37 — HOTFIX: v6.36's native print CRASHED the app
 
 - Derek: "File > Print made the app crash." Two faults in the v6.36
@@ -311,99 +358,12 @@ Durable bits kept live here:
   machine is regenerating it — find out what before restoring blindly.
 - Gates: tsc 0, 1103 tests, build (changelog/version are src).
 
-### v6.33 — the MEASURED wrap geometry (63 chars); the asset handler's cwd bug; Print OPENS
-
-- Five Derek reports (print, wrap, assets — then darkness and Title-Page
-  Fit mid-stream). The wrap and asset fixes both overturned earlier
-  diagnoses; details matter here.
-- WRAP ("the word 'of' is in a third row in scriptcraft; at the end of
-  the second row with a different program"): his two comparison pages
-  were re-extracted from the session transcript and MEASURED pixel-wise
-  (Playwright canvas). The reference is TRUE 10 cpi — 12pt Courier at
-  its natural 7.2pt advance, NO tracking — with full-width columns
-  1.5"→7.8" = 63 chars (both 63-char lines end ink ≈7.79"; CUT TO:
-  right-aligns to 7.8"; cap-height/pitch matches ours, so full-size
-  glyphs, wider column). THREE compounding causes had ScriptCraft at
-  60–61:
-  (a) FD_CPI 10.33 with 6.0" columns — 62-char capacity, wrong vs the
-      measured reference;
-  (b) the exporter's wordWrapRuns counted each word's TRAILING space in
-      its fit check — one word early on every full line;
-  (c) ProseMirror sets `white-space: break-spaces`, under which a
-      soft-wrapped line must ALSO fit the space it breaks at (Chromium
-      flip measured at EXACTLY capacity+1 advances; same spec rule in
-      WKWebView — Derek's observed 61 = floor(576/9.29) − 1. The
-      phantom SPACE, not letter-spacing quantization).
-- THE FIX — one geometry source: NEW `utils/screenplayMetrics.ts`
-  (FD_CPI 10.0, FD_INDENTS right edges 7.80, CHARS_PER_LINE floor'd,
-  SPACE_BEFORE, getTextLines, and columnFor(type, layout) which CLAMPS
-  columns to the layout's content edge — FDX imports / custom margins
-  now wrap identically in editor, page count, and exports).
-  pagination.ts, pdfExporter.ts AND docxExporter.ts import it (docx's
-  local copy had already drifted: its sceneHeading space-before missed
-  v6.30's change to 2 — the copies are dead). Editor side: the -0.31px
-  letter-spacing squeeze is REMOVED; default rightMargin 0.7"
-  (+ migratePageLayout chains untouched-default docs A4→Letter→0.7);
-  static CSS + industry template + templates/_helpers right edges
-  7.80" (stagePlay pins its historical 7.50 via a local wrapper); and
-  the break-spaces allowance: `.screenplay-element { margin-right:
-  -14px }` — one invisible space + slack, RESET on right/center-aligned
-  elements (and emitted per-rule by templateCss), so ink still ends at
-  7.8". TITLE_CPL = action − 1 (title blocks reset the allowance).
-  Export scene numbers now anchor ±0.15" off the heading column (were
-  hardcoded 1.0/7.75).
-- KNOWN EDGE: a spaceless 64-char token can render on 1 line where the
-  estimate counts 2 (no trailing space to fit) — pathological input;
-  measured fills absorb the visual drift.
-- ASSET IMAGES ("the images are still broken"): the v6.32 diagnosis was
-  WRONG TWICE OVER — the config assetProtocol enable was a no-op (the
-  `protocol-asset` cargo feature was never on) AND irrelevant (lib.rs
-  hand-rolls the `asset:` scheme handler; do NOT add the feature — the
-  built-in would fight the custom handler for the scheme name). REAL
-  bug: the handler's `trim_start_matches('/')` strips EVERY leading
-  slash from the decoded path → RELATIVE → resolved against cwd → 404
-  under `tauri dev` (a packaged app with cwd "/" survives by luck).
-  Fixed: path re-anchored absolute, canonicalized, and SCOPED to
-  app_data_dir (403 outside). The v6.32 config block is REVERTED.
-  cargo check ran IN-SANDBOX (GTK headers apt-installed) and caught a
-  real compile error before Derek could (UriSchemeContext needs
-  .app_handle() — the closure arg is not an AppHandle). Frontend
-  belt-and-suspenders: `utils/useAssetDisplayUrl` (direct URL →
-  onError → getAssetBytes → blob:, else a missing-file icon) wired in
-  AssetThumb (AssetManager) + AssetViewer.
-- PRINT ("just saved the script as a pdf. it did not open the print
-  menu"): tauri-plugin-opener `=2.5.4` (newest whose tauri req ^2.10
-  accepts the =2.10.3 pin) + `.plugin(init)` + `opener:allow-open-path`
-  scoped `$APPDATA/print/**` + @tauri-apps/plugin-opener npm dep.
-  Tauri print path now: write `print/<title>.pdf` under app data →
-  openPath() → Preview opens the exact export, one ⌘P from the real
-  dialog (autoPrint stays embedded — Acrobat-class viewers open the
-  dialog themselves); any throw falls back to the v6.32 save-dialog
-  path. Cargo.lock regenerated in-sandbox (additive only). FIRST
-  LAUNCH RECOMPILES the shell (~minutes).
-- DARKNESS ("figure out why"): two real contributors fixed — the
-  letter-spacing squeeze (denser ink, now gone) and macOS WebKit's
-  default stem-darkening (`-webkit-font-smoothing: antialiased` now on
-  .screenplay-content). Courier Prime now LEADS the font stack so the
-  screen face is the embedded export face even where Courier Final
-  Draft is installed. The residual difference vs his reference is the
-  reference's thinner Courier cut (cap-height ratio reads like Courier
-  New) — inherent to the face; said so plainly.
-- Title Page Fit: both axes — min(width, height ratios) against the
-  scroll viewport; effect deps now include page size.
-- checks: check-v633 (12 — layout default 0.7, squeeze gone, column
-  618.8px, the editor breaks Derek's EXACT sample like the reference,
-  export items match line-for-line, 63 chars end at 7.794in measured
-  from the PDF bytes) + screenplayMetrics.test.ts (9, incl. the exact
-  sample strings + migration chain) + AssetManager fallback tests.
-- Gates: tsc 0, 1103 tests, build, cargo check clean (in-sandbox — GTK
-  headers apt-installed; caught the UriSchemeContext error), checks 698/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.33** — the MEASURED wrap geometry (63 chars); the asset handler's cwd bug; Print opens
 - **v6.32** — asset protocol ON; Tauri print = save+toast; Courier Prime embedded
 - **v6.31** — Asset Manager: inline image thumbnails
 - **v6.30** — formatting verified against the standard; Print's silent Tauri no-op

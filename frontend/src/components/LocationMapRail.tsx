@@ -11,7 +11,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  FaMapMarkerAlt, FaChevronRight, FaChevronDown, FaRegMap, FaRegEyeSlash,
+  FaMapMarkerAlt, FaChevronRight, FaChevronDown, FaEllipsisV, FaRegEyeSlash,
   FaLock, FaLockOpen,
 } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
@@ -44,7 +44,7 @@ export const LocationMapRail: React.FC<Props> = ({ locations, allLocations = loc
 
   const [expanded, setExpanded] = useState<string | null>(null);
   const [rowMenu, setRowMenu] = useState<
-    { kind: 'map' | 'pin'; rowKey: string; names: string[]; place?: LocationPlace; top: number; left: number } | null
+    { rowKey: string; names: string[]; place?: LocationPlace; top: number; left: number } | null
   >(null);
   const [attachTo, setAttachTo] = useState<{ id: string; top: number; left: number } | null>(null);
 
@@ -101,6 +101,18 @@ export const LocationMapRail: React.FC<Props> = ({ locations, allLocations = loc
             {pinned && place?.locked && <FaLock className="locmap-rail-lock" title="This pin is locked" />}
             {place?.hidden && <FaRegEyeSlash className="locmap-rail-lock" title="Hidden from the locations list" />}
             {row.scenes > 0 && <span className="locmap-rail-scenes">{row.scenes}</span>}
+            {/* v6.38, Derek: the Map/Pin/Group buttons are GONE from the
+                details block — ONE ⋮ menu in the item header holds their
+                options instead. */}
+            <button
+              className="locmap-rail-menu-btn"
+              title="Location options"
+              onClick={(e) => {
+                e.stopPropagation();
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setRowMenu({ rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, Math.min(r.left, window.innerWidth - 240)) });
+              }}
+            ><FaEllipsisV /></button>
           </div>
           {isOpen && (
             <div className="locmap-rail-detail">
@@ -116,26 +128,7 @@ export const LocationMapRail: React.FC<Props> = ({ locations, allLocations = loc
                 allLocations={allLocations}
                 scriptNames={row.scriptNames}
                 place={place}
-                actions={<>
-                  <button
-                    className="locmap-tool-btn"
-                    title="Map options"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                      setRowMenu({ kind: 'map', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
-                    }}
-                  ><FaRegMap /> Map</button>
-                  <button
-                    className="locmap-tool-btn"
-                    title="Pin options"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                      setRowMenu({ kind: 'pin', rowKey: row.key, names: row.scriptNames, place, top: r.bottom + 4, left: Math.max(8, r.left) });
-                    }}
-                  ><FaMapMarkerAlt /> Pin</button>
-                </>}
+                hideActionsRow
               />
             </div>
           )}
@@ -147,47 +140,45 @@ export const LocationMapRail: React.FC<Props> = ({ locations, allLocations = loc
 {/* v5.85: the row menus. Two short lists rather than one long one —
     the map icon is about WHAT the place is, the pin icon about WHERE
     it sits. */}
+{/* v6.38, Derek: ONE ⋮ menu per row — the options that lived behind the
+    Map, Pin, and Group buttons, together. (The Group button WAS the
+    connect flow — its create/join controls stay in the details' Location
+    Group field.) */}
 {rowMenu && createPortal(
   <>
     <div className="locmap-menu-veil" onPointerDown={() => setRowMenu(null)} />
     <div className="locmap-pin-menu" style={{ top: rowMenu.top, left: rowMenu.left }}>
-      {rowMenu.kind === 'map' ? (
-        <>
-          <button
-            className="locmap-pin-menu-item"
-            onClick={() => {
-              const id = placeFor(rowMenu.names, rowMenu.place);
-              setRowMenu(null);
-              if (id) setAttachTo({ id, top: rowMenu.top, left: rowMenu.left });
-            }}
-          >Connect to location…</button>
-          <button
-            className="locmap-pin-menu-item"
-            onClick={() => {
-              const id = placeFor(rowMenu.names, rowMenu.place);
-              if (id) toggleHidden(id);
-              setRowMenu(null);
-            }}
-          >{rowMenu.place?.hidden ? 'Show in locations list' : 'Hide from locations list'}</button>
-        </>
-      ) : (
-        <>
-          <button
-            className="locmap-pin-menu-item"
-            disabled={!rowMenu.place || rowMenu.place.x === null}
-            title={rowMenu.place && rowMenu.place.x !== null ? undefined : 'This location has no pin on the map yet'}
-            onClick={() => { if (rowMenu.place) toggleLock(rowMenu.place.id); setRowMenu(null); }}
-          >
-            {rowMenu.place?.locked ? <><FaLock /> Unlock pin&rsquo;s position</> : <><FaLockOpen /> Lock pin&rsquo;s position</>}
-          </button>
-          <button
-            className="locmap-pin-menu-item locmap-pin-menu-danger"
-            disabled={!rowMenu.place || rowMenu.place.x === null}
-            title={rowMenu.place && rowMenu.place.x !== null ? undefined : 'This location has no pin on the map yet'}
-            onClick={() => { if (rowMenu.place) unpinPlace(rowMenu.place.id); setRowMenu(null); }}
-          >Delete pin</button>
-        </>
-      )}
+      <button
+        className="locmap-pin-menu-item"
+        onClick={() => {
+          const id = placeFor(rowMenu.names, rowMenu.place);
+          setRowMenu(null);
+          if (id) setAttachTo({ id, top: rowMenu.top, left: rowMenu.left });
+        }}
+      >Connect to location…</button>
+      <button
+        className="locmap-pin-menu-item"
+        onClick={() => {
+          const id = placeFor(rowMenu.names, rowMenu.place);
+          if (id) toggleHidden(id);
+          setRowMenu(null);
+        }}
+      >{rowMenu.place?.hidden ? 'Show in locations list' : 'Hide from locations list'}</button>
+      <div className="locmap-pin-menu-sep" />
+      <button
+        className="locmap-pin-menu-item"
+        disabled={!rowMenu.place || rowMenu.place.x === null}
+        title={rowMenu.place && rowMenu.place.x !== null ? undefined : 'This location has no pin on the map yet'}
+        onClick={() => { if (rowMenu.place) toggleLock(rowMenu.place.id); setRowMenu(null); }}
+      >
+        {rowMenu.place?.locked ? <><FaLock /> Unlock pin&rsquo;s position</> : <><FaLockOpen /> Lock pin&rsquo;s position</>}
+      </button>
+      <button
+        className="locmap-pin-menu-item locmap-pin-menu-danger"
+        disabled={!rowMenu.place || rowMenu.place.x === null}
+        title={rowMenu.place && rowMenu.place.x !== null ? undefined : 'This location has no pin on the map yet'}
+        onClick={() => { if (rowMenu.place) unpinPlace(rowMenu.place.id); setRowMenu(null); }}
+      >Delete pin</button>
     </div>
   </>,
   document.body,

@@ -94,11 +94,20 @@ export function buildCatalog() {
     }
   })(ROOT);
 
+  /** v6.38, Derek ("found in scriptnotes … 'video'. Is this actually still
+   *  in use?"): literals that are ACCESSIBILITY LABELS on embeds — not
+   *  user-facing helper text — stay out of the editor. The code keeps them;
+   *  the tool stops listing them. */
+  const NOT_HELPER_TEXT = new Set([
+    'video',   // ScriptNotes.tsx — title on the iframe embedding a video link
+  ]);
+
   /** entries: text -> { kinds, files, n, icon?, label? } */
   const entries = new Map();
   const add = (text, kind, file, ctx = {}) => {
     if (!text || !text.trim()) return;
     if (!/[a-zA-Z]/.test(text)) return;            // pure glyphs aren't editable text
+    if (NOT_HELPER_TEXT.has(text)) return;
     const rel = relative(ROOT, file);
     const e = entries.get(text) ?? { kinds: new Set(), files: new Set(), n: 0 };
     e.kinds.add(kind); e.files.add(rel); e.n++;

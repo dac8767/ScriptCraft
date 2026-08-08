@@ -215,6 +215,30 @@
 /* v6.22: the Helper Text window (dz-panel shell, own default size). */
 .htw-panel { display: flex; flex-direction: column; }
 .htw-panel .dz-body { flex: 1; }
+/* v6.38, Derek: the standard tool-window header (fullscreen + close) on the
+   Helper Text window — same classes as every floating tool, plus the bits
+   the dz-panel shell needs to seat them. */
+.htw-panel .htw-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--fd-border);
+  cursor: grab;
+  user-select: none;
+}
+.htw-panel .htw-header .tool-header-title {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.htw-header-right { display: inline-flex; align-items: center; gap: 2px; }
+.htw-panel.htw-fullscreen {
+  border-radius: 0;
+  z-index: 4000;
+}
 .ht-input {
   width: 100%;
   margin-top: 4px;

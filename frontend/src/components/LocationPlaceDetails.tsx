@@ -37,9 +37,11 @@ interface Props {
    *  passes its Map and Pin buttons so all three share ONE row, built here.
    *  The row always ends with Group (the old "+ Connect to location"). */
   actions?: React.ReactNode;
+  /** v6.38: the Map rail replaces the whole row with its header ⋮ menu. */
+  hideActionsRow?: boolean;
 }
 
-export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, place, allLocations = locations, actions }) => {
+export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, place, allLocations = locations, actions, hideActionsRow }) => {
   /* The details are the PLACE's, not the row's: a place holding two script
      locations shows both, whichever of its rows was expanded — otherwise a
      shared place under-reports its own membership. */
@@ -119,16 +121,20 @@ export const LocationPlaceDetails: React.FC<Props> = ({ locations, scriptNames, 
     <div className="locplace-details">
       {/* v6.01, Derek: "move the Connect to location button to the same row
           as map options and pin options. change the name to Group." One row,
-          composed here so both homes (List dropdown, Map rail) get it. */}
-      <div className="locmap-detail-actions">
-        {actions}
-        <button
-          ref={(el) => { connect.triggerRef.current = el; }}
-          className="locmap-tool-btn"
-          title="Connect this location to others — connected locations form a group"
-          onClick={() => connect.toggle()}
-        ><FaLink /> Group</button>
-      </div>
+          composed here so both homes (List dropdown, Map rail) get it.
+          v6.38, Derek: the Map rail hides this row entirely — its options
+          live in the row header's ⋮ menu now (hideActionsRow). */}
+      {!hideActionsRow && (
+        <div className="locmap-detail-actions">
+          {actions}
+          <button
+            ref={(el) => { connect.triggerRef.current = el; }}
+            className="locmap-tool-btn"
+            title="Connect this location to others — connected locations form a group"
+            onClick={() => connect.toggle()}
+          ><FaLink /> Group</button>
+        </div>
+      )}
       <label className="locmap-field-label">Location Group</label>
       {inGroup && place ? (
         <div className="locplace-group-row">

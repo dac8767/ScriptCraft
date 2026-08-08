@@ -55,11 +55,10 @@ try {
   await page.waitForSelector('.locmap', { timeout: 8000 });
   ok(true, 'the Map view renders');
 
-  // ── 2. v5.81: the map options moved OUT of the header, onto the
-  //    + Add Pin row — so before a map exists there is no options button
-  //    at all, only the empty state's Add Map.
-  ok(await page.$('.tool-fs-header .locmap-mapopts-btn') === null,
-    'the map options button is no longer in the header');
+  // ── 2. v6.38: Derek moved the options BACK into the header, renamed
+  //    "Options" (reversing v5.81) — present in map view even before a map.
+  ok(await page.$('.tool-fs-header .locmap-mapopts-btn') !== null,
+    'the Options button sits in the header (v6.38)');
 
   // ── 3. import → rotate → lock ───────────────────────────────────────
   await page.setInputFiles('.locmap input[type="file"]', MAP_PATH);
@@ -82,9 +81,9 @@ try {
   ok((await state()).map.rotationLocked === true, 'Set Rotation locks it');
   ok(await page.$('.locmap-import-bar') === null, 'and the rotation bar is gone for good');
 
-  // the options now live on the action row, in Derek's words
-  ok(await page.$('.locmap-actionbar .locmap-mapopts-btn') !== null,
-    'Map Options sits on the + Add Pin row');
+  // v6.38: the action row no longer holds it — the header does.
+  ok(await page.$('.locmap-actionbar .locmap-mapopts-btn') === null,
+    'the action row no longer holds Map Options (v6.38: header)');
   await page.click('.locmap-mapopts-btn');
   const opts = await page.$$eval('.char-upload-menu .char-upload-menu-item', (els) => els.map((e) => e.textContent.trim()));
   ok(JSON.stringify(opts) === JSON.stringify(['Replace Map', 'Rotate 90 degrees', 'Delete Map']),

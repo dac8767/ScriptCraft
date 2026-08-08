@@ -51,10 +51,12 @@
   /* v3.42, Derek: tighten the gap between the panel header and the first
      folder — no top padding. */
   padding: 0 6px 2px;
-  /* v4.22, Derek: the tree scales with the SIDE PANEL's item-size control
-     (--dock-scale, dragged on the panel edge) — the dedicated bottom zoom bar
-     was removed as redundant. */
-  --nb-tree-scale: var(--dock-scale, 1);
+  /* v4.22, Derek: the tree scaled with the SIDE PANEL's item-size control
+     (--dock-scale). v6.38: the WHOLE open tool zooms with --dock-scale now
+     (.tool-inline in 22-tools-extra) — defaulting this to the same var
+     would scale the tree TWICE, so it stands at 1 unless its own control
+     sets it. */
+  --nb-tree-scale: 1;
 }
 .fs-nb-toplevel-drop {
   flex: 0 0 auto;

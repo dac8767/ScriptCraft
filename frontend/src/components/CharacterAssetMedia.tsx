@@ -22,6 +22,13 @@ export const AssetImage: React.FC<{
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const objRef = useRef<string | null>(null);
+  /* v6.38: onFailed was an effect dependency, and callers pass inline
+     arrows — so EVERY parent re-render re-fetched the bytes (the Locations
+     map re-renders on rotate, ghost-pin moves…), and any transient failure
+     re-branded a working image broken. The callback rides a ref; the fetch
+     runs only when the asset actually changes. */
+  const onFailedRef = useRef(onFailed);
+  onFailedRef.current = onFailed;
   useEffect(() => {
     let dead = false;
     setFailed(false);
@@ -37,11 +44,11 @@ export const AssetImage: React.FC<{
         objRef.current = obj;
         setUrl(obj);
       } catch {
-        if (!dead) { setFailed(true); onFailed?.(); }
+        if (!dead) { setFailed(true); onFailedRef.current?.(); }
       }
     })();
     return () => { dead = true; };
-  }, [projectId, assetId, onFailed]);
+  }, [projectId, assetId]);
   // Revoke the last blob URL only when the component leaves for good.
   useEffect(() => () => { if (objRef.current) URL.revokeObjectURL(objRef.current); }, []);
   if (failed) return <div className={`char-profile-image-broken ${className ?? ''}`} title="Image unavailable">!</div>;

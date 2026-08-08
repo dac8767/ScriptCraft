@@ -1397,6 +1397,19 @@
 .locmap-img-rot > img, .locmap-img-rot > div { width: 100%; height: 100%; }
 /* Clicking the map drops a pin, so the map says so with its cursor. */
 .locmap-scroll-placing .locmap-stage { cursor: crosshair; }
+/* v6.38: the rail row's ⋮ menu — the Map/Pin/Group options in one place. */
+.locmap-rail-menu-btn {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1;
+}
+.locmap-rail-menu-btn:hover { color: var(--fd-text); background: var(--fd-overlay-light); }
 
 /* ── pins ──────────────────────────────────────────────────────────── */
 /* A pin with no location yet is dashed: it is a question, not a fact. */
@@ -1553,6 +1566,8 @@
   gap: 8px;
 }
 .locmap-actionbar > * { flex: 0 0 auto; }
+/* v6.38, Derek: the count stretches, so the group toggle (now last) sits at
+   the row's RIGHT edge. */
 .locmap-pin-count {
   flex: 1 1 auto;
   min-width: 0;

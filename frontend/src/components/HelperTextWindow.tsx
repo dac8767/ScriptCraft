@@ -3,15 +3,16 @@
  * design window into it's own window. add a button for this window under the
  * help > developer menu."
  *
- * A floating, draggable, any-edge-resizable window in the Design window's
- * visual language (dz-panel shell), portalled to <body>. Search + kind chips
- * + every catalogued string at once live in HelperTextSection. Opens from
- * Help ▸ Developer ▸ Helper Text… (store flag helperTextWindowOpen —
- * session state, like a dialog).
+ * v6.38, Derek: "give the helper text window the same format as all other
+ * windows (header with full screen button and close button)" — the header
+ * now wears the tool-window classes (same look by the same CSS, not a
+ * copy), with a working fullscreen toggle. Body, search and rows are
+ * unchanged (HelperTextSection). Opens from Help ▸ Developer ▸ Helper
+ * Text… (store flag helperTextWindowOpen — session state, like a dialog).
  */
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { LuSearch } from 'react-icons/lu';
+import { LuSearch, LuMaximize, LuMinimize } from 'react-icons/lu';
 import { useEditorStore } from '../stores/editorStore';
 import { HelperTextSection, filterHelperCatalog } from './HelperTextSection';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
@@ -25,12 +26,14 @@ export default function HelperTextWindow() {
     () => ({ x: Math.max(8, window.innerWidth / 2 - 210), y: 72 }),
   );
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 420, h: 620 });
+  const [fullscreen, setFullscreen] = useState(false);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
   const [query, setQuery] = useState('');
 
   if (!open) return null;
 
   const startDrag = (e: React.PointerEvent) => {
+    if (fullscreen) return;
     if ((e.target as HTMLElement).closest('button, input')) return;
     drag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
     const move = (ev: PointerEvent) => {
@@ -57,12 +60,25 @@ export default function HelperTextWindow() {
   const q = query.trim().toLowerCase();
   const entries = filterHelperCatalog(q);
 
+  const frame = fullscreen
+    ? { left: 0, top: 0, width: '100vw', height: '100vh' }
+    : { left: pos.x, top: pos.y, width: size.w, height: size.h };
+
   return createPortal(
-    <div className="dz-panel htw-panel" style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}>
-      <div className="dz-header" onPointerDown={startDrag}>
-        <span className="dz-title">Helper Text</span>
-        {editedCount > 0 && <span className="dz-count">{editedCount} changed</span>}
-        <button className="dz-close" title="Close" onClick={() => setOpen(false)}>&times;</button>
+    <div className={`dz-panel htw-panel${fullscreen ? ' htw-fullscreen' : ''}`} style={frame}>
+      <div className="tool-window-header htw-header" onPointerDown={startDrag}>
+        <span className="tool-header-title">
+          <span className="tool-window-title">Helper Text</span>
+          {editedCount > 0 && <span className="dz-count">{editedCount} changed</span>}
+        </span>
+        <span className="htw-header-right">
+          <button
+            className="tool-window-close htw-fsbtn"
+            title={fullscreen ? 'Exit full screen' : 'Full screen'}
+            onClick={() => setFullscreen((v) => !v)}
+          >{fullscreen ? <LuMinimize /> : <LuMaximize />}</button>
+          <button className="tool-window-close" title="Close" onClick={() => setOpen(false)}>&times;</button>
+        </span>
       </div>
 
       <div className="dz-search">
@@ -80,7 +96,7 @@ export default function HelperTextWindow() {
       </div>
 
       {/* any edge/corner resizes — the same shared zones as Design */}
-      <EdgeResizeZones onStart={beginEdge} />
+      {!fullscreen && <EdgeResizeZones onStart={beginEdge} />}
     </div>,
     document.body,
   );

@@ -63,7 +63,7 @@ import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
 import TitleBar from './TitleBar';
 import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
-import { makeSnippetCard } from './StickyNotes';
+import { captureSelectionSnippet } from './StickyNotes';
 import { ht } from '../utils/helperText';
 import LocationDatabase, { parseLocationFromHeading } from './LocationDatabase';
 import FormatPanel from './FormatPanel';
@@ -2463,17 +2463,10 @@ const ScreenplayEditor: React.FC = () => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || !e.altKey || e.shiftKey) return;
       if (e.code !== 'KeyX' && e.code !== 'KeyC') return;
-      const { from, to, empty } = editor.state.selection;
-      if (empty) return;
-      const text = editor.state.doc.textBetween(from, to, '\n');
-      if (!text.trim()) return;
+      // v6.38: ONE implementation with the Snippets window's buttons.
+      if (!captureSelectionSnippet(editor, e.code === 'KeyX' ? 'cut' : 'copy')) return;
       e.preventDefault();
-      const store = useEditorStore.getState();
-      store.addShelfCard(makeSnippetCard(text));
-      store.openTool('fragments');
-      if (e.code === 'KeyX' && editor.isEditable) {
-        editor.chain().focus().deleteSelection().run();
-      }
+      useEditorStore.getState().openTool('fragments');
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);

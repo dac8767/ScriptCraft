@@ -548,6 +548,17 @@
   ]
  },
  {
+  "text": "Copy the selected script text into a new snippet (⌥⌘C)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Notes & Snippets Windows",
+  "where": [
+   "components/StickyNotes.tsx"
+  ],
+  "icon": "FaCopy",
+  "label": "Copy selection"
+ },
+ {
   "text": "Copy to clipboard",
   "kind": "tooltip",
   "sites": 1,
@@ -595,6 +606,17 @@
   "where": [
    "components/Toolbar.tsx"
   ]
+ },
+ {
+  "text": "Cut the selected script text into a new snippet (⌥⌘X)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Notes & Snippets Windows",
+  "where": [
+   "components/StickyNotes.tsx"
+  ],
+  "icon": "LuScissors",
+  "label": "Cut selection to snippet"
  },
  {
   "text": "Default size",
@@ -1394,6 +1416,16 @@
   "icon": "FaRegFileAlt"
  },
  {
+  "text": "Insert this snippet into the script at the cursor",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Notes & Snippets Windows",
+  "where": [
+   "components/StickyNotes.tsx"
+  ],
+  "icon": "LuFileInput"
+ },
+ {
   "text": "Italic",
   "kind": "tooltip",
   "sites": 4,
@@ -1475,6 +1507,15 @@
   ]
  },
  {
+  "text": "Location options",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/LocationMapRail.tsx"
+  ]
+ },
+ {
   "text": "Locations that share a group fold together",
   "kind": "tooltip",
   "sites": 1,
@@ -1523,15 +1564,6 @@
    "components/ScriptStatistics.tsx"
   ],
   "label": "TOTAL"
- },
- {
-  "text": "Map options",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Scenes / Pages / Locations Windows",
-  "where": [
-   "components/LocationMapRail.tsx"
-  ]
  },
  {
   "text": "Menu (drag to reposition)",
@@ -1721,15 +1753,6 @@
   "area": "Outline Window",
   "where": [
    "components/BeatBoard.tsx"
-  ]
- },
- {
-  "text": "Pin options",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Scenes / Pages / Locations Windows",
-  "where": [
-   "components/LocationMapRail.tsx"
   ]
  },
  {
@@ -1992,7 +2015,7 @@
   "where": [
    "components/LocationMapOptions.tsx"
   ],
-  "label": "Map Options"
+  "label": "Options"
  },
  {
   "text": "Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar",
@@ -2515,15 +2538,6 @@
   "area": "Characters Window",
   "where": [
    "components/CharacterProfiles.tsx"
-  ]
- },
- {
-  "text": "video",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Notes & Snippets Windows",
-  "where": [
-   "components/ScriptNotes.tsx"
   ]
  },
  {

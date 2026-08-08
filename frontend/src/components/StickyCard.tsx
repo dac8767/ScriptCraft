@@ -230,12 +230,15 @@ interface StickyCardProps {
   onRemove: () => void;
   /** Replace the card's body while keeping the identical shell. */
   children?: React.ReactNode;
+  /** v6.38: extra head-row action buttons (the snippet window's
+   *  insert-into-script), rendered beside the card's own actions. */
+  headActions?: React.ReactNode;
 }
 
 // v4.33: the `anchor` foot ("Linked to Scene 14" / "General") is gone — every
 // card in these windows is general now, so there was nothing left to
 // distinguish. Script notes/to-dos live in the Navigator instead.
-export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove, children }: StickyCardProps) {
+export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere, onUpdate, onRemove, children, headActions }: StickyCardProps) {
   // Header: ⋮⋮ grip drags; the type name is placeholder text in an editable title
   const head = (extra?: React.ReactNode) => (
     <h5 className="swn-card-head">
@@ -300,11 +303,14 @@ export function StickyCard({ card, dragging, onDragStart, onDragEnd, onDropHere,
   if (card.type === 'snippet') {
     return wrap(<>
       {head((
-        <button
-          className="swn-x"
-          title="Copy to clipboard"
-          onClick={() => { if (navigator.clipboard) navigator.clipboard.writeText(card.text || ''); }}
-        ><FaCopy /></button>
+        <>
+          {headActions}
+          <button
+            className="swn-x"
+            title="Copy to clipboard"
+            onClick={() => { if (navigator.clipboard) navigator.clipboard.writeText(card.text || ''); }}
+          ><FaCopy /></button>
+        </>
       ))}
       <div className="swn-snippet">{card.text}</div>
     </>);
