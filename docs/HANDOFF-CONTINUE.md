@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.64 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.65 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,47 +227,53 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v6.64 — Send to Script writes LIVE section lines
+### v6.64 → v6.65 — Send to Script makes LIVE ANNOTATIONS
 
 - Derek: "the 'send to script' button in the outline toolbar adds the
   section header as an annotation at the indicated page location. if section
   info changes, such as the name or the estimated page amount, the change
   should be indicated in the annotation as well."
-- His first sentence did NOT describe the code: the button appended one
-  `# Beat title — description` line per BEAT at the END of the script — no
-  sections, no page placement, no page estimate. I asked rather than guess,
-  and he chose: SECTIONS, at their page, mirroring silently and always.
-- A sent line is now a MIRROR, not a copy. `General` gained an
-  `outlineSectionId` attribute (`data-outline-section`, parse/render like
-  todoId, so the link rides the saved document), and
-  `utils/outlineScriptSync.ts` owns the rest: `sectionLineText` is the ONE
-  text builder (Send and the mirror can't disagree), `collectOutlineSections`
-  gathers sections from EVERY variation (viewed columns + stash — a line sent
-  from one tab must keep mirroring after switching), `syncSectionLines`
-  rewrites what has fallen behind, `sendSectionsToScript` updates-then-inserts
-  so a second press can't duplicate.
-- The mirror lives in ScreenplayEditor, NOT the Outline Bar: the bar is
-  usually closed while the writer renames a section on the board, and a
-  mirror that only runs when a panel happens to be mounted is the silent
-  no-op this repo keeps re-learning. A signature of `id|title|pages` gates
-  it, so a column-resize drag (width changes, same names) doesn't walk the
-  document on every pointer move.
-- Two rules it does not break: `addToHistory: false` (Undo takes back the
-  RENAME, which re-fires the mirror, instead of peeling the mirror off), and
-  a section deleted in the outline leaves its line in the script untouched.
-- BUG the check caught, worth remembering: sections landing on the SAME
-  insertion point (pages the script hasn't reached yet all resolve to the
-  end) came out REVERSED. Inserting bottom-up needs the tie-break to reverse
-  too — each insert at position P pushes the previous one down, so equal
-  positions must be dealt latest-first. `b.at - a.at || b.i - a.i`.
-- The line is a `# ` section line, so it inherits the working-note rule
-  (hidden in Preview, suppressed in print, stripped from the Fountain
-  export) — the unit test asserts the prefix for exactly that reason.
-- check-v664 (16) drives the real document: placement (Act I at pos 0, Act II
-  at 3966), rename and page-estimate rewrites, mirroring with the bar CLOSED,
-  no duplicates on re-send, the undo behaviour, the deleted-section case, and
-  that `data-outline-section` reaches the saved HTML.
-- Gates: tsc 0, vitest 1170, build ok, check-all 910/0.
+- The old button appended one `# Beat title — description` line per BEAT at
+  the END of the script — no sections, no page placement, no page estimate.
+  I asked rather than guess and he chose sections, at their page, mirroring
+  silently. **v6.64 then read "annotation" as the `# …` section LINE** and
+  built exactly that. He came straight back with a screenshot: "it adds them
+  to the script in the old section format instead of as an annotation like I
+  requested." He meant the app's ANNOTATIONS (markupsSlice) — the tool in
+  the right panel. THE LESSON: this app has a feature literally named
+  Annotations; when a word names a shipped feature, it means that feature.
+  Check the tool list before reading a term loosely.
+- v6.65 is what he asked for. A sent section is a `ScriptMarkup` with a new
+  `outlineSectionId` field, anchored by the element's `markupId` BLOCK
+  attribute (ScriptMarkup's point-anchor path — no text selection needed,
+  works on any annotatable element). Its text lives in the annotation's
+  content, so **the mirror is a plain store write and never touches the
+  document at all** — much safer than v6.64's text rewriting.
+- `utils/outlineScriptSync.ts`: `sectionAnnotationText` is the ONE builder;
+  `sectionAnnotationContent` wraps it as mini-editor JSON;
+  `annotationFirstLine` reads it back (the round-trip is what the mirror
+  compares on); `collectOutlineSections` spans every variation;
+  `syncSectionAnnotations` rewrites what fell behind; `freeAnchorPos` finds
+  the next annotatable element that isn't already anchored — two sections
+  can resolve to the same spot and one element holds ONE markupId, so
+  without it the second would silently evict the first;
+  `clearLegacySectionLines` sweeps v6.64's stamped lines on the next send
+  (the stamp proves the app wrote them — nothing unstamped is touched).
+- `General.outlineSectionId` is KEPT, marked legacy: the sweep can only find
+  those lines while the schema still parses the stamp.
+- The mirror lives in ScreenplayEditor, not the Outline Bar — the bar is
+  usually closed while a section is renamed on the board, and a mirror that
+  only runs when a panel happens to be mounted is the silent no-op this repo
+  keeps re-learning. A `id|title|pages` signature gates it so a column-resize
+  drag doesn't rewrite anything. A hand-made annotation (no
+  outlineSectionId) is never rewritten; a deleted section leaves its
+  annotation as it stands.
+- check-v665 (19) drives it for real: annotations not script text (the doc's
+  textContent is byte-identical before and after), anchor placement, the
+  rename/page rewrites, mirroring with the bar CLOSED, no duplicates, no
+  eviction when four sections compete for anchors, the hand-made case, the
+  deleted-section case, and the v6.64 sweep.
+- Gates: tsc 0, vitest 1173, build ok, check-all 913/0.
 
 ### v6.63 — Settings ▸ Presets is a CHECKLIST that makes ONE file
 

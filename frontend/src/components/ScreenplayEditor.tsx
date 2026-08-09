@@ -40,7 +40,7 @@ import Superscript from '@tiptap/extension-superscript';
 import Highlight from '@tiptap/extension-highlight';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { generateTemplateCss, injectTemplateCss } from '../utils/templateCss';
-import { collectOutlineSections, outlineSectionSignature, syncSectionLines } from '../utils/outlineScriptSync';
+import { collectOutlineSections, outlineSectionSignature, syncSectionAnnotations } from '../utils/outlineScriptSync';
 import { docHasAnyText } from '../utils/docText';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
 import { setPaginationPrintMode, setPaginationVisibility, setPaginationContinuousMode, CONTINUOUS_GAP_PX, createPaginationPlugin, getPageMetrics, setMeasuredFills } from '../editor/pagination';
@@ -1047,14 +1047,14 @@ const ScreenplayEditor: React.FC = () => {
     }
   }, [editor]);
 
-  /* v6.64, Derek: a section line sent to the script MIRRORS its outline
-     section — "if section info changes, such as the name or the estimated
-     page amount, the change should be indicated in the annotation as well".
-     It lives here rather than on the Outline Bar because the bar is often
-     closed while the writer renames a section on the board, and a mirror
-     that only runs when a particular panel happens to be mounted is exactly
-     the silent no-op this repo keeps re-learning. The signature keeps a
-     column-resize drag (width changes, same names) from walking the doc. */
+  /* v6.65, Derek: an ANNOTATION sent from the outline MIRRORS its section —
+     "if section info changes, such as the name or the estimated page amount,
+     the change should be indicated in the annotation as well". It lives here
+     rather than on the Outline Bar because the bar is often closed while the
+     writer renames a section on the board, and a mirror that only runs when
+     a particular panel happens to be mounted is exactly the silent no-op
+     this repo keeps re-learning. The signature keeps a column-resize drag
+     (width changes, same names) from rewriting anything. */
   const beatColumnsForMirror = useEditorStore((s) => s.beatColumns);
   const outlineStashForMirror = useEditorStore((s) => s.outlineStash);
   const outlineSectionSig = useMemo(
@@ -1062,10 +1062,9 @@ const ScreenplayEditor: React.FC = () => {
     [beatColumnsForMirror, outlineStashForMirror],
   );
   useEffect(() => {
-    if (!editor || editor.isDestroyed) return;
     const st = useEditorStore.getState();
-    syncSectionLines(editor, collectOutlineSections(st.beatColumns, st.outlineStash));
-  }, [editor, outlineSectionSig]);
+    syncSectionAnnotations(collectOutlineSections(st.beatColumns, st.outlineStash));
+  }, [outlineSectionSig]);
 
   /* v5.04: the ONE place a "go to this scene" request is carried out. A panel
      asks via requestEditorScroll(pos); this runs when the editor AND its

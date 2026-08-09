@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.65",
+  "date": "2026-08-09",
+  "changes": [
+   "Send to Script now makes real ANNOTATIONS \u2014 one per outline section, anchored at the page the outline puts that section on, reading \u201cAct I \u2014 40 pages\u201d. v6.64 wrote \u201c# \u2026\u201d section lines into the script instead; that was the wrong thing, and nothing is written into your script text any more.",
+   "Each annotation keeps mirroring its section: rename it or change its page estimate and the annotation updates on the spot, whether the Outline Bar is open or not. Annotations you made yourself are never touched.",
+   "The next Send to Script clears out any \u201c# \u2026\u201d lines v6.64 left behind, so nothing is listed twice. Sending again updates what is there and adds only what is missing; deleting a section leaves its annotation alone."
+  ]
+ },
+ {
   "version": "6.64",
   "date": "2026-08-09",
   "changes": [

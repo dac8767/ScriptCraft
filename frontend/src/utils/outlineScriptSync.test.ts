@@ -1,44 +1,71 @@
+// @vitest-environment jsdom
 /**
- * v6.64, Derek: "Send to Script" lines MIRROR their outline section — "if
- * section info changes, such as the name or the estimated page amount, the
- * change should be indicated in the annotation as well".
+ * v6.65, Derek: "Send to Script" ANNOTATIONS mirror their outline section —
+ * "if section info changes, such as the name or the estimated page amount,
+ * the change should be indicated in the annotation as well".
  *
- * These pin the pure half (the one text builder, the cross-variation section
- * lookup, and the signature that decides when the mirror wakes up). The
- * document half — stamping, rewriting, no-duplicate re-sends — is driven for
- * real in devtools/check-v664.mjs, because a store assert would happily pass
- * while the script on screen said something else (the v6.62 lesson).
+ * These pin the pure half (the one text builder, the content shape, the
+ * cross-variation section lookup, and the signature that decides when the
+ * mirror wakes up). The anchoring half — placing annotations at a page,
+ * no-duplicate re-sends, clearing v6.64's lines — is driven for real in
+ * devtools/check-v665.mjs, because a store assert would happily pass while
+ * the script on screen said something else (the v6.62 lesson).
  */
 import { describe, it, expect } from 'vitest';
 import {
-  sectionLineText, collectOutlineSections, outlineSectionSignature,
+  sectionAnnotationText, sectionAnnotationContent, annotationFirstLine,
+  collectOutlineSections, outlineSectionSignature,
 } from './outlineScriptSync';
 
 const col = (id: string, title: string, targetPages?: number) => ({ id, title, targetPages });
 
-describe('sectionLineText', () => {
-  it('writes the name AND the page estimate, so both can be seen to change', () => {
-    expect(sectionLineText('Act I', 40)).toBe('# Act I — 40 pages');
-    expect(sectionLineText('Act II', 1)).toBe('# Act II — 1 page');
+describe('sectionAnnotationText', () => {
+  it('carries the name AND the page estimate, so both can be seen to change', () => {
+    expect(sectionAnnotationText('Act I', 40)).toBe('Act I — 40 pages');
+    expect(sectionAnnotationText('Act II', 1)).toBe('Act II — 1 page');
   });
 
-  it('never writes a nameless or zero-page line', () => {
-    expect(sectionLineText('   ', 12)).toBe('# Untitled Section — 12 pages');
-    expect(sectionLineText('Setup', 0)).toBe('# Setup — 1 page');
-    expect(sectionLineText('Setup', -4)).toBe('# Setup — 1 page');
+  it('never writes a nameless or zero-page annotation', () => {
+    expect(sectionAnnotationText('   ', 12)).toBe('Untitled Section — 12 pages');
+    expect(sectionAnnotationText('Setup', 0)).toBe('Setup — 1 page');
+    expect(sectionAnnotationText('Setup', -4)).toBe('Setup — 1 page');
   });
 
   it('rounds a fractional budget rather than printing it', () => {
-    expect(sectionLineText('Act I', 39.6)).toBe('# Act I — 40 pages');
+    expect(sectionAnnotationText('Act I', 39.6)).toBe('Act I — 40 pages');
   });
 
-  /* The line has to stay a SECTION line — "# " is what makes the script hide
-     it in Preview, suppress it in print and strip it on export (CLAUDE.md
-     §4). A sent line that lost its # would ship in a draft. */
-  it('is always a working-note section line', () => {
+  /* v6.65: it is an ANNOTATION, not a script line — Derek came back on
+     v6.64 for writing "# …" into the script. The "# " must be gone. */
+  it('is not a section line — no # prefix', () => {
     for (const [t, p] of [['Act I', 40], ['x', 1], ['', 3]] as const) {
-      expect(sectionLineText(t, p).startsWith('# ')).toBe(true);
+      expect(sectionAnnotationText(t, p).startsWith('#')).toBe(false);
     }
+  });
+});
+
+describe('sectionAnnotationContent / annotationFirstLine', () => {
+  it('builds the mini-editor doc the Annotations window reads', () => {
+    expect(sectionAnnotationContent('Act I', 40)).toEqual({
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Act I — 40 pages' }] }],
+    });
+  });
+
+  /* The round trip is what the mirror compares on, so a mismatch here would
+     make it rewrite every annotation on every outline change. */
+  it('reads its own content back exactly', () => {
+    for (const [t, p] of [['Act I', 40], ['Fun and Games', 25], ['', 1]] as const) {
+      expect(annotationFirstLine(sectionAnnotationContent(t, p))).toBe(sectionAnnotationText(t, p));
+    }
+  });
+
+  it('reads a hand-written annotation without choking on its shape', () => {
+    expect(annotationFirstLine(null)).toBe('');
+    expect(annotationFirstLine({ type: 'doc' })).toBe('');
+    expect(annotationFirstLine({ type: 'doc', content: [{ type: 'bulletList', content: [
+      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'note' }] }] },
+    ] }] })).toBe('note');
   });
 });
 

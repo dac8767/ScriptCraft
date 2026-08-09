@@ -28,7 +28,7 @@ import { dockWidthFor, toolDef } from './ToolDock';
 import { computeSceneLengths } from '../editor/pagination';
 import AddMenu from './AddMenu';
 import { showToast } from './Toast';
-import { sendSectionsToScript } from '../utils/outlineScriptSync';
+import { sendSectionsToScript, clearLegacySectionLines } from '../utils/outlineScriptSync';
 import { confirmDialog } from './ConfirmDialog';
 import { BEAT_COLORS } from './BeatBoard';
 
@@ -420,14 +420,13 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     }
   };
 
-  /* v6.64, Derek: "the 'send to script' button in the outline toolbar adds
-     the section header as an annotation at the indicated page location. if
-     section info changes, such as the name or the estimated page amount, the
-     change should be indicated in the annotation as well."
-     So it sends SECTIONS (it used to append one line per beat at the end of
-     the script), each at the page the outline puts it on, and each stamped
-     with its section id so the line keeps mirroring it — see
-     utils/outlineScriptSync. Sending twice updates instead of duplicating. */
+  /* v6.64 → v6.65, Derek: it sends SECTIONS (it used to append one line per
+     beat at the end of the script), each anchored at the page the outline
+     puts it on, as a real ANNOTATION — v6.64 wrote `# …` section lines and
+     he came straight back: "it adds them to the script in the old section
+     format instead of as an annotation like I requested". Each annotation
+     keeps mirroring its section (utils/outlineScriptSync); sending twice
+     updates instead of duplicating. */
   const posForPage = (page: number): number | null => {
     if (!scenes.length) return null;
     // The same page→script mapping double-clicking a bar item already uses:
@@ -439,13 +438,18 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
 
   const sendToScript = () => {
     if (!editor || editor.isDestroyed || acts.length === 0) return;
+    clearLegacySectionLines(editor);     // v6.64's `# …` lines, if any
     const sections = acts.map((a) => ({ id: a.id, title: a.title, pages: a.pages, page: a.start }));
-    const { added, updated } = sendSectionsToScript(editor, sections, posForPage);
+    const { added, updated, skipped } = sendSectionsToScript(editor, sections, posForPage);
     const bits = [
-      added ? `Added ${added} section line${added === 1 ? '' : 's'}` : '',
+      added ? `Added ${added} annotation${added === 1 ? '' : 's'}` : '',
       updated ? `${added ? 'updated' : 'Updated'} ${updated}` : '',
     ].filter(Boolean);
-    showToast(bits.length ? `${bits.join(', ')} in the script.` : 'The script is already up to date with this outline.', bits.length ? 'success' : 'info');
+    const tail = skipped ? ` ${skipped} had no line left to anchor to — write more script first.` : '';
+    showToast(
+      bits.length ? `${bits.join(', ')} in the script.${tail}` : `The script's annotations already match this outline.${tail}`,
+      skipped ? 'info' : bits.length ? 'success' : 'info',
+    );
   };
 
   const jumpToScene = (pos: number) => {
@@ -578,12 +582,12 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
           className="fs-ob-iconbtn"
           onClick={async () => {
             if (await confirmDialog(
-              `Put all ${acts.length} section${acts.length === 1 ? '' : 's'} into the script as section lines (# …), each at its page?\n\nEach line keeps mirroring its section — rename it or change its pages and the line follows. Lines already there are updated, not duplicated.`,
+              `Put all ${acts.length} section${acts.length === 1 ? '' : 's'} into the script as annotations, each at its page?\n\nEach annotation keeps mirroring its section — rename it or change its pages and the annotation follows. Ones already there are updated, not duplicated.`,
               { title: 'Send to Script', confirmLabel: 'Insert' },
             )) sendToScript();
           }}
           disabled={acts.length === 0}
-          title="Send to Script — put each section into the script as a section line (# …) that keeps mirroring it"
+          title="Send to Script — put each section into the script as an annotation that keeps mirroring it"
         >
           <FaFileExport />
         </button>

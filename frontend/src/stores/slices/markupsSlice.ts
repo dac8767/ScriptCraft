@@ -25,6 +25,11 @@ export interface ScriptMarkup {
   /** v5.26: the user picked this icon by hand — auto-icon (first content
    *  kind) must never overwrite it. Absent on v5.25 saves = false. */
   iconManual?: boolean;
+  /** v6.65: the outline SECTION this annotation was sent from (Send to
+   *  Script). It makes the annotation a MIRROR — rename the section or
+   *  change its page budget and utils/outlineScriptSync rewrites the
+   *  content. Absent on a hand-made annotation, which is never rewritten. */
+  outlineSectionId?: string;
 }
 
 /** Content kinds a markup can contain — drives the auto-icon rule. */

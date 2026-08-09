@@ -79,11 +79,11 @@ export const General = Node.create({
         renderHTML: (attrs) =>
           (attrs.todoColor ? { 'data-todo-color': attrs.todoColor } : {}),
       },
-      /** v6.64: the outline SECTION this line was sent from (Send to Script).
-       *  It makes the line a mirror rather than a copy — rename the section
-       *  or change its page budget and utils/outlineScriptSync rewrites the
-       *  line. Stored on the node like todoId, so the link travels with the
-       *  script and survives save/load. */
+      /** v6.64 LEGACY, kept deliberately: that version wrote outline sections
+       *  into the script as `# …` lines stamped with this. v6.65 replaced
+       *  them with real Annotations, and Send to Script CLEARS the old lines
+       *  (clearLegacySectionLines) — which it can only do while the schema
+       *  still recognises the stamp. Nothing writes it any more. */
       outlineSectionId: {
         default: null,
         parseHTML: (el) => (el as HTMLElement).getAttribute('data-outline-section'),
