@@ -146,14 +146,87 @@ export function resolveOutlinePreset(presetId: string): { name: string; columns:
    function, so the invariant can't drift between them. */
 export const PRESET_PAGES_PER_BEAT = 2;
 
-/** The page estimate for each beat filling a section of `pages` pages.
- *  Length = how many beats; the sum is always exactly `pages`. */
+/** Deal `pages` pages across `count` beats, biggest shares first. The sum is
+ *  exactly `pages` — unless there are more beats than pages, where a beat
+ *  still can't be shorter than one page and the section runs over. */
+export function splitPages(pages: number, count: number): number[] {
+  const total = Math.max(1, Math.round(pages));
+  const n = Math.max(0, Math.round(count));
+  if (n === 0) return [];
+  if (n >= total) return new Array(n).fill(1);
+  const base = Math.floor(total / n);
+  const extra = total - base * n;                     // 0..n-1 leftovers
+  return Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0));
+}
+
+/** The page estimate for each beat filling a section of `pages` pages, at the
+ *  preset's two-pages-a-beat ratio. Length = how many beats. */
 export function presetBeatSpans(pages: number): number[] {
   const total = Math.max(1, Math.round(pages));
-  const count = Math.max(1, Math.round(total / PRESET_PAGES_PER_BEAT));
-  const base = Math.floor(total / count);
-  const extra = total - base * count;                 // 0..count-1 leftovers
-  return Array.from({ length: count }, (_, i) => base + (i < extra ? 1 : 0));
+  return splitPages(total, Math.max(1, Math.round(total / PRESET_PAGES_PER_BEAT)));
+}
+
+/* ─── v6.59, Derek: "when a preset is used but beats already exist, it should
+   use the existing beats instead of creating new ones. it can change the page
+   estimates of existing beats to work with the new preset structure." ───
+   So the beats the writer already has become the preset's beats. How many
+   land in each section is the same question an election asks: hand out
+   `count` seats in proportion to `pages`. Every section gets one first (a
+   section with no beats is a hole in the outline), then each remaining beat
+   goes to whichever section is currently the most under-served — the largest
+   pages-per-beat. A section is capped at one beat per page, because a beat
+   can't be shorter than a page. */
+export function distributeBeats(pages: number[], count: number): number[] {
+  const n = pages.length;
+  const out = new Array<number>(n).fill(0);
+  if (n === 0 || count <= 0) return out;
+  const cap = pages.map((p) => Math.max(1, Math.round(p)));
+  let left = count;
+  // Pass 1: one each, biggest sections first — a short supply covers the
+  // sections carrying the most story rather than dying out at the opening.
+  for (const i of cap.map((_, i) => i).sort((a, b) => cap[b] - cap[a] || a - b)) {
+    if (left <= 0) break;
+    out[i] = 1;
+    left--;
+  }
+  // Pass 2: proportional, respecting the one-beat-per-page ceiling.
+  while (left > 0) {
+    let best = -1;
+    let bestQ = -1;
+    for (let i = 0; i < n; i++) {
+      if (out[i] >= cap[i]) continue;
+      const q = cap[i] / (out[i] + 1);
+      if (q > bestQ) { bestQ = q; best = i; }
+    }
+    if (best < 0) break;
+    out[best]++;
+    left--;
+  }
+  // Pass 3: more beats than the whole structure has pages. Nothing is thrown
+  // away — the thinnest sections take the overflow and run over budget.
+  while (left > 0) {
+    let best = 0;
+    for (let i = 1; i < n; i++) if (out[i] < out[best]) best = i;
+    out[best]++;
+    left--;
+  }
+  return out;
+}
+
+/** v6.59: the beats a preset may re-home, in the order it deals them out —
+ *  the board's own reading order (section, then order within the section),
+ *  with beats whose section is gone last. In 'append' the sections that are
+ *  staying keep their beats; only the loose ones are dealt. */
+export function presetReuseOrder(
+  beats: BeatInfo[],
+  columns: Array<{ id: string; position: number }>,
+  mode: 'append' | 'override',
+): BeatInfo[] {
+  const pos = new Map(columns.map((c) => [c.id, c.position]));
+  const pool = mode === 'override' ? beats : beats.filter((b) => !pos.has(b.columnId));
+  return [...pool].sort((a, b) =>
+    (pos.get(a.columnId) ?? Number.MAX_SAFE_INTEGER) - (pos.get(b.columnId) ?? Number.MAX_SAFE_INTEGER)
+    || a.position - b.position);
 }
 
 export function applyOutlinePreset(presetId: string, mode: 'append' | 'override' = 'append'): void {
@@ -164,16 +237,17 @@ export function applyOutlinePreset(presetId: string, mode: 'append' | 'override'
      the apply itself. */
   const st = useEditorStore.getState();
   st.renameOutlineTab(st.viewedOutlineTab, preset.name);
-  /* v2.23 (override): replace the SECTIONS, never the beats — clearing the
-     columns orphans every existing beat into the temporary "Uncategorized"
-     column until they're dragged into a new section, so no starter beats
-     are laid down there; the writer's own are waiting. */
+  const pages = preset.columns.map((_, i) => Math.max(1, Math.round(preset.pages[i] ?? 1)));
+  /* v6.59: beats already on the board are re-homed into the preset's
+     sections and re-fitted; only a board with none gets starter beats. */
+  const reuse = presetReuseOrder(st.beats, st.beatColumns, mode);
+  const counts = reuse.length > 0
+    ? distributeBeats(pages, reuse.length)
+    : pages.map((p) => presetBeatSpans(p).length);
   st.applyPresetSections(
-    preset.columns.map((title, i) => {
-      const pages = preset.pages[i] ?? 1;
-      return { title, pages, spans: presetBeatSpans(pages) };
-    }),
+    preset.columns.map((title, i) => ({ title, pages: pages[i], spans: splitPages(pages[i], counts[i]) })),
     mode,
+    reuse.map((b) => b.id),
   );
 }
 
@@ -1295,7 +1369,7 @@ export function OutlineTabActions() {
     // A preset id (built-in or custom:<id>) — v2.23 override rules apply.
     if (useEditorStore.getState().beatColumns.length === 0) { applyOutlinePreset(value); return; }
     const ok = await confirmDialog(
-      'This preset will replace your current sections. Your beats are NOT deleted — they move to a temporary "Uncategorized" column on the left, and you drag each one into its new section.',
+      'This preset will replace your current sections. Your beats are NOT deleted — this preset moves them into its own sections and re-fits their page estimates to the new structure.',
       { title: 'Replace the current outline?', confirmLabel: 'Replace Sections', danger: true },
     );
     if (ok) applyOutlinePreset(value, 'override');

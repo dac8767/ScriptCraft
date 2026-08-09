@@ -215,6 +215,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const barAddColumn = useEditorStore((s) => s.barAddColumn);
   const barAssignBeat = useEditorStore((s) => s.barAssignBeat);
   const barSetBeatOffsets = useEditorStore((s) => s.barSetBeatOffsets);
+  const barSetBeatSpan = useEditorStore((s) => s.barSetBeatSpan);
   const pageCount = useEditorStore((s) => s.pageCount);
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const zoom = useEditorStore((s) => s.outlineBarZoom);
@@ -249,10 +250,14 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
   const actsTotal = acts.reduce((sum, a) => sum + a.pages, 0);
   // v2.30: EVERY beat renders, derived from its section + board order + span.
   const items: BarBeatItem[] = useMemo(() => beats.map((b) => {
-    const slot = barSlots
-      ? (barSlots[b.id] ?? { columnId: '', position: Number.MAX_SAFE_INTEGER, barOffset: undefined })
-      : { columnId: b.columnId, position: b.position, barOffset: b.barOffset };
-    return { id: b.id, columnId: slot.columnId, position: slot.position, offset: slot.barOffset, span: Math.max(1, Math.round(b.outlineSpan ?? DEFAULT_SPAN)) };
+    // v6.59: page estimates are per-tab too, so they come off the slot as
+    // well — an older save has none, and falls back to the shared estimate
+    // every tab used to read.
+    const slot: { columnId: string; position: number; barOffset?: number; span?: number } = barSlots
+      ? (barSlots[b.id] ?? { columnId: '', position: Number.MAX_SAFE_INTEGER })
+      : { columnId: b.columnId, position: b.position, barOffset: b.barOffset, span: b.outlineSpan };
+    const span = slot.span ?? b.outlineSpan ?? DEFAULT_SPAN;
+    return { id: b.id, columnId: slot.columnId, position: slot.position, offset: slot.barOffset, span: Math.max(1, Math.round(span)) };
   }), [beats, barSlots]);
   const layout = useMemo(() => layoutBarBeats(acts, items), [acts, items]);
   let layoutEnd = 0;
@@ -333,7 +338,7 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
       setGhost({ id: d.id, page: snapPage(d.startPage + dPages, d.startSpan, totalPages) });
     } else if (d.kind === 'beat-resize') {
       const span = Math.max(SNAP, Math.round((d.startSpan + dPages) / SNAP) * SNAP);
-      updateBeat(d.id, { outlineSpan: Math.min(span, totalPages) });   // spans are shared across tabs
+      barSetBeatSpan(d.id, Math.min(span, totalPages));   // v6.59: on the BAR's tab
     } else {
       // Acts budget in WHOLE pages — the ruler total follows live.
       const pages = Math.max(1, Math.round(d.startSpan + dPages));
@@ -385,7 +390,11 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     const v = Math.max(1, Math.round(pop.value));   // whole pages only
     const title = pop.name.trim();
     if (pop.kind === 'column') barUpdateColumn(pop.id, { targetPages: v, ...(title ? { title } : {}) });
-    else updateBeat(pop.id, { outlineSpan: v, ...(title ? { title } : {}) });
+    else {
+      // The title is the shared beat's; the estimate belongs to this tab.
+      barSetBeatSpan(pop.id, v);
+      if (title) updateBeat(pop.id, { title });
+    }
     setPop(null);
   };
 

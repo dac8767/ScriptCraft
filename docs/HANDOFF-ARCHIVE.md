@@ -153,6 +153,37 @@ reliable; re-run before believing a weird worker failure.
 
 ## Version history — v6.53 and older (newest first)
 
+### v6.54 — freeform beat cards wear a real TITLE BAR
+
+- Derek: "give beat windows in the freeform view proper headers that can be
+  grabbed to drag the beats on the screen." v6.53 made the top row draggable
+  but it still LOOKED like the first line of the card — nothing said
+  "grab here", and the title input ate most of the row.
+- BeatCardContent derives `windowChrome = !!headerDragProps` (freeform
+  passes it, sections doesn't) and under it: the row gets
+  .beat-card-titlebar, renders FIRST — above any picture, where a window's
+  title bar belongs (it used to sit under the image, and in the
+  full-bleed branch inside the bottom overlay) — and the ⋮⋮ grip retires
+  in BOTH places (the inline one and the floating-over-image one), since
+  the whole bar is the handle now. FreeBeatCard stopped passing
+  dragHandleProps entirely: nothing left to render it.
+- ONE CSS rule does every theme AND every beat color: the band is
+  `color-mix(in srgb, currentColor 11%, transparent)` with a 20%
+  currentColor border. currentColor resolves to the theme's text on a
+  plain card and to readableTextOn(color) on a color-filled one, so the
+  bar is always a legible step off whatever is behind it — no per-theme
+  or per-color values to maintain. Negative margins pull it out to the
+  card's padding edges; the top corners take --dz-beat-card-radius.
+  user-select:none on the bar (dragging never selects), text on the title.
+- CHECK LESSON (cost one failing assert): a translucent band's computed
+  backgroundColor is the INK's channels plus alpha — comparing those to
+  the card's opaque color measures nothing. Composite fg over bg first
+  (and note getComputedStyle returns `color(srgb 0..1)` for color-mix,
+  not `rgb(0..255)` — parse both). Composited Δ17 in dark, asserted ≥10.
+- check-v653 grew 7 asserts (26 total): bar spans the card at the top, is
+  grabbable, holds title+buttons, no grip in freeform, visible band, sits
+  ABOVE a picture (with the floating grip gone), and sections-mode cards
+  still keep their ⋮⋮ and take no bar.
 ### v6.53 — freeform cards: header drag FIXED, any-edge resize, edge-anchored links
 
 - Derek: "i still cannot move the cards by dragging the window." ROOT

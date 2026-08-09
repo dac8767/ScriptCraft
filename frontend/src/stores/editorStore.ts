@@ -942,10 +942,14 @@ export const EMPTY_SCENE_NAV_DATA: SceneNavData = { filtered: 0, total: 0, chara
 /** v2.30: a non-viewed outline tab's parked data — its sections plus each
  *  beat's section/order in that tab. Beats themselves are SHARED. v2.60:
  *  barOffset is the beat's hand-placed page offset within its section on the
- *  Outline Bar (per tab, since sections differ per tab; unset = packed). */
+ *  Outline Bar (per tab, since sections differ per tab; unset = packed).
+ *  v6.59: `span` is the beat's page estimate in THIS tab — a variation with
+ *  wider sections needs longer beats, so the estimate belongs to the
+ *  arrangement, not to the shared beat. Unset (an older save) falls back to
+ *  the beat's own `outlineSpan`, which is what every tab shared before. */
 export interface OutlineTabData {
   columns: BeatColumn[];
-  beatSlots: Record<string, { columnId: string; position: number; barOffset?: number }>;
+  beatSlots: Record<string, { columnId: string; position: number; barOffset?: number; span?: number }>;
 }
 
 export interface BeatLinkPreview {

@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.59",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline presets now use the beats you already have. Choosing a structure over an existing outline re-homes your cards into its sections and re-fits their page estimates to fit — instead of dumping them in \u201cUncategorized\u201d and laying a second set of blank cards on top. Every section comes out filled, its beats still add up to its page budget exactly, and nothing is created or deleted. It is still one undo step.",
+   "Beats are spread across the new sections in proportion to their page budgets, in the order they were already in \u2014 with more beats than sections, the bigger sections get more of them; with fewer, the sections carrying the most story get one each.",
+   "Page estimates now belong to each outline variation. Changing how many pages a beat spans on one variation no longer changes it on the others \u2014 the same beat can be a two-pager in one arrangement and a six-pager in another. Editing on the Outline Bar writes the variation the bar is showing, not the one open on the board."
+  ]
+ },
+ {
   "version": "6.58",
   "date": "2026-08-09",
   "changes": [

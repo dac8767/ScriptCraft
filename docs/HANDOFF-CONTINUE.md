@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.58 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.59 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,57 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.59 — a preset USES the beats you have; page estimates go per-variation
+
+- Derek: "when a preset is used but beats already exist, it should use the
+  existing beats instead of creating new ones. it can change the page
+  estimates of existing beats to work with the new preset structure.
+  changing the estimated page length on one outline variation does not
+  change it on other variations." Two changes, one release.
+- **Re-homing.** The v2.23 rule (a preset override orphans every beat into
+  Uncategorized and you drag them back one at a time) is retired. Now
+  `applyOutlinePreset` hands the store a PLAN: the sections, the span for
+  each slot, and `reuse` — the beat ids to deal into those slots, in
+  order. The store fills slots from that queue and only mints a fresh beat
+  when the queue runs dry. Nothing is ever deleted; a re-homed beat keeps
+  everything the writer wrote and gives up only columnId / position /
+  outlineSpan (and its bar pin, which means nothing in a new section).
+- The arithmetic is pure and lives in BeatBoard.tsx, so the invariants are
+  provable over every shape rather than the five presets we ship:
+  - `splitPages(pages, count)` — deal a budget across n beats, biggest
+    shares first, sum exact (and all-1s when there are more beats than
+    pages, since a beat can't be shorter than a page).
+  - `presetBeatSpans(pages)` = splitPages at the v6.57 two-pages-a-beat
+    ratio. Unchanged behaviour, now one line.
+  - `distributeBeats(pages[], count)` — how many beats each section gets.
+    One each first (biggest sections first, so a short supply covers the
+    sections carrying the most story), then D'Hondt on `pages/(count+1)`
+    capped at one beat per page, then an uncapped overflow pass so no beat
+    is ever dropped.
+  - `presetReuseOrder(beats, columns, mode)` — the deal order: board
+    reading order (column position, then position), orphans last. In
+    'append' the sections that are STAYING keep their beats; only loose
+    ones are dealt, so appending can't rip a settled outline apart.
+- **Per-variation estimates.** `OutlineTabData.beatSlots` gained `span?`,
+  parked/restored exactly like `barOffset` in addOutlineTab /
+  switchOutlineTab / deleteOutlineTab. An older save has no span in its
+  slots, so the restore reads `slot.span ?? b.outlineSpan` — every tab
+  keeps the shared value it used to have until it's edited, instead of
+  snapping back to one page.
+- The Outline Bar edits ITS tab: new `barSetBeatSpan` (viewed → updateBeat,
+  parked → the stash), and the bar's `items` now read the span off the slot
+  the same way they read columnId/position. The right-click popover splits
+  its two writes — the TITLE is the shared beat's, the estimate is the
+  tab's. That comment at OutlineBar.tsx:336 ("spans are shared across
+  tabs") was the bug describing itself; it's gone.
+- Confirm wording follows the behaviour: no more promise of a pile of
+  Uncategorized cards.
+- Gates: tsc 0, vitest 1145, build ok, check-all 848/0 — check-v659 (16)
+  drives the dropdown + confirm, proves the same 60 ids survive with every
+  section filled and summing to budget, that one undo puts the acts back,
+  and that a 9 / 3 / 12-page split across two variations stays split in the
+  store AND in what the bar draws.
+
 ### v6.58 — an outline tab is DELETED, not "closed"
 
 - Derek (screenshot of the confirm): "replace all instances of 'close'
@@ -320,43 +371,12 @@ Durable bits kept live here:
   font ≤13px, ≥30px of bare bar between title and buttons, the title
   spanning <70% of the bar, and the focus expansion.
 
-### v6.54 — freeform beat cards wear a real TITLE BAR
-
-- Derek: "give beat windows in the freeform view proper headers that can be
-  grabbed to drag the beats on the screen." v6.53 made the top row draggable
-  but it still LOOKED like the first line of the card — nothing said
-  "grab here", and the title input ate most of the row.
-- BeatCardContent derives `windowChrome = !!headerDragProps` (freeform
-  passes it, sections doesn't) and under it: the row gets
-  .beat-card-titlebar, renders FIRST — above any picture, where a window's
-  title bar belongs (it used to sit under the image, and in the
-  full-bleed branch inside the bottom overlay) — and the ⋮⋮ grip retires
-  in BOTH places (the inline one and the floating-over-image one), since
-  the whole bar is the handle now. FreeBeatCard stopped passing
-  dragHandleProps entirely: nothing left to render it.
-- ONE CSS rule does every theme AND every beat color: the band is
-  `color-mix(in srgb, currentColor 11%, transparent)` with a 20%
-  currentColor border. currentColor resolves to the theme's text on a
-  plain card and to readableTextOn(color) on a color-filled one, so the
-  bar is always a legible step off whatever is behind it — no per-theme
-  or per-color values to maintain. Negative margins pull it out to the
-  card's padding edges; the top corners take --dz-beat-card-radius.
-  user-select:none on the bar (dragging never selects), text on the title.
-- CHECK LESSON (cost one failing assert): a translucent band's computed
-  backgroundColor is the INK's channels plus alpha — comparing those to
-  the card's opaque color measures nothing. Composite fg over bg first
-  (and note getComputedStyle returns `color(srgb 0..1)` for color-mix,
-  not `rgb(0..255)` — parse both). Composited Δ17 in dark, asserted ≥10.
-- check-v653 grew 7 asserts (26 total): bar spans the card at the top, is
-  grabbable, holds title+buttons, no grip in freeform, visible band, sits
-  ABOVE a picture (with the floating grip gone), and sections-mode cards
-  still keep their ⋮⋮ and take no bar.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.54** — freeform beat cards got real title bars (windowChrome in BeatCardContent), the ⋮⋮ grip retired in freeform
 - **v6.53** — freeform header drag fixed (always preventDefault + tap-to-focus), any-edge resize, click-place-click links with edge anchors (mindAnchors)
 - **v6.52** — beat count beside the tabs; card/board contrast (color-mix step); Helper Text became a real dockable TOOL; freeform link highlights + header drag
 - **v6.51** — the Helper Text catalog covers DYNAMIC title/placeholder expressions (+97); applier arm-flip fix; the rebuild-the-catalog standing rule

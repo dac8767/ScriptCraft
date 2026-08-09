@@ -97,7 +97,7 @@ describe('outline tabs', () => {
     const stash = S().outlineStash[tab1];
     expect(stash.columns.find((c) => c.id === act1.id)!.targetPages).toBe(33);
     expect(stash.columns.map((c) => c.title)).toContain('Act III');
-    expect(stash.beatSlots[b1]).toEqual({ columnId: added, position: 0 });
+    expect(stash.beatSlots[b1]).toEqual({ columnId: added, position: 0, span: 1 });
 
     // Back on tab 1, the bar edits are what loads.
     S().switchOutlineTab(tab1);
@@ -134,6 +134,56 @@ describe('bar pins (v2.60)', () => {
     // Coming back to the tab restores the pin onto the live beat.
     S().switchOutlineTab(tab1);
     expect(S().beats.find((b) => b.id === b1)!.barOffset).toBe(3);
+  });
+
+  /* v6.59, Derek: "changing the estimated page length on one outline
+     variation does not change it on other variations." The estimate is a
+     property of the arrangement, not of the shared beat. */
+  it('a page estimate set on one tab does not follow the beat to another', () => {
+    const { b1 } = seedThreeActs();
+    const tab1 = S().viewedOutlineTab;
+    S().updateBeat(b1, { outlineSpan: 6 });
+    const tab2 = S().addOutlineTab();
+    // Tab 2 inherits the estimate the beat had, then goes its own way.
+    expect(S().beats.find((b) => b.id === b1)!.outlineSpan).toBe(6);
+    S().updateBeat(b1, { outlineSpan: 2 });
+
+    S().switchOutlineTab(tab1);
+    expect(S().beats.find((b) => b.id === b1)!.outlineSpan).toBe(6);
+    S().switchOutlineTab(tab2);
+    expect(S().beats.find((b) => b.id === b1)!.outlineSpan).toBe(2);
+  });
+
+  it('barSetBeatSpan writes the BAR\'s tab, viewed or not', () => {
+    const { b1 } = seedThreeActs();
+    const tab1 = S().viewedOutlineTab;
+    S().barSetBeatSpan(b1, 5);                       // bar tab === viewed tab
+    expect(S().beats.find((b) => b.id === b1)!.outlineSpan).toBe(5);
+
+    const tab2 = S().addOutlineTab();
+    S().setOutlineBarTab(tab1);
+    S().barSetBeatSpan(b1, 9);                       // bar tab is parked
+    expect(S().outlineStash[tab1].beatSlots[b1].span).toBe(9);
+    // The tab being viewed is untouched…
+    expect(S().beats.find((b) => b.id === b1)!.outlineSpan).toBe(5);
+    // …and tab 1 loads its own estimate back.
+    S().switchOutlineTab(tab1);
+    expect(S().beats.find((b) => b.id === b1)!.outlineSpan).toBe(9);
+    S().switchOutlineTab(tab2);
+    expect(S().beats.find((b) => b.id === b1)!.outlineSpan).toBe(5);
+  });
+
+  /* An older save has no per-tab estimates at all — every tab must keep
+     reading the shared one until it's edited, not reset to a single page. */
+  it('a legacy slot with no span falls back to the beat\'s own estimate', () => {
+    const { a1, b1 } = seedThreeActs();
+    S().updateBeat(b1, { outlineSpan: 7 });
+    S().loadOutlineTabs(
+      [{ id: 'old-1', name: 'A' }, { id: 'old-2', name: 'B' }], 'old-2', 'old-2',
+      { 'old-1': { columns: [{ id: a1, title: 'Act I', position: 0, width: 0, targetPages: 10 }], beatSlots: { [b1]: { columnId: a1, position: 0 } } } },
+    );
+    S().switchOutlineTab('old-1');
+    expect(S().beats.find((b) => b.id === b1)!.outlineSpan).toBe(7);
   });
 
   it('moving a beat to another section drops its pin', () => {

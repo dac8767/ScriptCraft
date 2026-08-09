@@ -4,8 +4,12 @@
  * columns, titled and ordered, without disturbing existing ones.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { OUTLINE_PRESETS, applyOutlinePreset, presetBeatSpans, uncategorizedBeats } from './BeatBoard';
+import {
+  OUTLINE_PRESETS, applyOutlinePreset, presetBeatSpans, splitPages, distributeBeats,
+  presetReuseOrder, uncategorizedBeats,
+} from './BeatBoard';
 import { useEditorStore } from '../stores/editorStore';
+import type { BeatInfo } from '../stores/editorStore';
 
 describe('outline presets', () => {
   beforeEach(() => {
@@ -120,32 +124,168 @@ describe('outline presets', () => {
   });
 
   /* v2.23: choosing a preset over an existing outline REPLACES the sections
-     but never touches the beats — they become "uncategorized" (their section
-     is gone) and wait in the temporary column until dragged into place. */
-  it('override replaces sections but never deletes beats', () => {
+     but never touches the beats. v6.59, Derek: "when a preset is used but
+     beats already exist, it should use the existing beats instead of
+     creating new ones" — so they are re-homed into the new sections and
+     re-fitted, rather than dumped in Uncategorized to be dragged one by
+     one. */
+  it('override re-homes the existing beats into the new sections', () => {
     applyOutlinePreset('3act');
-    const beatIdsBefore = useEditorStore.getState().beats.map((b) => b.id).sort();
+    const before = useEditorStore.getState().beats;
+    const beatIdsBefore = before.map((b) => b.id).sort();
     expect(beatIdsBefore).toHaveLength(60);   // v6.57: 20 beats an act
+    // Give one of them some writing, to prove re-homing preserves it.
+    useEditorStore.getState().updateBeat(before[0].id, { title: 'Ordinary World', description: 'Draft', color: '#ef4444' });
 
     applyOutlinePreset('storycircle', 'override');
     const s = useEditorStore.getState();
-    expect(s.beatColumns.map((c) => c.title)).toEqual(
+    const cols = [...s.beatColumns].sort((a, b) => a.position - b.position);
+    expect(cols.map((c) => c.title)).toEqual(
       ['You', 'Need', 'Go', 'Search', 'Find', 'Take', 'Return', 'Change'],
     );
-    // Same beats — none deleted, and no blank starters piled on top.
+    // Exactly the same beats — none deleted, none created.
     expect(s.beats.map((b) => b.id).sort()).toEqual(beatIdsBefore);
-    // All of them now live in Uncategorized.
-    expect(uncategorizedBeats(s.beats, s.beatColumns).map((b) => b.id).sort()).toEqual(beatIdsBefore);
-    // Dragging one into a real section takes it out of Uncategorized.
-    useEditorStore.getState().updateBeat(beatIdsBefore[0], { columnId: s.beatColumns[0].id });
-    const after = useEditorStore.getState();
-    expect(uncategorizedBeats(after.beats, after.beatColumns)).toHaveLength(beatIdsBefore.length - 1);
+    expect(uncategorizedBeats(s.beats, s.beatColumns)).toHaveLength(0);
+    // Every section is filled, and its beats add up to its page budget.
+    for (const col of cols) {
+      const inCol = s.beats.filter((b) => b.columnId === col.id);
+      expect(inCol.length, col.title).toBeGreaterThan(0);
+      expect(inCol.reduce((sum, b) => sum + (b.outlineSpan ?? 0), 0), col.title).toBe(col.targetPages);
+    }
+    // The writing rode along; only section/order/estimate were re-fitted.
+    const kept = s.beats.find((b) => b.id === before[0].id)!;
+    expect([kept.title, kept.description, kept.color]).toEqual(['Ordinary World', 'Draft', '#ef4444']);
+  });
+
+  /* Fewer beats than the preset has sections: nothing is invented to pad it
+     out, and the beats there are land in the sections carrying the most
+     story rather than all piling into the opening. */
+  it('override with fewer beats than sections spreads them without creating any', () => {
+    const col = useEditorStore.getState().addBeatColumn('Ideas');
+    const ids = ['A', 'B', 'C'].map((t) => useEditorStore.getState().addBeat(t, col));
+    applyOutlinePreset('savethecat', 'override');
+    const s = useEditorStore.getState();
+    expect(s.beats.map((b) => b.id).sort()).toEqual([...ids].sort());
+    expect(s.beatColumns).toHaveLength(15);
+    // Three sections hold one beat each; a filled section still sums right.
+    const filled = s.beatColumns.filter((c) => s.beats.some((b) => b.columnId === c.id));
+    expect(filled).toHaveLength(3);
+    for (const c of filled) {
+      const inCol = s.beats.filter((b) => b.columnId === c.id);
+      expect(inCol.reduce((sum, b) => sum + (b.outlineSpan ?? 0), 0), c.title).toBe(c.targetPages);
+    }
+    // The three biggest beats of Snyder's sheet: Fun and Games, Finale,
+    // Bad Guys Close In (25 / 23 / 19 pages).
+    expect(filled.map((c) => c.title).sort()).toEqual(['Bad Guys Close In', 'Finale', 'Fun and Games']);
+  });
+
+  /* Loose beats (no section at all) are the append case: the preset lands
+     on an empty board that already has cards on the freeform canvas. */
+  it('a preset applied over loose beats uses them instead of adding starters', () => {
+    const ids = ['A', 'B', 'C', 'D'].map((t) => useEditorStore.getState().addBeat(t, 'gone'));
+    applyOutlinePreset('3act');
+    const s = useEditorStore.getState();
+    expect(s.beats.map((b) => b.id).sort()).toEqual([...ids].sort());
+    expect(uncategorizedBeats(s.beats, s.beatColumns)).toHaveLength(0);
+    // 4 beats over 3 equal 40-page acts.
+    const cols = [...s.beatColumns].sort((a, b) => a.position - b.position);
+    expect(cols.map((c) => s.beats.filter((b) => b.columnId === c.id).length)).toEqual([2, 1, 1]);
+    for (const c of cols) {
+      expect(s.beats.filter((b) => b.columnId === c.id).reduce((n, b) => n + (b.outlineSpan ?? 0), 0)).toBe(40);
+    }
+  });
+
+  /* Append over a real outline must not rip beats out of the sections that
+     are staying — only the loose ones are dealt into the new sections. */
+  it('append leaves the beats of the sections it keeps alone', () => {
+    const keep = useEditorStore.getState().addBeatColumn('Ideas', 6);
+    const settled = useEditorStore.getState().addBeat('Settled', keep);
+    const loose = useEditorStore.getState().addBeat('Loose', 'gone');
+    applyOutlinePreset('storycircle');
+    const s = useEditorStore.getState();
+    expect(s.beats.find((b) => b.id === settled)!.columnId).toBe(keep);
+    // The loose one was re-homed into the preset, so nothing is orphaned.
+    expect(s.beats.find((b) => b.id === loose)!.columnId).not.toBe('gone');
+    expect(uncategorizedBeats(s.beats, s.beatColumns)).toHaveLength(0);
+    expect(s.beats.map((b) => b.id).sort()).toEqual([settled, loose].sort());
+  });
+
+  /* The whole point of one batched write (v6.57): a preset is ONE undo. */
+  it('re-homing a preset undoes in a single step', () => {
+    applyOutlinePreset('3act');
+    const before = useEditorStore.getState().beats.map((b) => [b.id, b.columnId, b.outlineSpan]);
+    applyOutlinePreset('storycircle', 'override');
+    useEditorStore.getState().beatUndo();
+    expect(useEditorStore.getState().beats.map((b) => [b.id, b.columnId, b.outlineSpan])).toEqual(before);
   });
 
   it('an unknown preset id is a no-op; every preset has columns', () => {
     applyOutlinePreset('nope');
     expect(useEditorStore.getState().beatColumns).toHaveLength(0);
     for (const p of OUTLINE_PRESETS) expect(p.columns.length).toBeGreaterThan(0);
+  });
+});
+
+/* v6.59: the arithmetic behind re-homing. Kept pure so the invariants can be
+   proved over every shape, not just the ones a preset happens to have. */
+describe('preset re-fit math (v6.59)', () => {
+  it('splitPages deals a budget out exactly, biggest shares first', () => {
+    expect(splitPages(40, 20)).toEqual(Array(20).fill(2));
+    expect(splitPages(15, 8)).toEqual([2, 2, 2, 2, 2, 2, 2, 1]);
+    expect(splitPages(15, 7)).toEqual([3, 2, 2, 2, 2, 2, 2]);
+    expect(splitPages(10, 0)).toEqual([]);
+    // A beat is never shorter than a page — more beats than pages runs over.
+    expect(splitPages(3, 5)).toEqual([1, 1, 1, 1, 1]);
+    for (let pages = 1; pages <= 60; pages++) {
+      for (let n = 1; n <= 60; n++) {
+        const out = splitPages(pages, n);
+        expect(out).toHaveLength(n);
+        expect(out.every((x) => x >= 1), `${pages}/${n} floor`).toBe(true);
+        expect(out.reduce((a, b) => a + b, 0), `${pages}/${n} sum`).toBe(Math.max(pages, n));
+        // dealt in descending order, so the difference is never over 1
+        expect(out[0] - out[out.length - 1]).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it('presetBeatSpans still holds the two-pages-a-beat ratio', () => {
+    for (let pages = 1; pages <= 120; pages++) {
+      const spans = presetBeatSpans(pages);
+      expect(spans.reduce((a, b) => a + b, 0), `sum for ${pages}`).toBe(pages);
+      expect(Math.abs(spans.length - Math.round(pages / 2))).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('distributeBeats fills every section it can, in proportion, and loses none', () => {
+    expect(distributeBeats([40, 40, 40], 60)).toEqual([20, 20, 20]);
+    expect(distributeBeats([40, 40, 40], 4)).toEqual([2, 1, 1]);
+    expect(distributeBeats([15, 15, 15, 15, 15, 15, 15, 15], 60)).toEqual([8, 8, 8, 8, 7, 7, 7, 7]);
+    // Short supply covers the biggest sections.
+    expect(distributeBeats([1, 10, 1, 5], 2)).toEqual([0, 1, 0, 1]);
+    expect(distributeBeats([2, 2, 2], 0)).toEqual([0, 0, 0]);
+    expect(distributeBeats([], 5)).toEqual([]);
+    // A one-page section can hold exactly one beat; the rest go elsewhere.
+    expect(distributeBeats([1, 20], 6)).toEqual([1, 5]);
+    // More beats than the whole structure has pages: nothing is dropped.
+    expect(distributeBeats([2, 2], 9).reduce((a, b) => a + b, 0)).toBe(9);
+    for (const pages of [[40, 40, 40], [1, 1, 8, 2, 13, 1, 4, 25, 1, 19, 1, 9, 1, 23, 1], [15, 15, 15, 15]]) {
+      for (let n = 0; n <= 130; n++) {
+        const out = distributeBeats(pages, n);
+        expect(out.reduce((a, b) => a + b, 0), `${n} beats placed`).toBe(n);
+        // no section is left empty while another has two, once supply allows
+        if (n >= pages.length) expect(out.every((x) => x >= 1), `${n} fills every section`).toBe(true);
+      }
+    }
+  });
+
+  it('presetReuseOrder deals beats in reading order, orphans last', () => {
+    const beat = (id: string, columnId: string, position: number) =>
+      ({ id, columnId, position, title: '', description: '' }) as BeatInfo;
+    const cols = [{ id: 'c2', position: 1 }, { id: 'c1', position: 0 }];
+    const beats = [beat('x', 'gone', 0), beat('b', 'c1', 1), beat('c', 'c2', 0), beat('a', 'c1', 0)];
+    expect(presetReuseOrder(beats, cols, 'override').map((b) => b.id)).toEqual(['a', 'b', 'c', 'x']);
+    // append keeps the sections that are staying — only the orphan is dealt
+    expect(presetReuseOrder(beats, cols, 'append').map((b) => b.id)).toEqual(['x']);
   });
 });
 

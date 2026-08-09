@@ -60,16 +60,27 @@ export interface BeatsOutlineSlice {
    *  section's start). Presentation only — never reorders the board, never
    *  pushes a beat-undo snapshot. undefined un-pins (back to packed). */
   barSetBeatOffsets: (offsets: Record<string, number | undefined>) => void;
+  /** v6.59: a beat's page estimate on the BAR'S tab. Estimates are per-tab
+   *  (each variation sizes its own beats), so resizing on the bar must never
+   *  reach into the tab being viewed on the board. */
+  barSetBeatSpan: (beatId: string, span: number) => void;
   addBeatColumn: (title: string, targetPages?: number) => string;
   /** v6.57: lay down a whole preset — every section AND the beats that fill
    *  it — in ONE write. Doing it card by card (addBeatColumn + addBeat ×60)
    *  meant one forced undo snapshot per card, which overruns the capped
    *  stack and buries whatever the writer did before applying the preset.
-   *  'override' replaces the sections and adds no beats (the existing ones
-   *  orphan into Uncategorized, the v2.23 rule). */
+   *  'override' replaces the current sections; 'append' keeps them.
+   *  v6.59: `reuse` is the beats to RE-HOME into the new sections, in the
+   *  order to deal them out — a preset applied over existing work moves
+   *  those beats and re-fits their page estimates instead of laying down a
+   *  second set of starter cards. Slots left over once the reuse list runs
+   *  dry get fresh beats; beats left over once the sections are full keep
+   *  their own columnId (in 'override' that column is gone, so they wait in
+   *  Uncategorized — the v2.23 rule). Nothing is ever deleted. */
   applyPresetSections: (
     sections: Array<{ title: string; pages: number; spans: number[] }>,
     mode: 'append' | 'override',
+    reuse?: string[],
   ) => void;
   updateBeatColumn: (id: string, updates: Partial<{ title: string; position: number; width: number; targetPages: number }>) => void;
   deleteBeatColumn: (id: string) => void;
@@ -176,7 +187,7 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
         // Park the viewed tab's data, open the new tab EMPTY: every shared
         // beat lands in Uncategorized until it's dragged into a section.
         const slots: OutlineTabData['beatSlots'] = {};
-        for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position, barOffset: b.barOffset };
+        for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position, barOffset: b.barOffset, span: b.outlineSpan };
         // v2.47: the new tab is bound, for life, to the arrangement that's
         // active at creation (or the one explicitly asked for).
         const arrangeMode = mode ?? s.beatArrangeMode;
@@ -193,7 +204,7 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
     switchOutlineTab: (id) => set((s) => {
       if (id === s.viewedOutlineTab || !s.outlineTabs.some((t) => t.id === id)) return {};
       const slots: OutlineTabData['beatSlots'] = {};
-      for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position, barOffset: b.barOffset };
+      for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position, barOffset: b.barOffset, span: b.outlineSpan };
       const stash = { ...s.outlineStash, [s.viewedOutlineTab]: { columns: s.beatColumns, beatSlots: slots } };
       const target = stash[id] ?? { columns: [], beatSlots: {} };
       delete stash[id];
@@ -201,7 +212,7 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
       // match any of the target's sections, so they show as Uncategorized.
       const beats = s.beats.map((b) => {
         const slot = target.beatSlots[b.id];
-        return slot ? { ...b, columnId: slot.columnId, position: slot.position, barOffset: slot.barOffset } : b;
+        return slot ? { ...b, columnId: slot.columnId, position: slot.position, barOffset: slot.barOffset, outlineSpan: slot.span ?? b.outlineSpan } : b;
       });
       // v2.47: the view follows the tab's own arrangement. A tab from an old
       // save has none yet — it's stamped with the mode it's shown in now.
@@ -227,7 +238,7 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
         delete stash[next.id];
         beats = beats.map((b) => {
           const slot = target.beatSlots[b.id];
-          return slot ? { ...b, columnId: slot.columnId, position: slot.position, barOffset: slot.barOffset } : b;
+          return slot ? { ...b, columnId: slot.columnId, position: slot.position, barOffset: slot.barOffset, outlineSpan: slot.span ?? b.outlineSpan } : b;
         });
         beatColumns = target.columns;
         viewedOutlineTab = next.id;
@@ -362,6 +373,21 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
         return { outlineStash: { ...st.outlineStash, [st.outlineBarTab]: { ...tab, beatSlots: slots } } };
       });
     },
+    barSetBeatSpan: (beatId, span) => {
+      const s = get();
+      const value = Math.max(1, Math.round(span));
+      if (s.outlineBarTab === s.viewedOutlineTab) { get().updateBeat(beatId, { outlineSpan: value }); return; }
+      set((st) => {
+        const tab = st.outlineStash[st.outlineBarTab];
+        if (!tab?.beatSlots[beatId]) return {};
+        return {
+          outlineStash: {
+            ...st.outlineStash,
+            [st.outlineBarTab]: { ...tab, beatSlots: { ...tab.beatSlots, [beatId]: { ...tab.beatSlots[beatId], span: value } } },
+          },
+        };
+      });
+    },
     // v2.20: sections always get a page budget (default 1) — a blank budget
     // renders a section you can't grab on the Outline Bar.
     addBeatColumn: (title, targetPages = 1) => {
@@ -373,13 +399,21 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
       });
       return id;
     },
-    applyPresetSections: (sections, mode) => {
+    applyPresetSections: (sections, mode, reuse) => {
       pushBeatSnapshot(true);          // ONE undo step for the whole preset
       set((s) => {
         const baseCols = mode === 'override' ? [] : s.beatColumns;
         const maxPos = baseCols.length > 0 ? Math.max(...baseCols.map((c) => c.position)) : -1;
         const beatColumns = [...baseCols];
-        const beats = [...s.beats];
+        // v6.59: the re-home queue, in the caller's deal order. Unknown ids
+        // and duplicates are dropped so a stale plan can't clone a beat.
+        const byId = new Map(s.beats.map((b) => [b.id, b]));
+        const queue: string[] = [];
+        for (const id of reuse ?? []) {
+          if (byId.has(id) && !queue.includes(id)) queue.push(id);
+        }
+        let qi = 0;
+        const placed: BeatInfo[] = [];
         sections.forEach((sec, i) => {
           const columnId = uuid();
           beatColumns.push({
@@ -389,26 +423,35 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
             width: 0,
             targetPages: Math.max(1, Math.round(sec.pages)),
           });
-          if (mode === 'override') return;   // beats stay put and orphan
           sec.spans.forEach((span, j) => {
-            beats.push({
-              id: uuid(),
-              title: '',
-              description: '',
-              columnId,
-              position: j,
-              color: '',
-              imageUrl: '',
-              cardWidth: 0,
-              cardHeight: 0,
-              x: 0,
-              y: 0,
-              imageHeight: 0,
-              outlineSpan: Math.max(1, Math.round(span)),
-            });
+            const outlineSpan = Math.max(1, Math.round(span));
+            const src = qi < queue.length ? byId.get(queue[qi++])! : undefined;
+            placed.push(src
+              // A re-homed beat keeps everything the writer wrote — only its
+              // section, its order and its estimate are re-fitted. v2.60: a
+              // new section means the old bar pin no longer means anything.
+              ? { ...src, columnId, position: j, outlineSpan, barOffset: undefined }
+              : {
+                id: uuid(),
+                title: '',
+                description: '',
+                columnId,
+                position: j,
+                color: '',
+                imageUrl: '',
+                cardWidth: 0,
+                cardHeight: 0,
+                x: 0,
+                y: 0,
+                imageHeight: 0,
+                outlineSpan,
+              });
           });
         });
-        return { beatColumns, beats };
+        // Everything not re-homed stays exactly as it was, in its old order.
+        const moved = new Set(queue.slice(0, qi));
+        const rest = s.beats.filter((b) => !moved.has(b.id));
+        return { beatColumns, beats: [...rest, ...placed] };
       });
     },
     updateBeatColumn: (id, updates) => {
