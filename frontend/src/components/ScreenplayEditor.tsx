@@ -54,7 +54,6 @@ import MenuBar from './MenuBar';
 import Toolbar from './Toolbar';
 import ToolDock, { TempToolWindow, ToolFullscreenTakeover } from './ToolDock';
 import DesignPanel from './DesignPanel';
-import HelperTextWindow from './HelperTextWindow';
 import { applyDesignVars } from '../design/designTokens';
 import { DoubleChevronIcon } from './uiIcons';
 import { useBookmarkStore, bookmarkScriptKey } from '../stores/bookmarkStore';
@@ -3720,7 +3719,6 @@ const ScreenplayEditor: React.FC = () => {
         {!isHistoryMode && <ScriptNotePopover editor={editor} />}
         {!isHistoryMode && <MarkupPopover editor={editor} />}
         <DesignPanel />
-        <HelperTextWindow />
         {!isHistoryMode && shelfOpen && <ToolDock side="right" editor={editor} scrollContainer={editorMainEl} />}
         {!isHistoryMode && !shelfOpen && !previewMode && (
           <button

@@ -341,6 +341,18 @@
 .mind-arm-btn.active { color: var(--fd-accent); }
 .mind-armed { cursor: crosshair; }
 .mind-armed .beat-card { outline: 2px dashed var(--fd-accent); }
+/* v6.52, Derek: while the connection line is out, the ORIGIN stays lit and
+   the card under the pointer lights up harder — you can see exactly which
+   card you're about to pick. */
+.mind-link-origin .beat-card { outline: 2px dashed var(--fd-accent); }
+.mind-link-target .beat-card {
+  outline: 3px solid var(--fd-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--fd-accent) 30%, transparent);
+}
+.mind-linking .beat-card-wrap-free { cursor: crosshair; }
+/* v6.52: the freeform card's whole header row drags, windows-style. */
+.beat-card-wrap-free .beat-card-top { cursor: grab; }
+.beat-card-wrap-free .beat-card-top .beat-card-title { cursor: text; }
 .mind-lines .mind-line-draft {
   stroke: var(--fd-accent);
   stroke-width: 1.5;

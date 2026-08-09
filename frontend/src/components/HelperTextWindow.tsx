@@ -1,45 +1,34 @@
 /**
- * HelperTextWindow (v6.22) — Derek: "Move the helper text section from the
- * design window into it's own window. add a button for this window under the
- * help > developer menu."
+ * HelperTextTool (v6.22 as a floating window; v6.52 a real TOOL) — Derek:
+ * "Move the helper text section from the design window into it's own
+ * window" … "allow dragging the help text window into a side panel."
  *
- * v6.38, Derek: "give the helper text window the same format as all other
- * windows (header with full screen button and close button)". v6.42: that
- * chrome (drag, any-edge resize, fullscreen, close) moved into the shared
- * FloatingWindow shell — Settings wears it too now. Body, search and rows
- * are unchanged (HelperTextSection). Opens from Help ▸ Developer ▸ Helper
- * Text… (store flag helperTextWindowOpen — session state, like a dialog).
+ * v6.52: the FloatingWindow shell and the helperTextWindowOpen flag are
+ * gone — this is the tool BODY, rendered by ToolDock like every other
+ * window, which is what buys docking, drag-out, fullscreen and size memory
+ * for free. Opens from Help ▸ Developer ▸ Helper Text… (openTool). The
+ * root keeps the .htw-panel class — the v6.24-era checks select rows
+ * through it. Search + rows (HelperTextSection) are unchanged.
  */
 import { useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { useEditorStore } from '../stores/editorStore';
 import { HelperTextSection, filterHelperCatalog } from './HelperTextSection';
-import FloatingWindow from './FloatingWindow';
 
-export default function HelperTextWindow() {
-  const open = useEditorStore((s) => s.helperTextWindowOpen);
-  const setOpen = useEditorStore((s) => s.setHelperTextWindowOpen);
+/** The "N changed" chip beside the window title (TOOL_CHROME.TitleExtra). */
+export function HelperTextTitleExtra() {
   const editedCount = useEditorStore((s) => Object.keys(s.helperTextOverrides).length);
+  if (editedCount === 0) return null;
+  return <span className="dz-count">{editedCount} changed</span>;
+}
+
+export default function HelperTextTool() {
   const [query, setQuery] = useState('');
-
-  if (!open) return null;
-
   const q = query.trim().toLowerCase();
   const entries = filterHelperCatalog(q);
 
   return (
-    <FloatingWindow
-      className="htw-window"
-      initial={{ w: 420, h: 620 }}
-      min={{ w: 320, h: 280 }}
-      onClose={() => setOpen(false)}
-      title={(
-        <>
-          <span className="tool-window-title">Helper Text</span>
-          {editedCount > 0 && <span className="dz-count">{editedCount} changed</span>}
-        </>
-      )}
-    >
+    <div className="htw-panel htw-tool">
       <div className="dz-search">
         <LuSearch className="dz-search-icon" />
         <input
@@ -53,6 +42,6 @@ export default function HelperTextWindow() {
       <div className="dz-body">
         <HelperTextSection entries={entries} />
       </div>
-    </FloatingWindow>
+    </div>
   );
 }

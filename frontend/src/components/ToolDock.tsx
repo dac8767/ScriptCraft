@@ -24,6 +24,7 @@ import {
   FaStream, FaTags, FaBoxes, FaSpellCheck, FaHistory,
   FaKeyboard, FaRobot, FaBook, FaBookOpen, FaSlidersH, FaColumns,
   FaCommentDots, FaChevronRight, FaChevronDown, FaMarker, FaMagic,
+  FaRegEdit,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, FULLSCREEN_ONLY_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -52,6 +53,7 @@ import BeatBoard, { OutlineHeaderControls, useOutlineTabs, OutlineTabsExtra } fr
 import TypewriterTool, { FocusHeaderControls } from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
+import HelperTextTool, { HelperTextTitleExtra } from './HelperTextWindow';
 
 export interface ToolDef {
   id: ToolId;
@@ -160,6 +162,11 @@ export const ALL_TOOLS: ToolDef[] = [
   // kept beside the script instead of in a blocking modal. Opens floating (the
   // form needs width) but the pop-in button docks it.
   { id: 'feedback', label: 'Feedback', icon: <FaCommentDots />, defaultSize: { w: 460, h: 620 }, group: 3, noPanelFit: true },
+  // v6.52, Derek ("allow dragging the help text window into a side panel"):
+  // Helper Text is a real tool now — docking, drag-out, fullscreen and size
+  // memory come from the shared machinery. Opens from Help ▸ Developer; no
+  // dock row until it's dragged into a panel (DEFAULT_TOOL_CONFIG).
+  { id: 'helpertext', label: 'Helper Text', icon: <FaRegEdit />, defaultSize: { w: 420, h: 620 }, group: 3 },
   // (v5.21, Derek: the v4.95 dev-only Airtable panel is removed for good.)
 ];
 
@@ -414,6 +421,8 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // v4.70, Derek: screenshot buttons in the Feedback header — the capture
   // lands as a draggable chip above the form (FeedbackTool.tsx).
   feedback: { Controls: FeedbackShotControls },
+  // v6.52: the "N changed" chip beside the Helper Text title.
+  helpertext: { TitleExtra: HelperTextTitleExtra },
 };
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
@@ -584,6 +593,8 @@ export function ToolContent({ id, editor, scrollContainer, inTakeover = false }:
       return <WorkspacesTool />;
     case 'feedback':
       return <FeedbackTool />;
+    case 'helpertext':
+      return <HelperTextTool />;
     default:
       return null;
   }

@@ -24,30 +24,37 @@ try {
   ok(!cat.some((e) => e.text === 'video'), 'the "video" a11y label is out of the catalog');
 
   // ── 1: Helper Text window header ──
+  // (v6.52: Helper Text is a real TOOL now — the standard tool window IS
+  // the chrome; setHelperTextWindowOpen delegates to openTool.)
   await page.evaluate(() => window.__scStore.getState().setHelperTextWindowOpen(true));
+  await page.waitForSelector('.tool-window[data-tool="helpertext"]', { timeout: 8000 });
   await settle(page);
-  const htw = await page.evaluate(() => {
-    const p = document.querySelector('.htw-panel');
+  const HTW = '.tool-window[data-tool="helpertext"]';
+  const htw = await page.evaluate((w) => {
+    const p = document.querySelector(w);
     return {
       header: !!p?.querySelector('.tool-window-header .tool-window-title'),
-      // v6.43: the fullscreen button wears the STANDARD tool-window classes
-      // and SVG icons (char-profiles-fullscreen-btn + FullscreenIcon), not a
-      // lookalike — so the close count is exactly one.
-      fsBtn: !!p?.querySelector('.htw-fsbtn.char-profiles-fullscreen-btn svg'),
+      fsBtn: !!p?.querySelector('.char-profiles-fullscreen-btn svg'),
       close: !!p?.querySelector('.tool-window-close svg'),
     };
-  });
+  }, HTW);
   ok(htw.header, 'Helper Text window wears the tool-window header classes');
   ok(htw.fsBtn && htw.close, 'header carries the STANDARD fullscreen and close buttons (SVG icon family)');
-  await page.click('.htw-fsbtn');
-  await settle(page);
+  await page.click(`${HTW} .char-profiles-fullscreen-btn`);
+  await page.waitForSelector('.fs-tool-takeover', { timeout: 8000 });
   const fsRect = await page.evaluate(() => {
-    const r = document.querySelector('.htw-panel').getBoundingClientRect();
-    return { w: r.width, h: r.height, x: r.x, y: r.y, vw: window.innerWidth, vh: window.innerHeight };
+    const r = document.querySelector('.fs-tool-takeover .htw-panel').getBoundingClientRect();
+    // the takeover owns the EDITOR AREA (side docks stay) — the panel must
+    // fill THAT, not the viewport
+    const t = document.querySelector('.fs-tool-takeover').getBoundingClientRect();
+    return { w: r.width, tw: t.width };
   });
-  ok(fsRect.x === 0 && fsRect.y === 0 && fsRect.w >= fsRect.vw - 1 && fsRect.h >= fsRect.vh - 1,
-    `fullscreen fills the viewport (${Math.round(fsRect.w)}×${Math.round(fsRect.h)})`);
-  await page.click('.htw-fsbtn');
+  ok(fsRect.w >= fsRect.tw * 0.95, `fullscreen takeover hosts the panel edge to edge (${Math.round(fsRect.w)} of ${Math.round(fsRect.tw)}px)`);
+  // leave fullscreen through the takeover's own shrink button — the designed
+  // exit, which converts back to the floating window (a raw
+  // setFullscreenTool(null) just closes the tool).
+  await page.click('.fs-tool-takeover .tool-window-minimize');
+  await page.waitForSelector(`${HTW} .dz-search-input`, { timeout: 8000 });
   await settle(page);
 
   // ── 5: blank helper text sticks as an override ──

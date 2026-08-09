@@ -435,7 +435,13 @@
 /* ── Beat Card ── */
 .beat-card {
   position: relative;
-  background: var(--fd-dropdown-bg);
+  /* v6.52, Derek ("the background color and the beat card color is too
+     similar … this and all other themes"): the card surface takes a fixed
+     14% step toward the theme's TEXT color. Text clears the 4.5:1 floor
+     against the board in every theme, so this guarantees a visible card ↔
+     board separation everywhere — no per-theme value to keep in tune. */
+  background: color-mix(in srgb, var(--fd-dropdown-bg) 86%, var(--fd-text) 14%);
+  box-shadow: 0 1px 4px var(--fd-shadow, rgba(0, 0, 0, 0.3));
   border: 1px solid var(--fd-border);
   border-radius: var(--dz-beat-card-radius, 6px);
   padding: var(--dz-beat-card-pad, 10px);

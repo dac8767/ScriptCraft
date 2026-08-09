@@ -1,5 +1,16 @@
 [
  {
+  "version": "6.52",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline: the beat count sits at the left of the header now, right of the tabs.",
+   "Beat cards stand off the board background clearly in every theme — the card surface takes a fixed step toward the theme's text color, plus a soft shadow, so the separation holds whichever theme you use. Cards you've colored yourself are unchanged.",
+   "Helper Text is a real tool window now: drag it into a side panel like any other, pop it back out, fullscreen it, and its size is remembered. It still opens from Help ▸ Developer ▸ Helper Text… — and it no longer closes when you open another window (it stays up while its go-to buttons open the window a piece of text lives in).",
+   "Outline ▸ Freeform: while you're drawing a connection, the card you started from stays highlighted and the card under your pointer lights up — so it's clear which card you're about to connect to.",
+   "Outline ▸ Freeform: cards drag from anywhere along their top row, like every window in the app, instead of only the little corner grip. Clicking the title still puts the cursor in it for editing."
+  ]
+ },
+ {
   "version": "6.51",
   "date": "2026-08-09",
   "changes": [

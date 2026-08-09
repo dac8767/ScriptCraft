@@ -151,7 +151,34 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.46 and older (newest first)
+## Version history — v6.47 and older (newest first)
+
+### v6.47 — three new built-in themes: Paper, Gruvbox Dark, Catppuccin Mocha
+
+- Derek: "do you recommend adding any additional default themes?" → I
+  recommended Paper (a TRUE paper-white light — the stock Light is cool
+  blue-gray, nothing in the set was plain white), Gruvbox Dark (warm dark
+  — every existing dark theme is cool-toned) and Catppuccin Mocha (the
+  soft pastel-dark) → Derek: "add all".
+- The pattern for ANY new built-in theme (three touch points, no more):
+  (1) a `[data-theme="…"]` block in 22-tools-extra.css — placed BEFORE
+  the light-family override block; a LIGHT theme (paper) must also join
+  the light-family `.menu-dropdown` / `.dialog-box` selector lists there;
+  (2) themes.ts — BuiltInThemeId union + a BUILTIN_THEMES `{id,label,
+  base}` row (ThemesTab, MenuBar's View ▸ Theme and editorStore all read
+  that registry — nothing else to update; themeStore.allThemeIds appends
+  builtins missing from the persisted order, so new ones appear even on
+  a machine with a saved order); (3) the id into themeLadder.test.ts
+  THEMES.
+- Values chosen numerically BEFORE writing CSS (same method as v6.46):
+  every text/muted pair ≥4.5:1 on bg+panels; buttons paper #1565c0/white
+  5.75:1, gruvbox #6f5c12/#ebdbb2 4.76:1, catppuccin #655385/#cdd6f4
+  4.64:1 (the palettes' published accents #d79921/#cba6f7 fail as button
+  FILLS under their light text, so fills are custom darker steps; the
+  accents themselves stay authentic). Ladder verified: paper
+  234<241<250≤252≤254≤255, gruvbox 29<31<40≤48≤57, catppuccin
+  18<25<31≤43≤51. Screenshots of all three eyeballed (Vite+Chromium,
+  data-theme swap) before shipping.
 
 ### v6.46 — theme legibility pass (the palette report's S1/S2/S6, applied)
 

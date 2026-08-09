@@ -21,9 +21,9 @@ export interface DesignSlice {
   resetAllDesign: () => void;
   designPanelOpen: boolean;
   setDesignPanelOpen: (v: boolean) => void;
-  /** v6.22, Derek: the Helper Text editor is its OWN window now (Help ▸
-   *  Developer ▸ Helper Text…) — session flag, like a dialog. */
-  helperTextWindowOpen: boolean;
+  /** v6.22: the Helper Text editor's open flag. v6.52: Helper Text is a
+   *  real TOOL (id 'helpertext'); this setter survives as a delegation door
+   *  (checks and old call sites) — it just opens/closes the tool. */
   setHelperTextWindowOpen: (v: boolean) => void;
 }
 
@@ -51,7 +51,7 @@ export const migrateDesignVars = (vars: Record<string, number>): Record<string, 
   return out;
 };
 
-export const createDesignSlice: StateCreator<EditorState, [], [], DesignSlice> = (set) => ({
+export const createDesignSlice: StateCreator<EditorState, [], [], DesignSlice> = (set, get) => ({
   designVars: migrateDesignVars((_vs.designVars as Record<string, number>) ?? {}),
   setDesignVar: (id, val) => set((st) => {
     const next = { ...st.designVars, [id]: val };
@@ -70,6 +70,8 @@ export const createDesignSlice: StateCreator<EditorState, [], [], DesignSlice> =
   }),
   designPanelOpen: false,
   setDesignPanelOpen: (v) => set({ designPanelOpen: v }),
-  helperTextWindowOpen: false,
-  setHelperTextWindowOpen: (v) => set({ helperTextWindowOpen: v }),
+  setHelperTextWindowOpen: (v) => {
+    if (v) get().openTool('helpertext');
+    else get().closeTool('helpertext');
+  },
 });

@@ -63,14 +63,14 @@ try {
 
   // ── 1: the Helper Text window LISTS the dynamic tooltip ──
   await page.evaluate(() => window.__scStore.getState().setHelperTextWindowOpen(true));
-  await page.waitForSelector('.htw-window .dz-search-input', { timeout: 8000 });
-  await page.fill('.htw-window .dz-search-input', 'The Outline Bar shows this tab');
+  await page.waitForSelector('.htw-panel .dz-search-input', { timeout: 8000 });
+  await page.fill('.htw-panel .dz-search-input', 'The Outline Bar shows this tab');
   await settle(page);
-  const listed = await page.evaluate((arm) => document.querySelector('.htw-window .dz-body')?.textContent?.includes(arm), CHECKED_ARM);
+  const listed = await page.evaluate((arm) => document.querySelector('.htw-panel .dz-body')?.textContent?.includes(arm), CHECKED_ARM);
   ok(listed, 'the Helper Text window lists the checkbox\'s hover text (Derek\'s example)');
-  await page.fill('.htw-window .dz-search-input', 'Switch to this theme');
+  await page.fill('.htw-panel .dz-search-input', 'Switch to this theme');
   await settle(page);
-  const listed2 = await page.evaluate(() => document.querySelector('.htw-window .dz-body')?.textContent?.includes('Switch to this theme'));
+  const listed2 = await page.evaluate(() => document.querySelector('.htw-panel .dz-body')?.textContent?.includes('Switch to this theme'));
   ok(listed2, 'other dynamic tooltips (Customize theme rows) are listed too');
 
   // cleanup so nothing persists into other checks

@@ -392,6 +392,10 @@ export type ToolId =
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
   | 'notebook' | 'design' | 'workspaces' | 'feedback' | 'thesaurus' | 'rewrite'
+  /** v6.52, Derek: the Helper Text editor is a real TOOL now — draggable
+   *  into a side panel like any window. Opens from Help ▸ Developer; no
+   *  dock row by default (enabled:false). */
+  | 'helpertext'
   /** legacy — the standalone Title Page tool became the Pages window's
    *  Title Page TAB (v5.67); persisted layouts migrate onto 'pages',
    *  openTool remaps and lands on that tab. */
@@ -576,6 +580,8 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   // the Production menu). EVERY tool in ALL_TOOLS must have an entry here —
   // see toolConfigFor() below and the v0.63 bug it prevents.
   history: { side: 'right', enabled: false },   // v0.84: available, off by default
+  // v6.52: a developer tool — dockable once dragged there, no row until then.
+  helpertext: { side: 'right', enabled: false },
   navigator: { side: 'left', enabled: true },
   scenes: { side: 'left', enabled: true },
   pages: { side: 'left', enabled: true },
@@ -619,25 +625,29 @@ export const DEFAULT_TOOL_ORDER: string[] = [
  *  wherever a float is BORN (openTool's float branches, setToolMode
  *  'floating'); returns the patch closing every floating window but `keep`.
  *  Spread it BEFORE the branch's own fields so they win any overlap. */
+/** v5.32 exempted Design from float exclusivity ("opening the design window
+ *  should not close any other window" — the tweak-alongside tool, exempt in
+ *  BOTH directions). v6.52: Helper Text joins it — same species, a utility
+ *  you use while looking at the thing it edits (and v6.24's go-to buttons
+ *  open the target's window WHILE Helper Text stays up). */
+const FLOAT_EXEMPT: ToolId[] = ['design', 'helpertext'];
+
 function closeOtherFloats(s: Pick<EditorState, 'tempTool' | 'activeTool' | 'activeToolRight' | 'navigatorOpen' | 'shelfOpen' | 'toolMode' | 'fullscreenTool'>, keep: ToolId): Partial<EditorState> {
   const patch: Partial<EditorState> = {};
-  // v5.32, Derek: "opening the design window should not close any other
-  // window." Design is the tweak-alongside tool — it neither closes others
-  // when it opens, nor is it closed when others open.
-  if (keep === 'design') return patch;
+  if (FLOAT_EXEMPT.includes(keep)) return patch;
   // v5.37, Derek: ONE popped-out OR fullscreen window at a time — a float
   // being born lowers the fullscreen takeover and the Scrapbook surface
   // too. (The fullscreen entry paths spread this patch and re-set their
   // own fullscreenTool after it, so the field composes.)
   if (s.fullscreenTool) patch.fullscreenTool = null;
   if (useNotebookStore.getState().notebookOpen) useNotebookStore.getState().setNotebookOpen(false);
-  if (s.tempTool && s.tempTool !== keep && s.tempTool !== 'design') patch.tempTool = null;
-  if (s.activeTool && s.activeTool !== keep && s.activeTool !== 'design'
+  if (s.tempTool && s.tempTool !== keep && !FLOAT_EXEMPT.includes(s.tempTool)) patch.tempTool = null;
+  if (s.activeTool && s.activeTool !== keep && !FLOAT_EXEMPT.includes(s.activeTool)
       && s.navigatorOpen && s.toolMode[s.activeTool] === 'floating') {
     patch.activeTool = null;
     saveViewState({ activeTool: null });
   }
-  if (s.activeToolRight && s.activeToolRight !== keep && s.activeToolRight !== 'design'
+  if (s.activeToolRight && s.activeToolRight !== keep && !FLOAT_EXEMPT.includes(s.activeToolRight)
       && s.shelfOpen && s.toolMode[s.activeToolRight] === 'floating') {
     patch.activeToolRight = null;
     saveViewState({ activeToolRight: null });
@@ -1933,12 +1943,18 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
       // independent window — so the old v5.32 keep-the-temp special case is
       // gone with it.)
       const floats = s.toolMode[tool] === 'floating' ? closeOtherFloats(s, tool) : {};
+      /* v6.52: a FLOAT_EXEMPT tool riding the temp slot (Helper Text opened
+         from the menu) survives slot opens — the unconditional tempTool:null
+         here predates a tweak-alongside tool ever LIVING in that slot, and
+         it silently closed Helper Text the moment its go-to buttons opened
+         the target window. */
+      const keepTemp = s.tempTool && s.tempTool !== tool && FLOAT_EXEMPT.includes(s.tempTool) ? s.tempTool : null;
       if (left) {
         saveViewState({ activeTool: tool });
-        return { ...floats, activeTool: tool, tempTool: null };
+        return { ...floats, activeTool: tool, tempTool: keepTemp };
       }
       saveViewState({ activeToolRight: tool });
-      return { ...floats, activeToolRight: tool, tempTool: null };
+      return { ...floats, activeToolRight: tool, tempTool: keepTemp };
     }
     return { ...closeOtherFloats(s, tool), tempTool: tool };
   }),

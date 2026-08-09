@@ -1692,10 +1692,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             icon: t.icon, label: t.label, action: () => useEditorStore.getState().openTool(t.id),
           })),
           {
-            // v6.22, Derek: the Helper Text editor's own window.
+            // v6.22, Derek: the Helper Text editor's own window. v6.52: a
+            // real tool now — dockable into a side panel like any window.
             icon: <FaRegEdit />,
             label: 'Helper Text…',
-            action: () => useEditorStore.getState().setHelperTextWindowOpen(true),
+            action: () => useEditorStore.getState().openTool('helpertext'),
           },
           /* v1.34: the switch for features that exist but aren't finished
            * (Lock Pages; Collaboration until v6.40 removed it). One flag,

@@ -402,6 +402,9 @@ interface BeatCardContentProps {
   onUpdate: (id: string, updates: Partial<BeatInfo>) => void;
   onDelete: (id: string) => void;
   dragHandleProps?: Record<string, unknown>;
+  /** v6.52 (freeform): the WHOLE header row is a drag surface, windows-style
+   *  — spread on .beat-card-top. The handler guards its own targets. */
+  headerDragProps?: Record<string, unknown>;
   resizePointerDown: (e: React.PointerEvent) => void;
   /** v2.46: an extra header button, first in the right-hand group — the
    *  freeform card's Connect button rides here. */
@@ -409,7 +412,7 @@ interface BeatCardContentProps {
 }
 
 const BeatCardContent: React.FC<BeatCardContentProps> = ({
-  beat, onUpdate, onDelete, dragHandleProps, resizePointerDown, headExtra,
+  beat, onUpdate, onDelete, dragHandleProps, headerDragProps, resizePointerDown, headExtra,
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [descFocused, setDescFocused] = useState(false);
@@ -514,7 +517,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
 
   /* v2.46: ONE header row — it used to be pasted into both layout branches. */
   const headerRow = (
-    <div className="beat-card-top">
+    <div className="beat-card-top" {...(headerDragProps || {})}>
       <span className="beat-drag-icon" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>⋮⋮</span>
       <input
         className="beat-card-title"
@@ -764,9 +767,11 @@ export function mindTitleSize(cardWidth: number): number {
    another card; a line follows the pointer the whole way. */
 const FreeBeatCard: React.FC<FreeBeatCardProps & {
   armed: boolean;
+  linkOrigin: boolean;
+  linkTarget: boolean;
   onToggleArm: (id: string) => void;
   onStartLink: (e: React.PointerEvent, fromId: string) => void;
-}> = ({ beat, onUpdate, onDelete, armed, onToggleArm, onStartLink }) => {
+}> = ({ beat, onUpdate, onDelete, armed, linkOrigin, linkTarget, onToggleArm, onStartLink }) => {
   const dragRef = useRef<{ startX: number; startY: number; beatX: number; beatY: number } | null>(null);
 
   const handleResize = useCallback(
@@ -780,14 +785,26 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
   const bx = beat.x || 0;
   const by = beat.y || 0;
 
-  const onDragPointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+  /* v6.52: ONE drag engine for the grip and the header row. threshold=0
+     drags immediately (the grip); a positive threshold arms a pending drag
+     that only engages after real movement — the header's title input keeps
+     plain clicks (focus, caret) and gives up the pointer once a drag is
+     clearly meant (onEngage blurs it, windows-style). */
+  const beginCardDrag = useCallback(
+    (e: React.PointerEvent, opts?: { threshold?: number; onEngage?: () => void }) => {
+      const threshold = opts?.threshold ?? 0;
+      let engaged = threshold === 0;
+      if (engaged) { e.preventDefault(); e.stopPropagation(); }
       dragRef.current = { startX: e.clientX, startY: e.clientY, beatX: bx, beatY: by };
 
       const onMove = (ev: PointerEvent) => {
         if (!dragRef.current) return;
+        if (!engaged) {
+          if (Math.abs(ev.clientX - dragRef.current.startX) < threshold
+            && Math.abs(ev.clientY - dragRef.current.startY) < threshold) return;
+          engaged = true;
+          opts?.onEngage?.();
+        }
         const newX = Math.max(0, dragRef.current.beatX + (ev.clientX - dragRef.current.startX));
         const newY = Math.max(0, dragRef.current.beatY + (ev.clientY - dragRef.current.startY));
         onUpdate(beat.id, { x: newX, y: newY });
@@ -803,6 +820,24 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
     [beat.id, bx, by, onUpdate],
   );
 
+  const onDragPointerDown = useCallback((e: React.PointerEvent) => beginCardDrag(e), [beginCardDrag]);
+
+  /* v6.52, Derek: "allow dragging the freeform cards from the top of each
+     card, like all windows work" — the whole header row drags. Buttons keep
+     their jobs (the window-header guard); the title input drags only after
+     4px of movement, so clicking it still focuses and places the caret. A
+     FOCUSED title is being edited — text selection wins there. */
+  const onHeaderPointerDown = useCallback((e: React.PointerEvent) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('button')) return;
+    if (t.classList.contains('beat-card-title')) {
+      if (document.activeElement === t) return;
+      beginCardDrag(e, { threshold: 4, onEngage: () => (t as HTMLInputElement).blur() });
+      return;
+    }
+    beginCardDrag(e);
+  }, [beginCardDrag]);
+
   const wrapStyle: React.CSSProperties = {
     position: 'absolute',
     left: bx,
@@ -816,7 +851,7 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
   return (
     <div
       style={wrapStyle}
-      className={`beat-card-wrap beat-card-wrap-free${armed ? ' mind-armed' : ''}`}
+      className={`beat-card-wrap beat-card-wrap-free${armed ? ' mind-armed' : ''}${linkOrigin ? ' mind-link-origin' : ''}${linkTarget ? ' mind-link-target' : ''}`}
       data-beat-id={beat.id}
       /* Armed: the NEXT pointer-down anywhere on this card starts the line
          (capture phase, so the title/drag handle don't swallow it).
@@ -828,6 +863,7 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
         onUpdate={onUpdate}
         onDelete={onDelete}
         dragHandleProps={{ onPointerDown: onDragPointerDown, style: { touchAction: 'none', cursor: 'grab' } }}
+        headerDragProps={{ onPointerDown: onHeaderPointerDown, style: { touchAction: 'none' } }}
         resizePointerDown={resizePointerDown}
         headExtra={
           <button
@@ -872,6 +908,8 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
      rect, plus its scroll — the same space the beats' x/y live in. */
   const canvasRef = useRef<HTMLDivElement>(null);
   const [linkDrag, setLinkDrag] = useState<{ fromId: string; x: number; y: number } | null>(null);
+  // v6.52: the card under the pointer while a connection line is out.
+  const [linkHover, setLinkHover] = useState<string | null>(null);
   const [armedId, setArmedId] = useState<string | null>(null);
   const [selectedLine, setSelectedLine] = useState<{ fromId: string; toId: string } | null>(null);
 
@@ -912,12 +950,26 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
       const r = canvas.getBoundingClientRect();
       return { x: ev.clientX - r.left + canvas.scrollLeft, y: ev.clientY - r.top + canvas.scrollTop };
     };
+    /* v6.52, Derek: while the line is out, the ORIGIN stays highlighted
+       (linkDrag.fromId — arming cleared above, so the class rides the drag)
+       and the card under the pointer lights up as the would-be target. */
+    const hoverAt = (ev: { clientX: number; clientY: number }) => {
+      const hit = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)
+        ?.closest('[data-beat-id]');
+      const id = hit?.getAttribute('data-beat-id');
+      return id && id !== fromId ? id : null;
+    };
     setLinkDrag({ fromId, ...toCanvas(e) });
-    const onMove = (ev: PointerEvent) => setLinkDrag({ fromId, ...toCanvas(ev) });
+    setLinkHover(null);
+    const onMove = (ev: PointerEvent) => {
+      setLinkDrag({ fromId, ...toCanvas(ev) });
+      setLinkHover(hoverAt(ev));
+    };
     const onUp = (ev: PointerEvent) => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
       setLinkDrag(null);
+      setLinkHover(null);
       const hit = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)
         ?.closest('[data-beat-id]');
       const targetId = hit?.getAttribute('data-beat-id');
@@ -998,6 +1050,8 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
           onUpdate={onUpdateBeat}
           onDelete={onDeleteBeat}
           armed={armedId === beat.id}
+          linkOrigin={linkDrag?.fromId === beat.id}
+          linkTarget={linkHover === beat.id}
           onToggleArm={handleToggleArm}
           onStartLink={handleStartLink}
         />
@@ -1156,7 +1210,6 @@ export function OutlineBarCheck() {
 }
 
 export function OutlineHeaderControls() {
-  const beatCount = useEditorStore((s) => s.beats.length);
   const beatArrangeMode = useEditorStore((s) => s.beatArrangeMode);
   const goToArrangement = useEditorStore((s) => s.goToArrangement);
   /* v6.49, Derek: search + color filter in the header (standard cluster
@@ -1167,10 +1220,6 @@ export function OutlineHeaderControls() {
   const setBeatSearch = useEditorStore((s) => s.setBeatSearch);
   const beatColorFilter = useEditorStore((s) => s.beatColorFilter);
   const { toggleBeatColorFilter, clearBeatColorFilter } = useEditorStore.getState();
-  const filterActive = beatSearch.trim() !== '' || beatColorFilter.length > 0;
-  const shownCount = filterActive
-    ? beats.filter((b) => beatMatchesFilter(b, beatSearch, beatColorFilter)).length
-    : beats.length;
   // The Filter menu lists the colors this outline actually uses (plus
   // Uncolored when uncolored beats exist) — like Characters' data-derived
   // relationship types, not the whole palette.
@@ -1200,14 +1249,10 @@ export function OutlineHeaderControls() {
   /* v6.49, Derek: the header carries the standard control cluster now —
      Filter · View · Search (+ the ? at the very end). The Arrangement
      buttons became the View dropdown; Presets/Add and the bar checkbox
-     moved down to the body's first row. */
+     moved down to the body's first row. v6.52: the beat count moved LEFT,
+     beside the tab strip (OutlineBeatCount) — this cluster starts at View. */
   return (
     <span className="beat-header-controls">
-      <span className="beat-board-info">
-        {filterActive
-          ? `${shownCount} of ${beatCount} beat${beatCount !== 1 ? 's' : ''}`
-          : `${beatCount} beat${beatCount !== 1 ? 's' : ''}`}
-      </span>
       {/* v5.80's canonical cluster order: View · Filter · Sort · Search.
           v6.50, Derek: the trigger shows just the CURRENT view (icon +
           name, the Characters-window pattern) — no "View" word. v2.47's
@@ -1281,14 +1326,38 @@ export function useOutlineTabs(): ToolChromeTab[] {
   }));
 }
 
+/** v6.52, Derek: the beat count sits LEFT — right of the tab strip — in the
+ *  window header and the takeover's tabs row alike. Shows "M of N" while
+ *  the header search/filter narrows the board. */
+export function OutlineBeatCount() {
+  const beatCount = useEditorStore((s) => s.beats.length);
+  const beats = useEditorStore((s) => s.beats);
+  const beatSearch = useEditorStore((s) => s.beatSearch);
+  const beatColorFilter = useEditorStore((s) => s.beatColorFilter);
+  const filterActive = beatSearch.trim() !== '' || beatColorFilter.length > 0;
+  const shown = filterActive
+    ? beats.filter((b) => beatMatchesFilter(b, beatSearch, beatColorFilter)).length
+    : beatCount;
+  return (
+    <span className="beat-board-info">
+      {filterActive
+        ? `${shown} of ${beatCount} beat${beatCount !== 1 ? 's' : ''}`
+        : `${beatCount} beat${beatCount !== 1 ? 's' : ''}`}
+    </span>
+  );
+}
+
 /** The + (new variation) button, hugging the header tab strip. */
 export function OutlineTabsExtra() {
   return (
-    <button
-      className="beat-tab-add"
-      title="New outline variation"
-      onClick={() => useEditorStore.getState().addOutlineTab()}
-    >+</button>
+    <>
+      <button
+        className="beat-tab-add"
+        title="New outline variation"
+        onClick={() => useEditorStore.getState().addOutlineTab()}
+      >+</button>
+      <OutlineBeatCount />
+    </>
   );
 }
 
@@ -1479,6 +1548,8 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
             </div>
           ))}
           <button className="beat-tab-add" title="New outline variation" onClick={() => addOutlineTab()}>+</button>
+          {/* v6.52: the count rides beside the tabs here too. */}
+          <OutlineBeatCount />
         </div>
       )}
 

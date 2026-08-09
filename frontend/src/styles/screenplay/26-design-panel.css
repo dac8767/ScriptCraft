@@ -215,6 +215,10 @@
 /* v6.22: the Helper Text window (dz-panel shell, own default size). */
 .htw-panel { display: flex; flex-direction: column; }
 .htw-panel .dz-body { flex: 1; }
+/* v6.52: as a TOOL body (docked or windowed) the panel fills its host and
+   scrolls its own list — the window chrome belongs to ToolDock now. */
+.htw-tool { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
+.htw-tool .dz-body { overflow: auto; min-height: 0; }
 /* v6.38, Derek: the standard tool-window header (fullscreen + close) on the
    Helper Text window — same classes as every floating tool, plus the bits
    the dz-panel shell needs to seat them. */

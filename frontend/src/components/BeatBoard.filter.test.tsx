@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import { beatMatchesFilter, OutlineHeaderControls } from './BeatBoard';
+import { beatMatchesFilter, OutlineHeaderControls, OutlineBeatCount } from './BeatBoard';
 import { useEditorStore } from '../stores/editorStore';
 
 const BEAT = { title: 'Midpoint reversal', description: 'Ellie learns the truth', color: '#ef4444' };
@@ -72,14 +72,21 @@ describe('OutlineHeaderControls (v6.49 cluster)', () => {
     expect(host.querySelector('.beat-bar-check')).toBeNull();   // body row's job now
   });
 
+  /* v6.52, Derek: the count lives BESIDE the tab strip (OutlineBeatCount),
+     not in the right-hand cluster. */
   it('shows "M of N beats" while a search narrows the board', () => {
     const st = useEditorStore.getState();
     const colId = st.addBeatColumn('Act I');
     st.addBeat('Opening image', colId);
     st.addBeat('Midpoint', colId);
-    act(() => { root.render(<OutlineHeaderControls />); });
+    act(() => { root.render(<OutlineBeatCount />); });
     expect(host.querySelector('.beat-board-info')?.textContent).toBe('2 beats');
     act(() => { useEditorStore.getState().setBeatSearch('mid'); });
     expect(host.querySelector('.beat-board-info')?.textContent).toBe('1 of 2 beats');
+  });
+
+  it('the cluster no longer carries the count', () => {
+    act(() => { root.render(<OutlineHeaderControls />); });
+    expect(host.querySelector('.beat-board-info')).toBeNull();
   });
 });

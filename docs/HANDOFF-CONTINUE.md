@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.51 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.52 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,43 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.52 — Outline/freeform polish; card contrast; Helper Text = a real TOOL
+
+- Derek's five (screenshot batch): (1) the beat count moved LEFT, beside
+  the tab strip — OutlineBeatCount renders in OutlineTabsExtra (window)
+  AND the takeover's .beat-tabs row; the cluster starts at View now;
+  (2) CARD ↔ BOARD CONTRAST: .beat-card background = color-mix(in srgb,
+  var(--fd-dropdown-bg) 86%, var(--fd-text) 14%) + a soft shadow — the
+  AA text floor guarantees a visible step in EVERY theme, no per-theme
+  values (dark Δ43, light Δ23 measured in check-v652); user-colored
+  cards unaffected; (3) HELPER TEXT IS A TOOL (id 'helpertext'):
+  ALL_TOOLS + DEFAULT_TOOL_CONFIG enabled:false (no dock row until
+  dragged in — dockInto enables on drop), ToolContent case, TitleExtra
+  "N changed" chip; the FloatingWindow shell + helperTextWindowOpen flag
+  are GONE — setHelperTextWindowOpen survives as a delegation door to
+  openTool/closeTool (checks + old callers); body keeps .htw-panel (now
+  .htw-tool too) so the v6.24 row selectors held; (4) freeform connect
+  shows its state: the ORIGIN card stays lit during the line-drag
+  (mind-link-origin — arming clears at drag start, so the class rides
+  linkDrag.fromId) and the hovered card lights up hard
+  (mind-link-target, elementFromPoint tracking in onMove); (5) freeform
+  cards drag by the WHOLE header row, windows-style — beginCardDrag
+  grew a threshold mode: buttons keep their jobs, a FOCUSED title keeps
+  text selection, an unfocused title starts the drag only after 4px
+  (onEngage blurs it) so plain clicks still focus with the caret.
+- FLOAT-EXCLUSIVITY exemption extended: FLOAT_EXEMPT = ['design',
+  'helpertext'] in closeOtherFloats (v5.32's design rule, now a set) AND
+  the slot-open branches' unconditional tempTool:null now preserves an
+  exempt temp tool — that null predates anything living in the temp slot
+  that should survive; it silently closed Helper Text when its v6.24
+  go-to buttons opened the target window (check-v624 caught it).
+- Takeover note recorded in check-v638: the fullscreen takeover owns the
+  EDITOR AREA (side docks stay) — width asserts compare against the
+  takeover, not the viewport; leave fullscreen via the takeover's shrink
+  button (a raw setFullscreenTool(null) just closes the tool).
+- check-v652 (13 asserts); v624/v638/v649/v651 updated where the Helper
+  Text shell changed; 1125 vitest.
+
 ### v6.51 — Helper Text catalog covers DYNAMIC sites; applier arm-flip fix
 
 - Derek (with his screenshot of the bar checkbox's tooltip): "recheck the
@@ -376,38 +413,12 @@ Durable bits kept live here:
   ThemesTab.click (apply + button-guard + hidden-unhide),
   BeatBoard.barcheck (checkbox states/move). 1114 vitest.
 
-### v6.47 — three new built-in themes: Paper, Gruvbox Dark, Catppuccin Mocha
-
-- Derek: "do you recommend adding any additional default themes?" → I
-  recommended Paper (a TRUE paper-white light — the stock Light is cool
-  blue-gray, nothing in the set was plain white), Gruvbox Dark (warm dark
-  — every existing dark theme is cool-toned) and Catppuccin Mocha (the
-  soft pastel-dark) → Derek: "add all".
-- The pattern for ANY new built-in theme (three touch points, no more):
-  (1) a `[data-theme="…"]` block in 22-tools-extra.css — placed BEFORE
-  the light-family override block; a LIGHT theme (paper) must also join
-  the light-family `.menu-dropdown` / `.dialog-box` selector lists there;
-  (2) themes.ts — BuiltInThemeId union + a BUILTIN_THEMES `{id,label,
-  base}` row (ThemesTab, MenuBar's View ▸ Theme and editorStore all read
-  that registry — nothing else to update; themeStore.allThemeIds appends
-  builtins missing from the persisted order, so new ones appear even on
-  a machine with a saved order); (3) the id into themeLadder.test.ts
-  THEMES.
-- Values chosen numerically BEFORE writing CSS (same method as v6.46):
-  every text/muted pair ≥4.5:1 on bg+panels; buttons paper #1565c0/white
-  5.75:1, gruvbox #6f5c12/#ebdbb2 4.76:1, catppuccin #655385/#cdd6f4
-  4.64:1 (the palettes' published accents #d79921/#cba6f7 fail as button
-  FILLS under their light text, so fills are custom darker steps; the
-  accents themselves stay authentic). Ladder verified: paper
-  234<241<250≤252≤254≤255, gruvbox 29<31<40≤48≤57, catppuccin
-  18<25<31≤43≤51. Screenshots of all three eyeballed (Vite+Chromium,
-  data-theme swap) before shipping.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.47** — three new built-in themes: Paper, Gruvbox Dark, Catppuccin Mocha (the theme-adding pattern lives in its archive section)
 - **v6.46** — theme legibility pass (palette report S1/S2/S6: sepia/sol-light/dracula/light depth fixes, AA floors)
 - **v6.45** — Upload Voice Clip tool removed from the character window (Voice Profile writing fields stay; AssetAudio deleted)
 - **v6.44** — print round 4: sharedPrintInfo (nil-NSPrintInfo theory) + fsync breadcrumb log; Settings…→app menu above Quit
