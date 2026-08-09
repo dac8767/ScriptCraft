@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.61",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline: every column on the board now starts at the same width, Unsorted included. Its width used to be set by its own contents, so the one-line hint stretched it wider than the sections beside it.",
+   "Outline: columns resize by dragging their right edge, and the edge is now a proper 10px target that lights up when you are on it \u2014 the old handle sat half outside the column, which clipped it down to a 3px sliver you had to hit exactly. Unsorted resizes too. A section\u2019s width saves with the script."
+  ]
+ },
+ {
   "version": "6.60",
   "date": "2026-08-09",
   "changes": [

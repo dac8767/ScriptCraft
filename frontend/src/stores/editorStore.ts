@@ -1223,6 +1223,12 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  Driven by dragging the bar's bottom edge. */
   outlineBarRowScale: number;
   setOutlineBarRowScale: (s: number) => void;
+  /** v6.61: the width of the Outline board's "Unsorted" column. Real
+   *  sections carry their own width on the column record; Unsorted is a
+   *  phantom column with nowhere to keep one, so its width is a view
+   *  preference. 0 = the shared CSS default every column starts at. */
+  outlineUnsortedWidth: number;
+  setOutlineUnsortedWidth: (w: number) => void;
   /** v2.66: vertical scale of the Scrapbook tree's rows (1 = default) —
    *  text and icons follow proportionally. Driven by the panel's bottom
    *  zoom bar. Persisted view state. */
@@ -1505,6 +1511,7 @@ const CUSTOMIZATION_FIELDS = [
   'qatItems', 'toolbarDdWidths',
   'chromeCustomPx', 'chromeGapPx',
   'outlineBarRows', 'outlineBarZoom', 'outlineBarLabels', 'outlineBarRowScale',
+  'outlineUnsortedWidth',
   'uiResizeLocked',
   // v4.79: fields Customize grew since v3.49 that had DRIFTED out of this
   // list — Cancel wasn't reverting them, and the customize export needs them.
@@ -1708,6 +1715,12 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     const clamped = clamp(s, 0.7, 2.5);
     saveViewState({ outlineBarRowScale: clamped });
     set({ outlineBarRowScale: clamped });
+  },
+  outlineUnsortedWidth: (_vs.outlineUnsortedWidth as number) ?? 0,
+  setOutlineUnsortedWidth: (w) => {
+    const next = w > 0 ? Math.max(200, Math.round(w)) : 0;
+    saveViewState({ outlineUnsortedWidth: next });
+    set({ outlineUnsortedWidth: next });
   },
   scrapbookTreeScale: (_vs.scrapbookTreeScale as number) ?? 1,
   setScrapbookTreeScale: (s) => {

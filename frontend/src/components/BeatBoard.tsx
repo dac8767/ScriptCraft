@@ -1667,8 +1667,14 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
   const sortedColumns = [...beatColumns].sort((a, b) => a.position - b.position);
   const isSingleColumn = sortedColumns.length === 1;
-  // v2.23: beats orphaned by a preset override wait in "Unsorted".
+  // v2.23: beats with no section (v6.60: including the ones a deleted
+  // section left behind) wait in "Unsorted".
   const orphanBeats = unsortedBeats(beats, beatColumns);
+  /* v6.61: Unsorted is a phantom column — there is no column record to hold
+     a width, so its own is a view preference. 0 = the shared default. */
+  const unsortedWidth = useEditorStore((s) => s.outlineUnsortedWidth);
+  const setUnsortedWidth = useEditorStore((s) => s.setOutlineUnsortedWidth);
+  const unsortedResizePointerDown = useColumnResize(setUnsortedWidth);
 
   /* v6.49: the header's search + color filter hide non-matching cards in
      every view — sections, Unsorted and the freeform canvas alike. */
@@ -1828,7 +1834,10 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
                 It sits before the first section (Derek: "make it the
                 furthest left column") and goes once it's empty. */}
             {keepUnsortedMounted(orphanBeats.length, activeDragId !== null, dragStartedWithOrphans) && !maximizedColumnId && (
-              <div className="beat-column beat-column-unsorted">
+              <div
+                className="beat-column beat-column-unsorted"
+                style={unsortedWidth > 0 ? { width: unsortedWidth, minWidth: 200, maxWidth: 'none' } : undefined}
+              >
                 <div className="beat-column-header">
                   <span className="beat-column-unsorted-title">Unsorted</span>
                 </div>
@@ -1842,6 +1851,10 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
                 <div className="beat-column-unsorted-hint">
                   Beats with no section wait here — drag each into one. This column disappears when it's empty.
                 </div>
+                {/* v6.61: Unsorted resizes from its right edge like any other
+                    column — a column you can see but can't drag would be a
+                    control that does nothing. */}
+                <div className="beat-column-resize-handle" title="Drag to change this column's width" onPointerDown={unsortedResizePointerDown} style={{ touchAction: 'none' }} />
               </div>
             )}
             {sortedColumns.map((col) => {
@@ -1952,7 +1965,7 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
       </SortableContext>
       <button className="beat-add-btn" onClick={() => onAddBeat('New Beat', col.id)}>+ Add Beat</button>
       {/* Column resize handle (right edge) */}
-      {!isSingleColumn && !isMaximized && <div className="beat-column-resize-handle" onPointerDown={colResizePointerDown} style={{ touchAction: 'none' }} />}
+      {!isSingleColumn && !isMaximized && <div className="beat-column-resize-handle" title="Drag to change this column's width" onPointerDown={colResizePointerDown} style={{ touchAction: 'none' }} />}
     </div>
   );
 };

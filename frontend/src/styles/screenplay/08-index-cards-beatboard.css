@@ -327,6 +327,13 @@
 }
 .beat-column {
   position: relative;
+  /* v6.61, Derek: "the unsorted section should be the same width by default
+     as the other sections." Column width used to be content-derived, so the
+     Unsorted column's one-line hint stretched it to the 500px cap while the
+     sections settled at 340 — the width every column now starts at. Drag a
+     column's right edge to change it; the min-width token still wins if the
+     writer raises it in the Design window. */
+  width: 340px;
   min-width: var(--dz-beat-col-minw, 280px);
   max-width: 500px;
   flex-shrink: 0;
@@ -424,21 +431,33 @@
   min-width: 0;
   touch-action: manipulation;
 }
-/* Column right-edge resize handle */
+/* Column right-edge resize handle. v6.61: it used to sit at right:-3px, and
+   the column's own overflow:hidden clipped the outer half — leaving a ~3px
+   strip that had to be hit exactly. It now lives fully INSIDE the edge, so
+   the whole 10px is grabbable, and it lights up on hover so the edge shows
+   it can be dragged. */
 .beat-column-resize-handle {
   position: absolute;
   top: 0;
-  right: -3px;
-  width: 6px;
+  right: 0;
+  width: 10px;
   height: 100%;
   cursor: col-resize;
   z-index: 5;
 }
-.beat-column-resize-handle:hover {
+.beat-column-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  right: 3px;
+  width: 2px;
+  border-radius: 2px;
   background: var(--fd-accent);
-  opacity: 0.4;
-  border-radius: 3px;
+  opacity: 0;
+  transition: opacity .12s;
 }
+.beat-column-resize-handle:hover::after { opacity: .55; }
 
 /* ── Beat Card ── */
 .beat-card {

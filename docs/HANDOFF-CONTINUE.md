@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.60 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.61 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,40 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.61 — one default column width; the edge is actually grabbable
+
+- Derek (screenshot): "the unsorted section should be the same width by
+  default as the other sections. allow resizing of the column widths by
+  dragging the edge."
+- WIDTH. `.beat-column` carried no `width` — only `min-width: 280` /
+  `max-width: 500` — so every column sized to its own max-content. Sections
+  settled at 340 (their widest card); Unsorted's one-line hint measured 483
+  and shoved it to the 500 cap. Fixed at the cause: `width: 340px` on
+  `.beat-column`, one default every column starts at. `min-width` still
+  reads the `--dz-beat-col-minw` design token, so raising it in the Design
+  window still grows them all together. Verified single-column
+  (`flex: 1 1 0%` beats `width`) and maximized still fill the row.
+- RESIZE. It EXISTED — `useColumnResize` + `.beat-column-resize-handle`, and
+  it worked — but the handle sat at `right: -3px; width: 6px` inside a
+  column with `overflow: hidden`, so the outer half was clipped away and
+  what was left was a ~3px strip with no visual cue. My first probe of it
+  reported "dead"; that was my own error (I aimed 200px below a 206px-tall
+  column). Root cause was reach, not wiring: the handle now lives fully
+  inside the edge at `width: 10px`, with an `::after` bar that fades in on
+  hover and a "Drag to change this column's width" tooltip.
+- Unsorted resizes too. A control you can see and can't drag is the silent
+  no-op Derek hates, and Unsorted is a phantom column with no record to
+  hold a width — so it gets one as a VIEW PREF (`outlineUnsortedWidth`,
+  saved through saveViewState like outlineBarZoom/RowScale, added to
+  CUSTOMIZATION_FIELDS). Real sections keep storing width on the column
+  record, which saves with the script.
+- check-v661 (13): all three columns equal at rest, the strip is a target at
+  2/4/6/8px in, col-resize cursor, the tint arrives on hover (waited for —
+  the .12s transition reads 0 if you measure too early), a section drag
+  moves only that column and lands on its record, Unsorted's drag persists
+  and survives the column unmounting, and the 200px floor holds.
+- Gates: tsc 0, vitest 1149, build ok, check-all 874/0.
+
 ### v6.60 — deleting a SECTION no longer deletes its beats (Unsorted)
 
 - Derek: "if an outline section is deleted and it had beats inside it, the
@@ -369,29 +403,12 @@ Durable bits kept live here:
 - check-v652 (18): 20 beats an act, all 2-page, sums = budgets, 60 cards
   actually rendered, one-undo, divider present.
 
-### v6.56 — the outline beat count leaves the tab pill
-
-- Derek: "vertically center '4 beats' and add space between that and the +
-  button. remove the box that is around '4 beats'." The box was never the
-  count's own — v6.52 rendered it inside TabsExtra, i.e. INSIDE
-  .tool-chrome-tabs, whose border draws the strip's pill; the count
-  inherited it and sat hard against the + button.
-- ToolChrome gained an `AfterTabs` slot (HeaderTabs renders it as a
-  SIBLING of the host + measurer, outside the pill) for chrome that
-  belongs beside the tabs without being one of them. beatboard:
-  TabsExtra = the + only, AfterTabs = OutlineBeatCount. naturalWidth's
-  fit maths picks the new sibling up on its own (it walks row.children).
-- CSS: align-self:center (centers it in the window header row AND in the
-  takeover's flex-end .beat-tabs row) + margin-left:12px + nowrap.
-- check-v652 measures the OUTCOME, not the markup: bare text (no border,
-  not contained by the strip), ≥8px clear of the + button, and within
-  1.5px of the header row's vertical middle.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.56** — the outline beat count left the tab pill (ToolChrome grew an AfterTabs slot outside the strip)
 - **v6.55** — freeform beat titles shrunk (mindTitleSize 12–16, title width 46%) so the title bar has bare band to grab
 - **v6.54** — freeform beat cards got real title bars (windowChrome in BeatCardContent), the ⋮⋮ grip retired in freeform
 - **v6.53** — freeform header drag fixed (always preventDefault + tap-to-focus), any-edge resize, click-place-click links with edge anchors (mindAnchors)

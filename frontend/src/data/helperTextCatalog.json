@@ -1098,6 +1098,15 @@
   ]
  },
  {
+  "text": "Drag to change this column's width",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
+ },
+ {
   "text": "Drag to change this section's page budget",
   "kind": "tooltip",
   "sites": 1,

@@ -153,6 +153,23 @@ reliable; re-run before believing a weird worker failure.
 
 ## Version history — v6.53 and older (newest first)
 
+### v6.56 — the outline beat count leaves the tab pill
+
+- Derek: "vertically center '4 beats' and add space between that and the +
+  button. remove the box that is around '4 beats'." The box was never the
+  count's own — v6.52 rendered it inside TabsExtra, i.e. INSIDE
+  .tool-chrome-tabs, whose border draws the strip's pill; the count
+  inherited it and sat hard against the + button.
+- ToolChrome gained an `AfterTabs` slot (HeaderTabs renders it as a
+  SIBLING of the host + measurer, outside the pill) for chrome that
+  belongs beside the tabs without being one of them. beatboard:
+  TabsExtra = the + only, AfterTabs = OutlineBeatCount. naturalWidth's
+  fit maths picks the new sibling up on its own (it walks row.children).
+- CSS: align-self:center (centers it in the window header row AND in the
+  takeover's flex-end .beat-tabs row) + margin-left:12px + nowrap.
+- check-v652 measures the OUTCOME, not the markup: bare text (no border,
+  not contained by the strip), ≥8px clear of the + button, and within
+  1.5px of the header row's vertical middle.
 ### v6.55 — freeform titles shrink so the title bar has room to grab
 
 - Derek: "make the beat title smaller so that the area for grabbing and

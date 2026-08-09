@@ -37,6 +37,7 @@ export interface ViewState {
   toolbarDdWidths?: Record<string, number>;
   outlineBarZoom?: number;
   outlineBarRowScale?: number;
+  outlineUnsortedWidth?: number;
   scrapbookTreeScale?: number;
   bigBtnInsetPx?: number;
   panelItemScale?: { left: number; right: number };
