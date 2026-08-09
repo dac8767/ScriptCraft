@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.63",
+  "date": "2026-08-09",
+  "changes": [
+   "Settings \u25b8 Presets is now a checklist that makes ONE preset file. Tick the items you want included \u2014 Settings, Customizations, Themes, Workspaces, Outline Presets \u2014 and Export Preset writes them all into a single file. Six separate exports and six separate files are gone.",
+   "An item you have none of yet is shown but can\u2019t be ticked, and says why. Export stays dead until something is ticked, so you can never write an empty preset.",
+   "Import Preset takes one file and applies whatever is in it, after telling you what that is. It still opens every preset file ScriptCraft has ever written \u2014 old full presets, settings backups, customization, theme, workspace and outline-preset files all load as the item they hold."
+  ]
+ },
+ {
   "version": "6.62",
   "date": "2026-08-09",
   "changes": [

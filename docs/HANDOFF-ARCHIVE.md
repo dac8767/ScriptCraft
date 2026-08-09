@@ -153,6 +153,27 @@ reliable; re-run before believing a weird worker failure.
 
 ## Version history — v6.53 and older (newest first)
 
+### v6.58 — an outline tab is DELETED, not "closed"
+
+- Derek (screenshot of the confirm): "replace all instances of 'close'
+  with 'delete'." The dialog's own body already admitted it — "Only this
+  arrangement of sections is deleted" — so "close" was a euphemism for a
+  destructive action. Now: "Delete Outline Tab" / `Delete "<name>"? …` /
+  the danger button reads Delete Tab, and BOTH × tooltips (the header
+  strip's closeTitle and the takeover row's) say "Delete this outline
+  variation (beats are kept)". confirmCloseOutlineTab →
+  confirmDeleteOutlineTab; the store action was already deleteOutlineTab.
+- SCOPE, deliberate: only the tab flow. I surveyed the rest — the other
+  user-facing "Close"es (window/dialog close buttons, "Close Anyway" on a
+  failed save, Customize's "Close this window to lock the layout") close
+  something without destroying it, and renaming those to Delete would be
+  a lie in the other direction. Told Derek that's where I drew the line.
+- ChromeTabs' `closeTitle`/`onClose` PROP names stay — they are the
+  generic strip's affordance, and a future tool may use them for a real
+  close. Only the Outline's strings changed.
+- check-v652 (19) asserts the × tooltip starts with Delete and contains
+  no "close"; catalog rebuilt (the standing rule) so the Helper Text
+  window lists the new wording.
 ### v6.57 — presets FILL their sections (2 pages a beat, sums exact); + divider
 
 - Derek: "the preset for the 2 act structure should include 20 beats in

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.62 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.63 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,47 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.63 — Settings ▸ Presets is a CHECKLIST that makes ONE file
+
+- Derek: "the Settings > Presets tab is not what I want. I want one single
+  preset file that can include all the information for each item on the
+  current preset list. The tab has a checklist of each of these items. If
+  you check an item, preset information for that item will be included in
+  the single preset file." (This is the QUEUED "ONE PRESET EXPORT WINDOW"
+  spec from 2026-07-31, arriving as the Settings tab rather than a new
+  window — see the queue block at the top of this file for the rest of it.)
+- `PRESET_PARTS` (utils/presets.ts) is the registry and the ONE source: the
+  checklist renders from it, `buildPresetBundle` collects from it, and
+  `applyPresetFile` applies through it. A new preset type can't be in the
+  file but missing from the checkbox, or the reverse. Five parts: settings,
+  customize, themes, workspaces, outline.
+- Each part's payload is byte-for-byte what that item's own export always
+  wrote (gatherSettings, buildCustomizeExport, customThemes, workspaces +
+  order, outlinePresetStore.exportJson) — so what a category MEANS didn't
+  change, only how many files come out. The old "Full Preset" row retires
+  into "tick everything"; its payload was gatherSettings, which is the
+  settings part.
+- File: `{ kind: 'preset-bundle', version: 1, includes: [...], parts: {...} }`
+  written as `…_preset.json` (typedExportName, Derek's suffix rule).
+- BACKWARD COMPATIBILITY is the part worth keeping: `readPresetFile`
+  recognises the bundle AND every single-type file the app has ever written
+  (full-preset, settings-backup, customize-export, themes array,
+  workspaces-export, and a bare outline-preset array), each reading as the
+  one part it holds. A preset the app made must never become unopenable.
+- An item the writer has none of renders disabled with a title saying why;
+  Export is disabled until something is ticked (no empty preset file). One
+  part throwing is reported by name — `{ applied, failed }` — instead of
+  taking the rest of the import down.
+- SCOPE, stated to Derek: the checklist governs EXPORT (his words). Import
+  takes one file and applies everything in it after a confirm naming the
+  contents — `applyPresetFile(json, only?)` already takes the filter, so a
+  mirror-image import checklist is a UI change away if he wants it. The
+  other scattered export doors (Customize footer, ThemesTab, Settings ▸
+  Backup) still run their own flows — that half of the queued spec is
+  untouched.
+- Gates: tsc 0, vitest 1157, build ok, check-all 894/0 (presets.test.ts +8,
+  check-v663: 17).
+
 ### v6.62 — the board LIED about where deleted beats went
 
 - Derek (screenshot): "when i deleted the Act II column, instead of the
@@ -375,33 +416,12 @@ Durable bits kept live here:
   and that a 9 / 3 / 12-page split across two variations stays split in the
   store AND in what the bar draws.
 
-### v6.58 — an outline tab is DELETED, not "closed"
-
-- Derek (screenshot of the confirm): "replace all instances of 'close'
-  with 'delete'." The dialog's own body already admitted it — "Only this
-  arrangement of sections is deleted" — so "close" was a euphemism for a
-  destructive action. Now: "Delete Outline Tab" / `Delete "<name>"? …` /
-  the danger button reads Delete Tab, and BOTH × tooltips (the header
-  strip's closeTitle and the takeover row's) say "Delete this outline
-  variation (beats are kept)". confirmCloseOutlineTab →
-  confirmDeleteOutlineTab; the store action was already deleteOutlineTab.
-- SCOPE, deliberate: only the tab flow. I surveyed the rest — the other
-  user-facing "Close"es (window/dialog close buttons, "Close Anyway" on a
-  failed save, Customize's "Close this window to lock the layout") close
-  something without destroying it, and renaming those to Delete would be
-  a lie in the other direction. Told Derek that's where I drew the line.
-- ChromeTabs' `closeTitle`/`onClose` PROP names stay — they are the
-  generic strip's affordance, and a future tool may use them for a real
-  close. Only the Outline's strings changed.
-- check-v652 (19) asserts the × tooltip starts with Delete and contains
-  no "close"; catalog rebuilt (the standing rule) so the Helper Text
-  window lists the new wording.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.58** — an outline tab is DELETED, not "closed" (the tab flow only; other Close buttons stay)
 - **v6.57** — presets fill their sections at ~2 pages a beat with sums exact (presetBeatSpans); divider before the + button
 - **v6.56** — the outline beat count left the tab pill (ToolChrome grew an AfterTabs slot outside the strip)
 - **v6.55** — freeform beat titles shrunk (mindTitleSize 12–16, title width 46%) so the title bar has bare band to grab

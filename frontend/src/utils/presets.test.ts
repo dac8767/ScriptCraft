@@ -16,9 +16,13 @@ import {
   buildCustomizeExport, applyCustomizeExport, parseCustomizeExport,
   buildFullPreset, applyFullPreset,
   applySettingsFromScriptFile,
+  buildPresetBundle, readPresetFile, applyPresetFile, PRESET_PARTS,
+  type PresetBundle, type PresetPartId,
 } from './presets';
 import { useEditorStore } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
+import { useThemeStore } from '../stores/themeStore';
+import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 
 const ed = () => useEditorStore.getState();
 
@@ -149,5 +153,105 @@ describe('customize from an existing script (.odraft)', () => {
   it('refuses a file that is not a ScriptCraft script', () => {
     expect(() => applySettingsFromScriptFile('nope')).toThrow(/valid JSON/);
     expect(() => applySettingsFromScriptFile(JSON.stringify({ kind: 'customize-export' }))).toThrow(/not a ScriptCraft script/);
+  });
+});
+
+/* ── v6.63, Derek: ONE preset file, built from a checklist ────────────────
+   "I want one single preset file that can include all the information for
+   each item on the current preset list… If you check an item, preset
+   information for that item will be included in the single preset file."
+   Two things must hold or the feature lies: only the CHECKED parts go in,
+   and every file the app has ever written still opens. */
+describe('preset bundle (v6.63)', () => {
+  beforeEach(() => {
+    useThemeStore.setState({ customThemes: [] });
+    useOutlinePresetStore.setState({ presets: [] });
+    useEditorStore.setState({ workspaces: {}, workspaceOrder: [] });
+  });
+
+  const parse = (json: string) => JSON.parse(json) as PresetBundle;
+
+  it('includes exactly the ticked items — and nothing else', () => {
+    const doc = parse(buildPresetBundle(['themes', 'settings'], '2026-08-09T00:00:00.000Z'));
+    expect(doc.kind).toBe('preset-bundle');
+    expect(doc.includes).toEqual(['settings', 'themes']);       // registry order
+    expect(Object.keys(doc.parts).sort()).toEqual(['settings', 'themes']);
+    expect(doc.parts.customize).toBeUndefined();
+    expect(doc.parts.workspaces).toBeUndefined();
+    expect(doc.parts.outline).toBeUndefined();
+  });
+
+  it('an empty checklist writes a file with no parts, not a broken one', () => {
+    const doc = parse(buildPresetBundle([], '2026-08-09T00:00:00.000Z'));
+    expect(doc.includes).toEqual([]);
+    expect(doc.parts).toEqual({});
+    expect(() => readPresetFile(JSON.stringify(doc))).toThrow(/empty/);
+  });
+
+  it('every item on the list can be included, and reads back', () => {
+    useThemeStore.getState().saveCustomTheme({ id: 'mine', label: 'Mine', colors: {} } as never);
+    useEditorStore.setState({ workspaces: { Writing: { tools: {} } as never }, workspaceOrder: ['Writing'] });
+    useOutlinePresetStore.setState({ presets: [{ id: 'p1', name: 'Mine', columns: ['A'], pages: [10] }] as never });
+    const ids: PresetPartId[] = PRESET_PARTS.map((p) => p.id);
+    const json = buildPresetBundle(ids, '2026-08-09T00:00:00.000Z');
+    expect(readPresetFile(json).ids).toEqual(ids);
+    const doc = parse(json);
+    expect(Array.isArray(doc.parts.themes) && (doc.parts.themes as unknown[]).length).toBe(1);
+    expect((doc.parts.workspaces as { workspaceOrder: string[] }).workspaceOrder).toEqual(['Writing']);
+  });
+
+  it('a bundle round-trips its parts back into the app', () => {
+    useThemeStore.getState().saveCustomTheme({ id: 'roundtrip', label: 'Round Trip', colors: {} } as never);
+    useEditorStore.setState({ workspaces: { Deck: { tools: {} } as never }, workspaceOrder: ['Deck'] });
+    const json = buildPresetBundle(['themes', 'workspaces'], '2026-08-09T00:00:00.000Z');
+
+    useThemeStore.setState({ customThemes: [] });
+    useEditorStore.setState({ workspaces: {}, workspaceOrder: [] });
+    const { applied, failed } = applyPresetFile(json);
+    expect(failed).toEqual([]);
+    expect(applied).toEqual(['1 theme', '1 workspace']);
+    expect(useThemeStore.getState().customThemes.map((t) => t.id)).toEqual(['roundtrip']);
+    expect(Object.keys(useEditorStore.getState().workspaces)).toEqual(['Deck']);
+  });
+
+  it('`only` applies just the parts asked for', () => {
+    useThemeStore.getState().saveCustomTheme({ id: 'a', label: 'A', colors: {} } as never);
+    useEditorStore.setState({ workspaces: { W: { tools: {} } as never }, workspaceOrder: ['W'] });
+    const json = buildPresetBundle(['themes', 'workspaces'], '2026-08-09T00:00:00.000Z');
+    useThemeStore.setState({ customThemes: [] });
+    useEditorStore.setState({ workspaces: {}, workspaceOrder: [] });
+    applyPresetFile(json, ['themes']);
+    expect(useThemeStore.getState().customThemes).toHaveLength(1);
+    expect(Object.keys(useEditorStore.getState().workspaces)).toHaveLength(0);
+  });
+
+  /* A preset the app wrote must never stop opening. Every single-type file
+     from before v6.63 reads as the one part it holds. */
+  it('still opens every older single-type preset file', () => {
+    expect(readPresetFile(buildFullPreset('2026-01-01T00:00:00.000Z')).ids).toEqual(['settings']);
+    expect(readPresetFile(JSON.stringify({ kind: 'settings-backup', data: { 'opendraft:x': '1' } })).ids).toEqual(['settings']);
+    expect(readPresetFile(buildCustomizeExport('2026-01-01T00:00:00.000Z')).ids).toEqual(['customize']);
+    expect(readPresetFile(JSON.stringify({ kind: 'scriptcraft-themes', version: 1, themes: [{ id: 'a', label: 'A' }] })).ids).toEqual(['themes']);
+    expect(readPresetFile(JSON.stringify({ kind: 'workspaces-export', workspaces: { A: {} }, workspaceOrder: ['A'] })).ids).toEqual(['workspaces']);
+    expect(readPresetFile(JSON.stringify([{ name: 'P', columns: ['A'], pages: [1] }])).ids).toEqual(['outline']);
+  });
+
+  it('refuses a file that is not ours instead of half-applying it', () => {
+    expect(() => readPresetFile('nope')).toThrow(/valid JSON/);
+    expect(() => readPresetFile(JSON.stringify({ hello: 'world' }))).toThrow(/not a ScriptCraft preset/);
+  });
+
+  /* One part failing must not take the rest of the file down with it. */
+  it('reports a part that cannot be applied and still applies the others', () => {
+    useThemeStore.getState().saveCustomTheme({ id: 'ok', label: 'OK', colors: {} } as never);
+    const json = buildPresetBundle(['themes'], '2026-08-09T00:00:00.000Z');
+    const doc = parse(json);
+    doc.includes = ['themes', 'outline'];
+    doc.parts.outline = 'not an array';                    // a corrupt part
+    useThemeStore.setState({ customThemes: [] });
+    const res = applyPresetFile(JSON.stringify(doc));
+    expect(res.applied).toEqual(['1 theme']);
+    expect(res.failed).toEqual(['Outline Presets']);
+    expect(useThemeStore.getState().customThemes).toHaveLength(1);
   });
 });

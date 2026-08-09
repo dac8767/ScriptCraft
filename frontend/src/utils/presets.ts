@@ -12,6 +12,11 @@
  *     outline presets) keep their own flows; the File ▸ Export ▸ Presets
  *     window compiles all of them in one place.
  *
+ * v6.63 replaces the six-files-six-buttons surface with ONE file built from
+ * a checklist — see PRESET_PARTS at the bottom of this file. The builders
+ * above are still the source of each part's payload, so nothing about what a
+ * category MEANS changed; only how many files come out.
+ *
  * Filenames: every preset-type export ends in `_<type>.json` (Derek's rule —
  * the type must be readable off the filename): _settings, _theme, _themes,
  * _customize, _outline-presets, _preset. typedExportName is the ONE builder.
@@ -21,6 +26,7 @@ import { useThemeStore } from '../stores/themeStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { resolveMoresContds, DEFAULT_MORES_CONTDS, type MoresContds, type ThemeId } from '../stores/editorStore';
 import { gatherSettings, applyBackup } from './settingsBackup';
+import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 
 /** `base` + `_<type>.json` — the one place the suffix convention lives. */
 export const typedExportName = (base: string, type: string): string => `${base}_${type}.json`;
@@ -250,4 +256,165 @@ export function applySettingsFromScriptFile(json: string): ScriptSettingsApplied
     out.templateId = content._templateId;
   }
   return out;
+}
+
+/* ── v6.63, Derek: ONE preset file ──────────────────────────────────────
+   "I want one single preset file that can include all the information for
+   each item on the current preset list. The tab has a checklist of each of
+   these items. If you check an item, preset information for that item will
+   be included in the single preset file."
+
+   So the six separate exports become one bundle with a part per checked
+   item. PRESET_PARTS is THE registry: the checklist renders from it, the
+   bundle is built from it, and an imported bundle is applied through it —
+   one list, so a new preset type can never be in the file but missing from
+   the checkbox (or the reverse). Each part's payload is byte-for-byte what
+   that item's own export always wrote, so an old single-type file and a
+   part of a bundle are the same shape. */
+
+export type PresetPartId = 'settings' | 'customize' | 'themes' | 'workspaces' | 'outline';
+
+export interface PresetBundle {
+  app: 'ScriptCraft';
+  kind: 'preset-bundle';
+  version: 1;
+  exportedAt: string;
+  /** The checklist, recorded — which parts this file carries. */
+  includes: PresetPartId[];
+  parts: Partial<Record<PresetPartId, unknown>>;
+}
+
+export interface PresetPart {
+  id: PresetPartId;
+  label: string;
+  /** How many of this thing the app currently holds; null = not a count
+   *  (Settings/Customizations are always there). 0 disables the checkbox. */
+  count: () => number | null;
+  /** The payload this part contributes. */
+  collect: () => unknown;
+  /** Apply a payload back. Returns a short line for the result toast. */
+  apply: (payload: unknown) => string;
+}
+
+export const PRESET_PARTS: PresetPart[] = [
+  {
+    id: 'settings',
+    label: 'Settings',
+    count: () => null,
+    collect: () => gatherSettings(),
+    apply: (p) => {
+      const res = applyBackup(JSON.stringify({ kind: 'settings-backup', data: p }));
+      return `${res.imported} setting${res.imported === 1 ? '' : 's'}`;
+    },
+  },
+  {
+    id: 'customize',
+    label: 'Customizations',
+    count: () => null,
+    collect: () => JSON.parse(buildCustomizeExport(new Date().toISOString())) as unknown,
+    apply: (p) => { applyCustomizeExport(JSON.stringify(p)); return 'customizations'; },
+  },
+  {
+    id: 'themes',
+    label: 'Themes',
+    count: () => useThemeStore.getState().customThemes.length,
+    collect: () => useThemeStore.getState().customThemes,
+    apply: (p) => {
+      const list = Array.isArray(p) ? p : [];
+      const th = useThemeStore.getState();
+      let n = 0;
+      for (const t of list) {
+        const c = t as { id?: unknown; label?: unknown };
+        if (str(c.id) && str(c.label)) { th.saveCustomTheme(t as Parameters<typeof th.saveCustomTheme>[0]); n++; }
+      }
+      return `${n} theme${n === 1 ? '' : 's'}`;
+    },
+  },
+  {
+    id: 'workspaces',
+    label: 'Workspaces',
+    count: () => Object.keys(useEditorStore.getState().workspaces).length,
+    collect: () => {
+      const st = useEditorStore.getState();
+      return { workspaces: st.workspaces, workspaceOrder: st.workspaceOrder };
+    },
+    apply: (p) => {
+      const d = (p ?? {}) as { workspaces?: unknown };
+      const map = (d.workspaces ?? p) as Record<string, never>;
+      if (!map || typeof map !== 'object' || Array.isArray(map)) return '0 workspaces';
+      const added = useEditorStore.getState().importWorkspaces(map);
+      return `${added.length} workspace${added.length === 1 ? '' : 's'}`;
+    },
+  },
+  {
+    id: 'outline',
+    label: 'Outline Presets',
+    count: () => useOutlinePresetStore.getState().presets.length,
+    collect: () => JSON.parse(useOutlinePresetStore.getState().exportJson()) as unknown,
+    apply: (p) => {
+      const res = useOutlinePresetStore.getState().importPresets(JSON.stringify(p));
+      if (res.error) throw new Error(res.error);
+      return `${res.added} outline preset${res.added === 1 ? '' : 's'}`;
+    },
+  },
+];
+
+export const presetPart = (id: PresetPartId): PresetPart | undefined => PRESET_PARTS.find((p) => p.id === id);
+
+/** Build the single file from the checked parts, in registry order. */
+export function buildPresetBundle(checked: PresetPartId[], nowIso: string): string {
+  const includes = PRESET_PARTS.filter((p) => checked.includes(p.id)).map((p) => p.id);
+  const parts: Partial<Record<PresetPartId, unknown>> = {};
+  for (const id of includes) parts[id] = presetPart(id)!.collect();
+  const doc: PresetBundle = { app: 'ScriptCraft', kind: 'preset-bundle', version: 1, exportedAt: nowIso, includes, parts };
+  return JSON.stringify(doc, null, 2);
+}
+
+/** What a file holds, without applying any of it. Understands the bundle AND
+ *  every single-type file the app has ever written, so a preset saved before
+ *  v6.63 still opens — a file the app made must never become unreadable. */
+export function readPresetFile(json: string): { parts: Partial<Record<PresetPartId, unknown>>; ids: PresetPartId[] } {
+  let doc: unknown;
+  try { doc = JSON.parse(json); } catch { throw new Error('That file is not valid JSON.'); }
+  const d = doc as Record<string, unknown>;
+  const parts: Partial<Record<PresetPartId, unknown>> = {};
+
+  if (d && d.kind === 'preset-bundle' && d.parts && typeof d.parts === 'object') {
+    const src = d.parts as Record<string, unknown>;
+    for (const p of PRESET_PARTS) if (src[p.id] !== undefined) parts[p.id] = src[p.id];
+  } else if (d && d.kind === 'full-preset' && d.settings) {
+    // v4.79's "everything" file — its settings blob IS the settings part.
+    parts.settings = d.settings;
+  } else if (d && d.kind === 'settings-backup' && d.data) {
+    parts.settings = d.data;
+  } else if (d && d.kind === 'customize-export') {
+    parts.customize = d;
+  } else if (d && Array.isArray(d.themes)) {
+    parts.themes = d.themes;
+  } else if (d && d.workspaces && typeof d.workspaces === 'object') {
+    parts.workspaces = d;
+  } else if (Array.isArray(doc)) {
+    parts.outline = doc;                       // outlinePresetStore.exportJson()
+  } else {
+    throw new Error('That file is not a ScriptCraft preset.');
+  }
+
+  const ids = PRESET_PARTS.filter((p) => parts[p.id] !== undefined).map((p) => p.id);
+  if (!ids.length) throw new Error('That preset file is empty.');
+  return { parts, ids };
+}
+
+/** Apply a preset file. `only` limits it to those parts (default: all of
+ *  them). Each part reports what it applied; a part that throws is reported
+ *  by name instead of taking the rest of the file down with it. */
+export function applyPresetFile(json: string, only?: PresetPartId[]): { applied: string[]; failed: string[] } {
+  const { parts, ids } = readPresetFile(json);
+  const wanted = only ? ids.filter((id) => only.includes(id)) : ids;
+  const applied: string[] = [];
+  const failed: string[] = [];
+  for (const id of wanted) {
+    const part = presetPart(id)!;
+    try { applied.push(part.apply(parts[id])); } catch { failed.push(part.label); }
+  }
+  return { applied, failed };
 }

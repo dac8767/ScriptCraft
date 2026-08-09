@@ -1962,6 +1962,17 @@
   "label": "Skip for now"
  },
  {
+  "text": "Load a preset file — it applies whatever that file contains",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PresetsPanel.tsx"
+  ],
+  "icon": "FaFileImport",
+  "label": "Import Preset"
+ },
+ {
   "text": "Load customization choices from a file — this replaces your current ones",
   "kind": "tooltip",
   "sites": 1,
@@ -2783,6 +2794,17 @@
   "icon": "FaCheck"
  },
  {
+  "text": "Save the ticked items as one preset file",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PresetsPanel.tsx"
+  ],
+  "icon": "FaFileExport",
+  "label": "Export Preset"
+ },
+ {
   "text": "Save this script to a project to use the Asset Manager",
   "kind": "tooltip",
   "sites": 1,
@@ -3258,6 +3280,26 @@
   "label": "Connect to location…"
  },
  {
+  "text": "Tick at least one item to export",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PresetsPanel.tsx"
+  ],
+  "icon": "FaFileExport",
+  "label": "Export Preset"
+ },
+ {
+  "text": "Tick every item",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PresetsPanel.tsx"
+  ]
+ },
+ {
   "text": "Title Page",
   "kind": "tooltip",
   "sites": 1,
@@ -3309,6 +3351,15 @@
    "components/IndexCards.tsx"
   ],
   "icon": "FaUndo"
+ },
+ {
+  "text": "Untick every item",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PresetsPanel.tsx"
+  ]
  },
  {
   "text": "View",

@@ -16,14 +16,13 @@ import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { useEditorStore } from '../stores/editorStore';
 import {
   buildCustomizeExport, applyCustomizeExport,
-  buildFullPreset, applyFullPreset,
+  buildPresetBundle, readPresetFile, applyPresetFile, presetPart,
+  PRESET_PARTS, type PresetPartId,
   typedExportName, stampedBase,
 } from '../utils/presets';
-import { buildBackup, applyBackup } from '../utils/settingsBackup';
 import { saveFile, openTextFile } from '../utils/fileOps';
 import { confirmDialog } from './ConfirmDialog';
 import { showToast } from './Toast';
-import { extractThemes } from './ThemesTab';
 import { Modal } from './Modal';
 
 const JSON_FILTER = [{ name: 'ScriptCraft Preset', extensions: ['json'] }];
@@ -57,198 +56,122 @@ export async function importCustomizationsFlow(): Promise<boolean> {
   }
 }
 
-interface RowSpec {
-  key: string;
-  label: string;
-  desc: string;
-  onExport?: () => void | Promise<void>;
-  onImport?: () => void | Promise<void>;
-  exportDisabled?: string;   // reason — renders the button disabled with a title
-}
+/* v6.63, Derek: "I want one single preset file that can include all the
+   information for each item on the current preset list. The tab has a
+   checklist of each of these items. If you check an item, preset
+   information for that item will be included in the single preset file."
+   The rows render from PRESET_PARTS (utils/presets.ts) — the same registry
+   that builds the file and applies it, so a checkbox can't drift from what
+   the file actually carries. */
+const PART_DESC: Record<PresetPartId, (n: number | null) => string> = {
+  settings: () => 'Every preference the app remembers — the Settings window, shortcuts, spelling, backup and file options. Applies fully after a restart.',
+  customize: () => 'The Customize window’s choices: toolbar and panel layout, elements and transitions, theme order, context menu, Mores & Continueds. Applies immediately.',
+  themes: (n) => (n ? `Your ${n} custom theme${n === 1 ? '' : 's'}.` : 'Your custom themes. None yet — create one in Customize ▸ Themes.'),
+  workspaces: (n) => (n ? `Your ${n} saved layout${n === 1 ? '' : 's'} — which tools are open, where, and how big.` : 'Saved layouts — which tools are open, where and how big. None saved yet; save one from View ▸ Workspaces.'),
+  outline: (n) => (n ? `Your ${n} saved outline arrangement${n === 1 ? '' : 's'}.` : 'Your saved outline arrangements. None saved yet — save one from the Outline’s Presets menu.'),
+};
 
 export default function PresetsPanel({ showImports = true }: { showImports?: boolean }) {
-  const customThemes = useThemeStore((s) => s.customThemes);
-  const outlinePresets = useOutlinePresetStore((s) => s.presets);
-  const workspaceNames = Object.keys(useEditorStore((s) => s.workspaces));
-  // Bump to re-render after an import changes store-backed counts.
+  // Store reads so the counts (and therefore which rows are available)
+  // re-render as the writer adds themes / workspaces / outline presets.
+  useThemeStore((s) => s.customThemes);
+  useOutlinePresetStore((s) => s.presets);
+  useEditorStore((s) => s.workspaces);
   const [, bump] = useState(0);
 
-  const rows: RowSpec[] = [
-    {
-      key: 'full',
-      label: 'Full Preset',
-      desc: 'Everything the app remembers — Customize, Settings, themes, shortcuts, presets. Importing overrides it all and applies fully after a restart.',
-      onExport: async () => {
-        const now = new Date().toISOString();
-        if (await saveFile(buildFullPreset(now), typedExportName(stampedBase(now), 'preset'), JSON_FILTER)) {
-          showToast('Full preset exported.', 'success');
-        }
-      },
-      onImport: async () => {
-        const file = await openTextFile(JSON_FILTER);
-        if (!file) return;
-        const sure = await confirmDialog(
-          'Are you sure? This will override every stored preference — Customize, Settings, themes, and the rest.',
-          { title: 'Import Full Preset', confirmLabel: 'Import', danger: true },
-        );
-        if (!sure) return;
-        try {
-          const { imported } = applyFullPreset(file.content);
-          showToast(`Imported ${imported} preferences — restart ScriptCraft to apply everything.`, 'success');
-          bump((v) => v + 1);
-        } catch (err) {
-          showToast(err instanceof Error ? err.message : 'Could not import that file.', 'error');
-        }
-      },
-    },
-    {
-      key: 'customize',
-      label: 'Customizations',
-      desc: 'The Customize window’s choices: toolbar and panel layout, elements and transitions, themes, context menu, Mores & Continueds. Importing applies immediately.',
-      onExport: () => void exportCustomizationsFlow(),
-      onImport: async () => { if (await importCustomizationsFlow()) bump((v) => v + 1); },
-    },
-    {
-      key: 'settings',
-      label: 'Settings',
-      desc: 'The Settings window’s preferences (the same file as Settings ▸ System ▸ Export Settings). Importing applies fully after a restart.',
-      onExport: async () => {
-        const now = new Date().toISOString();
-        if (await saveFile(buildBackup(now), typedExportName(stampedBase(now), 'settings'), JSON_FILTER)) {
-          showToast('Settings exported.', 'success');
-        }
-      },
-      onImport: async () => {
-        const file = await openTextFile(JSON_FILTER);
-        if (!file) return;
-        const sure = await confirmDialog(
-          'Import these settings? They override your current preferences and apply fully after a restart.',
-          { title: 'Import Settings', confirmLabel: 'Import', danger: true },
-        );
-        if (!sure) return;
-        try {
-          const res = applyBackup(file.content);
-          showToast(`Imported ${res.imported} settings — restart ScriptCraft to apply everything.`, 'success');
-          bump((v) => v + 1);
-        } catch (err) {
-          showToast(err instanceof Error ? err.message : 'Could not import that file.', 'error');
-        }
-      },
-    },
-    {
-      key: 'themes',
-      label: 'Themes',
-      desc: customThemes.length
-        ? `Your ${customThemes.length} custom theme${customThemes.length === 1 ? '' : 's'} in one file. (Single-theme export lives in Customize ▸ Themes.)`
-        : 'Your custom themes in one file. No custom themes yet — create one in Customize ▸ Themes.',
-      exportDisabled: customThemes.length ? undefined : 'No custom themes to export',
-      onExport: async () => {
-        const payload = { kind: 'scriptcraft-themes', version: 1, themes: customThemes };
-        if (await saveFile(JSON.stringify(payload, null, 2), typedExportName('scriptcraft-all', 'themes'), JSON_FILTER)) {
-          showToast(`Exported ${customThemes.length} theme${customThemes.length === 1 ? '' : 's'}.`, 'success');
-        }
-      },
-      onImport: async () => {
-        const file = await openTextFile(JSON_FILTER);
-        if (!file) return;
-        try {
-          const found = extractThemes(JSON.parse(file.content));
-          if (!found.length) { showToast('No themes found in that file.', 'info'); return; }
-          const th = useThemeStore.getState();
-          for (const t of found) th.saveCustomTheme(t);
-          showToast(`Imported ${found.length} theme${found.length === 1 ? '' : 's'}.`, 'success');
-          bump((v) => v + 1);
-        } catch (err) {
-          showToast(err instanceof Error ? err.message : 'Could not read that file.', 'error');
-        }
-      },
-    },
-    {
-      key: 'workspaces',
-      label: 'Workspaces',
-      desc: workspaceNames.length
-        ? `Your ${workspaceNames.length} saved layout${workspaceNames.length === 1 ? '' : 's'} — which tools are open, where, and how big.`
-        : 'Saved layouts — which tools are open, where, and how big. None saved yet; save one from View ▸ Workspaces.',
-      exportDisabled: workspaceNames.length ? undefined : 'No workspaces to export',
-      onExport: async () => {
-        const st = useEditorStore.getState();
-        const payload = {
-          app: 'ScriptCraft', kind: 'workspaces-export', version: 1,
-          workspaces: st.workspaces, workspaceOrder: st.workspaceOrder,
-        };
-        if (await saveFile(JSON.stringify(payload, null, 2), typedExportName('scriptcraft', 'workspaces'), JSON_FILTER)) {
-          showToast(`Exported ${workspaceNames.length} workspace${workspaceNames.length === 1 ? '' : 's'}.`, 'success');
-        }
-      },
-      onImport: async () => {
-        // Accepts our export, a raw workspaces map, or another project's
-        // .odraft — the same shapes View ▸ Workspaces ▸ Import accepts, since
-        // importWorkspaces does the merging either way.
-        const file = await openTextFile([{ name: 'ScriptCraft Workspaces or Script', extensions: ['json', 'odraft'] }]);
-        if (!file) return;
-        try {
-          const doc = JSON.parse(file.content) as Record<string, unknown>;
-          const map = (doc.workspaces ?? (doc.content as Record<string, unknown> | undefined)?._workspaces ?? doc) as Record<string, never>;
-          if (!map || typeof map !== 'object' || Array.isArray(map)) { showToast('No workspaces found in that file.', 'info'); return; }
-          const added = useEditorStore.getState().importWorkspaces(map);
-          showToast(added.length ? `Imported ${added.length} workspace${added.length === 1 ? '' : 's'}.` : 'No workspaces found in that file.', added.length ? 'success' : 'info');
-          bump((v) => v + 1);
-        } catch (err) {
-          showToast(err instanceof Error ? err.message : 'Could not read that file.', 'error');
-        }
-      },
-    },
-    {
-      key: 'outline',
-      label: 'Outline Presets',
-      desc: outlinePresets.length
-        ? `Your ${outlinePresets.length} saved outline arrangement${outlinePresets.length === 1 ? '' : 's'}.`
-        : 'Your saved outline arrangements. None saved yet — save one from the Outline’s Arrangement menu.',
-      exportDisabled: outlinePresets.length ? undefined : 'No outline presets to export',
-      onExport: async () => {
-        const store = useOutlinePresetStore.getState();
-        if (await saveFile(store.exportJson(), typedExportName('scriptcraft', 'outline-presets'), JSON_FILTER)) {
-          showToast('Outline presets exported.', 'success');
-        }
-      },
-      onImport: async () => {
-        const file = await openTextFile(JSON_FILTER);
-        if (!file) return;
-        const result = useOutlinePresetStore.getState().importPresets(file.content);
-        if (result.error) showToast(result.error, 'error');
-        else {
-          showToast(`Imported ${result.added} preset${result.added === 1 ? '' : 's'}${result.skipped ? ` (${result.skipped} skipped)` : ''}.`, result.added > 0 ? 'success' : 'info');
-          bump((v) => v + 1);
-        }
-      },
-    },
-  ];
+  const counts = Object.fromEntries(PRESET_PARTS.map((p) => [p.id, p.count()])) as Record<PresetPartId, number | null>;
+  const available = PRESET_PARTS.filter((p) => counts[p.id] !== 0).map((p) => p.id);
+  // Everything the app actually has is checked to begin with — the common
+  // case is "save all of it", and the old Full Preset was one click.
+  const [checked, setChecked] = useState<PresetPartId[]>(available);
+  const on = (id: PresetPartId) => checked.includes(id) && counts[id] !== 0;
+  const live = checked.filter((id) => counts[id] !== 0);
+  const allOn = available.length > 0 && available.every((id) => checked.includes(id));
+
+  const toggle = (id: PresetPartId) =>
+    setChecked((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
+
+  const exportBundle = async () => {
+    if (!live.length) return;
+    const now = new Date().toISOString();
+    if (await saveFile(buildPresetBundle(live, now), typedExportName(stampedBase(now), 'preset'), JSON_FILTER)) {
+      showToast(`Preset exported — ${live.length} item${live.length === 1 ? '' : 's'} included.`, 'success');
+    }
+  };
+
+  const importBundle = async () => {
+    const file = await openTextFile([{ name: 'ScriptCraft Preset', extensions: ['json', 'odraft'] }]);
+    if (!file) return;
+    let ids: PresetPartId[];
+    try {
+      ids = readPresetFile(file.content).ids;
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not read that file.', 'error');
+      return;
+    }
+    const names = ids.map((id) => presetPart(id)!.label).join(', ');
+    const sure = await confirmDialog(
+      `This preset contains: ${names}.\n\nImporting overrides what you have for each of those. Nothing else is touched.`,
+      { title: 'Import Preset', confirmLabel: 'Import', danger: true },
+    );
+    if (!sure) return;
+    try {
+      const { applied, failed } = applyPresetFile(file.content);
+      bump((v) => v + 1);
+      const done = applied.join(', ');
+      if (failed.length) showToast(`Imported ${done}. Could not apply: ${failed.join(', ')}.`, 'error');
+      else showToast(`Imported ${done} — restart ScriptCraft to apply everything.`, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not import that file.', 'error');
+    }
+  };
 
   return (
     <div className="fs-presets">
-      {rows.map((r) => (
-        <div key={r.key} className="fs-presets-row">
-          <div className="fs-presets-meta">
-            <div className="fs-presets-label">{r.label}</div>
-            <div className="fs-presets-desc">{r.desc}</div>
-          </div>
-          <div className="fs-presets-actions">
-            <button
-              className="fs-presets-btn"
-              disabled={!!r.exportDisabled}
-              title={r.exportDisabled ?? `Export ${r.label.toLowerCase()} to a file`}
-              onClick={() => void r.onExport?.()}
-            ><FaFileExport aria-hidden /> Export</button>
-            {showImports && r.onImport && (
-              <button
-                className="fs-presets-btn"
-                title={`Import ${r.label.toLowerCase()} from a file`}
-                onClick={() => void r.onImport?.()}
-              ><FaFileImport aria-hidden /> Import</button>
-            )}
-          </div>
-        </div>
-      ))}
+      <div className="fs-presets-intro">
+        Tick what to include. Everything you tick is saved in ONE preset file.
+        <button
+          className="fs-presets-all"
+          onClick={() => setChecked(allOn ? [] : available)}
+          title={allOn ? 'Untick every item' : 'Tick every item'}
+        >{allOn ? 'Select none' : 'Select all'}</button>
+      </div>
+
+      {PRESET_PARTS.map((p) => {
+        const empty = counts[p.id] === 0;
+        return (
+          <label key={p.id} className={`fs-presets-row${empty ? ' fs-presets-row-empty' : ''}`}>
+            <input
+              type="checkbox"
+              className="fs-presets-check"
+              checked={on(p.id)}
+              disabled={empty}
+              onChange={() => toggle(p.id)}
+              title={empty ? `Nothing to include — you have no ${p.label.toLowerCase()} yet` : `Include ${p.label.toLowerCase()} in the preset file`}
+            />
+            <div className="fs-presets-meta">
+              <div className="fs-presets-label">{p.label}</div>
+              <div className="fs-presets-desc">{PART_DESC[p.id](counts[p.id])}</div>
+            </div>
+          </label>
+        );
+      })}
+
+      <div className="fs-presets-footer">
+        <button
+          className="fs-presets-btn fs-presets-btn-primary"
+          disabled={!live.length}
+          title={live.length ? 'Save the ticked items as one preset file' : 'Tick at least one item to export'}
+          onClick={() => void exportBundle()}
+        ><FaFileExport aria-hidden /> Export Preset</button>
+        {showImports && (
+          <button
+            className="fs-presets-btn"
+            title="Load a preset file — it applies whatever that file contains"
+            onClick={() => void importBundle()}
+          ><FaFileImport aria-hidden /> Import Preset</button>
+        )}
+      </div>
     </div>
   );
 }
