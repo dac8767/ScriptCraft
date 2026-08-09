@@ -126,13 +126,16 @@ const ANNOTATABLE = new Set([
  *  already carrying an anchor. Two sections can resolve to the same spot
  *  (pages the script hasn't reached yet), and one element can only hold one
  *  markupId — without this the second section would silently evict the
- *  first. Returns null when the script has nowhere left to put it. */
-export function freeAnchorPos(editor: Editor, at: number, taken: Set<number>): number | null {
+ *  first. `live` is the set of annotation ids that still EXIST: an element
+ *  left stamped with a deleted annotation's id is free, not occupied for
+ *  ever. Returns null when the script has nowhere left to put it. */
+export function freeAnchorPos(editor: Editor, at: number, taken: Set<number>, live: Set<string>): number | null {
   const doc = editor.state.doc;
   let first: number | null = null;
   let after: number | null = null;
   doc.forEach((node, pos) => {
-    if (!ANNOTATABLE.has(node.type.name) || node.attrs?.markupId || taken.has(pos)) return;
+    const held = node.attrs?.markupId as string | null;
+    if (!ANNOTATABLE.has(node.type.name) || (held && live.has(held)) || taken.has(pos)) return;
     if (first === null) first = pos;
     if (after === null && pos >= at) after = pos;
   });
@@ -158,10 +161,11 @@ export function sendSectionsToScript(
 
   const tr = editor.state.tr;
   const taken = new Set<number>();
+  const live = new Set(st.markups.map((m) => m.id));
   const made: ScriptMarkup[] = [];
   for (const sec of missing) {
     const want = (sec.page != null ? posForPage(sec.page) : null) ?? editor.state.doc.content.size;
-    const at = freeAnchorPos(editor, want, taken);
+    const at = freeAnchorPos(editor, want, taken, live);
     if (at === null) continue;                      // no element left to hold it
     taken.add(at);
     const node = editor.state.doc.nodeAt(at);

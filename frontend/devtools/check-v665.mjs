@@ -171,6 +171,47 @@ try {
   ok(!swept.includes('# Section 1'), 'and the next send clears it out');
   ok(swept === textBefore, 'leaving the script exactly as the writer wrote it');
 
+  /* ── v6.66, Derek: "each section is 1 page, so section 1 should be at the
+     top of page 1, the next at the top of page 2, etc. But … that is not
+     where the section annotations were placed."
+     v6.65 mapped a page to the SCENE covering it — the Outline Bar's own
+     estimate — so a 1-page section landed wherever its scene began. Ground
+     truth here is the PAGINATOR's: it pushes each page's first element down
+     with a big inline margin-top, so those elements are the page tops. ── */
+  const onePagers = await page.evaluate(() => {
+    const st = window.__scStore.getState();
+    st.setBeatColumns([]); st.setMarkups([]);
+    return ['Page One', 'Page Two', 'Page Three'].map((t) => st.addBeatColumn(t, 1));
+  });
+  await settle(page);
+  await page.click('button[title^="Send to Script"]');
+  await page.waitForSelector('.fs-confirm-overlay', { timeout: 5000 });
+  await page.click('.fs-confirm-ok');
+  await settle(page);
+  const placed = await page.evaluate((ids) => {
+    const st = window.__scStore.getState();
+    const kids = [...document.querySelectorAll('.ProseMirror > *')];
+    // element 0 opens page 1; every later page starts at the element the
+    // paginator pushed down
+    const tops = kids.map((el, i) => ({ i, mt: parseFloat(el.style.marginTop || '0') }))
+      .filter((x) => x.i === 0 || x.mt > 20)
+      .map((x) => x.i);
+    const anchorIdx = (mkId) => kids.findIndex((el) => el.getAttribute('data-markup-block') === mkId);
+    return {
+      pages: tops.length,
+      rows: ids.map((secId) => {
+        const m = st.markups.find((x) => x.outlineSectionId === secId);
+        const idx = m ? anchorIdx(m.id) : -1;
+        return { idx, atTopOfPage: tops.indexOf(idx) + 1 };
+      }),
+    };
+  }, onePagers);
+  ok(placed.pages >= 3, `the seeded script really is more than 3 pages long (${placed.pages})`);
+  placed.rows.forEach((r, i) => {
+    ok(r.atTopOfPage === i + 1,
+      `the 1-page section ${i + 1} anchors at the TOP OF PAGE ${i + 1} (element ${r.idx}${r.atTopOfPage ? `, top of page ${r.atTopOfPage}` : ', not a page top'})`);
+  });
+
 } catch (e) {
   console.log('PROBE ERROR:', e.message);
   fail++;

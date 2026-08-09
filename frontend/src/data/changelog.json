@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.66",
+  "date": "2026-08-09",
+  "changes": [
+   "Send to Script now anchors each section annotation at the TOP OF THE PAGE that section starts on. With three one-page sections you get one at the top of page 1, one at the top of page 2 and one at the top of page 3. It had been landing on whichever scene happened to cover that page, which is not the same thing.",
+   "An element left carrying a deleted annotation\u2019s anchor no longer blocks that spot for good \u2014 a section can anchor there again."
+  ]
+ },
+ {
   "version": "6.65",
   "date": "2026-08-09",
   "changes": [

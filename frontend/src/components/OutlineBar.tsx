@@ -25,7 +25,7 @@ import type { Editor } from '@tiptap/react';
 import { FaFileExport, FaStream, FaLayerGroup, FaDotCircle, FaRegCircle, FaArrowsAltH } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, DEFAULT_OUTLINE_BAR_ROWS, type BeatInfo, type BeatColumn } from '../stores/editorStore';
 import { dockWidthFor, toolDef } from './ToolDock';
-import { computeSceneLengths } from '../editor/pagination';
+import { computeSceneLengths, computePageBlocks, posAfterScriptPageIn } from '../editor/pagination';
 import AddMenu from './AddMenu';
 import { showToast } from './Toast';
 import { sendSectionsToScript, clearLegacySectionLines } from '../utils/outlineScriptSync';
@@ -427,13 +427,25 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
      format instead of as an annotation like I requested". Each annotation
      keeps mirroring its section (utils/outlineScriptSync); sending twice
      updates instead of duplicating. */
+  /* v6.66, Derek: "each section is 1 page, so this means section 1 should be
+     at the top of page 1, the next at the top of page 2, etc. But … that is
+     not where the section annotations were placed."
+     v6.65 mapped a page to the SCENE whose estimated range covered it — the
+     Outline Bar's own scene arithmetic, not the script's real pagination, so
+     a section landed wherever its scene happened to start. The paginator is
+     the only thing that knows where a page begins: computePageBlocks gives
+     the blocks per page, and posAfterScriptPageIn(n-1) is the first block of
+     page n — the SAME pure boundary function the Pages tool and the Custom
+     Page dialog resolve through. */
   const posForPage = (page: number): number | null => {
-    if (!scenes.length) return null;
-    // The same page→script mapping double-clicking a bar item already uses:
-    // the scene whose real page range contains that page.
-    const scene = scenes.find((sc) => page >= sc.start && page < sc.start + sc.pages);
-    if (scene) return scene.pos;
-    return page < scenes[0].start ? scenes[0].pos : null;   // past the end → end
+    if (!editor || editor.isDestroyed) return null;
+    const n = Math.max(1, Math.round(page));
+    try {
+      const pages = computePageBlocks(editor.state.doc, pageLayout);
+      return posAfterScriptPageIn(pages, n - 1, editor.state.doc.content.size);
+    } catch {
+      return null;                                  // mid-transaction
+    }
   };
 
   const sendToScript = () => {

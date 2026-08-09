@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.65 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.66 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,7 +227,7 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v6.64 → v6.65 — Send to Script makes LIVE ANNOTATIONS
+### v6.64 → v6.66 — Send to Script makes LIVE ANNOTATIONS
 
 - Derek: "the 'send to script' button in the outline toolbar adds the
   section header as an annotation at the indicated page location. if section
@@ -268,12 +268,32 @@ Durable bits kept live here:
   drag doesn't rewrite anything. A hand-made annotation (no
   outlineSectionId) is never rewritten; a deleted section leaves its
   annotation as it stands.
-- check-v665 (19) drives it for real: annotations not script text (the doc's
+- **v6.66 — the PAGE mapping.** Derek: "each section is 1 page, so section
+  1 should be at the top of page 1, the next at the top of page 2, etc. But
+  … that is not where the section annotations were placed." v6.65's
+  `posForPage` reused the Outline Bar's own scene arithmetic — the SCENE
+  whose estimated range covered the page — so a section landed wherever its
+  scene began. Only the paginator knows where a page starts:
+  `computePageBlocks` + `posAfterScriptPageIn(n - 1)` is the first block of
+  page n, the SAME pure boundary function the Pages tool and the Custom Page
+  dialog resolve through. Verified: page tops at element 0/18/36, three
+  1-page sections anchored at 0/18/36.
+- **v6.66 — orphaned anchors.** `freeAnchorPos` treated ANY element carrying
+  a markupId as occupied. An element still stamped with a DELETED
+  annotation's id was therefore blocked for ever. It now takes the set of
+  live annotation ids, so a stale stamp reads as free.
+- CHECK-WRITING LESSON: my first placement assert measured icon Y against
+  `.page` boxes — and there is only ONE `.page` container in the editor;
+  the page breaks are `margin-top` decorations on the element that OPENS
+  each page. The assert reported a failure the product didn't have, and the
+  fix was to measure the paginator's own ground truth (element 0 plus every
+  element with a big inline margin-top ARE the page tops).
+- check-v665 (23) drives it for real: annotations not script text (the doc's
   textContent is byte-identical before and after), anchor placement, the
   rename/page rewrites, mirroring with the bar CLOSED, no duplicates, no
   eviction when four sections compete for anchors, the hand-made case, the
   deleted-section case, and the v6.64 sweep.
-- Gates: tsc 0, vitest 1173, build ok, check-all 913/0.
+- Gates: tsc 0, vitest 1173, build ok, check-all 917/0.
 
 ### v6.63 — Settings ▸ Presets is a CHECKLIST that makes ONE file
 
