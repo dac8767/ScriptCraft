@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.50",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline: the view control in the header now shows just the current view's icon and name — Sections or Freeform — like every other window; the word \"View\" is gone, and both options carry icons in the menu.",
+   "Outline: + Add Section leads the body row at the far left, with breathing room before the Presets dropdown.",
+   "Outline: the checkbox now reads \"Show this outline in the outline bar\"."
+  ]
+ },
+ {
   "version": "6.49",
   "date": "2026-08-08",
   "changes": [

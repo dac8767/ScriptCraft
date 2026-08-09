@@ -463,12 +463,14 @@
    removed, the v6.48 :has() grow workaround could go too.) */
 .beat-header-controls .fs-help-btn { margin-left: auto; }
 /* v6.49, Derek: Presets + the add button live in the BODY's first row now
-   (left side; "Show in Outline Bar" holds the row's right edge). */
+   (left side; the bar checkbox holds the row's right edge). v6.50: the add
+   button leads, with extra air before the Presets dropdown. */
 .beat-tabs-actions {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
+.beat-tabs-actions .beat-board-add-col-btn { margin-right: 8px; }
 .beat-tabs-actions .beat-board-preset { max-width: 160px; }
 .beat-tabs-actions .beat-board-add-col-btn { white-space: nowrap; }
 /* The circled-? icon carries its own ring now — the button is bare. */

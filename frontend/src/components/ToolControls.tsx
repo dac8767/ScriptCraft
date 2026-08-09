@@ -96,6 +96,8 @@ export interface ControlDropdownItem {
   keepOpen?: boolean;
   /** v6.49 (the Outline's color filter): a small color dot before the label. */
   swatch?: string;
+  /** v6.50 (the Outline's view options): an icon before the label. */
+  icon?: React.ReactNode;
 }
 
 /** One tab of a window's row-2 strip (TOOL_CHROME.useTabs). */
@@ -172,6 +174,7 @@ export const ControlDropdown: React.FC<{
               onClick={() => { if (!it.keepOpen) close(); it.onSelect(); }}
             >
               {it.swatch && <span className="tool-ctl-swatch" style={{ background: it.swatch }} />}
+              {it.icon && <span className="tool-ctl-item-icon">{it.icon}</span>}
               {it.label}
             </button>
           ))}

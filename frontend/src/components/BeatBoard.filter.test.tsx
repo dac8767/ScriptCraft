@@ -58,7 +58,13 @@ describe('OutlineHeaderControls (v6.49 cluster)', () => {
     act(() => { root.render(<OutlineHeaderControls />); });
     const labels = [...host.querySelectorAll('.tool-ctl .tool-ctl-label')].map((el) => el.textContent);
     expect(labels).toContain('Filter');
-    expect(labels).toContain('View');
+    // v6.50, Derek: the View trigger shows only the CURRENT view's icon +
+    // name (no "View" word) — the slot stamp comes from the title.
+    const view = host.querySelector('[data-ctl="view"]');
+    expect(view).toBeTruthy();
+    expect(view?.textContent).toBe('Sections');
+    expect(view?.querySelector('svg')).toBeTruthy();
+    expect(view?.textContent).not.toContain('View');
     expect(host.querySelector('[data-ctl="search"], .tool-ctl-search-field')).toBeTruthy();
     expect(host.querySelector('.beat-mode-center')).toBeNull();
     expect(host.querySelector('.beat-mode-btn')).toBeNull();

@@ -29,6 +29,8 @@ try {
     const hc = win?.querySelector('.beat-header-controls');
     return {
       ctlLabels: [...(hc?.querySelectorAll('.tool-ctl .tool-ctl-label') ?? [])].map((el) => el.textContent),
+      viewCurrent: hc?.querySelector('[data-ctl="view"]')?.textContent,
+      viewIcon: !!hc?.querySelector('[data-ctl="view"] svg'),
       searchBtn: !!hc?.querySelector('[data-ctl="search"], .tool-ctl-search-field'),
       modeCenter: !!document.querySelector('.beat-mode-center'),
       modeBtns: !!document.querySelector('.beat-mode-btn'),
@@ -36,7 +38,8 @@ try {
       help: !!hc?.querySelector('.fs-help-btn'),
     };
   }, W);
-  ok(header.ctlLabels.includes('Filter') && header.ctlLabels.includes('View'), `header has Filter + View dropdowns (${JSON.stringify(header.ctlLabels)})`);
+  ok(header.ctlLabels.includes('Filter') && !header.ctlLabels.includes('View'), `header has Filter; the View trigger shows only the current view (${JSON.stringify(header.ctlLabels)})`);
+  ok(header.viewCurrent === 'Sections' && header.viewIcon, `View trigger reads icon + "${header.viewCurrent}"`);
   ok(header.searchBtn, 'header has the standard search control');
   ok(!header.modeCenter && !header.modeBtns, 'the Arrangement label/buttons are gone');
   ok(!header.colorAll, '"Show beat color on all tabs" is gone');
@@ -54,6 +57,7 @@ try {
     const cr = check?.getBoundingClientRect();
     return {
       hasPreset: !!preset, addLabel: add?.textContent, hasCheck: !!check,
+      addLeftOfPreset: !!(add && preset) && add.getBoundingClientRect().right + 8 <= preset.x,
       checkText: check?.textContent, checkbox: !!check?.querySelector('input[type="checkbox"]'),
       presetLeftish: preset ? preset.x - rr.x < 200 : false,
       checkRightGap: cr ? Math.round(rr.right - cr.right) : -1,
@@ -62,22 +66,26 @@ try {
   }, W);
   ok(row && row.hasPreset && row.addLabel?.includes('Add Section'), 'Presets + "+ Add Section" render in the body first row');
   ok(row?.presetLeftish, 'Presets/Add hold the row\'s left side');
-  ok(row?.hasCheck && row.checkbox && row.checkText?.includes('Show in Outline Bar'), '"Show in Outline Bar" rides the same row');
+  ok(row?.hasCheck && row.checkbox && row.checkText?.includes('Show this outline in the outline bar'), '"Show this outline in the outline bar" rides the same row');
+  ok(row?.addLeftOfPreset, 'the add button sits far left, before Presets (with air between)');
   ok(row != null && row.checkRightGap >= 0 && row.checkRightGap < 40, `…aligned right (gap to row edge: ${row?.checkRightGap}px)`);
   ok(!row?.inHeader, 'neither lives in the header cluster anymore');
 
   // ── 1: the View dropdown navigates arrangements ──
-  await page.click(`${W} .beat-header-controls .tool-ctl:has(.tool-ctl-label:text-is("View"))`);
+  await page.click(`${W} .beat-header-controls [data-ctl="view"]`);
   await settle(page);
   const viewItems = await page.evaluate(() =>
-    [...document.querySelectorAll('.tool-ctl-menu .tool-ctl-menu-item')].map((el) => el.textContent.trim()));
-  ok(viewItems.includes('Sections') && viewItems.includes('Freeform'), `View menu = Sections/Freeform (${JSON.stringify(viewItems)})`);
-  await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Freeform")');
+    [...document.querySelectorAll('.tool-ctl-menu .tool-ctl-menu-item')].map((el) => ({
+      label: el.textContent.trim(), icon: !!el.querySelector('.tool-ctl-item-icon svg'),
+    })));
+  ok(viewItems.some((i) => i.label === 'Sections' && i.icon) && viewItems.some((i) => i.label === 'Freeform' && i.icon),
+    `View menu = Sections/Freeform, each with an icon (${JSON.stringify(viewItems)})`);
+  await page.click('.tool-ctl-menu .tool-ctl-menu-item:has-text("Freeform")');
   await settle(page);
   const mode1 = await page.evaluate(() => window.__scStore.getState().beatArrangeMode);
   ok(mode1 === 'custom', `picking Freeform jumps to a Freeform tab (mode=${mode1})`);
-  await page.click(`${W} .beat-header-controls .tool-ctl:has(.tool-ctl-label:text-is("View"))`);
-  await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Sections")');
+  await page.click(`${W} .beat-header-controls [data-ctl="view"]`);
+  await page.click('.tool-ctl-menu .tool-ctl-menu-item:has-text("Sections")');
   await settle(page);
   ok(await page.evaluate(() => window.__scStore.getState().beatArrangeMode) === 'auto', 'and back to Sections');
 

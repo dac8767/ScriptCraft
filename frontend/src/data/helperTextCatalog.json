@@ -2441,13 +2441,14 @@
  {
   "text": "View",
   "kind": "tooltip",
-  "sites": 4,
-  "area": "Characters Window",
+  "sites": 5,
+  "area": "Outline Window",
   "where": [
+   "components/BeatBoard.tsx",
    "components/CharacterProfiles.tsx",
    "components/SceneNavigator.tsx"
   ],
-  "icon": "LuWaypoints"
+  "icon": "LuColumns3"
  },
  {
   "text": "View this snapshot in the editor (read-only)",

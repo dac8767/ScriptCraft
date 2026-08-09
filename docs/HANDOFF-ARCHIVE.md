@@ -151,7 +151,23 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.44 and older (newest first)
+## Version history — v6.45 and older (newest first)
+
+### v6.45 — Upload Voice Clip removed from the character window
+
+- Derek: "remove the 'upload voice clip' tool from the character window."
+  SCOPE READ: the TOOL, not the section — the Voice Profile photo-row
+  toggle and its Speech Pattern / Vocabulary fields STAY (they're
+  writing fields); renderVoiceButton (upload / player+Replace+Remove),
+  the handlers, the hidden audio input, and AssetAudio (CharacterProfiles
+  was its only consumer) are gone. `.char-profile-voice-btn` CSS KEPT —
+  the Relationships/Appears-in/Voice-Profile toggles wear it; the
+  player-row CSS block (28 lines) removed. characterProfile.voiceProfile
+  stays in the type (saved scripts carry it; annotated HISTORICAL like
+  rotationLocked). Helper catalog regenerated (366).
+- Print (v6.44) still awaits Derek's verdict — if it crashed again, ask
+  for `cat "$HOME/Library/Application Support/com.freedraft.app/print/
+  print-debug.log"` FIRST; plan B (out-of-process helper) is declared.
 
 ### v6.44 — print round 4: nil NSPrintInfo + BREADCRUMBS; Settings→app menu
 

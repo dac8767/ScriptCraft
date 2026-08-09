@@ -24,7 +24,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
 import { FaLink, FaPaperclip, FaRegQuestionCircle, FaRegTrashAlt } from 'react-icons/fa';
-import { LuRotateCcw } from 'react-icons/lu';
+import { LuRotateCcw, LuColumns3, LuWaypoints } from 'react-icons/lu';
 import { ExpandIcon, ShrinkIcon } from './uiIcons';
 import { readableTextOn } from '../utils/palettes';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
@@ -1087,6 +1087,15 @@ export function OutlineTabActions() {
 
   return (
     <span className="beat-tabs-actions">
+      {/* v6.50, Derek: the add button leads (far left), Presets follows
+          with its own breathing room (the CSS margin). */}
+      {beatArrangeMode === 'auto' ? (
+        // v6.38, Derek: the standard blue primary look (fs-btn-primary) —
+        // both modes' add button, one slot.
+        <button className="beat-board-add-col-btn fs-btn-primary" onClick={handleAddColumn}>+ Add Section</button>
+      ) : (
+        <button className="beat-board-add-col-btn fs-btn-primary" onClick={handleAddBeatFree}>+ Add Beat</button>
+      )}
       {beatArrangeMode === 'auto' && (
         <select
           className="beat-board-preset"
@@ -1114,13 +1123,6 @@ export function OutlineTabActions() {
           </optgroup>
         </select>
       )}
-      {beatArrangeMode === 'auto' ? (
-        // v6.38, Derek: the standard blue primary look (fs-btn-primary) —
-        // both modes' add button, one slot.
-        <button className="beat-board-add-col-btn fs-btn-primary" onClick={handleAddColumn}>+ Add Section</button>
-      ) : (
-        <button className="beat-board-add-col-btn fs-btn-primary" onClick={handleAddBeatFree}>+ Add Beat</button>
-      )}
     </span>
   );
 }
@@ -1147,7 +1149,7 @@ export function OutlineBarCheck() {
         disabled={isBarTab}
         onChange={() => useEditorStore.getState().setOutlineBarTab(viewedTab)}
       />
-      Show in Outline Bar
+      Show this outline in the outline bar
     </label>
   );
 }
@@ -1206,15 +1208,18 @@ export function OutlineHeaderControls() {
           : `${beatCount} beat${beatCount !== 1 ? 's' : ''}`}
       </span>
       {/* v5.80's canonical cluster order: View · Filter · Sort · Search.
-          v2.47's rule still holds: a tab is bound to its arrangement for
-          life, so picking a view NAVIGATES — it jumps to a tab of the
-          asked-for arrangement, creating one if none exists. */}
+          v6.50, Derek: the trigger shows just the CURRENT view (icon +
+          name, the Characters-window pattern) — no "View" word. v2.47's
+          rule still holds: a tab is bound to its arrangement for life, so
+          picking a view NAVIGATES — it jumps to a tab of the asked-for
+          arrangement, creating one if none exists. */}
       <ControlDropdown
-        label="View"
+        title="View"
+        icon={beatArrangeMode === 'auto' ? <LuColumns3 /> : <LuWaypoints />}
         current={beatArrangeMode === 'auto' ? 'Sections' : 'Freeform'}
         items={[
-          { label: 'Sections', active: beatArrangeMode === 'auto', onSelect: () => goToArrangement('auto') },
-          { label: 'Freeform', active: beatArrangeMode === 'custom', onSelect: () => goToArrangement('custom') },
+          { label: 'Sections', icon: <LuColumns3 />, active: beatArrangeMode === 'auto', onSelect: () => goToArrangement('auto') },
+          { label: 'Freeform', icon: <LuWaypoints />, active: beatArrangeMode === 'custom', onSelect: () => goToArrangement('custom') },
         ]}
       />
       <ControlDropdown

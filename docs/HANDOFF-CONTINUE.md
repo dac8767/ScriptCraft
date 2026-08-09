@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.49 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.50 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,23 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.50 — Outline polish: bare View trigger + option icons; add-button leads
+
+- Derek's four: (1) the View trigger drops the word "View" — icon + the
+  CURRENT view's name only (the Characters-window pattern: no `label`,
+  `title="View"`, `icon` swaps with the mode; data-ctl still stamps
+  'view' because chromeSlotOf reads label ?? title, so the v5.80 order
+  test keeps covering it); (2) Sections/Freeform menu OPTIONS carry
+  icons — ControlDropdownItem gained optional `icon` (LuColumns3 /
+  LuWaypoints, monotone); (3) the bar checkbox reads "Show this outline
+  in the outline bar"; (4) "+ Add Section" (or + Add Beat in Freeform)
+  moved to the FAR LEFT of the body row, with margin air before the
+  Presets dropdown (.beat-tabs-actions .beat-board-add-col-btn
+  margin-right).
+- check-v649 UPDATED to the new shapes (View selected by [data-ctl=
+  "view"], icon asserts, new checkbox text, add-left-of-preset) — 20
+  asserts now. Filter still selected by its .tool-ctl-label.
+
 ### v6.49 — Outline header standardized: View/Filter/Search; actions row in the BODY
 
 - Derek's five: (1) the Arrangement label+buttons → the standard View
@@ -362,27 +379,12 @@ Durable bits kept live here:
   shipping. themeLadder.test.ts only orders surfaces — unaffected.
 - The artifact was republished with APPLIED tags on S1/S2/S6 (same URL).
 
-### v6.45 — Upload Voice Clip removed from the character window
-
-- Derek: "remove the 'upload voice clip' tool from the character window."
-  SCOPE READ: the TOOL, not the section — the Voice Profile photo-row
-  toggle and its Speech Pattern / Vocabulary fields STAY (they're
-  writing fields); renderVoiceButton (upload / player+Replace+Remove),
-  the handlers, the hidden audio input, and AssetAudio (CharacterProfiles
-  was its only consumer) are gone. `.char-profile-voice-btn` CSS KEPT —
-  the Relationships/Appears-in/Voice-Profile toggles wear it; the
-  player-row CSS block (28 lines) removed. characterProfile.voiceProfile
-  stays in the type (saved scripts carry it; annotated HISTORICAL like
-  rotationLocked). Helper catalog regenerated (366).
-- Print (v6.44) still awaits Derek's verdict — if it crashed again, ask
-  for `cat "$HOME/Library/Application Support/com.freedraft.app/print/
-  print-debug.log"` FIRST; plan B (out-of-process helper) is declared.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.45** — Upload Voice Clip tool removed from the character window (Voice Profile writing fields stay; AssetAudio deleted)
 - **v6.44** — print round 4: sharedPrintInfo (nil-NSPrintInfo theory) + fsync breadcrumb log; Settings…→app menu above Quit
 - **v6.43** — print round 3: ACTIVE_PRINT keep-alive (async sheet lifetime); Settings→File (reversed v6.44); standard window buttons on FloatingWindow
 - **v6.42** — LOCAL-FIRST: account/cloud UI purged (service layer kept in code); Settings became a FloatingWindow; Auto Saves subfolder; Filter→Display
