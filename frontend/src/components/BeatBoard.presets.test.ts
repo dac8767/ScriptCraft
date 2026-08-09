@@ -4,7 +4,7 @@
  * columns, titled and ordered, without disturbing existing ones.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { OUTLINE_PRESETS, applyOutlinePreset, uncategorizedBeats } from './BeatBoard';
+import { OUTLINE_PRESETS, applyOutlinePreset, presetBeatSpans, uncategorizedBeats } from './BeatBoard';
 import { useEditorStore } from '../stores/editorStore';
 
 describe('outline presets', () => {
@@ -27,20 +27,61 @@ describe('outline presets', () => {
     expect(s2.outlineTabs.find((t) => t.id === s2.viewedOutlineTab)?.name).toBe('Story Circle (8 steps)');
   });
 
-  it('3-Act Structure adds Act I / Act II / Act III in order, one blank beat each, 40 pages per act', () => {
+  /* v6.57, Derek: "the preset for the [3] act structure should include 20
+     beats in each act, each of which is 2 pages estimated length." */
+  it('3-Act Structure adds Act I / Act II / Act III, 40 pages each, filled with 20 two-page beats', () => {
     applyOutlinePreset('3act');
     const cols = [...useEditorStore.getState().beatColumns].sort((a, b) => a.position - b.position);
     expect(cols.map((c) => c.title)).toEqual(['Act I', 'Act II', 'Act III']);
     // v2.20, Derek: each act defaults to 40 pages.
     expect(cols.map((c) => c.targetPages)).toEqual([40, 40, 40]);
-    // v2.18: every preset section starts with one blank beat.
     const beats = useEditorStore.getState().beats;
-    expect(beats).toHaveLength(3);
+    expect(beats).toHaveLength(60);
     for (const col of cols) {
-      expect(beats.filter((b) => b.columnId === col.id)).toHaveLength(1);
+      const inCol = beats.filter((b) => b.columnId === col.id);
+      expect(inCol).toHaveLength(20);
+      for (const b of inCol) expect(b.outlineSpan).toBe(2);
+      expect(inCol.reduce((sum, b) => sum + (b.outlineSpan ?? 0), 0)).toBe(col.targetPages);
     }
-    // v2.20: beats are never born blank — 1 page by default.
-    for (const b of beats) expect(b.outlineSpan).toBe(1);
+  });
+
+  /* The rule Derek asked me to carry to the rest: ~2 pages a beat, with the
+     spans adding up to the section EXACTLY. */
+  it('presetBeatSpans: counts by the two-pages-a-beat ratio and always sums to the budget', () => {
+    expect(presetBeatSpans(40)).toEqual(Array(20).fill(2));
+    expect(presetBeatSpans(1)).toEqual([1]);
+    expect(presetBeatSpans(2)).toEqual([2]);
+    expect(presetBeatSpans(3)).toEqual([2, 1]);
+    expect(presetBeatSpans(5)).toEqual([2, 2, 1]);
+    expect(presetBeatSpans(15)).toEqual([2, 2, 2, 2, 2, 2, 2, 1]);
+    for (let pages = 1; pages <= 120; pages++) {
+      const spans = presetBeatSpans(pages);
+      expect(spans.reduce((a, b) => a + b, 0), `sum for ${pages}`).toBe(pages);
+      expect(spans.every((n) => n >= 1), `no empty beat at ${pages}`).toBe(true);
+      // never more than a page off the intended ratio
+      expect(Math.abs(spans.length - Math.round(pages / 2))).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('EVERY preset fills each section with beats whose pages add up to that section', () => {
+    for (const p of OUTLINE_PRESETS) {
+      useEditorStore.getState().setBeatColumns([]);
+      useEditorStore.getState().setBeats([]);
+      applyOutlinePreset(p.id);
+      const cols = [...useEditorStore.getState().beatColumns].sort((a, b) => a.position - b.position);
+      const beats = useEditorStore.getState().beats;
+      expect(cols, p.id).toHaveLength(p.columns.length);
+      cols.forEach((col, i) => {
+        const inCol = beats.filter((b) => b.columnId === col.id);
+        const sum = inCol.reduce((acc, b) => acc + (b.outlineSpan ?? 0), 0);
+        expect(inCol.length, `${p.id} · ${col.title} beat count`).toBe(presetBeatSpans(p.pages[i]).length);
+        expect(sum, `${p.id} · ${col.title} pages`).toBe(p.pages[i]);
+        expect(col.targetPages, `${p.id} · ${col.title} budget`).toBe(p.pages[i]);
+      });
+      // and the whole structure still adds up to the preset's page count
+      expect(beats.reduce((acc, b) => acc + (b.outlineSpan ?? 0), 0), `${p.id} total`)
+        .toBe(p.pages.reduce((a, b) => a + b, 0));
+    }
   });
 
   it('the classic structures ship with their full beat lists', () => {
@@ -51,7 +92,11 @@ describe('outline presets', () => {
     expect(byId.sequences.columns).toHaveLength(8);     // 8 sequences
     applyOutlinePreset('savethecat');
     expect(useEditorStore.getState().beatColumns).toHaveLength(15);
-    expect(useEditorStore.getState().beats).toHaveLength(15);
+    // v6.57: each of Snyder's beats is filled at ~2 pages a card, so a
+    // one-page beat gets a single card and Fun and Games (25pp) gets 13.
+    const stcBeats = useEditorStore.getState().beats;
+    expect(stcBeats).toHaveLength(byId.savethecat.pages.reduce((n, p) => n + presetBeatSpans(p).length, 0));
+    expect(stcBeats.reduce((a, b) => a + (b.outlineSpan ?? 0), 0)).toBe(110);
   });
 
   /* v2.20: every preset carries a page budget per section, never blank. */
@@ -80,7 +125,7 @@ describe('outline presets', () => {
   it('override replaces sections but never deletes beats', () => {
     applyOutlinePreset('3act');
     const beatIdsBefore = useEditorStore.getState().beats.map((b) => b.id).sort();
-    expect(beatIdsBefore).toHaveLength(3);
+    expect(beatIdsBefore).toHaveLength(60);   // v6.57: 20 beats an act
 
     applyOutlinePreset('storycircle', 'override');
     const s = useEditorStore.getState();
@@ -94,7 +139,7 @@ describe('outline presets', () => {
     // Dragging one into a real section takes it out of Uncategorized.
     useEditorStore.getState().updateBeat(beatIdsBefore[0], { columnId: s.beatColumns[0].id });
     const after = useEditorStore.getState();
-    expect(uncategorizedBeats(after.beats, after.beatColumns)).toHaveLength(2);
+    expect(uncategorizedBeats(after.beats, after.beatColumns)).toHaveLength(beatIdsBefore.length - 1);
   });
 
   it('an unknown preset id is a no-op; every preset has columns', () => {

@@ -151,7 +151,44 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.51 and older (newest first)
+## Version history — v6.52 and older (newest first)
+
+### v6.52 — Outline/freeform polish; card contrast; Helper Text = a real TOOL
+
+- Derek's five (screenshot batch): (1) the beat count moved LEFT, beside
+  the tab strip — OutlineBeatCount renders in OutlineTabsExtra (window)
+  AND the takeover's .beat-tabs row; the cluster starts at View now;
+  (2) CARD ↔ BOARD CONTRAST: .beat-card background = color-mix(in srgb,
+  var(--fd-dropdown-bg) 86%, var(--fd-text) 14%) + a soft shadow — the
+  AA text floor guarantees a visible step in EVERY theme, no per-theme
+  values (dark Δ43, light Δ23 measured in check-v652); user-colored
+  cards unaffected; (3) HELPER TEXT IS A TOOL (id 'helpertext'):
+  ALL_TOOLS + DEFAULT_TOOL_CONFIG enabled:false (no dock row until
+  dragged in — dockInto enables on drop), ToolContent case, TitleExtra
+  "N changed" chip; the FloatingWindow shell + helperTextWindowOpen flag
+  are GONE — setHelperTextWindowOpen survives as a delegation door to
+  openTool/closeTool (checks + old callers); body keeps .htw-panel (now
+  .htw-tool too) so the v6.24 row selectors held; (4) freeform connect
+  shows its state: the ORIGIN card stays lit during the line-drag
+  (mind-link-origin — arming clears at drag start, so the class rides
+  linkDrag.fromId) and the hovered card lights up hard
+  (mind-link-target, elementFromPoint tracking in onMove); (5) freeform
+  cards drag by the WHOLE header row, windows-style — beginCardDrag
+  grew a threshold mode: buttons keep their jobs, a FOCUSED title keeps
+  text selection, an unfocused title starts the drag only after 4px
+  (onEngage blurs it) so plain clicks still focus with the caret.
+- FLOAT-EXCLUSIVITY exemption extended: FLOAT_EXEMPT = ['design',
+  'helpertext'] in closeOtherFloats (v5.32's design rule, now a set) AND
+  the slot-open branches' unconditional tempTool:null now preserves an
+  exempt temp tool — that null predates anything living in the temp slot
+  that should survive; it silently closed Helper Text when its v6.24
+  go-to buttons opened the target window (check-v624 caught it).
+- Takeover note recorded in check-v638: the fullscreen takeover owns the
+  EDITOR AREA (side docks stay) — width asserts compare against the
+  takeover, not the viewport; leave fullscreen via the takeover's shrink
+  button (a raw setFullscreenTool(null) just closes the tool).
+- check-v652 (13 asserts); v624/v638/v649/v651 updated where the Helper
+  Text shell changed; 1125 vitest.
 
 ### v6.51 — Helper Text catalog covers DYNAMIC sites; applier arm-flip fix
 

@@ -61,6 +61,16 @@ export interface BeatsOutlineSlice {
    *  pushes a beat-undo snapshot. undefined un-pins (back to packed). */
   barSetBeatOffsets: (offsets: Record<string, number | undefined>) => void;
   addBeatColumn: (title: string, targetPages?: number) => string;
+  /** v6.57: lay down a whole preset — every section AND the beats that fill
+   *  it — in ONE write. Doing it card by card (addBeatColumn + addBeat ×60)
+   *  meant one forced undo snapshot per card, which overruns the capped
+   *  stack and buries whatever the writer did before applying the preset.
+   *  'override' replaces the sections and adds no beats (the existing ones
+   *  orphan into Uncategorized, the v2.23 rule). */
+  applyPresetSections: (
+    sections: Array<{ title: string; pages: number; spans: number[] }>,
+    mode: 'append' | 'override',
+  ) => void;
   updateBeatColumn: (id: string, updates: Partial<{ title: string; position: number; width: number; targetPages: number }>) => void;
   deleteBeatColumn: (id: string) => void;
   beats: BeatInfo[];
@@ -362,6 +372,44 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
         return { beatColumns: [...s.beatColumns, { id, title, position: maxPos + 1, width: 0, targetPages: Math.max(1, Math.round(targetPages)) }] };
       });
       return id;
+    },
+    applyPresetSections: (sections, mode) => {
+      pushBeatSnapshot(true);          // ONE undo step for the whole preset
+      set((s) => {
+        const baseCols = mode === 'override' ? [] : s.beatColumns;
+        const maxPos = baseCols.length > 0 ? Math.max(...baseCols.map((c) => c.position)) : -1;
+        const beatColumns = [...baseCols];
+        const beats = [...s.beats];
+        sections.forEach((sec, i) => {
+          const columnId = uuid();
+          beatColumns.push({
+            id: columnId,
+            title: sec.title,
+            position: maxPos + 1 + i,
+            width: 0,
+            targetPages: Math.max(1, Math.round(sec.pages)),
+          });
+          if (mode === 'override') return;   // beats stay put and orphan
+          sec.spans.forEach((span, j) => {
+            beats.push({
+              id: uuid(),
+              title: '',
+              description: '',
+              columnId,
+              position: j,
+              color: '',
+              imageUrl: '',
+              cardWidth: 0,
+              cardHeight: 0,
+              x: 0,
+              y: 0,
+              imageHeight: 0,
+              outlineSpan: Math.max(1, Math.round(span)),
+            });
+          });
+        });
+        return { beatColumns, beats };
+      });
     },
     updateBeatColumn: (id, updates) => {
       pushBeatSnapshot();

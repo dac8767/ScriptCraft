@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.56 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.57 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,38 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.57 — presets FILL their sections (2 pages a beat, sums exact); + divider
+
+- Derek: "the preset for the 2 act structure should include 20 beats in
+  each act, each of which is 2 pages estimated length. determine the
+  proper beats per section for all other presets, and make sure the total
+  estimated pages for the beats in a section equal the estimated pages for
+  that section." NOTE: there is no 2-act preset — 3-Act is the one whose
+  acts are 40 pages, i.e. exactly 20 × 2, so that is what he means (told
+  him, and offered to add a real 2-act preset).
+- His numbers ARE the rule: 40 pages ÷ 20 beats = TWO PAGES A BEAT.
+  presetBeatSpans(pages) (pure, exported) returns one span per beat:
+  count = round(pages / 2) (min 1), base = floor(pages/count), and the
+  remainder is dealt out a page at a time so the spans sum EXACTLY.
+  3-Act → 20×2. Save the Cat → 61 cards over its 110 pages (a 1-page beat
+  gets one card, Fun and Games' 25 gets 13). Hero's Journey → 64/120.
+  Story Circle + Sequence Method → 8 per 15-page section, 64/120. CUSTOM
+  presets go through the same function — one rule, no per-preset table to
+  drift.
+- ONE WRITE, ONE UNDO STEP: applyPresetSections (new slice action)
+  replaces the addBeatColumn+addBeat loop. addBeat FORCES an undo snapshot
+  per call, so 60 cards would have pushed 60 snapshots — overrunning the
+  capped stack (BEAT_UNDO_MAX) and burying whatever the writer did before.
+  Now: one snapshot, one set(), one re-render, and a single undo takes the
+  whole preset back (asserted in check-v652).
+- Derek, same turn: "add a clear divider between the outline tabs and the
+  + button" — .tool-chrome-tabs .beat-tab-add gets a border-left in
+  currentColor at 35% (visible against the active tab's accent fill too).
+  CSS ORDER FOOTGUN: the rule already had `border: none` AFTER my
+  border-left, which silently wiped it — the shorthand must come first.
+- check-v652 (18): 20 beats an act, all 2-page, sums = budgets, 60 cards
+  actually rendered, one-undo, divider present.
+
 ### v6.56 — the outline beat count leaves the tab pill
 
 - Derek: "vertically center '4 beats' and add space between that and the +
@@ -345,48 +377,12 @@ Durable bits kept live here:
   with the flow they tested (its count/contrast/HelperText/header-drag
   asserts stay, 9).
 
-### v6.52 — Outline/freeform polish; card contrast; Helper Text = a real TOOL
-
-- Derek's five (screenshot batch): (1) the beat count moved LEFT, beside
-  the tab strip — OutlineBeatCount renders in OutlineTabsExtra (window)
-  AND the takeover's .beat-tabs row; the cluster starts at View now;
-  (2) CARD ↔ BOARD CONTRAST: .beat-card background = color-mix(in srgb,
-  var(--fd-dropdown-bg) 86%, var(--fd-text) 14%) + a soft shadow — the
-  AA text floor guarantees a visible step in EVERY theme, no per-theme
-  values (dark Δ43, light Δ23 measured in check-v652); user-colored
-  cards unaffected; (3) HELPER TEXT IS A TOOL (id 'helpertext'):
-  ALL_TOOLS + DEFAULT_TOOL_CONFIG enabled:false (no dock row until
-  dragged in — dockInto enables on drop), ToolContent case, TitleExtra
-  "N changed" chip; the FloatingWindow shell + helperTextWindowOpen flag
-  are GONE — setHelperTextWindowOpen survives as a delegation door to
-  openTool/closeTool (checks + old callers); body keeps .htw-panel (now
-  .htw-tool too) so the v6.24 row selectors held; (4) freeform connect
-  shows its state: the ORIGIN card stays lit during the line-drag
-  (mind-link-origin — arming clears at drag start, so the class rides
-  linkDrag.fromId) and the hovered card lights up hard
-  (mind-link-target, elementFromPoint tracking in onMove); (5) freeform
-  cards drag by the WHOLE header row, windows-style — beginCardDrag
-  grew a threshold mode: buttons keep their jobs, a FOCUSED title keeps
-  text selection, an unfocused title starts the drag only after 4px
-  (onEngage blurs it) so plain clicks still focus with the caret.
-- FLOAT-EXCLUSIVITY exemption extended: FLOAT_EXEMPT = ['design',
-  'helpertext'] in closeOtherFloats (v5.32's design rule, now a set) AND
-  the slot-open branches' unconditional tempTool:null now preserves an
-  exempt temp tool — that null predates anything living in the temp slot
-  that should survive; it silently closed Helper Text when its v6.24
-  go-to buttons opened the target window (check-v624 caught it).
-- Takeover note recorded in check-v638: the fullscreen takeover owns the
-  EDITOR AREA (side docks stay) — width asserts compare against the
-  takeover, not the viewport; leave fullscreen via the takeover's shrink
-  button (a raw setFullscreenTool(null) just closes the tool).
-- check-v652 (13 asserts); v624/v638/v649/v651 updated where the Helper
-  Text shell changed; 1125 vitest.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.52** — beat count beside the tabs; card/board contrast (color-mix step); Helper Text became a real dockable TOOL; freeform link highlights + header drag
 - **v6.51** — the Helper Text catalog covers DYNAMIC title/placeholder expressions (+97); applier arm-flip fix; the rebuild-the-catalog standing rule
 - **v6.50** — Outline polish: bare View trigger (icon + current view), option icons, add button leads the body row
 - **v6.49** — Outline header standardized: View/Filter/Search cluster, actions row in the body, "Show beat color on all tabs" retired

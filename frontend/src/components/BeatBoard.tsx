@@ -133,6 +133,29 @@ export function resolveOutlinePreset(presetId: string): { name: string; columns:
   return OUTLINE_PRESETS.find((p) => p.id === presetId);
 }
 
+/* ─── v6.57, Derek: "the preset for the [3] act structure should include 20
+   beats in each act, each of which is 2 pages estimated length. determine
+   the proper beats per section for all other presets, and make sure the
+   total estimated pages for the beats in a section equal the estimated
+   pages for that section." ───
+   His own numbers set the ratio — a 40-page act filled by 20 beats is TWO
+   PAGES A BEAT — so that ratio decides the count everywhere, and the pages
+   are then dealt out so they add up EXACTLY: with an odd budget the
+   remainder is spread one page at a time instead of leaving a rounding
+   error. Every preset (and any the writer saves) is filled by this one
+   function, so the invariant can't drift between them. */
+export const PRESET_PAGES_PER_BEAT = 2;
+
+/** The page estimate for each beat filling a section of `pages` pages.
+ *  Length = how many beats; the sum is always exactly `pages`. */
+export function presetBeatSpans(pages: number): number[] {
+  const total = Math.max(1, Math.round(pages));
+  const count = Math.max(1, Math.round(total / PRESET_PAGES_PER_BEAT));
+  const base = Math.floor(total / count);
+  const extra = total - base * count;                 // 0..count-1 leftovers
+  return Array.from({ length: count }, (_, i) => base + (i < extra ? 1 : 0));
+}
+
 export function applyOutlinePreset(presetId: string, mode: 'append' | 'override' = 'append'): void {
   const preset = resolveOutlinePreset(presetId);
   if (!preset) return;
@@ -141,22 +164,17 @@ export function applyOutlinePreset(presetId: string, mode: 'append' | 'override'
      the apply itself. */
   const st = useEditorStore.getState();
   st.renameOutlineTab(st.viewedOutlineTab, preset.name);
-  if (mode === 'override') {
-    // v2.23: replace the SECTIONS, never the beats. Clearing the columns
-    // orphans every existing beat; orphans render in the temporary
-    // "Uncategorized" column until they're dragged into a new section.
-    // No blank starter beats here — the user's own beats are waiting.
-    useEditorStore.getState().setBeatColumns([]);
-    const { addBeatColumn } = useEditorStore.getState();
-    preset.columns.forEach((title, i) => addBeatColumn(title, preset.pages[i] ?? 1));
-    return;
-  }
-  const { addBeatColumn, addBeat } = useEditorStore.getState();
-  preset.columns.forEach((title, i) => {
-    // v2.18: every preset section starts with one blank beat, ready to fill.
-    // v2.20: each section carries its structure's page budget.
-    addBeat('', addBeatColumn(title, preset.pages[i] ?? 1));
-  });
+  /* v2.23 (override): replace the SECTIONS, never the beats — clearing the
+     columns orphans every existing beat into the temporary "Uncategorized"
+     column until they're dragged into a new section, so no starter beats
+     are laid down there; the writer's own are waiting. */
+  st.applyPresetSections(
+    preset.columns.map((title, i) => {
+      const pages = preset.pages[i] ?? 1;
+      return { title, pages, spans: presetBeatSpans(pages) };
+    }),
+    mode,
+  );
 }
 
 /** v2.23: beats whose section no longer exists (a preset override cleared

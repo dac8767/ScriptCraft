@@ -25,7 +25,16 @@ describe('outlinePresetStore', () => {
     const cols = [...useEditorStore.getState().beatColumns].sort((a, b) => a.position - b.position);
     expect(cols.map((c) => c.title)).toEqual(['I', 'II', 'III', 'IV']);
     expect(cols.map((c) => c.targetPages)).toEqual([25, 35, 30, 25]);
-    expect(useEditorStore.getState().beats).toHaveLength(4);   // one blank beat each
+    /* v6.57: a preset — the writer's own included — fills each section with
+       beats at ~2 pages a card, and their spans add up to that section. */
+    const beats = useEditorStore.getState().beats;
+    cols.forEach((c) => {
+      const budget = c.targetPages ?? 0;
+      const inCol = beats.filter((b) => b.columnId === c.id);
+      expect(inCol.length, c.title).toBe(Math.round(budget / 2));
+      expect(inCol.reduce((sum, b) => sum + (b.outlineSpan ?? 0), 0), c.title).toBe(budget);
+    });
+    expect(beats).toHaveLength([25, 35, 30, 25].reduce((n, pages) => n + Math.round(pages / 2), 0));
   });
 
   it('page budgets are whole and at least 1 when saved', () => {

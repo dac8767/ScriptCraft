@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.57",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline presets now arrive filled in: the 3-Act Structure lays down 20 beats in each act at 2 pages apiece, and every other preset is filled the same way — about two pages a beat — so a section's beats always add up to exactly the pages that section is budgeted. (Save the Cat's one-page beats get a single card; its 25-page Fun and Games gets thirteen.) Presets you save yourself fill the same way.",
+   "Applying a preset is a single undo step, however many cards it lays down.",
+   "Outline: a divider line separates the outline tabs from the + button."
+  ]
+ },
+ {
   "version": "6.56",
   "date": "2026-08-09",
   "changes": [

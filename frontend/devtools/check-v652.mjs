@@ -147,6 +147,61 @@ try {
   await settle(page);
   const focused = await page.evaluate(() => document.activeElement?.classList.contains('beat-card-title') ?? false);
   ok(focused, 'a plain click on the title still focuses it');
+
+  // ── v6.57: a preset fills each section, and the divider before + ──
+  await page.evaluate(() => window.__scStore.getState().openTool('beatboard'));
+  await page.waitForSelector(`${'.tool-window[data-tool="beatboard"]'} [data-ctl="view"]`, { timeout: 8000 });
+  await page.click(`${W} [data-ctl="view"]`);
+  await page.click('.tool-ctl-menu .tool-ctl-menu-item:has-text("Sections")');
+  await settle(page);
+  await page.evaluate(() => {
+    const st = window.__scStore.getState();
+    st.setBeatColumns([]); st.setBeats([]);
+    st.addOutlineTab();                       // a clean tab for the preset
+  });
+  await settle(page);
+  await page.selectOption(`${W} .beat-board-preset`, '3act');
+  await settle(page);
+  const preset = await page.evaluate(() => {
+    const st = window.__scStore.getState();
+    const cols = [...st.beatColumns].sort((a, b) => a.position - b.position);
+    return cols.map((c) => {
+      const inCol = st.beats.filter((b) => b.columnId === c.id);
+      return {
+        title: c.title,
+        budget: c.targetPages,
+        beats: inCol.length,
+        pages: inCol.reduce((sum, b) => sum + (b.outlineSpan ?? 0), 0),
+        spans: [...new Set(inCol.map((b) => b.outlineSpan))],
+      };
+    });
+  });
+  ok(preset.length === 3 && preset.every((c) => c.beats === 20),
+    `3-Act fills each act with 20 beats (${preset.map((c) => c.beats).join('/')})`);
+  ok(preset.every((c) => c.spans.length === 1 && c.spans[0] === 2),
+    'every one of them is a 2-page beat');
+  ok(preset.every((c) => c.pages === c.budget),
+    `each act's beats add up to its page budget (${preset.map((c) => `${c.pages}/${c.budget}`).join(' ')})`);
+  // the cards really are on the board, not just in the store
+  const cards = await page.evaluate((w) => document.querySelectorAll(`${w} .beat-column-cards .beat-card`).length, W);
+  ok(cards === 60, `all 60 cards render (${cards})`);
+  // ONE undo step takes the whole preset back (not 60)
+  await page.evaluate(() => window.__scStore.getState().beatUndo());
+  await settle(page);
+  const undone = await page.evaluate(() => ({
+    beats: window.__scStore.getState().beats.length,
+    cols: window.__scStore.getState().beatColumns.length,
+  }));
+  ok(undone.beats === 0 && undone.cols === 0, `one undo removes the whole preset (${JSON.stringify(undone)})`);
+
+  // Derek: "add a clear divider between the outline tabs and the + button"
+  const divider = await page.evaluate((w) => {
+    const add = document.querySelector(`${w} .tool-chrome-tabs:not(.tool-chrome-tabs-measure) .beat-tab-add`);
+    const cs = getComputedStyle(add);
+    return { w: parseFloat(cs.borderLeftWidth), style: cs.borderLeftStyle, color: cs.borderLeftColor };
+  }, W);
+  ok(divider.w >= 1 && divider.style === 'solid', `the + button carries a divider rule (${divider.w}px ${divider.style})`);
+
 } catch (e) {
   console.log('PROBE ERROR:', e.message);
   fail++;

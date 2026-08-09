@@ -613,9 +613,15 @@
   padding: 8px 12px 0;
 }
 /* v6.48: the + (new variation) rides INSIDE the header tab strip's pill —
-   chrome-tab clothes there, not the board-tab ones. */
+   chrome-tab clothes there, not the board-tab ones. v6.57, Derek: "add a
+   clear divider between the outline tabs and the + button" — the tabs butt
+   together inside the pill, so the + needs a rule of its own to read as a
+   separate control. currentColor keeps it visible on the active tab's
+   accent fill as well as the muted ones. */
 .tool-chrome-tabs .beat-tab-add {
   border: none;
+  /* the divider — declared AFTER the reset, or the shorthand wipes it */
+  border-left: 1px solid color-mix(in srgb, currentColor 35%, transparent);
   border-radius: 0;
   background: var(--fd-overlay-light);
   color: var(--fd-text-muted);
