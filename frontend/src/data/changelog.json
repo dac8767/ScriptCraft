@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.55",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline ▸ Freeform: beat titles are smaller in the card's title bar, and the title no longer stretches across the whole bar — there's always a clear strip of bare bar to grab when you want to move the card. Click the title and it expands to the full width for editing; a long title shows with an ellipsis at rest."
+  ]
+ },
+ {
   "version": "6.54",
   "date": "2026-08-09",
   "changes": [

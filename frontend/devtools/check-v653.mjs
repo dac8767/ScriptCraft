@@ -238,6 +238,31 @@ try {
     `the header is a bar across the top of the card (spans: ${bar && bar.spans}, at top: ${bar && bar.atTop})`);
   ok(bar && bar.grab === 'grab', `the bar reads as grabbable (cursor: ${bar && bar.grab})`);
   ok(bar && bar.holdsTitle && bar.holdsBtns, 'the title and the card buttons live in it');
+  /* v6.55, Derek: "make the beat title smaller so that the area for grabbing
+     and moving is bigger" — the title takes a share of the bar, not all of
+     it, so bare band is always left over between it and the buttons. */
+  const grab = await page.evaluate((sel) => {
+    const top = document.querySelector(`${sel} .beat-card-top`);
+    const t = top.querySelector('.beat-card-title').getBoundingClientRect();
+    const btns = top.querySelector('.beat-card-headbtns').getBoundingClientRect();
+    const bar = top.getBoundingClientRect();
+    return {
+      font: Math.round(parseFloat(getComputedStyle(top.querySelector('.beat-card-title')).fontSize)),
+      bare: Math.round(btns.left - t.right),            // band between title and buttons
+      barW: Math.round(bar.width),
+      titleW: Math.round(t.width),
+    };
+  }, card(ids.a));
+  ok(grab.font <= 13, `the title reads at a normal card size (${grab.font}px)`);
+  ok(grab.bare >= 30, `a clear strip of bare bar is left to grab (${grab.bare}px between title and buttons)`);
+  ok(grab.titleW < grab.barW * 0.7, `the title no longer spans the bar (${grab.titleW} of ${grab.barW}px)`);
+  // focusing hands the full width back for editing
+  await page.click(`${card(ids.a)} .beat-card-title`);
+  await settle(page);
+  const focusedW = await page.evaluate((sel) => Math.round(document.querySelector(`${sel} .beat-card-title`).getBoundingClientRect().width), card(ids.a));
+  ok(focusedW > grab.titleW, `editing the title gives it the full row back (${grab.titleW} → ${focusedW}px)`);
+  await page.evaluate(() => document.activeElement.blur());
+  await settle(page);
   ok(bar && !bar.grip, 'the ⋮⋮ grip is gone — the bar itself is the handle');
   /* The band is INK AT 11% over the card, so its computed value is
      translucent — composite it over the card before measuring, or the

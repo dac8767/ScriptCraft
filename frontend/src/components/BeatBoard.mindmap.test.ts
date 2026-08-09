@@ -16,10 +16,14 @@ describe('mind map helpers', () => {
     expect(toggleMindLink(['b', 'c'], 'b')).toEqual(['c']);
   });
 
+  /* v6.55, Derek: smaller titles = more title bar left to grab. A default
+     card reads at 13px — the same size as a sections-mode card's title. */
   it('title size grows with the card but stays clamped', () => {
-    expect(mindTitleSize(0)).toBe(16);        // default 240px card
-    expect(mindTitleSize(150)).toBe(13);      // floor
-    expect(mindTitleSize(600)).toBe(24);      // ceiling
+    expect(mindTitleSize(0)).toBe(13);        // default 240px card
+    expect(mindTitleSize(150)).toBe(12);      // floor
+    expect(mindTitleSize(600)).toBe(16);      // ceiling
+    // never bigger than the card's own body text is small — and monotonic
+    expect(mindTitleSize(240)).toBeLessThanOrEqual(mindTitleSize(400));
   });
 });
 

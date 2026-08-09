@@ -774,9 +774,13 @@ export function freeformAutoLayout(beats: BeatInfo[]): BeatInfo[] {
     return { ...b, x: 24 + (i % 3) * 270, y: 24 + Math.floor(i / 3) * 150 };
   });
 }
-/** Emphasis: the title grows with the card, clamped to stay readable. */
+/** Emphasis: the title grows with the card, clamped to stay readable.
+ *  v6.55, Derek ("make the beat title smaller so that the area for grabbing
+ *  and moving is bigger"): the range came down from 13–24 to 12–16 — a
+ *  default card now reads at 13px, the same as every other beat card's
+ *  title, and the title bar keeps more bare band to grab. */
 export function mindTitleSize(cardWidth: number): number {
-  return Math.max(13, Math.min(24, Math.round((cardWidth || 240) / 15)));
+  return Math.max(12, Math.min(16, Math.round((cardWidth || 240) / 18)));
 }
 
 /* ─── v6.53 connection anchors (Derek: "you place [a circle] anywhere on the

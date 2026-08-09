@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.54 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.55 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,27 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.55 — freeform titles shrink so the title bar has room to grab
+
+- Derek: "make the beat title smaller so that the area for grabbing and
+  moving is bigger in the freeform view." TWO changes, because the font
+  alone would not have helped: the input was `flex: 1` and swallowed the
+  whole bar regardless of type size.
+  1. mindTitleSize's range 13–24 → 12–16 (divisor 15 → 18): a default
+     240px card now reads at 13px — the same size as every other beat
+     card's title — and a big card tops out at 16px instead of 24px. The
+     v2.33 emphasis (bigger card = bigger title) survives, just gentler.
+     The unit test carries the new numbers plus a monotonicity check.
+  2. `.beat-card-title` in a title bar takes `width: 46%` (flex 0 1 auto)
+     instead of flex:1, so bare band is always left between it and the
+     card's buttons — measured 43px on a 250px card, and the whole strip
+     is a drag surface. A long title ellipsizes at rest
+     (text-overflow works on an unfocused input) and `:focus` hands the
+     full row back for editing, so nothing is unreachable.
+- check-v653 (30 asserts) measures the outcome rather than the CSS: title
+  font ≤13px, ≥30px of bare bar between title and buttons, the title
+  spanning <70% of the bar, and the focus expansion.
+
 ### v6.54 — freeform beat cards wear a real TITLE BAR
 
 - Derek: "give beat windows in the freeform view proper headers that can be
@@ -382,28 +403,12 @@ Durable bits kept live here:
   tooltip → control updates; arm flips stay clean; ? popover editable;
   the window lists the example strings.
 
-### v6.50 — Outline polish: bare View trigger + option icons; add-button leads
-
-- Derek's four: (1) the View trigger drops the word "View" — icon + the
-  CURRENT view's name only (the Characters-window pattern: no `label`,
-  `title="View"`, `icon` swaps with the mode; data-ctl still stamps
-  'view' because chromeSlotOf reads label ?? title, so the v5.80 order
-  test keeps covering it); (2) Sections/Freeform menu OPTIONS carry
-  icons — ControlDropdownItem gained optional `icon` (LuColumns3 /
-  LuWaypoints, monotone); (3) the bar checkbox reads "Show this outline
-  in the outline bar"; (4) "+ Add Section" (or + Add Beat in Freeform)
-  moved to the FAR LEFT of the body row, with margin air before the
-  Presets dropdown (.beat-tabs-actions .beat-board-add-col-btn
-  margin-right).
-- check-v649 UPDATED to the new shapes (View selected by [data-ctl=
-  "view"], icon asserts, new checkbox text, add-left-of-preset) — 20
-  asserts now. Filter still selected by its .tool-ctl-label.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.50** — Outline polish: bare View trigger (icon + current view), option icons, add button leads the body row
 - **v6.49** — Outline header standardized: View/Filter/Search cluster, actions row in the body, "Show beat color on all tabs" retired
 - **v6.48** — Themes menu label + click-to-apply; outline tabs into the window header (ChromeTabs grew rename/close/TabsExtra); Auto Save → Snapshot
 - **v6.47** — three new built-in themes: Paper, Gruvbox Dark, Catppuccin Mocha (the theme-adding pattern lives in its archive section)

@@ -407,11 +407,19 @@
   -webkit-user-select: none;
 }
 .beat-card-windowed .beat-card-titlebar:active { cursor: grabbing; }
+/* v6.55, Derek: the title no longer stretches across the whole bar — it
+   takes a share and leaves the rest as bare band, so there is always an
+   obvious place to grab. Focusing it hands the full width back for
+   editing; at rest a long title ellipsizes rather than being cut mid-word. */
 .beat-card-windowed .beat-card-titlebar .beat-card-title {
   cursor: text;
   user-select: text;
   -webkit-user-select: text;
+  flex: 0 1 auto;
+  width: 46%;
+  text-overflow: ellipsis;
 }
+.beat-card-windowed .beat-card-titlebar .beat-card-title:focus { width: 100%; }
 /* An image starts below the bar, not under it. */
 .beat-card-windowed .beat-card-image { border-radius: 0; }
 .mind-lines .mind-line-draft {

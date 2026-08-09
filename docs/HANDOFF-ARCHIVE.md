@@ -151,7 +151,24 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.49 and older (newest first)
+## Version history — v6.50 and older (newest first)
+
+### v6.50 — Outline polish: bare View trigger + option icons; add-button leads
+
+- Derek's four: (1) the View trigger drops the word "View" — icon + the
+  CURRENT view's name only (the Characters-window pattern: no `label`,
+  `title="View"`, `icon` swaps with the mode; data-ctl still stamps
+  'view' because chromeSlotOf reads label ?? title, so the v5.80 order
+  test keeps covering it); (2) Sections/Freeform menu OPTIONS carry
+  icons — ControlDropdownItem gained optional `icon` (LuColumns3 /
+  LuWaypoints, monotone); (3) the bar checkbox reads "Show this outline
+  in the outline bar"; (4) "+ Add Section" (or + Add Beat in Freeform)
+  moved to the FAR LEFT of the body row, with margin air before the
+  Presets dropdown (.beat-tabs-actions .beat-board-add-col-btn
+  margin-right).
+- check-v649 UPDATED to the new shapes (View selected by [data-ctl=
+  "view"], icon asserts, new checkbox text, add-left-of-preset) — 20
+  asserts now. Filter still selected by its .tool-ctl-label.
 
 ### v6.49 — Outline header standardized: View/Filter/Search; actions row in the BODY
 
