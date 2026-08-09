@@ -386,9 +386,34 @@
 .mind-lines g:hover .mind-line-dot,
 .mind-lines g.selected .mind-line-dot { fill: var(--fd-accent); }
 .mind-linking, .mind-linking .beat-card-wrap-free { cursor: crosshair; }
-/* v6.52: the freeform card's whole header row drags, windows-style. */
-.beat-card-wrap-free .beat-card-top { cursor: grab; }
-.beat-card-wrap-free .beat-card-top .beat-card-title { cursor: text; }
+/* v6.52: the freeform card's whole header row drags, windows-style.
+   v6.54, Derek ("give beat windows in the freeform view proper headers that
+   can be grabbed"): that row IS a title bar now — its own band across the
+   full width of the card, at the very top, with the title and the card's
+   buttons in it. currentColor is what makes ONE rule work everywhere: on a
+   plain card it resolves to the theme's text color, on a color-filled card
+   to that card's readable ink, so the band is always a legible step off the
+   surface behind it — in every theme, on every beat color. */
+.beat-card-windowed .beat-card-titlebar {
+  margin: calc(-1 * var(--dz-beat-card-pad, 10px)) calc(-1 * var(--dz-beat-card-pad, 10px)) 2px;
+  padding: 6px var(--dz-beat-card-pad, 10px);
+  background: color-mix(in srgb, currentColor 11%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: var(--dz-beat-card-radius, 6px) var(--dz-beat-card-radius, 6px) 0 0;
+  cursor: grab;
+  /* the bar itself is chrome — never select its text while dragging; the
+     title field opts back in so editing works normally */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.beat-card-windowed .beat-card-titlebar:active { cursor: grabbing; }
+.beat-card-windowed .beat-card-titlebar .beat-card-title {
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+}
+/* An image starts below the bar, not under it. */
+.beat-card-windowed .beat-card-image { border-radius: 0; }
 .mind-lines .mind-line-draft {
   stroke: var(--fd-accent);
   stroke-width: 1.5;

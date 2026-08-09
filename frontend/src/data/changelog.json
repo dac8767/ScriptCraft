@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.54",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline ▸ Freeform: every beat card now has a proper title bar across the top — its own shaded band holding the title and the card's buttons — and the whole bar is the handle you grab to move the card around the board.",
+   "The bar sits above a beat's picture, the way a window's title bar does, and it tints itself to match colored cards in every theme. The old ⋮⋮ grip is gone from freeform cards, since the bar replaces it (cards in the Sections view keep theirs)."
+  ]
+ },
+ {
   "version": "6.53",
   "date": "2026-08-09",
   "changes": [

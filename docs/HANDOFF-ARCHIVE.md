@@ -151,7 +151,40 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.48 and older (newest first)
+## Version history — v6.49 and older (newest first)
+
+### v6.49 — Outline header standardized: View/Filter/Search; actions row in the BODY
+
+- Derek's five: (1) the Arrangement label+buttons → the standard View
+  dropdown (Sections/Freeform; still NAVIGATES per v2.47 — goToArrangement
+  jumps/creates a tab of that arrangement); (2) Presets + "+ Add Section"
+  → the body's FIRST ROW (.beat-board-actions-row, left side; the row
+  renders in window AND takeover, both arrange modes); (3) "Show beat
+  color on all tabs" REMOVED — color always paints the whole card
+  (beatColorAllTabs store field + setter + viewState write deleted; old
+  blobs carry the dead key harmlessly; the edge-stripe branch is gone);
+  (4) header search + color filter — standard cluster, v5.80 CANONICAL
+  ORDER View·Filter·Sort·Search (ToolControls.order.test caught my
+  Filter-first draft — the registry-driven order test works); (5) the
+  v6.48 "Show in Outline Bar" checkbox → the body row's RIGHT edge
+  (margin-left:auto), semantics unchanged (locked while viewed tab feeds
+  the bar). New OutlineBarCheck component; OutlineHeaderControls is now
+  count ("M of N beats" while filtering) · View · Filter · Search · ?.
+- Search/filter machinery: beatSearch + beatColorFilter TRANSIENT store
+  state (editorStore; not saved to file, not viewState); ONE predicate
+  beatMatchesFilter(title/description substring + color set, '' =
+  uncolored) hides cards in sections, Uncategorized AND the freeform
+  canvas (canvas link-drawing already skips missing endpoints); Filter
+  menu lists only colors IN USE (BEAT_COLOR_NAMES) + swatch dots —
+  ControlDropdownItem gained optional `swatch`.
+- CSS unwound with the features: .beat-mode-* rules, the container-type
+  + @container block AND the v6.48 :has() grow workaround (only needed
+  because of that container-type) are all gone — the header cluster
+  contributes real max-content again (v4.86 contract); hc wraps instead
+  of clipping (overflow:hidden dropped).
+- check-v649 (18 asserts). Browser-check lesson recorded: the collapsing
+  search field shifts the cluster mid-click — test Filter BEFORE typing
+  in Search, or the Filter click lands on a moved target.
 
 ### v6.48 — seven-item batch: Themes label/click-to-apply; outline tabs → HEADER; Snapshot rename
 

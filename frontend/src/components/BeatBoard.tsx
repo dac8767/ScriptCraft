@@ -519,10 +519,18 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
       ? { maxHeight: imgH }
       : {};
 
-  /* v2.46: ONE header row — it used to be pasted into both layout branches. */
+  /* v2.46: ONE header row — it used to be pasted into both layout branches.
+     v6.54, Derek: with headerDragProps the card wears WINDOW CHROME — the row
+     becomes a real title bar (its own band, at the very top of the card, the
+     whole thing a drag surface), so the ⋮⋮ grip retires: there is nothing
+     left for it to do that the bar doesn't. Sections-mode cards have no such
+     bar and keep the grip, which is also their dnd-kit handle. */
+  const windowChrome = !!headerDragProps;
   const headerRow = (
-    <div className="beat-card-top" {...(headerDragProps || {})}>
-      <span className="beat-drag-icon" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>⋮⋮</span>
+    <div className={`beat-card-top${windowChrome ? ' beat-card-titlebar' : ''}`} {...(headerDragProps || {})}>
+      {!windowChrome && (
+        <span className="beat-drag-icon" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>⋮⋮</span>
+      )}
       <input
         className="beat-card-title"
         value={beat.title}
@@ -553,9 +561,12 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
   );
 
   return (
-    <div className={`beat-card${isImgFull ? ' beat-card-img-full' : ''}${wholeColor ? ' beat-card-colored' : ''}`} style={cardStyle}>
-      {/* Floating drag handle over image */}
-      {beat.imageUrl && (
+    <div className={`beat-card${isImgFull ? ' beat-card-img-full' : ''}${wholeColor ? ' beat-card-colored' : ''}${windowChrome ? ' beat-card-windowed' : ''}`} style={cardStyle}>
+      {/* v6.54: a windowed card's title bar sits at the very top, above the
+          picture — where a window's title bar belongs. */}
+      {windowChrome && headerRow}
+      {/* Floating drag handle over image (grip-mode cards only) */}
+      {beat.imageUrl && !windowChrome && (
         <span className="beat-drag-icon beat-drag-icon-floating" {...(dragHandleProps || {})} style={{ touchAction: 'none' }}>⋮⋮</span>
       )}
       {beat.imageUrl && (
@@ -610,7 +621,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
 
       {isImgFull ? (
         <div className="beat-card-content-bottom">
-          {headerRow}
+          {!windowChrome && headerRow}
           {descFocused ? (
             <textarea
               ref={descRef}
@@ -639,7 +650,7 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
         </div>
       ) : (
         <>
-          {headerRow}
+          {!windowChrome && headerRow}
           {descFocused ? (
             <textarea
               ref={descRef}
@@ -873,8 +884,6 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
     [beat.id, bx, by, onUpdate],
   );
 
-  const onDragPointerDown = useCallback((e: React.PointerEvent) => beginCardDrag(e), [beginCardDrag]);
-
   /* v6.52, Derek: "allow dragging the freeform cards from the top of each
      card, like all windows work" — the whole header row drags, buttons keep
      their jobs (the window-header guard). v6.53: over the TITLE the press
@@ -938,7 +947,6 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
         beat={beat}
         onUpdate={onUpdate}
         onDelete={onDelete}
-        dragHandleProps={{ onPointerDown: onDragPointerDown, style: { touchAction: 'none', cursor: 'grab' } }}
         headerDragProps={{ onPointerDown: onHeaderPointerDown, style: { touchAction: 'none' } }}
       />
       {/* v6.53: any-edge resize replaces the corner grip (which the Connect

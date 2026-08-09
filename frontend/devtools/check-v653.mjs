@@ -8,7 +8,10 @@
    4 click-place-click connecting: circle on the first card's edge, circle
      on the second's; the line meets both cards where they were placed
    5 Escape cancels a half-placed connection
-   6 a pre-v6.53 link (no anchors) still draws center to center */
+   6 a pre-v6.53 link (no anchors) still draws center to center
+   7 (v6.54) the card wears a PROPER TITLE BAR: a banded row across the top
+     of the card, above any picture, that is the drag surface — the old ⋮⋮
+     grip retires in freeform but stays in sections mode */
 import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
@@ -210,6 +213,81 @@ try {
   }, { a: card(ids.a) });
   ok(Math.abs(legacy.x1 - legacy.acx) < 4 && Math.abs(legacy.y1 - legacy.acy) < 4,
     'an anchorless link draws from the card center, exactly as before');
+
+  // ── 7 (v6.54): a proper title bar ──
+  const bar = await page.evaluate((sel) => {
+    const wrap = document.querySelector(sel);
+    const card = wrap.querySelector('.beat-card');
+    const top = wrap.querySelector('.beat-card-top');
+    if (!top) return null;
+    const c = card.getBoundingClientRect(), t = top.getBoundingClientRect();
+    const cs = getComputedStyle(top);
+    return {
+      titlebar: top.classList.contains('beat-card-titlebar'),
+      atTop: Math.round(t.top - c.top) <= 1,
+      spans: Math.round(c.width - t.width) <= 2,
+      grab: cs.cursor,
+      grip: !!wrap.querySelector('.beat-drag-icon'),
+      bg: cs.backgroundColor,
+      cardBg: getComputedStyle(card).backgroundColor,
+      holdsTitle: !!top.querySelector('.beat-card-title'),
+      holdsBtns: !!top.querySelector('.beat-card-headbtns'),
+    };
+  }, card(ids.a));
+  ok(bar && bar.titlebar && bar.atTop && bar.spans,
+    `the header is a bar across the top of the card (spans: ${bar && bar.spans}, at top: ${bar && bar.atTop})`);
+  ok(bar && bar.grab === 'grab', `the bar reads as grabbable (cursor: ${bar && bar.grab})`);
+  ok(bar && bar.holdsTitle && bar.holdsBtns, 'the title and the card buttons live in it');
+  ok(bar && !bar.grip, 'the ⋮⋮ grip is gone — the bar itself is the handle');
+  /* The band is INK AT 11% over the card, so its computed value is
+     translucent — composite it over the card before measuring, or the
+     channels lie (the raw numbers are the ink's, not what you see). */
+  const parse = (v) => {
+    const n = (v.match(/[\d.]+/g) || []).map(Number);
+    const scale = /color\(/.test(v) ? 255 : 1;                 // color(srgb …) is 0..1
+    return { r: n[0] * scale, g: n[1] * scale, b: n[2] * scale, a: n.length > 3 ? n[3] : 1 };
+  };
+  const over = (fg, bg) => ({
+    r: fg.a * fg.r + (1 - fg.a) * bg.r,
+    g: fg.a * fg.g + (1 - fg.a) * bg.g,
+    b: fg.a * fg.b + (1 - fg.a) * bg.b,
+  });
+  const cardRgb = bar ? parse(bar.cardBg) : null;
+  const bandRgb = bar ? over(parse(bar.bg), cardRgb) : null;
+  const bandDelta = bar ? Math.max(Math.abs(bandRgb.r - cardRgb.r), Math.abs(bandRgb.g - cardRgb.g), Math.abs(bandRgb.b - cardRgb.b)) : 0;
+  ok(bandDelta >= 10, `the band is a visible step off the card (Δ${Math.round(bandDelta)} once composited)`);
+
+  // the bar sits ABOVE a picture, where a window's title bar belongs
+  await page.evaluate((i) => {
+    const px = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+    window.__scStore.getState().updateBeat(i, { imageUrl: px });
+  }, ids.a);
+  await settle(page);
+  const withImg = await page.evaluate((sel) => {
+    const wrap = document.querySelector(sel);
+    const top = wrap.querySelector('.beat-card-top').getBoundingClientRect();
+    const img = wrap.querySelector('.beat-card-image')?.getBoundingClientRect();
+    return img ? { above: top.bottom <= img.top + 1, floatGrip: !!wrap.querySelector('.beat-drag-icon-floating') } : null;
+  }, card(ids.a));
+  ok(withImg && withImg.above && !withImg.floatGrip, 'with a picture the bar stays on top, and the floating grip is gone with it');
+  await page.evaluate((i) => window.__scStore.getState().updateBeat(i, { imageUrl: '' }), ids.a);
+  await settle(page);
+
+  // sections mode still has its ⋮⋮ (it is the sortable's handle)
+  await page.click(`${W} [data-ctl="view"]`);
+  await page.click('.tool-ctl-menu .tool-ctl-menu-item:has-text("Sections")');
+  await settle(page);
+  await page.evaluate(() => {
+    const st = window.__scStore.getState();
+    st.addBeat('Sections beat', st.beatColumns[0]?.id || st.addBeatColumn('Act I'));
+  });
+  await settle(page);
+  const sections = await page.evaluate((w) => {
+    const c = document.querySelector(`${w} .beat-column-cards .beat-card-wrap`);
+    return { grip: !!c?.querySelector('.beat-drag-icon'), bar: !!c?.querySelector('.beat-card-titlebar') };
+  }, W);
+  ok(sections.grip && !sections.bar, 'sections-mode cards keep the ⋮⋮ handle and take no title bar');
+
 } catch (e) {
   console.log('PROBE ERROR:', e.message);
   fail++;

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.53 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.54 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,38 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.54 — freeform beat cards wear a real TITLE BAR
+
+- Derek: "give beat windows in the freeform view proper headers that can be
+  grabbed to drag the beats on the screen." v6.53 made the top row draggable
+  but it still LOOKED like the first line of the card — nothing said
+  "grab here", and the title input ate most of the row.
+- BeatCardContent derives `windowChrome = !!headerDragProps` (freeform
+  passes it, sections doesn't) and under it: the row gets
+  .beat-card-titlebar, renders FIRST — above any picture, where a window's
+  title bar belongs (it used to sit under the image, and in the
+  full-bleed branch inside the bottom overlay) — and the ⋮⋮ grip retires
+  in BOTH places (the inline one and the floating-over-image one), since
+  the whole bar is the handle now. FreeBeatCard stopped passing
+  dragHandleProps entirely: nothing left to render it.
+- ONE CSS rule does every theme AND every beat color: the band is
+  `color-mix(in srgb, currentColor 11%, transparent)` with a 20%
+  currentColor border. currentColor resolves to the theme's text on a
+  plain card and to readableTextOn(color) on a color-filled one, so the
+  bar is always a legible step off whatever is behind it — no per-theme
+  or per-color values to maintain. Negative margins pull it out to the
+  card's padding edges; the top corners take --dz-beat-card-radius.
+  user-select:none on the bar (dragging never selects), text on the title.
+- CHECK LESSON (cost one failing assert): a translucent band's computed
+  backgroundColor is the INK's channels plus alpha — comparing those to
+  the card's opaque color measures nothing. Composite fg over bg first
+  (and note getComputedStyle returns `color(srgb 0..1)` for color-mix,
+  not `rgb(0..255)` — parse both). Composited Δ17 in dark, asserted ≥10.
+- check-v653 grew 7 asserts (26 total): bar spans the card at the top, is
+  grabbable, holds title+buttons, no grip in freeform, visible band, sits
+  ABOVE a picture (with the floating grip gone), and sections-mode cards
+  still keep their ⋮⋮ and take no bar.
+
 ### v6.53 — freeform cards: header drag FIXED, any-edge resize, edge-anchored links
 
 - Derek: "i still cannot move the cards by dragging the window." ROOT
@@ -367,44 +399,12 @@ Durable bits kept live here:
   "view"], icon asserts, new checkbox text, add-left-of-preset) — 20
   asserts now. Filter still selected by its .tool-ctl-label.
 
-### v6.49 — Outline header standardized: View/Filter/Search; actions row in the BODY
-
-- Derek's five: (1) the Arrangement label+buttons → the standard View
-  dropdown (Sections/Freeform; still NAVIGATES per v2.47 — goToArrangement
-  jumps/creates a tab of that arrangement); (2) Presets + "+ Add Section"
-  → the body's FIRST ROW (.beat-board-actions-row, left side; the row
-  renders in window AND takeover, both arrange modes); (3) "Show beat
-  color on all tabs" REMOVED — color always paints the whole card
-  (beatColorAllTabs store field + setter + viewState write deleted; old
-  blobs carry the dead key harmlessly; the edge-stripe branch is gone);
-  (4) header search + color filter — standard cluster, v5.80 CANONICAL
-  ORDER View·Filter·Sort·Search (ToolControls.order.test caught my
-  Filter-first draft — the registry-driven order test works); (5) the
-  v6.48 "Show in Outline Bar" checkbox → the body row's RIGHT edge
-  (margin-left:auto), semantics unchanged (locked while viewed tab feeds
-  the bar). New OutlineBarCheck component; OutlineHeaderControls is now
-  count ("M of N beats" while filtering) · View · Filter · Search · ?.
-- Search/filter machinery: beatSearch + beatColorFilter TRANSIENT store
-  state (editorStore; not saved to file, not viewState); ONE predicate
-  beatMatchesFilter(title/description substring + color set, '' =
-  uncolored) hides cards in sections, Uncategorized AND the freeform
-  canvas (canvas link-drawing already skips missing endpoints); Filter
-  menu lists only colors IN USE (BEAT_COLOR_NAMES) + swatch dots —
-  ControlDropdownItem gained optional `swatch`.
-- CSS unwound with the features: .beat-mode-* rules, the container-type
-  + @container block AND the v6.48 :has() grow workaround (only needed
-  because of that container-type) are all gone — the header cluster
-  contributes real max-content again (v4.86 contract); hc wraps instead
-  of clipping (overflow:hidden dropped).
-- check-v649 (18 asserts). Browser-check lesson recorded: the collapsing
-  search field shifts the cluster mid-click — test Filter BEFORE typing
-  in Search, or the Filter click lands on a moved target.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.49** — Outline header standardized: View/Filter/Search cluster, actions row in the body, "Show beat color on all tabs" retired
 - **v6.48** — Themes menu label + click-to-apply; outline tabs into the window header (ChromeTabs grew rename/close/TabsExtra); Auto Save → Snapshot
 - **v6.47** — three new built-in themes: Paper, Gruvbox Dark, Catppuccin Mocha (the theme-adding pattern lives in its archive section)
 - **v6.46** — theme legibility pass (palette report S1/S2/S6: sepia/sol-light/dracula/light depth fixes, AA floors)
