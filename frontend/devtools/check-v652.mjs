@@ -194,6 +194,13 @@ try {
   }));
   ok(undone.beats === 0 && undone.cols === 0, `one undo removes the whole preset (${JSON.stringify(undone)})`);
 
+  // v6.58, Derek: closing a tab DELETES that arrangement — say delete
+  const tabX = await page.evaluate((w) => {
+    const x = document.querySelector(`${w} .tool-chrome-tabs:not(.tool-chrome-tabs-measure) .tool-chrome-tab-x`);
+    return x ? x.getAttribute('title') : null;
+  }, W);
+  ok(tabX && /^Delete/.test(tabX) && !/close/i.test(tabX), `the tab's × says delete (${JSON.stringify(tabX)})`);
+
   // Derek: "add a clear divider between the outline tabs and the + button"
   const divider = await page.evaluate((w) => {
     const add = document.querySelector(`${w} .tool-chrome-tabs:not(.tool-chrome-tabs-measure) .beat-tab-add`);

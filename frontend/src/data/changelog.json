@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.58",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline: closing a variation tab is called what it is — deleting. The confirm reads \"Delete Outline Tab\" with a Delete Tab button, and the × on a tab says \"Delete this outline variation (beats are kept)\". Nothing about the behaviour changed: your beats live in every tab, and only that arrangement of sections goes."
+  ]
+ },
+ {
   "version": "6.57",
   "date": "2026-08-09",
   "changes": [

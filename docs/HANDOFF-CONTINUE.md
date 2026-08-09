@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.57 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.58 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,28 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.58 — an outline tab is DELETED, not "closed"
+
+- Derek (screenshot of the confirm): "replace all instances of 'close'
+  with 'delete'." The dialog's own body already admitted it — "Only this
+  arrangement of sections is deleted" — so "close" was a euphemism for a
+  destructive action. Now: "Delete Outline Tab" / `Delete "<name>"? …` /
+  the danger button reads Delete Tab, and BOTH × tooltips (the header
+  strip's closeTitle and the takeover row's) say "Delete this outline
+  variation (beats are kept)". confirmCloseOutlineTab →
+  confirmDeleteOutlineTab; the store action was already deleteOutlineTab.
+- SCOPE, deliberate: only the tab flow. I surveyed the rest — the other
+  user-facing "Close"es (window/dialog close buttons, "Close Anyway" on a
+  failed save, Customize's "Close this window to lock the layout") close
+  something without destroying it, and renaming those to Delete would be
+  a lie in the other direction. Told Derek that's where I drew the line.
+- ChromeTabs' `closeTitle`/`onClose` PROP names stay — they are the
+  generic strip's affordance, and a future tool may use them for a real
+  close. Only the Outline's strings changed.
+- check-v652 (19) asserts the × tooltip starts with Delete and contains
+  no "close"; catalog rebuilt (the standing rule) so the Helper Text
+  window lists the new wording.
+
 ### v6.57 — presets FILL their sections (2 pages a beat, sums exact); + divider
 
 - Derek: "the preset for the 2 act structure should include 20 beats in
@@ -330,58 +352,12 @@ Durable bits kept live here:
   ABOVE a picture (with the floating grip gone), and sections-mode cards
   still keep their ⋮⋮ and take no bar.
 
-### v6.53 — freeform cards: header drag FIXED, any-edge resize, edge-anchored links
-
-- Derek: "i still cannot move the cards by dragging the window." ROOT
-  CAUSE of the v6.52 miss: the header's title branch used a threshold and
-  deliberately let the pointerdown default through so the input could
-  focus — which handed the gesture to the browser's native text-selection
-  drag INSIDE that input, and the card never moved. (My v6.52 check
-  dragged in one 80px jump, clearing the threshold before the browser
-  settled into selection; a hand-paced press-creep-travel reproduces it.
-  RULE: drive drag checks the way a hand moves — tiny first steps.) FIX:
-  beginCardDrag ALWAYS preventDefaults; nothing native starts. A press
-  that never travels far enough replays as a tap — focusTitleAt() focuses
-  the field and drops the caret at the click point via
-  caretRangeFromPoint (falls back to end-of-text). A FOCUSED title still
-  keeps text selection (the drag defers), so editing is unchanged.
-  check-v653 drives both the slow drag and the plain click.
-- Any-edge resize: FreeBeatCard renders the shared EdgeResizeZones +
-  startEdgeResize (v5.46's primitive — same one the tool windows use);
-  rect() falls back to the DOM box for auto-height cards, apply() writes
-  x/y/cardWidth/cardHeight straight to the store so west/north edges move
-  the card's origin as they resize. BeatCardContent's corner grip is now
-  OPTIONAL (resizePointerDown?) — sections mode keeps it, freeform drops
-  it because the Connect button took that corner.
-- LINK REBUILD (Derek's spec): the Connect button moved to the card's
-  BOTTOM-RIGHT corner (z-index 41, above the .fs-edge zones' 40), and
-  arm-then-drag became CLICK-PLACE-CLICK: click Connect → a circle
-  follows the pointer along THIS card's perimeter → click to fix it →
-  the line follows the pointer, the hovered card shows its own circle →
-  click to fix and connect. Escape or a click on empty canvas cancels;
-  the button toggles off at any stage. The canvas takes those clicks in
-  the CAPTURE phase, so no card drag or edge resize starts under them.
-- DATA (backwards compatible): mindLinks stays a plain id array; the new
-  BeatInfo.mindAnchors keys the two endpoint anchors by target id. An
-  anchor is NORMALIZED to the card's box ({ax, ay} in 0..1, one pinned to
-  an edge) so a resized card keeps its connection point in proportion. A
-  pre-v6.53 save has no anchors and draws center-to-center exactly as it
-  did — asserted in check-v653.
-- Geometry is now MEASURED: a ResizeObserver over the canvas keeps each
-  card's real box (the old `cardHeight || 110` guess would float the
-  circles off the edge, and had been skewing every line's endpoints).
-  nearestEdgeAnchor/anchorPoint are pure + unit-tested
-  (BeatBoard.anchors.test.ts, 7 cases incl. the pointer-outside-the-card
-  projection and the resize-keeps-its-spot property).
-- check-v653 (19 asserts). check-v652's four link-drag asserts retired
-  with the flow they tested (its count/contrast/HelperText/header-drag
-  asserts stay, 9).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.53** — freeform header drag fixed (always preventDefault + tap-to-focus), any-edge resize, click-place-click links with edge anchors (mindAnchors)
 - **v6.52** — beat count beside the tabs; card/board contrast (color-mix step); Helper Text became a real dockable TOOL; freeform link highlights + header drag
 - **v6.51** — the Helper Text catalog covers DYNAMIC title/placeholder expressions (+97); applier arm-flip fix; the rebuild-the-catalog standing rule
 - **v6.50** — Outline polish: bare View trigger (icon + current view), option icons, add button leads the body row

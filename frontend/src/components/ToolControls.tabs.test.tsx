@@ -36,7 +36,7 @@ describe('ChromeTabs close affordance', () => {
     act(() => {
       root.render(<ChromeTabs tabs={[
         tab({ label: 'Plain' }),
-        tab({ label: 'Closable', onSelect, onClose, closeTitle: 'Close this outline variation (beats are kept)' }),
+        tab({ label: 'Closable', onSelect, onClose, closeTitle: 'Delete this outline variation (beats are kept)' }),
       ]} />);
     });
     const xs = host.querySelectorAll('.tool-chrome-tab-x');

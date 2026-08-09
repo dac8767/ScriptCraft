@@ -661,15 +661,6 @@
   ]
  },
  {
-  "text": "Close this outline variation (beats are kept)",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Outline Window",
-  "where": [
-   "components/BeatBoard.tsx"
-  ]
- },
- {
   "text": "Close without saving",
   "kind": "tooltip",
   "sites": 1,
@@ -972,6 +963,15 @@
    "components/NotebookTool.tsx"
   ],
   "icon": "FaRegTrashAlt"
+ },
+ {
+  "text": "Delete this outline variation (beats are kept)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
+  ]
  },
  {
   "text": "Delete this theme",

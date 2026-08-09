@@ -1480,14 +1480,14 @@ export function OutlineHeaderControls() {
 /* ─── v6.48: the variation tabs live in the WINDOW HEADER (Derek: "move
    outline tabs to header like all other windows"). The tab DATA feeds the
    shared ChromeTabs strip via TOOL_CHROME.useTabs; rename (double-click),
-   close (×) and the + button ride the shared strip's optional slots. The
+   delete (×) and the + button ride the shared strip's optional slots. The
    takeover view has no chrome, so it keeps an in-board copy of the same
    row (see BeatBoard below). */
 
-async function confirmCloseOutlineTab(id: string, name: string): Promise<void> {
+async function confirmDeleteOutlineTab(id: string, name: string): Promise<void> {
   const ok = await confirmDialog(
-    `Close "${name}"? Your beats are safe — they live in every tab. Only this arrangement of sections is deleted.`,
-    { title: 'Close Outline Tab', confirmLabel: 'Close Tab', danger: true },
+    `Delete "${name}"? Your beats are safe — they live in every tab. Only this arrangement of sections is deleted.`,
+    { title: 'Delete Outline Tab', confirmLabel: 'Delete Tab', danger: true },
   );
   if (ok) useEditorStore.getState().deleteOutlineTab(id);
 }
@@ -1502,8 +1502,8 @@ export function useOutlineTabs(): ToolChromeTab[] {
     active: viewedTab === t.id,
     onSelect: () => switchOutlineTab(t.id),
     onRename: (name: string) => renameOutlineTab(t.id, name),
-    onClose: outlineTabs.length > 1 ? () => { void confirmCloseOutlineTab(t.id, t.name); } : undefined,
-    closeTitle: 'Close this outline variation (beats are kept)',
+    onClose: outlineTabs.length > 1 ? () => { void confirmDeleteOutlineTab(t.id, t.name); } : undefined,
+    closeTitle: 'Delete this outline variation (beats are kept)',
   }));
 }
 
@@ -1722,8 +1722,8 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
               {outlineTabs.length > 1 && (
                 <button
                   className="beat-tab-x"
-                  title="Close this outline variation (beats are kept)"
-                  onClick={(e) => { e.stopPropagation(); void confirmCloseOutlineTab(t.id, t.name); }}
+                  title="Delete this outline variation (beats are kept)"
+                  onClick={(e) => { e.stopPropagation(); void confirmDeleteOutlineTab(t.id, t.name); }}
                 >×</button>
               )}
             </div>

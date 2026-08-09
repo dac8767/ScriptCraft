@@ -151,7 +151,54 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.52 and older (newest first)
+## Version history — v6.53 and older (newest first)
+
+### v6.53 — freeform cards: header drag FIXED, any-edge resize, edge-anchored links
+
+- Derek: "i still cannot move the cards by dragging the window." ROOT
+  CAUSE of the v6.52 miss: the header's title branch used a threshold and
+  deliberately let the pointerdown default through so the input could
+  focus — which handed the gesture to the browser's native text-selection
+  drag INSIDE that input, and the card never moved. (My v6.52 check
+  dragged in one 80px jump, clearing the threshold before the browser
+  settled into selection; a hand-paced press-creep-travel reproduces it.
+  RULE: drive drag checks the way a hand moves — tiny first steps.) FIX:
+  beginCardDrag ALWAYS preventDefaults; nothing native starts. A press
+  that never travels far enough replays as a tap — focusTitleAt() focuses
+  the field and drops the caret at the click point via
+  caretRangeFromPoint (falls back to end-of-text). A FOCUSED title still
+  keeps text selection (the drag defers), so editing is unchanged.
+  check-v653 drives both the slow drag and the plain click.
+- Any-edge resize: FreeBeatCard renders the shared EdgeResizeZones +
+  startEdgeResize (v5.46's primitive — same one the tool windows use);
+  rect() falls back to the DOM box for auto-height cards, apply() writes
+  x/y/cardWidth/cardHeight straight to the store so west/north edges move
+  the card's origin as they resize. BeatCardContent's corner grip is now
+  OPTIONAL (resizePointerDown?) — sections mode keeps it, freeform drops
+  it because the Connect button took that corner.
+- LINK REBUILD (Derek's spec): the Connect button moved to the card's
+  BOTTOM-RIGHT corner (z-index 41, above the .fs-edge zones' 40), and
+  arm-then-drag became CLICK-PLACE-CLICK: click Connect → a circle
+  follows the pointer along THIS card's perimeter → click to fix it →
+  the line follows the pointer, the hovered card shows its own circle →
+  click to fix and connect. Escape or a click on empty canvas cancels;
+  the button toggles off at any stage. The canvas takes those clicks in
+  the CAPTURE phase, so no card drag or edge resize starts under them.
+- DATA (backwards compatible): mindLinks stays a plain id array; the new
+  BeatInfo.mindAnchors keys the two endpoint anchors by target id. An
+  anchor is NORMALIZED to the card's box ({ax, ay} in 0..1, one pinned to
+  an edge) so a resized card keeps its connection point in proportion. A
+  pre-v6.53 save has no anchors and draws center-to-center exactly as it
+  did — asserted in check-v653.
+- Geometry is now MEASURED: a ResizeObserver over the canvas keeps each
+  card's real box (the old `cardHeight || 110` guess would float the
+  circles off the edge, and had been skewing every line's endpoints).
+  nearestEdgeAnchor/anchorPoint are pure + unit-tested
+  (BeatBoard.anchors.test.ts, 7 cases incl. the pointer-outside-the-card
+  projection and the resize-keeps-its-spot property).
+- check-v653 (19 asserts). check-v652's four link-drag asserts retired
+  with the flow they tested (its count/contrast/HelperText/header-drag
+  asserts stay, 9).
 
 ### v6.52 — Outline/freeform polish; card contrast; Helper Text = a real TOOL
 
