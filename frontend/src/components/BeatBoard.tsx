@@ -1510,17 +1510,17 @@ export function OutlineBeatCount() {
   );
 }
 
-/** The + (new variation) button, hugging the header tab strip. */
+/** The + (new variation) button, hugging the header tab strip — INSIDE its
+ *  bordered pill, since it reads as one of the tabs. (v6.56, Derek: the beat
+ *  count moved out of that pill — it was picking up the border as a box —
+ *  and rides the AfterTabs slot instead.) */
 export function OutlineTabsExtra() {
   return (
-    <>
-      <button
-        className="beat-tab-add"
-        title="New outline variation"
-        onClick={() => useEditorStore.getState().addOutlineTab()}
-      >+</button>
-      <OutlineBeatCount />
-    </>
+    <button
+      className="beat-tab-add"
+      title="New outline variation"
+      onClick={() => useEditorStore.getState().addOutlineTab()}
+    >+</button>
   );
 }
 

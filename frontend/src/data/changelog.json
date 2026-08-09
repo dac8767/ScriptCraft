@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.56",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline: the beat count (\"4 beats\") is plain text again — it had been sitting inside the tab strip's outline, which drew a box around it. It now sits clear of the + button and is vertically centered in the header."
+  ]
+ },
+ {
   "version": "6.55",
   "date": "2026-08-09",
   "changes": [

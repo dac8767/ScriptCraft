@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.55 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.56 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,24 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.56 — the outline beat count leaves the tab pill
+
+- Derek: "vertically center '4 beats' and add space between that and the +
+  button. remove the box that is around '4 beats'." The box was never the
+  count's own — v6.52 rendered it inside TabsExtra, i.e. INSIDE
+  .tool-chrome-tabs, whose border draws the strip's pill; the count
+  inherited it and sat hard against the + button.
+- ToolChrome gained an `AfterTabs` slot (HeaderTabs renders it as a
+  SIBLING of the host + measurer, outside the pill) for chrome that
+  belongs beside the tabs without being one of them. beatboard:
+  TabsExtra = the + only, AfterTabs = OutlineBeatCount. naturalWidth's
+  fit maths picks the new sibling up on its own (it walks row.children).
+- CSS: align-self:center (centers it in the window header row AND in the
+  takeover's flex-end .beat-tabs row) + margin-left:12px + nowrap.
+- check-v652 measures the OUTCOME, not the markup: bare text (no border,
+  not contained by the strip), ≥8px clear of the + button, and within
+  1.5px of the header row's vertical middle.
+
 ### v6.55 — freeform titles shrink so the title bar has room to grab
 
 - Derek: "make the beat title smaller so that the area for grabbing and
@@ -364,50 +382,12 @@ Durable bits kept live here:
 - check-v652 (13 asserts); v624/v638/v649/v651 updated where the Helper
   Text shell changed; 1125 vitest.
 
-### v6.51 — Helper Text catalog covers DYNAMIC sites; applier arm-flip fix
-
-- Derek (with his screenshot of the bar checkbox's tooltip): "recheck the
-  entire app for helper text that is not an option in the helper text
-  window. I've found many." ROOT CAUSE: build-helper-catalog.mjs only
-  matched LITERAL title="…"/placeholder="…" attributes — every dynamic
-  site (title={cond ? 'A' : 'B'}, title={'X'}, ~147 of them) produced
-  overridable DOM text the window never LISTED. The DOM applier always
-  handled them at runtime (it keys whatever lands in the DOM by default
-  string); listing was the gap.
-- Builder now slices the balanced {…} expression after title=/
-  placeholder= (quote-aware walker) and harvests every FIXED string
-  literal inside. Guards: comparison operands/lookup keys skipped
-  (===, [key], .includes(, case, and attr= for JSX-typed title props
-  whose classNames aren't helper text); templates WITH ${…} dropped
-  WHOLE (their pieces — 'can'/'cannot', pluralizing 's' — are fragments
-  of one contextual string; no fixed default exists to key an override).
-  Catalog 365 → 462 entries (+96 tooltips/placeholders, +1 hint).
-- APPLIER BUG found by the new coverage: data-ht-orig memory went STALE
-  when a dynamic title re-rendered to its OTHER arm — it painted the old
-  arm's override over the new arm (or "restored" the wrong default).
-  applyToElement now adopts cur as the new original when it matches
-  neither the remembered default nor its override. helperText.test grew
-  the arm-flip case (12 tests).
-- BeatBoard's ? popover body now rides ht() (the TypewriterTool
-  convention it had missed) — editable like the rest.
-- STANDING RULE recorded in CLAUDE.md §3 (Derek, this batch): any change
-  that adds/removes/rewords helper text reruns build-helper-catalog.mjs
-  in the SAME change. check-helper-catalog enforces it in check-all.
-- NOT covered (by design): tooltips interpolating live data (`Switch to
-  ${tab name}`) have no fixed default to key an override by — contextual
-  labels, not fixed helper text. Raw EMPTY-STATE texts (~109 sites, e.g.
-  "No snapshots yet…") are also still outside ht() — a separate
-  mechanical sweep if Derek wants those editable too.
-- helperTextCatalog.test.ts pins the coverage + junk-guards at the data
-  level; check-v651 (8 asserts) drives the LIVE loop: override a ternary
-  tooltip → control updates; arm flips stay clean; ? popover editable;
-  the window lists the example strings.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.51** — the Helper Text catalog covers DYNAMIC title/placeholder expressions (+97); applier arm-flip fix; the rebuild-the-catalog standing rule
 - **v6.50** — Outline polish: bare View trigger (icon + current view), option icons, add button leads the body row
 - **v6.49** — Outline header standardized: View/Filter/Search cluster, actions row in the body, "Show beat color on all tabs" retired
 - **v6.48** — Themes menu label + click-to-apply; outline tabs into the window header (ChromeTabs grew rename/close/TabsExtra); Auto Save → Snapshot

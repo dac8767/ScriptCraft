@@ -29,13 +29,29 @@ try {
   // ── 1: the count rides the tab strip, not the right cluster ──
   const count = await page.evaluate((w) => {
     const win = document.querySelector(w);
+    const info = win?.querySelector('.tool-window-header .beat-board-info');
+    if (!info) return { text: null };
+    const strip = win.querySelector('.tool-chrome-tabs:not(.tool-chrome-tabs-measure)');
+    const i = info.getBoundingClientRect(), s = strip.getBoundingClientRect();
+    const row = info.parentElement.getBoundingClientRect();
+    const cs = getComputedStyle(info);
     return {
-      inStrip: win?.querySelector('.tool-chrome-tabs:not(.tool-chrome-tabs-measure) .beat-board-info')?.textContent ?? null,
-      inCluster: !!win?.querySelector('.beat-header-controls .beat-board-info'),
+      text: info.textContent,
+      afterStrip: i.left >= s.right,                       // beside the tabs
+      boxed: !!strip.contains(info),                       // v6.56: not inside the pill
+      gap: Math.round(i.left - s.right),
+      border: cs.borderStyle !== 'none' && parseFloat(cs.borderWidth) > 0,
+      // centered in the header row (within a pixel of the row's middle)
+      offCenter: Math.abs((i.top + i.bottom) / 2 - (row.top + row.bottom) / 2),
+      inCluster: !!win.querySelector('.beat-header-controls .beat-board-info'),
     };
   }, W);
-  ok(/\d+ beats?/.test(count.inStrip || ''), `the beat count sits beside the tabs (${JSON.stringify(count.inStrip)})`);
+  ok(/\d+ beats?/.test(count.text || ''), `the beat count sits beside the tabs (${JSON.stringify(count.text)})`);
   ok(!count.inCluster, 'and no longer in the right-hand cluster');
+  // v6.56, Derek: out of the tab pill (no box), spaced off the + button, centered
+  ok(!count.boxed && !count.border, 'the count is bare text — outside the tab strip\'s box');
+  ok(count.afterStrip && count.gap >= 8, `there is space between it and the + button (${count.gap}px)`);
+  ok(count.offCenter <= 1.5, `it sits vertically centered in the header (off by ${count.offCenter.toFixed(1)}px)`);
 
   // ── 2: card ↔ board separation, dark AND light ──
   await page.evaluate(() => {

@@ -269,10 +269,18 @@
   letter-spacing: 0.5px;
   color: var(--fd-text-muted);
 }
+/* v6.56, Derek: "vertically center '4 beats' and add space between that and
+   the + button. remove the box that is around it." The box was the tab
+   strip's own border — the count sits OUTSIDE that pill now (the AfterTabs
+   slot), so it is bare text; align-self keeps it centered in the header row
+   AND in the takeover's bottom-aligned tabs row. */
 .beat-board-info {
   font-size: 11px;
   color: var(--fd-text-muted);
+  align-self: center;
+  margin-left: 12px;
   margin-right: auto;
+  white-space: nowrap;
 }
 .beat-board-add-col-btn {
   background: transparent;

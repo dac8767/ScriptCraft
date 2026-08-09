@@ -49,7 +49,7 @@ import MarkupsPanel, { MarkupsTitleExtra, MarkupsControls } from './MarkupsPanel
 import ThesaurusTool from './ThesaurusTool';
 import RewriteTool, { RewriteHeaderControls } from './RewriteTool';
 import { ScenesTool } from './ScenesTool';
-import BeatBoard, { OutlineHeaderControls, useOutlineTabs, OutlineTabsExtra } from './BeatBoard';
+import BeatBoard, { OutlineHeaderControls, useOutlineTabs, OutlineTabsExtra, OutlineBeatCount } from './BeatBoard';
 import TypewriterTool, { FocusHeaderControls } from './TypewriterTool';
 import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
@@ -198,6 +198,10 @@ export interface ToolChrome {
    *  the Outline's + (new variation) button. Stays visible when the strip
    *  collapses into a dropdown. */
   TabsExtra?: React.FC;
+  /** v6.56: rendered AFTER the strip, outside its bordered pill — for chrome
+   *  that belongs beside the tabs but is not one of them (the Outline's beat
+   *  count, which looked boxed while it sat inside). */
+  AfterTabs?: React.FC;
   /** The Filter / Sort / View / Search cluster, in that order. */
   Controls?: React.FC;
 }
@@ -318,6 +322,7 @@ function HeaderTabs({ chrome }: { chrome: ToolChrome }) {
         <ChromeTabs tabs={tabs} />
         {chrome.TabsExtra && <chrome.TabsExtra />}
       </span>
+      {chrome.AfterTabs && <chrome.AfterTabs />}
     </>
   );
 }
@@ -417,7 +422,7 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // v2.41: count/Arrangement/help. v6.48, Derek: the variation tabs moved up
   // into the header (rename/close/+ ride the shared strip's optional slots),
   // and Presets + Add moved into the controls cluster with them.
-  beatboard: { useTabs: useOutlineTabs, TabsExtra: OutlineTabsExtra, Controls: OutlineHeaderControls },
+  beatboard: { useTabs: useOutlineTabs, TabsExtra: OutlineTabsExtra, AfterTabs: OutlineBeatCount, Controls: OutlineHeaderControls },
   // v4.70, Derek: screenshot buttons in the Feedback header — the capture
   // lands as a draggable chip above the form (FeedbackTool.tsx).
   feedback: { Controls: FeedbackShotControls },

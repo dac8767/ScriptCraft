@@ -151,7 +151,46 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.50 and older (newest first)
+## Version history — v6.51 and older (newest first)
+
+### v6.51 — Helper Text catalog covers DYNAMIC sites; applier arm-flip fix
+
+- Derek (with his screenshot of the bar checkbox's tooltip): "recheck the
+  entire app for helper text that is not an option in the helper text
+  window. I've found many." ROOT CAUSE: build-helper-catalog.mjs only
+  matched LITERAL title="…"/placeholder="…" attributes — every dynamic
+  site (title={cond ? 'A' : 'B'}, title={'X'}, ~147 of them) produced
+  overridable DOM text the window never LISTED. The DOM applier always
+  handled them at runtime (it keys whatever lands in the DOM by default
+  string); listing was the gap.
+- Builder now slices the balanced {…} expression after title=/
+  placeholder= (quote-aware walker) and harvests every FIXED string
+  literal inside. Guards: comparison operands/lookup keys skipped
+  (===, [key], .includes(, case, and attr= for JSX-typed title props
+  whose classNames aren't helper text); templates WITH ${…} dropped
+  WHOLE (their pieces — 'can'/'cannot', pluralizing 's' — are fragments
+  of one contextual string; no fixed default exists to key an override).
+  Catalog 365 → 462 entries (+96 tooltips/placeholders, +1 hint).
+- APPLIER BUG found by the new coverage: data-ht-orig memory went STALE
+  when a dynamic title re-rendered to its OTHER arm — it painted the old
+  arm's override over the new arm (or "restored" the wrong default).
+  applyToElement now adopts cur as the new original when it matches
+  neither the remembered default nor its override. helperText.test grew
+  the arm-flip case (12 tests).
+- BeatBoard's ? popover body now rides ht() (the TypewriterTool
+  convention it had missed) — editable like the rest.
+- STANDING RULE recorded in CLAUDE.md §3 (Derek, this batch): any change
+  that adds/removes/rewords helper text reruns build-helper-catalog.mjs
+  in the SAME change. check-helper-catalog enforces it in check-all.
+- NOT covered (by design): tooltips interpolating live data (`Switch to
+  ${tab name}`) have no fixed default to key an override by — contextual
+  labels, not fixed helper text. Raw EMPTY-STATE texts (~109 sites, e.g.
+  "No snapshots yet…") are also still outside ht() — a separate
+  mechanical sweep if Derek wants those editable too.
+- helperTextCatalog.test.ts pins the coverage + junk-guards at the data
+  level; check-v651 (8 asserts) drives the LIVE loop: override a ternary
+  tooltip → control updates; arm flips stay clean; ? popover editable;
+  the window lists the example strings.
 
 ### v6.50 — Outline polish: bare View trigger + option icons; add-button leads
 
