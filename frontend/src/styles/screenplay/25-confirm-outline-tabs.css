@@ -336,20 +336,56 @@
   stroke-width: 2.5;
   stroke-dasharray: 2 3;
 }
-/* v2.46: the Connect button ARMS a card — dashed outline + crosshair say
-   "drag from here"; the next pointer-down on it starts the line. */
-.mind-arm-btn.active { color: var(--fd-accent); }
+/* v6.53, Derek: "move the link button into the bottom right corner." It sits
+   above the edge-resize zones (z-index 40) so the corner still connects. */
+.beat-card-linkbtn {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  z-index: 41;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.75;
+}
+.beat-card-linkbtn:hover { opacity: 1; color: var(--fd-text); background: var(--fd-overlay-light); }
+.beat-card-linkbtn.active { opacity: 1; color: var(--fd-accent); background: var(--fd-overlay-medium); }
+/* The card whose edge you're picking right now (armed), and the origin
+   holding its start circle while you go choose the other end (v6.52). */
 .mind-armed { cursor: crosshair; }
 .mind-armed .beat-card { outline: 2px dashed var(--fd-accent); }
-/* v6.52, Derek: while the connection line is out, the ORIGIN stays lit and
-   the card under the pointer lights up harder — you can see exactly which
-   card you're about to pick. */
 .mind-link-origin .beat-card { outline: 2px dashed var(--fd-accent); }
 .mind-link-target .beat-card {
   outline: 3px solid var(--fd-accent);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--fd-accent) 30%, transparent);
 }
-.mind-linking .beat-card-wrap-free { cursor: crosshair; }
+/* v6.53: the circle you're placing, and the one already fixed. */
+.mind-lines .mind-anchor-preview {
+  fill: var(--fd-accent);
+  stroke: var(--fd-bg);
+  stroke-width: 2;
+  pointer-events: none;
+}
+.mind-lines .mind-anchor-set {
+  fill: var(--fd-accent);
+  stroke: var(--fd-bg);
+  stroke-width: 2;
+  pointer-events: none;
+}
+/* Where a finished connection meets each card. */
+.mind-lines .mind-line-dot { fill: var(--fd-text-muted); pointer-events: none; }
+.mind-lines g:hover .mind-line-dot,
+.mind-lines g.selected .mind-line-dot { fill: var(--fd-accent); }
+.mind-linking, .mind-linking .beat-card-wrap-free { cursor: crosshair; }
 /* v6.52: the freeform card's whole header row drags, windows-style. */
 .beat-card-wrap-free .beat-card-top { cursor: grab; }
 .beat-card-wrap-free .beat-card-top .beat-card-title { cursor: text; }

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.52 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.53 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,53 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.53 — freeform cards: header drag FIXED, any-edge resize, edge-anchored links
+
+- Derek: "i still cannot move the cards by dragging the window." ROOT
+  CAUSE of the v6.52 miss: the header's title branch used a threshold and
+  deliberately let the pointerdown default through so the input could
+  focus — which handed the gesture to the browser's native text-selection
+  drag INSIDE that input, and the card never moved. (My v6.52 check
+  dragged in one 80px jump, clearing the threshold before the browser
+  settled into selection; a hand-paced press-creep-travel reproduces it.
+  RULE: drive drag checks the way a hand moves — tiny first steps.) FIX:
+  beginCardDrag ALWAYS preventDefaults; nothing native starts. A press
+  that never travels far enough replays as a tap — focusTitleAt() focuses
+  the field and drops the caret at the click point via
+  caretRangeFromPoint (falls back to end-of-text). A FOCUSED title still
+  keeps text selection (the drag defers), so editing is unchanged.
+  check-v653 drives both the slow drag and the plain click.
+- Any-edge resize: FreeBeatCard renders the shared EdgeResizeZones +
+  startEdgeResize (v5.46's primitive — same one the tool windows use);
+  rect() falls back to the DOM box for auto-height cards, apply() writes
+  x/y/cardWidth/cardHeight straight to the store so west/north edges move
+  the card's origin as they resize. BeatCardContent's corner grip is now
+  OPTIONAL (resizePointerDown?) — sections mode keeps it, freeform drops
+  it because the Connect button took that corner.
+- LINK REBUILD (Derek's spec): the Connect button moved to the card's
+  BOTTOM-RIGHT corner (z-index 41, above the .fs-edge zones' 40), and
+  arm-then-drag became CLICK-PLACE-CLICK: click Connect → a circle
+  follows the pointer along THIS card's perimeter → click to fix it →
+  the line follows the pointer, the hovered card shows its own circle →
+  click to fix and connect. Escape or a click on empty canvas cancels;
+  the button toggles off at any stage. The canvas takes those clicks in
+  the CAPTURE phase, so no card drag or edge resize starts under them.
+- DATA (backwards compatible): mindLinks stays a plain id array; the new
+  BeatInfo.mindAnchors keys the two endpoint anchors by target id. An
+  anchor is NORMALIZED to the card's box ({ax, ay} in 0..1, one pinned to
+  an edge) so a resized card keeps its connection point in proportion. A
+  pre-v6.53 save has no anchors and draws center-to-center exactly as it
+  did — asserted in check-v653.
+- Geometry is now MEASURED: a ResizeObserver over the canvas keeps each
+  card's real box (the old `cardHeight || 110` guess would float the
+  circles off the edge, and had been skewing every line's endpoints).
+  nearestEdgeAnchor/anchorPoint are pure + unit-tested
+  (BeatBoard.anchors.test.ts, 7 cases incl. the pointer-outside-the-card
+  projection and the resize-keeps-its-spot property).
+- check-v653 (19 asserts). check-v652's four link-drag asserts retired
+  with the flow they tested (its count/contrast/HelperText/header-drag
+  asserts stay, 9).
+
 ### v6.52 — Outline/freeform polish; card contrast; Helper Text = a real TOOL
 
 - Derek's five (screenshot batch): (1) the beat count moved LEFT, beside
@@ -353,71 +400,12 @@ Durable bits kept live here:
   search field shifts the cluster mid-click — test Filter BEFORE typing
   in Search, or the Filter click lands on a moved target.
 
-### v6.48 — seven-item batch: Themes label/click-to-apply; outline tabs → HEADER; Snapshot rename
-
-- Derek's five + two mid-turn: (1) View ▸ "Theme" → "Themes"; (2) clicking
-  a theme row in Customize APPLIES it (ThemesTab rows get onClick +
-  fs-theme-click cursor; buttons exempt via closest('button'); a HIDDEN
-  row applies + unhides — active can never be hidden); (3) applying an
-  outline preset RENAMES the viewed tab to the preset's name (inside
-  applyOutlinePreset itself so every door gets it; resolveOutlinePreset
-  return type gained `name`); (4) `.beat-board-preset` wears the standard
-  dropdown clothes (bg --fd-input-bg, text --fd-text — was transparent);
-  (5) Script History says SNAPSHOT everywhere (labels/dialogs/toasts:
-  Take Snapshot…/Snapshots/Compare with Snapshot…/Track Changes Since
-  Last Snapshot; the Check In dialog → "Take Snapshot"; VersionHistory
-  window title "Snapshots"; CompareVersionPicker; toolbarCommands +
-  shortcuts labels; HelpReference — which ALSO still advertised
-  "ScriptCraft Cloud account", a missed v6.42 surface, now gone). The
-  command IDS were already takeSnapshot/snapshots/compareSnapshot —
-  labels only. On-disk "Auto Saves/Auto Save — …" names KEPT (v6.42
-  spec; shared with timed autosaves; check-v642 asserts them). Stale
-  toast path "Tools > Script History" corrected to File > (it's the File
-  menu's last item). (6) the per-tab ◉ → a "Show in Outline Bar"
-  checkbox in the header — checked+DISABLED when the viewed tab feeds
-  the bar (exactly one tab always does; you check it on another tab,
-  never uncheck), wired to setOutlineBarTab(viewed). (7) outline
-  variation tabs live in the WINDOW HEADER via TOOL_CHROME.useTabs —
-  ToolChromeTab gained optional key/onRename/onClose(+closeTitle)
-  (double-click rename input, × span — strip mode only, like badge);
-  ToolChrome gained TabsExtra (the + button, inside the strip host, so
-  it survives collapse); beatboard chrome = useTabs+TabsExtra+Controls;
-  Presets + Add Section moved INTO OutlineHeaderControls; the in-board
-  .beat-tabs row now renders ONLY in the chrome-less takeover
-  (!embedded); .beat-tab-use CSS retired.
-- TWO PRE-EXISTING header bugs surfaced (the tabs made them load-
-  bearing): (a) .beat-header-controls is a SIZE CONTAINER (container-
-  type: inline-size for its @container query) → reports ZERO max-content
-  → .tool-chrome-right's min-width:max-content sizing collapsed the
-  whole outline cluster to 0px (confirmed on the PRE-change build via
-  stash: cluster w=0 even then). Fix: `.tool-chrome-right:has(
-  .beat-header-controls)` + its .tool-chrome-controls get flex:1 1 auto
-  (the docked strip's v4.90 contract). (b) naturalWidth() counted
-  ABSOLUTE children (the pinned corner actions — already reserved via
-  row padding — and the dead-center Arrangement block), inflating the
-  collapse decision ~230px → tabs collapsed in rows that fit. Fix:
-  skip out-of-flow children in the sum. And the v2.48 absolute
-  DEAD-CENTER Arrangement is retired — it painted OVER the presets/
-  checkbox at most widths now the row is shared; it rides the flow
-  (margin-left:auto), which is exactly v2.95's narrow fallback made
-  permanent.
-- check-v648 (20 asserts: menu labels, flyout snapshot names, theme
-  click applies via Settings cz-themes, header strip/+/no beat-tabs/no
-  dot, checkbox states + bar move, preset bg + rename-on-apply in store
-  AND strip, dblclick rename + Escape). Note for future checks: the
-  in-window menu bar is a TOGGLE (openMenu helper clicks until open);
-  tool window width seeds via toolSizes setState (strip collapses to
-  the v5.71 pill below ~1200px with this many controls — by design).
-- New tests: BeatBoard.presets (rename on apply incl. override),
-  ToolControls.tabs (×/rename affordances; React 19 onBlur = focusout),
-  ThemesTab.click (apply + button-guard + hidden-unhide),
-  BeatBoard.barcheck (checkbox states/move). 1114 vitest.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.48** — Themes menu label + click-to-apply; outline tabs into the window header (ChromeTabs grew rename/close/TabsExtra); Auto Save → Snapshot
 - **v6.47** — three new built-in themes: Paper, Gruvbox Dark, Catppuccin Mocha (the theme-adding pattern lives in its archive section)
 - **v6.46** — theme legibility pass (palette report S1/S2/S6: sepia/sol-light/dracula/light depth fixes, AA floors)
 - **v6.45** — Upload Voice Clip tool removed from the character window (Voice Profile writing fields stay; AssetAudio deleted)

@@ -336,16 +336,6 @@
   "icon": "FaColumns"
  },
  {
-  "text": "Armed — drag from this card to another card to connect (click to cancel)",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Outline Window",
-  "where": [
-   "components/BeatBoard.tsx"
-  ],
-  "icon": "FaLink"
- },
- {
   "text": "At least one preset must remain",
   "kind": "tooltip",
   "sites": 1,
@@ -709,7 +699,7 @@
   "icon": "FaCheck"
  },
  {
-  "text": "Connect — click, then drag from this card to another card",
+  "text": "Connect — click, then click this card's edge and the other card's edge",
   "kind": "tooltip",
   "sites": 1,
   "area": "Outline Window",
@@ -2296,6 +2286,16 @@
   "where": [
    "components/BeatBoard.tsx"
   ]
+ },
+ {
+  "text": "Placing a connection — click this card's edge to set the starting point (Escape cancels)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
+  ],
+  "icon": "FaLink"
  },
  {
   "text": "Press a key combination… (Esc to cancel)",

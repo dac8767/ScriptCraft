@@ -3,9 +3,8 @@
    2 beat cards visibly separate from the board background in EVERY theme
      (color-mix step toward the theme's text color — sampled on two themes)
    3 Helper Text is a real tool: floats like a window AND docks into a panel
-   4 freeform connect: the origin card stays lit; the hovered card lights up
-   5 freeform cards drag by the whole header row (title input still focuses
-     on a plain click) */
+   4 freeform cards drag by the whole header row (title input still focuses
+     on a plain click; v6.53 rebuilt the connect flow — see check-v653) */
 import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
@@ -106,28 +105,9 @@ try {
     return { a: beats[beats.length - 2].id, b: beats[beats.length - 1].id };
   });
   const cardSel = (id) => `${W} .beat-card-wrap-free[data-beat-id="${id}"]`;
-  // arm the origin, start the line, hover the target
-  await page.click(`${cardSel(ids.a)} .mind-arm-btn`);
-  await settle(page);
-  const armed = await page.evaluate((sel) => document.querySelector(sel)?.classList.contains('mind-armed'), cardSel(ids.a));
-  ok(armed, 'arming lights the origin (mind-armed)');
-  const aBox = await page.$eval(cardSel(ids.a), (el) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
-  const bBox = await page.$eval(cardSel(ids.b), (el) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
-  await page.mouse.move(aBox.x, aBox.y);
-  await page.mouse.down();
-  await page.mouse.move(bBox.x, bBox.y, { steps: 6 });
-  await settle(page);
-  const midDrag = await page.evaluate((s) => ({
-    origin: document.querySelector(s.a)?.classList.contains('mind-link-origin'),
-    target: document.querySelector(s.b)?.classList.contains('mind-link-target'),
-  }), { a: cardSel(ids.a), b: cardSel(ids.b) });
-  ok(midDrag.origin, 'while the line is out, the ORIGIN card stays highlighted');
-  ok(midDrag.target, 'the card under the pointer lights up as the would-be target');
-  await page.mouse.up();
-  await settle(page);
-  const linked = await page.evaluate((aId) =>
-    (window.__scStore.getState().beats.find((b) => b.id === aId)?.mindLinks ?? []).length > 0, ids.a);
-  ok(linked, 'releasing over it makes the connection');
+  /* (v6.53 replaced arm-then-drag with click-place-click and moved the
+     Connect button to the card's corner — that flow, its highlights and the
+     edge anchors are covered end to end by check-v653.) */
 
   // 5: drag by the header row (over the unfocused title input)
   const before = await page.evaluate((id) => {

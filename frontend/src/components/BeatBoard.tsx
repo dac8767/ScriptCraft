@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -27,7 +27,8 @@ import { FaLink, FaPaperclip, FaRegQuestionCircle, FaRegTrashAlt } from 'react-i
 import { LuRotateCcw, LuColumns3, LuWaypoints } from 'react-icons/lu';
 import { ExpandIcon, ShrinkIcon } from './uiIcons';
 import { readableTextOn } from '../utils/palettes';
-import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
+import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
+import { useEditorStore, type BeatInfo, type BeatAnchor, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
 import { ht } from '../utils/helperText';
@@ -405,7 +406,10 @@ interface BeatCardContentProps {
   /** v6.52 (freeform): the WHOLE header row is a drag surface, windows-style
    *  — spread on .beat-card-top. The handler guards its own targets. */
   headerDragProps?: Record<string, unknown>;
-  resizePointerDown: (e: React.PointerEvent) => void;
+  /** The bottom-right corner grip. Sections-mode cards only since v6.53 —
+   *  freeform cards resize from any edge (EdgeResizeZones) and their corner
+   *  belongs to the Connect button. */
+  resizePointerDown?: (e: React.PointerEvent) => void;
   /** v2.46: an extra header button, first in the right-hand group — the
    *  freeform card's Connect button rides here. */
   headExtra?: React.ReactNode;
@@ -671,8 +675,10 @@ const BeatCardContent: React.FC<BeatCardContentProps> = ({
       </div>
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
 
-      {/* Resize handle */}
-      <div className="beat-card-resize-handle" onPointerDown={resizePointerDown} style={{ touchAction: 'none' }} />
+      {/* Resize handle (sections mode; freeform resizes from any edge) */}
+      {resizePointerDown && (
+        <div className="beat-card-resize-handle" onPointerDown={resizePointerDown} style={{ touchAction: 'none' }} />
+      )}
     </div>
   );
 };
@@ -762,39 +768,86 @@ export function mindTitleSize(cardWidth: number): number {
   return Math.max(13, Math.min(24, Math.round((cardWidth || 240) / 15)));
 }
 
-/* v2.46, Derek: connecting is a two-step — push the card's Connect button
-   to ARM it, then click-drag from anywhere on that card and release over
-   another card; a line follows the pointer the whole way. */
+/* ─── v6.53 connection anchors (Derek: "you place [a circle] anywhere on the
+   edge of the first beat … you also choose a space on the edge" of the
+   second) ───
+   An anchor is stored NORMALIZED to its card's box — ax/ay in 0..1, with one
+   of them pinned to 0 or 1 so the point sits ON the perimeter. Normalized
+   means a resized or re-typed card keeps its connection where the writer put
+   it, in proportion. Pure + exported for the tests. */
+export interface CardBox { left: number; top: number; w: number; h: number }
+
+/** The perimeter point nearest a canvas-space pointer. Works from anywhere —
+ *  outside the card it projects onto the closest edge. */
+export function nearestEdgeAnchor(box: CardBox, px: number, py: number): BeatAnchor {
+  const w = Math.max(1, box.w);
+  const h = Math.max(1, box.h);
+  const rx = Math.min(1, Math.max(0, (px - box.left) / w));
+  const ry = Math.min(1, Math.max(0, (py - box.top) / h));
+  const dLeft = rx * w;
+  const dRight = (1 - rx) * w;
+  const dTop = ry * h;
+  const dBottom = (1 - ry) * h;
+  const nearest = Math.min(dLeft, dRight, dTop, dBottom);
+  if (nearest === dLeft) return { ax: 0, ay: ry };
+  if (nearest === dRight) return { ax: 1, ay: ry };
+  if (nearest === dTop) return { ax: rx, ay: 0 };
+  return { ax: rx, ay: 1 };
+}
+
+/** Anchor → canvas point. No anchor (every pre-v6.53 link) = the card's
+ *  center, which is exactly what those links drew before. */
+export function anchorPoint(box: CardBox, a?: BeatAnchor): { x: number; y: number } {
+  if (!a) return { x: box.left + box.w / 2, y: box.top + box.h / 2 };
+  return { x: box.left + a.ax * box.w, y: box.top + a.ay * box.h };
+}
+
+/** v6.53: put the caret where the writer clicked, after a click that turned
+ *  out NOT to be a drag. (The header preventDefaults its pointerdown — see
+ *  beginCardDrag — so the browser never gets to focus the field itself.) */
+function focusTitleAt(input: HTMLInputElement, clientX: number, clientY: number) {
+  input.focus();
+  const doc = document as Document & { caretRangeFromPoint?: (x: number, y: number) => Range | null };
+  let offset = input.value.length;
+  try {
+    const r = doc.caretRangeFromPoint?.(clientX, clientY);
+    if (r && typeof r.startOffset === 'number') offset = Math.min(r.startOffset, input.value.length);
+    input.setSelectionRange(offset, offset);
+  } catch { /* older engines: focus alone, caret at the end */ }
+}
+
+/* v2.46: connecting was arm-then-drag. v6.53, Derek: the Connect button
+   moved to the card's BOTTOM-RIGHT corner and the flow is click-place-click
+   — click it, place a circle on this card's edge, then place one on the
+   other card's edge. The canvas owns that state machine; the card only
+   reports its own pointer events and paints the highlights. */
 const FreeBeatCard: React.FC<FreeBeatCardProps & {
   armed: boolean;
   linkOrigin: boolean;
   linkTarget: boolean;
   onToggleArm: (id: string) => void;
-  onStartLink: (e: React.PointerEvent, fromId: string) => void;
-}> = ({ beat, onUpdate, onDelete, armed, linkOrigin, linkTarget, onToggleArm, onStartLink }) => {
+}> = ({ beat, onUpdate, onDelete, armed, linkOrigin, linkTarget, onToggleArm }) => {
   const dragRef = useRef<{ startX: number; startY: number; beatX: number; beatY: number } | null>(null);
-
-  const handleResize = useCallback(
-    (w: number, h: number) => {
-      onUpdate(beat.id, { cardWidth: w, cardHeight: h });
-    },
-    [beat.id, onUpdate],
-  );
-  const resizePointerDown = useResizeHandle(handleResize);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   const bx = beat.x || 0;
   const by = beat.y || 0;
 
-  /* v6.52: ONE drag engine for the grip and the header row. threshold=0
-     drags immediately (the grip); a positive threshold arms a pending drag
-     that only engages after real movement — the header's title input keeps
-     plain clicks (focus, caret) and gives up the pointer once a drag is
-     clearly meant (onEngage blurs it, windows-style). */
+  /* v6.52: ONE drag engine for the grip and the header row. v6.53 fix,
+     Derek ("i still cannot move the cards by dragging the window"): the
+     header ALWAYS preventDefaults its pointerdown now. The v6.52 threshold
+     mode deliberately let the default through so the title could focus —
+     which handed the gesture to the browser's native text-selection drag
+     inside that input, and the card never moved. Nothing native starts
+     here any more; a press that never travels far enough to be a drag is
+     replayed as a click through opts.onTap (which focuses the title and
+     places the caret). */
   const beginCardDrag = useCallback(
-    (e: React.PointerEvent, opts?: { threshold?: number; onEngage?: () => void }) => {
+    (e: React.PointerEvent, opts?: { threshold?: number; onTap?: (ev: PointerEvent) => void }) => {
+      e.preventDefault();
+      e.stopPropagation();
       const threshold = opts?.threshold ?? 0;
       let engaged = threshold === 0;
-      if (engaged) { e.preventDefault(); e.stopPropagation(); }
       dragRef.current = { startX: e.clientX, startY: e.clientY, beatX: bx, beatY: by };
 
       const onMove = (ev: PointerEvent) => {
@@ -803,16 +856,16 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
           if (Math.abs(ev.clientX - dragRef.current.startX) < threshold
             && Math.abs(ev.clientY - dragRef.current.startY) < threshold) return;
           engaged = true;
-          opts?.onEngage?.();
         }
         const newX = Math.max(0, dragRef.current.beatX + (ev.clientX - dragRef.current.startX));
         const newY = Math.max(0, dragRef.current.beatY + (ev.clientY - dragRef.current.startY));
         onUpdate(beat.id, { x: newX, y: newY });
       };
-      const onUp = () => {
+      const onUp = (ev: PointerEvent) => {
         dragRef.current = null;
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
+        if (!engaged) opts?.onTap?.(ev);
       };
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
@@ -823,20 +876,46 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
   const onDragPointerDown = useCallback((e: React.PointerEvent) => beginCardDrag(e), [beginCardDrag]);
 
   /* v6.52, Derek: "allow dragging the freeform cards from the top of each
-     card, like all windows work" — the whole header row drags. Buttons keep
-     their jobs (the window-header guard); the title input drags only after
-     4px of movement, so clicking it still focuses and places the caret. A
-     FOCUSED title is being edited — text selection wins there. */
+     card, like all windows work" — the whole header row drags, buttons keep
+     their jobs (the window-header guard). v6.53: over the TITLE the press
+     starts a 4px-threshold drag with a tap fallback that focuses the field
+     and drops the caret where you clicked; once the title HAS focus it is
+     being edited, so text selection wins there. */
   const onHeaderPointerDown = useCallback((e: React.PointerEvent) => {
     const t = e.target as HTMLElement;
     if (t.closest('button')) return;
     if (t.classList.contains('beat-card-title')) {
       if (document.activeElement === t) return;
-      beginCardDrag(e, { threshold: 4, onEngage: () => (t as HTMLInputElement).blur() });
+      beginCardDrag(e, {
+        threshold: 4,
+        onTap: (ev) => focusTitleAt(t as HTMLInputElement, ev.clientX, ev.clientY),
+      });
       return;
     }
     beginCardDrag(e);
   }, [beginCardDrag]);
+
+  /* v6.53, Derek: "freeform beat windows should also be able to change size
+     by adjusting any side of the window" — the shared EdgeResizeZones the
+     tool windows use (v5.46), so the card resizes from any edge or corner
+     and the west/north edges move x/y as they shrink. The card's geometry
+     IS its store fields, so apply() writes them straight through. */
+  const beginEdge = useCallback((zone: EdgeZone, e: React.PointerEvent) => {
+    const el = wrapRef.current;
+    startEdgeResize(e, zone, {
+      rect: () => ({
+        left: bx,
+        top: by,
+        w: beat.cardWidth || el?.offsetWidth || 240,
+        // an auto-height card has no stored height until it is resized once
+        h: beat.cardHeight || el?.offsetHeight || 110,
+      }),
+      min: { w: 160, h: 90 },
+      apply: (g) => onUpdate(beat.id, {
+        x: Math.max(0, g.left), y: Math.max(0, g.top), cardWidth: g.w, cardHeight: g.h,
+      }),
+    });
+  }, [beat.id, beat.cardWidth, beat.cardHeight, bx, by, onUpdate]);
 
   const wrapStyle: React.CSSProperties = {
     position: 'absolute',
@@ -850,13 +929,10 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
 
   return (
     <div
+      ref={wrapRef}
       style={wrapStyle}
       className={`beat-card-wrap beat-card-wrap-free${armed ? ' mind-armed' : ''}${linkOrigin ? ' mind-link-origin' : ''}${linkTarget ? ' mind-link-target' : ''}`}
       data-beat-id={beat.id}
-      /* Armed: the NEXT pointer-down anywhere on this card starts the line
-         (capture phase, so the title/drag handle don't swallow it).
-         data-beat-id on the wrapper is what the drop hit-test looks for. */
-      onPointerDownCapture={armed ? (e) => onStartLink(e, beat.id) : undefined}
     >
       <BeatCardContent
         beat={beat}
@@ -864,17 +940,18 @@ const FreeBeatCard: React.FC<FreeBeatCardProps & {
         onDelete={onDelete}
         dragHandleProps={{ onPointerDown: onDragPointerDown, style: { touchAction: 'none', cursor: 'grab' } }}
         headerDragProps={{ onPointerDown: onHeaderPointerDown, style: { touchAction: 'none' } }}
-        resizePointerDown={resizePointerDown}
-        headExtra={
-          <button
-            className={`beat-toolbar-btn mind-arm-btn${armed ? ' active' : ''}`}
-            title={armed
-              ? 'Armed — drag from this card to another card to connect (click to cancel)'
-              : 'Connect — click, then drag from this card to another card'}
-            onClick={() => onToggleArm(beat.id)}
-          ><FaLink /></button>
-        }
       />
+      {/* v6.53: any-edge resize replaces the corner grip (which the Connect
+          button now occupies). */}
+      <EdgeResizeZones onStart={beginEdge} />
+      <button
+        className={`beat-card-linkbtn${armed ? ' active' : ''}`}
+        title={armed
+          ? 'Placing a connection — click this card\'s edge to set the starting point (Escape cancels)'
+          : 'Connect — click, then click this card\'s edge and the other card\'s edge'}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onToggleArm(beat.id); }}
+      ><FaLink /></button>
     </div>
   );
 };
@@ -900,125 +977,193 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
   // never stack — see freeformAutoLayout. Everything below (cards, line
   // endpoints, the drag maths) reads these effective coordinates.
   const beats = useMemo(() => freeformAutoLayout(rawBeats), [rawBeats]);
-  /* v2.46: mind map connections — arm a card with its Connect button, then
-     click-drag from that card; a live line follows the pointer, and
-     releasing over another card links them (stored on the source beat's
-     mindLinks). Click a line to SELECT it, then Delete/Backspace removes
-     it. Coordinates are canvas-content space: client minus the canvas
-     rect, plus its scroll — the same space the beats' x/y live in. */
+  /* v2.46 connected by arm-then-drag. v6.53, Derek: CLICK-PLACE-CLICK —
+     the Connect button (bottom-right corner) starts it, the next click
+     places the circle on THIS card's edge, and the click after that places
+     one on the other card's edge; both anchors are stored on the source
+     beat (mindAnchors, keyed by target). Click a line to SELECT it, then
+     Delete/Backspace removes it. Coordinates are canvas-content space:
+     client minus the canvas rect, plus its scroll — the same space the
+     beats' x/y live in. */
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [linkDrag, setLinkDrag] = useState<{ fromId: string; x: number; y: number } | null>(null);
-  // v6.52: the card under the pointer while a connection line is out.
-  const [linkHover, setLinkHover] = useState<string | null>(null);
-  const [armedId, setArmedId] = useState<string | null>(null);
+  const [linkPlace, setLinkPlace] = useState<{ fromId: string; from?: BeatAnchor } | null>(null);
+  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
+  /** The edge circle under the pointer right now (which card, and where). */
+  const [preview, setPreview] = useState<{ id: string; a: BeatAnchor } | null>(null);
   const [selectedLine, setSelectedLine] = useState<{ fromId: string; toId: string } | null>(null);
 
-  const handleToggleArm = useCallback((id: string) => {
-    setArmedId((a) => (a === id ? null : id));
+  /* v6.53: MEASURED card boxes. Anchors are normalized to a card's real box,
+     so a guessed height (the old `cardHeight || 110`) would float the circle
+     off the card's edge — and it was already skewing every line's endpoints.
+     One observer over the canvas keeps the real sizes. */
+  const [boxes, setBoxes] = useState<Record<string, { w: number; h: number }>>({});
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const read = () => {
+      const next: Record<string, { w: number; h: number }> = {};
+      canvas.querySelectorAll<HTMLElement>('[data-beat-id]').forEach((el) => {
+        const id = el.getAttribute('data-beat-id');
+        if (id) next[id] = { w: el.offsetWidth, h: el.offsetHeight };
+      });
+      setBoxes((prev) => {
+        const ids = Object.keys(next);
+        const same = ids.length === Object.keys(prev).length
+          && ids.every((id) => prev[id] && prev[id].w === next[id].w && prev[id].h === next[id].h);
+        return same ? prev : next;
+      });
+    };
+    read();
+    if (typeof ResizeObserver === 'undefined') return;          // jsdom
+    const ro = new ResizeObserver(read);
+    canvas.querySelectorAll('[data-beat-id]').forEach((el) => ro.observe(el));
+    return () => ro.disconnect();
+  }, [beats]);
+
+  const boxOf = useCallback((b: BeatInfo): CardBox => ({
+    left: b.x || 0,
+    top: b.y || 0,
+    w: boxes[b.id]?.w || b.cardWidth || 240,
+    h: boxes[b.id]?.h || b.cardHeight || 110,
+  }), [boxes]);
+
+  const toCanvas = useCallback((ev: { clientX: number; clientY: number }) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const r = canvas.getBoundingClientRect();
+    return { x: ev.clientX - r.left + canvas.scrollLeft, y: ev.clientY - r.top + canvas.scrollTop };
   }, []);
 
-  /* Delete/Backspace removes the selected line; Escape clears selection and
-     disarms. Never while typing in a field. */
+  const cardUnder = useCallback((clientX: number, clientY: number): string | null => {
+    const hit = (document.elementFromPoint(clientX, clientY) as HTMLElement | null)?.closest('[data-beat-id]');
+    return hit?.getAttribute('data-beat-id') ?? null;
+  }, []);
+
+  const handleToggleArm = useCallback((id: string) => {
+    setLinkPlace((cur) => (cur && cur.fromId === id ? null : { fromId: id }));
+  }, []);
+
+  /* While placing, the circle follows the pointer along the relevant card's
+     perimeter: the ORIGIN's while you pick the start, then whichever card
+     you hover while you pick the end. */
   useEffect(() => {
-    if (!selectedLine && !armedId) return;
+    if (!linkPlace) { setPointer(null); setPreview(null); return; }
+    const onMove = (ev: PointerEvent) => {
+      const p = toCanvas(ev);
+      setPointer(p);
+      if (!linkPlace.from) {
+        const b = beats.find((x) => x.id === linkPlace.fromId);
+        setPreview(b ? { id: b.id, a: nearestEdgeAnchor(boxOf(b), p.x, p.y) } : null);
+        return;
+      }
+      const id = cardUnder(ev.clientX, ev.clientY);
+      const target = id && id !== linkPlace.fromId ? beats.find((x) => x.id === id) : null;
+      setPreview(target ? { id: target.id, a: nearestEdgeAnchor(boxOf(target), p.x, p.y) } : null);
+    };
+    document.addEventListener('pointermove', onMove);
+    return () => document.removeEventListener('pointermove', onMove);
+  }, [linkPlace, beats, boxOf, toCanvas, cardUnder]);
+
+  /** Every click while a connection is being placed lands here first (the
+   *  canvas takes it in the CAPTURE phase, so no card drag starts). */
+  const handlePlaceClick = useCallback((e: React.PointerEvent) => {
+    if (!linkPlace) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // the Connect button stays a toggle at every stage
+    if ((e.target as HTMLElement).closest('.beat-card-linkbtn')) { setLinkPlace(null); return; }
+    const p = toCanvas(e);
+    if (!linkPlace.from) {
+      const b = beats.find((x) => x.id === linkPlace.fromId);
+      if (!b) { setLinkPlace(null); return; }
+      setLinkPlace({ fromId: b.id, from: nearestEdgeAnchor(boxOf(b), p.x, p.y) });
+      return;
+    }
+    const targetId = cardUnder(e.clientX, e.clientY);
+    const target = targetId && targetId !== linkPlace.fromId ? beats.find((x) => x.id === targetId) : null;
+    if (!target) { setLinkPlace(null); return; }        // clicked away = cancel
+    const toAnchor = nearestEdgeAnchor(boxOf(target), p.x, p.y);
+    // Read the LATEST links from the store — this closure's beats can be a
+    // render behind. Adding only; an existing pair in either direction is
+    // left alone so the same connection can't be drawn twice.
+    const st = useEditorStore.getState();
+    const from = st.beats.find((b) => b.id === linkPlace.fromId);
+    const already = !!from && ((from.mindLinks ?? []).includes(target.id)
+      || ((st.beats.find((b) => b.id === target.id)?.mindLinks) ?? []).includes(from.id));
+    if (from && !already && linkPlace.from) {
+      onUpdateBeat(from.id, {
+        mindLinks: [...(from.mindLinks ?? []), target.id],
+        mindAnchors: { ...(from.mindAnchors ?? {}), [target.id]: { from: linkPlace.from, to: toAnchor } },
+      });
+    }
+    setLinkPlace(null);
+  }, [linkPlace, beats, boxOf, toCanvas, cardUnder, onUpdateBeat]);
+
+  /** Drop a link and the anchors that positioned it. */
+  const removeLink = useCallback((fromId: string, toId: string) => {
+    const from = useEditorStore.getState().beats.find((b) => b.id === fromId);
+    if (!from) return;
+    const anchors = { ...(from.mindAnchors ?? {}) };
+    delete anchors[toId];
+    onUpdateBeat(fromId, { mindLinks: toggleMindLink(from.mindLinks, toId), mindAnchors: anchors });
+  }, [onUpdateBeat]);
+
+  /* Delete/Backspace removes the selected line; Escape clears selection and
+     cancels a half-placed connection. Never while typing in a field. */
+  useEffect(() => {
+    if (!selectedLine && !linkPlace) return;
     const handler = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (e.key === 'Escape') {
         setSelectedLine(null);
-        setArmedId(null);
+        setLinkPlace(null);
         return;
       }
       if (selectedLine && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
-        const from = useEditorStore.getState().beats.find((b) => b.id === selectedLine.fromId);
-        if (from) onUpdateBeat(from.id, { mindLinks: toggleMindLink(from.mindLinks, selectedLine.toId) });
+        removeLink(selectedLine.fromId, selectedLine.toId);
         setSelectedLine(null);
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [selectedLine, armedId, onUpdateBeat]);
+  }, [selectedLine, linkPlace, removeLink]);
 
-  const handleStartLink = useCallback((e: React.PointerEvent, fromId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setArmedId(null);
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const toCanvas = (ev: { clientX: number; clientY: number }) => {
-      const r = canvas.getBoundingClientRect();
-      return { x: ev.clientX - r.left + canvas.scrollLeft, y: ev.clientY - r.top + canvas.scrollTop };
-    };
-    /* v6.52, Derek: while the line is out, the ORIGIN stays highlighted
-       (linkDrag.fromId — arming cleared above, so the class rides the drag)
-       and the card under the pointer lights up as the would-be target. */
-    const hoverAt = (ev: { clientX: number; clientY: number }) => {
-      const hit = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)
-        ?.closest('[data-beat-id]');
-      const id = hit?.getAttribute('data-beat-id');
-      return id && id !== fromId ? id : null;
-    };
-    setLinkDrag({ fromId, ...toCanvas(e) });
-    setLinkHover(null);
-    const onMove = (ev: PointerEvent) => {
-      setLinkDrag({ fromId, ...toCanvas(ev) });
-      setLinkHover(hoverAt(ev));
-    };
-    const onUp = (ev: PointerEvent) => {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      setLinkDrag(null);
-      setLinkHover(null);
-      const hit = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)
-        ?.closest('[data-beat-id]');
-      const targetId = hit?.getAttribute('data-beat-id');
-      if (!targetId || targetId === fromId) return;
-      // Read the LATEST links from the store — the closure's beats are stale
-      // by the time the pointer comes up. Drop only ADDS (removal is
-      // select-line + Delete now); an existing pair in either direction is
-      // left alone so the same connection can't be drawn twice.
-      const st = useEditorStore.getState();
-      const from = st.beats.find((b) => b.id === fromId);
-      if (!from) return;
-      const already = (from.mindLinks ?? []).includes(targetId)
-        || ((st.beats.find((b) => b.id === targetId)?.mindLinks) ?? []).includes(fromId);
-      if (!already) onUpdateBeat(fromId, { mindLinks: [...(from.mindLinks ?? []), targetId] });
-    };
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
-  }, [onUpdateBeat]);
-
-  const center = (b: BeatInfo) => ({
-    cx: (b.x || 0) + (b.cardWidth || 240) / 2,
-    cy: (b.y || 0) + (b.cardHeight || 110) / 2,
-  });
-  const lines: Array<{ from: BeatInfo; to: BeatInfo }> = [];
+  const lines: Array<{ from: BeatInfo; to: BeatInfo; anchors?: { from: BeatAnchor; to: BeatAnchor } }> = [];
   for (const b of beats) {
     for (const t of b.mindLinks ?? []) {
       const other = beats.find((x) => x.id === t);
-      if (other) lines.push({ from: b, to: other });
+      if (other) lines.push({ from: b, to: other, anchors: b.mindAnchors?.[t] });
     }
   }
 
-  const dragFrom = linkDrag ? beats.find((b) => b.id === linkDrag.fromId) : null;
+  const placeFrom = linkPlace ? beats.find((b) => b.id === linkPlace.fromId) : null;
+  const previewBeat = preview ? beats.find((b) => b.id === preview.id) : null;
+  const previewPt = preview && previewBeat ? anchorPoint(boxOf(previewBeat), preview.a) : null;
+  const fixedPt = placeFrom && linkPlace?.from ? anchorPoint(boxOf(placeFrom), linkPlace.from) : null;
 
   return (
     <div
-      className={`beat-custom-canvas${linkDrag ? ' mind-linking' : ''}`}
+      className={`beat-custom-canvas${linkPlace ? ' mind-linking' : ''}`}
       ref={canvasRef}
-      /* Clicking empty canvas deselects the line and disarms. */
+      /* v6.53: while a connection is being placed the canvas takes the click
+         in the CAPTURE phase, so it lands on an edge instead of starting a
+         card drag. Otherwise a click on empty canvas just deselects. */
+      onPointerDownCapture={linkPlace ? handlePlaceClick : undefined}
       onPointerDown={(e) => {
         if (e.target === e.currentTarget || (e.target as HTMLElement).classList?.contains('mind-lines')) {
           setSelectedLine(null);
-          setArmedId(null);
+          setLinkPlace(null);
         }
       }}
     >
       <svg className="mind-lines" aria-hidden="true">
-        {lines.map(({ from, to }) => {
-          const a = center(from);
-          const b = center(to);
+        {lines.map(({ from, to, anchors }) => {
+          // v6.53: draw between the chosen edge points; a link made before
+          // anchors existed has none and still runs center to center.
+          const a = anchorPoint(boxOf(from), anchors?.from);
+          const b = anchorPoint(boxOf(to), anchors?.to);
           const selected = selectedLine?.fromId === from.id && selectedLine?.toId === to.id;
           return (
             <g
@@ -1027,21 +1172,26 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
               onClick={(e) => { e.stopPropagation(); setSelectedLine({ fromId: from.id, toId: to.id }); }}
             >
               {/* Fat invisible twin makes the 1.5px line clickable. */}
-              <line className="mind-line-hit" x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy} />
-              <line x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy}>
+              <line className="mind-line-hit" x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+              <line x1={a.x} y1={a.y} x2={b.x} y2={b.y}>
                 <title>Click to select — press Delete to remove</title>
               </line>
+              <circle className="mind-line-dot" cx={a.x} cy={a.y} r={3} />
+              <circle className="mind-line-dot" cx={b.x} cy={b.y} r={3} />
             </g>
           );
         })}
-        {/* The live line while dragging out a connection. */}
-        {dragFrom && linkDrag && (
+        {/* The line being placed: from the fixed start circle to the target
+            circle under the pointer (or to the pointer itself). */}
+        {fixedPt && (pointer || previewPt) && (
           <line
             className="mind-line-draft"
-            x1={center(dragFrom).cx} y1={center(dragFrom).cy}
-            x2={linkDrag.x} y2={linkDrag.y}
+            x1={fixedPt.x} y1={fixedPt.y}
+            x2={(previewPt ?? pointer)!.x} y2={(previewPt ?? pointer)!.y}
           />
         )}
+        {fixedPt && <circle className="mind-anchor-set" cx={fixedPt.x} cy={fixedPt.y} r={5} />}
+        {previewPt && <circle className="mind-anchor-preview" cx={previewPt.x} cy={previewPt.y} r={6} />}
       </svg>
       {beats.map((beat) => (
         <FreeBeatCard
@@ -1049,11 +1199,12 @@ const CustomCanvas: React.FC<CustomCanvasProps> = ({
           beat={beat}
           onUpdate={onUpdateBeat}
           onDelete={onDeleteBeat}
-          armed={armedId === beat.id}
-          linkOrigin={linkDrag?.fromId === beat.id}
-          linkTarget={linkHover === beat.id}
+          /* armed = this card's edge is the one being picked; linkOrigin =
+             its start circle is set and the line is out looking for a home. */
+          armed={!!linkPlace && linkPlace.fromId === beat.id && !linkPlace.from}
+          linkOrigin={!!linkPlace?.from && linkPlace.fromId === beat.id}
+          linkTarget={!!linkPlace?.from && preview?.id === beat.id}
           onToggleArm={handleToggleArm}
-          onStartLink={handleStartLink}
         />
       ))}
     </div>

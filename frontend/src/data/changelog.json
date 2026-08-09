@@ -1,5 +1,15 @@
 [
  {
+  "version": "6.53",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline ▸ Freeform: dragging a card by its header works now — anywhere along the top row, like every window in the app. (The v6.52 attempt let the browser's own text-selection take over the gesture whenever you started on the title; nothing native starts there any more. Clicking the title still puts the cursor exactly where you clicked.)",
+   "Outline ▸ Freeform: cards resize from any edge or corner, not just the bottom-right — and dragging the top or left edge moves that side while the opposite one stays put.",
+   "Outline ▸ Freeform: the Connect button moved to the card's bottom-right corner, and connecting is now click-place-click — click Connect, click where you want the line to leave the first card, then click where it should meet the second. A circle follows your pointer along each card's edge so you can see the exact spot; Escape cancels.",
+   "Connections remember those points in proportion to the card, so resizing a card keeps its lines attached where you put them. Connections made before this update keep drawing from card center to card center."
+  ]
+ },
+ {
   "version": "6.52",
   "date": "2026-08-09",
   "changes": [

@@ -988,7 +988,16 @@ export interface BeatInfo {
    *  in v2.44, but the field stays so old saves still load cleanly. */
   mindShape?: 'rect' | 'rounded' | 'ellipse';
   mindLinks?: string[];
+  /** v6.53: where each connection MEETS the two cards, normalized to their
+   *  boxes (0..1 on each axis, one pinned to an edge). Keyed by the target
+   *  beat's id, so it rides alongside mindLinks without changing that
+   *  array's shape — a pre-v6.53 save simply has none and its lines draw
+   *  center-to-center, exactly as they did. */
+  mindAnchors?: Record<string, { from: BeatAnchor; to: BeatAnchor }>;
 }
+
+/** v6.53: a point on a card's perimeter, normalized to the card's box. */
+export interface BeatAnchor { ax: number; ay: number }
 
 export type BeatArrangeMode = 'auto' | 'custom';
 
