@@ -153,6 +153,37 @@ reliable; re-run before believing a weird worker failure.
 
 ## Version history — v6.53 and older (newest first)
 
+### v6.57 — presets FILL their sections (2 pages a beat, sums exact); + divider
+
+- Derek: "the preset for the 2 act structure should include 20 beats in
+  each act, each of which is 2 pages estimated length. determine the
+  proper beats per section for all other presets, and make sure the total
+  estimated pages for the beats in a section equal the estimated pages for
+  that section." NOTE: there is no 2-act preset — 3-Act is the one whose
+  acts are 40 pages, i.e. exactly 20 × 2, so that is what he means (told
+  him, and offered to add a real 2-act preset).
+- His numbers ARE the rule: 40 pages ÷ 20 beats = TWO PAGES A BEAT.
+  presetBeatSpans(pages) (pure, exported) returns one span per beat:
+  count = round(pages / 2) (min 1), base = floor(pages/count), and the
+  remainder is dealt out a page at a time so the spans sum EXACTLY.
+  3-Act → 20×2. Save the Cat → 61 cards over its 110 pages (a 1-page beat
+  gets one card, Fun and Games' 25 gets 13). Hero's Journey → 64/120.
+  Story Circle + Sequence Method → 8 per 15-page section, 64/120. CUSTOM
+  presets go through the same function — one rule, no per-preset table to
+  drift.
+- ONE WRITE, ONE UNDO STEP: applyPresetSections (new slice action)
+  replaces the addBeatColumn+addBeat loop. addBeat FORCES an undo snapshot
+  per call, so 60 cards would have pushed 60 snapshots — overrunning the
+  capped stack (BEAT_UNDO_MAX) and burying whatever the writer did before.
+  Now: one snapshot, one set(), one re-render, and a single undo takes the
+  whole preset back (asserted in check-v652).
+- Derek, same turn: "add a clear divider between the outline tabs and the
+  + button" — .tool-chrome-tabs .beat-tab-add gets a border-left in
+  currentColor at 35% (visible against the active tab's accent fill too).
+  CSS ORDER FOOTGUN: the rule already had `border: none` AFTER my
+  border-left, which silently wiped it — the shorthand must come first.
+- check-v652 (18): 20 beats an act, all 2-page, sums = budgets, 60 cards
+  actually rendered, one-undo, divider present.
 ### v6.56 — the outline beat count leaves the tab pill
 
 - Derek: "vertically center '4 beats' and add space between that and the +

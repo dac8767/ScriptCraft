@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.62",
+  "date": "2026-08-09",
+  "changes": [
+   "Outline: deleting a section no longer makes it look like its beats jumped into the section next door. They were always going to Unsorted \u2014 but the surviving section stretched across the board and wrapped its cards into a grid, which read exactly like everything had been dumped there. A section only takes the whole board when it really is the only column, Unsorted included."
+  ]
+ },
+ {
   "version": "6.61",
   "date": "2026-08-09",
   "changes": [

@@ -94,6 +94,33 @@ try {
   ok(JSON.stringify(both.loose) === JSON.stringify(['Opening Image', 'Catalyst', 'Midpoint']),
     `the newly freed beat lands after the ones already waiting (${both.loose.join(' / ')})`);
 
+  /* ── 5b (v6.62): Derek deleted the second-to-last section and read the
+     result as "the beats went into Act I". They hadn't — but the surviving
+     section took flex:1 and wrapped its cards into a grid, which looks
+     exactly like that. With Unsorted up, no section may stretch or wrap. ── */
+  await page.evaluate(() => window.__scStore.getState().beatUndo());   // back to Act II + 2 loose
+  await settle(page);
+  const oneLeft = await page.evaluate((w) => {
+    const cols = [...document.querySelectorAll(`${w} .beat-board-columns > .beat-column`)];
+    const un = cols.find((c) => c.classList.contains('beat-column-unsorted'));
+    const sec = cols.find((c) => !c.classList.contains('beat-column-unsorted'));
+    return {
+      cols: cols.length,
+      unW: Math.round(un?.getBoundingClientRect().width ?? -1),
+      secW: Math.round(sec?.getBoundingClientRect().width ?? -1),
+      wrapped: !!sec?.querySelector('.beat-column-cards-wrap'),
+      inSection: sec?.querySelectorAll('.beat-card').length ?? -1,
+      inUnsorted: un?.querySelectorAll('.beat-card').length ?? -1,
+    };
+  }, W);
+  ok(oneLeft.cols === 2 && oneLeft.secW === oneLeft.unW,
+    `the last section stays a normal column beside Unsorted (${oneLeft.secW} vs ${oneLeft.unW})`);
+  ok(!oneLeft.wrapped, 'its cards stay a single list — no grid that reads as "they all landed here"');
+  ok(oneLeft.inSection === 1 && oneLeft.inUnsorted === 2,
+    `and the cards are where the store says: 1 in the section, 2 unsorted (${oneLeft.inSection}/${oneLeft.inUnsorted})`);
+  await page.evaluate(() => window.__scStore.getState().beatRedo());
+  await settle(page);
+
   /* ── 6: one undo ── */
   await page.evaluate(() => window.__scStore.getState().beatUndo());
   await settle(page);

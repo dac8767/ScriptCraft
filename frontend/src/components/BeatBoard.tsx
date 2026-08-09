@@ -1666,7 +1666,6 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   }, [beatBoardOpen, embedded, beatUndo, beatRedo, maximizedColumnId]);
 
   const sortedColumns = [...beatColumns].sort((a, b) => a.position - b.position);
-  const isSingleColumn = sortedColumns.length === 1;
   // v2.23: beats with no section (v6.60: including the ones a deleted
   // section left behind) wait in "Unsorted".
   const orphanBeats = unsortedBeats(beats, beatColumns);
@@ -1697,6 +1696,17 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   /* v2.45: remember whether Unsorted was showing when the drag began —
      see keepUnsortedMounted. */
   const [dragStartedWithOrphans, setDragStartedWithOrphans] = useState(false);
+
+  /* v6.62, Derek: "when i deleted the Act II column, instead of the beats
+     going to the unsorted section, they went into the act I column instead."
+     They had NOT — the store put them in Unsorted. The layout lied: a lone
+     section takes flex:1 and wraps its cards into a grid, so deleting the
+     second-to-last section blew a 20-card list open into a wide block that
+     read as "everything landed here". Unsorted IS a column on the board, so
+     a section is only the single column when Unsorted isn't up. ONE source
+     for that, read by the layout and by the render below. */
+  const unsortedShowing = keepUnsortedMounted(orphanBeats.length, activeDragId !== null, dragStartedWithOrphans);
+  const isSingleColumn = sortedColumns.length === 1 && !unsortedShowing;
 
   const handleDragStart = useCallback((e: DragStartEvent) => {
     setActiveDragId(String(e.active.id));
@@ -1833,7 +1843,7 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
                 but isn't one — no title input, no page budget, no delete.
                 It sits before the first section (Derek: "make it the
                 furthest left column") and goes once it's empty. */}
-            {keepUnsortedMounted(orphanBeats.length, activeDragId !== null, dragStartedWithOrphans) && !maximizedColumnId && (
+            {unsortedShowing && !maximizedColumnId && (
               <div
                 className="beat-column beat-column-unsorted"
                 style={unsortedWidth > 0 ? { width: unsortedWidth, minWidth: 200, maxWidth: 'none' } : undefined}

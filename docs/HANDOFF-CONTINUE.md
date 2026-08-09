@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.61 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.62 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,32 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.62 — the board LIED about where deleted beats went
+
+- Derek (screenshot): "when i deleted the Act II column, instead of the
+  beats going to the unsorted section (which they should), they went into
+  the act I column instead."
+- They hadn't. I reproduced his exact sequence and dumped the store: after
+  deleting down to one act, `Act I:20, LOOSE:40` — the v6.60 code did
+  precisely the right thing. What moved was the LAYOUT: `isSingleColumn`
+  counted only SECTIONS, so the moment the second-to-last one went, the
+  survivor took `flex: 1` + `.beat-column-cards-wrap` and its 20-card
+  vertical list blew open into a 994px-wide 2-across grid. That reads as
+  "everything landed in Act I" — and the measurement is in the repro:
+  340px/1-wide before, 994px/wrapped after.
+- Fix at the cause: Unsorted IS a column on the board, so a section is only
+  "the single column" when Unsorted isn't showing. `unsortedShowing` is now
+  computed ONCE (from keepUnsortedMounted) and read by both the layout flag
+  and the render — the same one-source rule that keeps drifting lists in
+  this codebase honest. A genuinely lone section still stretches (verified:
+  1150 of 1198px), and maximize is untouched.
+- LESSON for the file: a store assert is not a UI assert. check-v660 proved
+  the beats were in Unsorted and passed while the screen was telling Derek
+  the opposite. Its new asserts measure what he can SEE — the surviving
+  section is the same width as Unsorted, its cards are not wrapped, and the
+  card counts per column match the store.
+- Gates: tsc 0, vitest 1149, build ok, check-all 877/0 (check-v660 now 16).
+
 ### v6.61 — one default column width; the edge is actually grabbable
 
 - Derek (screenshot): "the unsorted section should be the same width by
@@ -371,43 +397,12 @@ Durable bits kept live here:
   no "close"; catalog rebuilt (the standing rule) so the Helper Text
   window lists the new wording.
 
-### v6.57 — presets FILL their sections (2 pages a beat, sums exact); + divider
-
-- Derek: "the preset for the 2 act structure should include 20 beats in
-  each act, each of which is 2 pages estimated length. determine the
-  proper beats per section for all other presets, and make sure the total
-  estimated pages for the beats in a section equal the estimated pages for
-  that section." NOTE: there is no 2-act preset — 3-Act is the one whose
-  acts are 40 pages, i.e. exactly 20 × 2, so that is what he means (told
-  him, and offered to add a real 2-act preset).
-- His numbers ARE the rule: 40 pages ÷ 20 beats = TWO PAGES A BEAT.
-  presetBeatSpans(pages) (pure, exported) returns one span per beat:
-  count = round(pages / 2) (min 1), base = floor(pages/count), and the
-  remainder is dealt out a page at a time so the spans sum EXACTLY.
-  3-Act → 20×2. Save the Cat → 61 cards over its 110 pages (a 1-page beat
-  gets one card, Fun and Games' 25 gets 13). Hero's Journey → 64/120.
-  Story Circle + Sequence Method → 8 per 15-page section, 64/120. CUSTOM
-  presets go through the same function — one rule, no per-preset table to
-  drift.
-- ONE WRITE, ONE UNDO STEP: applyPresetSections (new slice action)
-  replaces the addBeatColumn+addBeat loop. addBeat FORCES an undo snapshot
-  per call, so 60 cards would have pushed 60 snapshots — overrunning the
-  capped stack (BEAT_UNDO_MAX) and burying whatever the writer did before.
-  Now: one snapshot, one set(), one re-render, and a single undo takes the
-  whole preset back (asserted in check-v652).
-- Derek, same turn: "add a clear divider between the outline tabs and the
-  + button" — .tool-chrome-tabs .beat-tab-add gets a border-left in
-  currentColor at 35% (visible against the active tab's accent fill too).
-  CSS ORDER FOOTGUN: the rule already had `border: none` AFTER my
-  border-left, which silently wiped it — the shorthand must come first.
-- check-v652 (18): 20 beats an act, all 2-page, sums = budgets, 60 cards
-  actually rendered, one-undo, divider present.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.57** — presets fill their sections at ~2 pages a beat with sums exact (presetBeatSpans); divider before the + button
 - **v6.56** — the outline beat count left the tab pill (ToolChrome grew an AfterTabs slot outside the strip)
 - **v6.55** — freeform beat titles shrunk (mindTitleSize 12–16, title width 46%) so the title bar has bare band to grab
 - **v6.54** — freeform beat cards got real title bars (windowChrome in BeatCardContent), the ⋮⋮ grip retired in freeform
