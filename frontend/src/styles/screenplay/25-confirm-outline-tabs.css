@@ -68,23 +68,24 @@
 }
 .fs-confirm-actions button:disabled:hover { filter: none; }
 
-/* ─── Uncategorized column (v2.23) — the temporary holding pen after a
-       preset override. Looks like a section but isn't one. ─── */
-.beat-column-uncategorized {
+/* ─── Unsorted column (v2.23, renamed from Uncategorized in v6.60) — where
+       beats with no section wait, including the ones a deleted section left
+       behind. Looks like a section but isn't one. ─── */
+.beat-column-unsorted {
   border: 1px dashed var(--fd-text-muted);
   background: var(--fd-overlay-subtle);
 }
-.beat-column-uncategorized .beat-column-header {
+.beat-column-unsorted .beat-column-header {
   justify-content: center;
 }
-.beat-column-uncat-title {
+.beat-column-unsorted-title {
   font-size: 13px;
   font-weight: 600;
   color: var(--fd-text-muted);
   font-style: italic;
   padding: 4px 0;
 }
-.beat-column-uncat-hint {
+.beat-column-unsorted-hint {
   font-size: 11px;
   color: var(--fd-text-muted);
   padding: 6px 10px 10px;

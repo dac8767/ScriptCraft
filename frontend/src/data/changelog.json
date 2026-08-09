@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.60",
+  "date": "2026-08-09",
+  "changes": [
+   "Deleting an outline section no longer deletes the beats inside it. They move to \u201cUnsorted\u201d \u2014 the dashed column furthest left on the board \u2014 in the order they were in, and you drag them wherever they belong. It is a single undo step, and the trash button now says so before you click it.",
+   "The one and only way to delete a beat is the delete button on the beat itself.",
+   "The holding column for beats with no section is now called Unsorted (it was Uncategorized)."
+  ]
+ },
+ {
   "version": "6.59",
   "date": "2026-08-09",
   "changes": [

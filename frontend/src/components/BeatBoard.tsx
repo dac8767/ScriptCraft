@@ -51,7 +51,7 @@ export const BEAT_COLOR_NAMES: Record<string, string> = {
 };
 
 /** v6.49: the header search + color filter, one predicate for every render
- *  path (sections, Uncategorized, freeform canvas) and the header count.
+ *  path (sections, Unsorted, freeform canvas) and the header count.
  *  `colors` holds hex values ('' = uncolored); empty = no color filter. */
 export function beatMatchesFilter(
   b: Pick<BeatInfo, 'title' | 'description' | 'color'>,
@@ -251,22 +251,25 @@ export function applyOutlinePreset(presetId: string, mode: 'append' | 'override'
   );
 }
 
-/** v2.23: beats whose section no longer exists (a preset override cleared
- *  the columns). They live in the temporary "Uncategorized" column until
- *  dragged into a real section. Exported for the test. */
-export function uncategorizedBeats(beats: BeatInfo[], columns: Array<{ id: string }>): BeatInfo[] {
+/** v2.23: beats whose section no longer exists. v6.60, Derek: deleting a
+ *  section sends its beats here rather than destroying them — "no beats
+ *  should ever be deleted unless they are individually deleted using the
+ *  delete button on the beat itself". They wait in the temporary "Unsorted"
+ *  column, furthest left, until dragged into a real section. Exported for
+ *  the test. */
+export function unsortedBeats(beats: BeatInfo[], columns: Array<{ id: string }>): BeatInfo[] {
   return beats
     .filter((b) => !columns.some((c) => c.id === b.columnId))
     .sort((a, b) => a.position - b.position);
 }
 
-/** v2.45: whether the Uncategorized column renders. It must stay MOUNTED for
+/** v2.45: whether the Unsorted column renders. It must stay MOUNTED for
  *  the entire drag if it was there when the drag began — dragOver reassigns
  *  the beat's columnId live, so dragging the last orphan out would otherwise
  *  unmount the column (an active dnd-kit droppable) mid-drag, and dnd-kit's
  *  re-measuring then loops setState into React's "Maximum update depth
  *  exceeded" crash. Exported for the regression test. */
-export function keepUncatMounted(orphanCount: number, dragActive: boolean, hadOrphansAtDragStart: boolean): boolean {
+export function keepUnsortedMounted(orphanCount: number, dragActive: boolean, hadOrphansAtDragStart: boolean): boolean {
   return orphanCount > 0 || (dragActive && hadOrphansAtDragStart);
 }
 
@@ -1664,11 +1667,11 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
 
   const sortedColumns = [...beatColumns].sort((a, b) => a.position - b.position);
   const isSingleColumn = sortedColumns.length === 1;
-  // v2.23: beats orphaned by a preset override wait in "Uncategorized".
-  const orphanBeats = uncategorizedBeats(beats, beatColumns);
+  // v2.23: beats orphaned by a preset override wait in "Unsorted".
+  const orphanBeats = unsortedBeats(beats, beatColumns);
 
   /* v6.49: the header's search + color filter hide non-matching cards in
-     every view — sections, Uncategorized and the freeform canvas alike. */
+     every view — sections, Unsorted and the freeform canvas alike. */
   const beatSearch = useEditorStore((s) => s.beatSearch);
   const beatColorFilter = useEditorStore((s) => s.beatColorFilter);
   const matchesFilter = useCallback(
@@ -1685,14 +1688,14 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { addOutlineTab, switchOutlineTab, renameOutlineTab } = useEditorStore.getState();
   const [renamingTab, setRenamingTab] = useState<string | null>(null);
 
-  /* v2.45: remember whether Uncategorized was showing when the drag began —
-     see keepUncatMounted. */
+  /* v2.45: remember whether Unsorted was showing when the drag began —
+     see keepUnsortedMounted. */
   const [dragStartedWithOrphans, setDragStartedWithOrphans] = useState(false);
 
   const handleDragStart = useCallback((e: DragStartEvent) => {
     setActiveDragId(String(e.active.id));
     const st = useEditorStore.getState();
-    setDragStartedWithOrphans(uncategorizedBeats(st.beats, st.beatColumns).length > 0);
+    setDragStartedWithOrphans(unsortedBeats(st.beats, st.beatColumns).length > 0);
   }, []);
 
   const handleDragCancel = useCallback(() => setActiveDragId(null), []);
@@ -1819,14 +1822,15 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
       {beatArrangeMode === 'auto' ? (
         <DndContext sensors={sensors} collisionDetection={beatCollisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div className={`beat-board-columns${maximizedColumnId ? ' beat-board-columns-maximized' : ''}`}>
-            {/* v2.23: the temporary holding pen for beats orphaned by a
-                preset override. Looks like a section but isn't one — no
-                title input, no page budget, no delete. It sits before the
-                first section and disappears once it's empty. */}
-            {keepUncatMounted(orphanBeats.length, activeDragId !== null, dragStartedWithOrphans) && !maximizedColumnId && (
-              <div className="beat-column beat-column-uncategorized">
+            {/* v2.23: the holding pen for beats with no section — v6.60,
+                the ones a deleted section left behind. Looks like a section
+                but isn't one — no title input, no page budget, no delete.
+                It sits before the first section (Derek: "make it the
+                furthest left column") and goes once it's empty. */}
+            {keepUnsortedMounted(orphanBeats.length, activeDragId !== null, dragStartedWithOrphans) && !maximizedColumnId && (
+              <div className="beat-column beat-column-unsorted">
                 <div className="beat-column-header">
-                  <span className="beat-column-uncat-title">Uncategorized</span>
+                  <span className="beat-column-unsorted-title">Unsorted</span>
                 </div>
                 <SortableContext items={visibleOrphans.map((b) => b.id)} strategy={verticalListSortingStrategy}>
                   <div className="beat-column-cards">
@@ -1835,8 +1839,8 @@ const BeatBoard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
                     ))}
                   </div>
                 </SortableContext>
-                <div className="beat-column-uncat-hint">
-                  Drag each beat into a section — this column disappears when it's empty.
+                <div className="beat-column-unsorted-hint">
+                  Beats with no section wait here — drag each into one. This column disappears when it's empty.
                 </div>
               </div>
             )}
@@ -1937,7 +1941,7 @@ const BeatColumnView: React.FC<BeatColumnViewProps> = ({
             title={isMaximized ? 'Restore section' : 'Maximize section'}
           >{isMaximized ? <ShrinkIcon /> : <ExpandIcon />}</button>
         )}
-        <button className="beat-column-delete" onClick={() => onDeleteColumn(col.id)} title="Delete section"><FaRegTrashAlt /></button>
+        <button className="beat-column-delete" onClick={() => onDeleteColumn(col.id)} title="Delete section — its beats move to Unsorted, they are not deleted"><FaRegTrashAlt /></button>
       </div>
       <SortableContext items={colBeats.map((b) => b.id)} strategy={verticalListSortingStrategy}>
         <div ref={setDropRef} className={`beat-column-cards${isSingleColumn ? ' beat-column-cards-wrap' : ''}`}>

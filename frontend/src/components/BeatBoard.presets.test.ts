@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   OUTLINE_PRESETS, applyOutlinePreset, presetBeatSpans, splitPages, distributeBeats,
-  presetReuseOrder, uncategorizedBeats,
+  presetReuseOrder, unsortedBeats,
 } from './BeatBoard';
 import { useEditorStore } from '../stores/editorStore';
 import type { BeatInfo } from '../stores/editorStore';
@@ -127,7 +127,7 @@ describe('outline presets', () => {
      but never touches the beats. v6.59, Derek: "when a preset is used but
      beats already exist, it should use the existing beats instead of
      creating new ones" — so they are re-homed into the new sections and
-     re-fitted, rather than dumped in Uncategorized to be dragged one by
+     re-fitted, rather than dumped in Unsorted to be dragged one by
      one. */
   it('override re-homes the existing beats into the new sections', () => {
     applyOutlinePreset('3act');
@@ -145,7 +145,7 @@ describe('outline presets', () => {
     );
     // Exactly the same beats — none deleted, none created.
     expect(s.beats.map((b) => b.id).sort()).toEqual(beatIdsBefore);
-    expect(uncategorizedBeats(s.beats, s.beatColumns)).toHaveLength(0);
+    expect(unsortedBeats(s.beats, s.beatColumns)).toHaveLength(0);
     // Every section is filled, and its beats add up to its page budget.
     for (const col of cols) {
       const inCol = s.beats.filter((b) => b.columnId === col.id);
@@ -186,7 +186,7 @@ describe('outline presets', () => {
     applyOutlinePreset('3act');
     const s = useEditorStore.getState();
     expect(s.beats.map((b) => b.id).sort()).toEqual([...ids].sort());
-    expect(uncategorizedBeats(s.beats, s.beatColumns)).toHaveLength(0);
+    expect(unsortedBeats(s.beats, s.beatColumns)).toHaveLength(0);
     // 4 beats over 3 equal 40-page acts.
     const cols = [...s.beatColumns].sort((a, b) => a.position - b.position);
     expect(cols.map((c) => s.beats.filter((b) => b.columnId === c.id).length)).toEqual([2, 1, 1]);
@@ -206,7 +206,7 @@ describe('outline presets', () => {
     expect(s.beats.find((b) => b.id === settled)!.columnId).toBe(keep);
     // The loose one was re-homed into the preset, so nothing is orphaned.
     expect(s.beats.find((b) => b.id === loose)!.columnId).not.toBe('gone');
-    expect(uncategorizedBeats(s.beats, s.beatColumns)).toHaveLength(0);
+    expect(unsortedBeats(s.beats, s.beatColumns)).toHaveLength(0);
     expect(s.beats.map((b) => b.id).sort()).toEqual([settled, loose].sort());
   });
 
@@ -289,23 +289,105 @@ describe('preset re-fit math (v6.59)', () => {
   });
 });
 
-/* v2.45 regression: dragging the LAST orphan out of Uncategorized used to
+/* v2.45 regression: dragging the LAST orphan out of Unsorted used to
    unmount the column mid-drag (dragOver reassigns columnId live), and
    dnd-kit's re-measuring of the vanished droppable looped setState into
    React's "Maximum update depth exceeded" crash. The column must stay
    mounted until the drag ends. */
-describe('keepUncatMounted', () => {
+describe('keepUnsortedMounted', () => {
   it('keeps the column through a drag that started with orphans, even at zero', async () => {
-    const { keepUncatMounted } = await import('./BeatBoard');
+    const { keepUnsortedMounted } = await import('./BeatBoard');
     // Mid-drag, last orphan already reassigned by dragOver → stays mounted.
-    expect(keepUncatMounted(0, true, true)).toBe(true);
+    expect(keepUnsortedMounted(0, true, true)).toBe(true);
     // Drag over: the column finally goes away.
-    expect(keepUncatMounted(0, false, true)).toBe(false);
+    expect(keepUnsortedMounted(0, false, true)).toBe(false);
     // Orphans present → always mounted, dragging or not.
-    expect(keepUncatMounted(2, false, false)).toBe(true);
-    expect(keepUncatMounted(2, true, false)).toBe(true);
+    expect(keepUnsortedMounted(2, false, false)).toBe(true);
+    expect(keepUnsortedMounted(2, true, false)).toBe(true);
     // No orphans and none at drag start → never mounted.
-    expect(keepUncatMounted(0, true, false)).toBe(false);
-    expect(keepUncatMounted(0, false, false)).toBe(false);
+    expect(keepUnsortedMounted(0, true, false)).toBe(false);
+    expect(keepUnsortedMounted(0, false, false)).toBe(false);
+  });
+});
+
+/* v6.60, Derek: "if an outline section is deleted and it had beats inside
+   it, the beats should not be deleted. instead they should move to an
+   Unsorted section (make it the furthest left column). no beats should ever
+   be deleted unless they are individually deleted using the delete button on
+   the beat itself." Before this, deleteBeatColumn filtered them out of the
+   pool with one click and no warning. */
+describe('deleting a section keeps its beats (v6.60)', () => {
+  beforeEach(() => {
+    useEditorStore.getState().setBeatColumns([]);
+    useEditorStore.getState().setBeats([]);
+    useEditorStore.getState().resetOutlineTabs();
+  });
+  const S = () => useEditorStore.getState();
+
+  it('cuts the beats loose into Unsorted instead of deleting them', () => {
+    const a = S().addBeatColumn('Act I', 10);
+    const b = S().addBeatColumn('Act II', 20);
+    const keep = S().addBeat('Stays', b);
+    const one = S().addBeat('First', a);
+    const two = S().addBeat('Second', a);
+    S().updateBeat(one, { barOffset: 4 });          // a pin inside Act I
+
+    S().deleteBeatColumn(a);
+    const s = S();
+    expect(s.beatColumns.map((c) => c.title)).toEqual(['Act II']);
+    expect(s.beats.map((x) => x.id).sort()).toEqual([keep, one, two].sort());
+    // the freed pair is unsorted, in the order they were in
+    expect(unsortedBeats(s.beats, s.beatColumns).map((x) => x.title)).toEqual(['First', 'Second']);
+    // the other section's beat is untouched
+    expect(s.beats.find((x) => x.id === keep)!.columnId).toBe(b);
+    // v2.60: a pin is an offset inside a section that no longer exists
+    expect(s.beats.find((x) => x.id === one)!.barOffset).toBeUndefined();
+  });
+
+  it('appends after the beats already waiting, renumbering the pool', () => {
+    const a = S().addBeatColumn('Act I', 10);
+    const b = S().addBeatColumn('Act II', 10);
+    const waiting = S().addBeat('Already loose', 'gone');
+    const first = S().addBeat('A1', a);
+    S().addBeat('B1', b);
+    S().deleteBeatColumn(a);
+    S().deleteBeatColumn(b);
+    const s = S();
+    expect(unsortedBeats(s.beats, s.beatColumns).map((x) => x.title)).toEqual(['Already loose', 'A1', 'B1']);
+    // positions are a clean 0..n-1, so nothing collides in the column
+    expect(unsortedBeats(s.beats, s.beatColumns).map((x) => x.position)).toEqual([0, 1, 2]);
+    expect(s.beats.find((x) => x.id === waiting)!.position).toBe(0);
+    expect(s.beats.find((x) => x.id === first)!.position).toBe(1);
+  });
+
+  it('is one undo step, and the individual delete button still deletes', () => {
+    const a = S().addBeatColumn('Act I', 10);
+    const one = S().addBeat('First', a);
+    S().addBeat('Second', a);
+    S().deleteBeatColumn(a);
+    S().beatUndo();
+    expect(S().beatColumns.map((c) => c.title)).toEqual(['Act I']);
+    expect(S().beats.every((x) => x.columnId === a)).toBe(true);
+    // the ONE door that removes a beat
+    S().deleteBeat(one);
+    expect(S().beats.map((x) => x.title)).toEqual(['Second']);
+  });
+
+  it('deleting a section on one variation leaves the others alone', () => {
+    const a = S().addBeatColumn('Act I', 10);
+    const beat = S().addBeat('Opening', a);
+    const tab1 = S().viewedOutlineTab;
+    const tab2 = S().addOutlineTab();
+    const circle = S().addBeatColumn('You', 15);
+    S().updateBeat(beat, { columnId: circle, position: 0 });
+
+    S().deleteBeatColumn(circle);
+    expect(unsortedBeats(S().beats, S().beatColumns)).toHaveLength(1);
+    S().switchOutlineTab(tab1);
+    // tab 1 still has its own section, with the beat in it
+    expect(S().beatColumns.map((c) => c.title)).toEqual(['Act I']);
+    expect(S().beats.find((x) => x.id === beat)!.columnId).toBe(a);
+    S().switchOutlineTab(tab2);
+    expect(S().beatColumns).toHaveLength(0);
   });
 });

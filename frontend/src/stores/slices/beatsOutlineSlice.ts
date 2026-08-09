@@ -76,7 +76,7 @@ export interface BeatsOutlineSlice {
    *  second set of starter cards. Slots left over once the reuse list runs
    *  dry get fresh beats; beats left over once the sections are full keep
    *  their own columnId (in 'override' that column is gone, so they wait in
-   *  Uncategorized — the v2.23 rule). Nothing is ever deleted. */
+   *  Unsorted — the v2.23 rule). Nothing is ever deleted. */
   applyPresetSections: (
     sections: Array<{ title: string; pages: number; spans: number[] }>,
     mode: 'append' | 'override',
@@ -185,7 +185,7 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
       const id = uuid();
       set((s) => {
         // Park the viewed tab's data, open the new tab EMPTY: every shared
-        // beat lands in Uncategorized until it's dragged into a section.
+        // beat lands in Unsorted until it's dragged into a section.
         const slots: OutlineTabData['beatSlots'] = {};
         for (const b of s.beats) slots[b.id] = { columnId: b.columnId, position: b.position, barOffset: b.barOffset, span: b.outlineSpan };
         // v2.47: the new tab is bound, for life, to the arrangement that's
@@ -209,7 +209,7 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
       const target = stash[id] ?? { columns: [], beatSlots: {} };
       delete stash[id];
       // Beats without a slot in the target tab keep their columnId — it won't
-      // match any of the target's sections, so they show as Uncategorized.
+      // match any of the target's sections, so they show as Unsorted.
       const beats = s.beats.map((b) => {
         const slot = target.beatSlots[b.id];
         return slot ? { ...b, columnId: slot.columnId, position: slot.position, barOffset: slot.barOffset, outlineSpan: slot.span ?? b.outlineSpan } : b;
@@ -460,12 +460,32 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
         beatColumns: s.beatColumns.map((c) => (c.id === id ? { ...c, ...updates } : c)),
       }));
     },
+    /* v6.60, Derek: "if an outline section is deleted and it had beats inside
+       it, the beats should not be deleted. instead they should move to an
+       Unsorted section … no beats should ever be deleted unless they are
+       individually deleted using the delete button on the beat itself."
+       Unsorted isn't a real column — it is every beat whose section is gone
+       (see unsortedBeats) — so deleting a section CUTS ITS BEATS LOOSE and
+       renumbers the whole loose pool: the ones already waiting keep their
+       order, the freed ones land after them. */
     deleteBeatColumn: (id) => {
       pushBeatSnapshot(true);
-      set((s) => ({
-        beatColumns: s.beatColumns.filter((c) => c.id !== id),
-        beats: s.beats.filter((b) => b.columnId !== id),
-      }));
+      set((s) => {
+        if (!s.beatColumns.some((c) => c.id === id)) return {};
+        const beatColumns = s.beatColumns.filter((c) => c.id !== id);
+        const byPosition = (a: BeatInfo, b: BeatInfo) => a.position - b.position;
+        const waiting = s.beats.filter((b) => b.columnId !== id && !beatColumns.some((c) => c.id === b.columnId)).sort(byPosition);
+        const freed = s.beats.filter((b) => b.columnId === id).sort(byPosition);
+        const order = new Map([...waiting, ...freed].map((b, i) => [b.id, i]));
+        return {
+          beatColumns,
+          beats: s.beats.map((b) => (order.has(b.id)
+            // v2.60: a bar pin is an offset inside a section. There isn't one
+            // any more, so the beat goes back to packed.
+            ? { ...b, columnId: '', position: order.get(b.id)!, barOffset: undefined }
+            : b)),
+        };
+      });
     },
     beats: [],
     setBeats: (beats) => {

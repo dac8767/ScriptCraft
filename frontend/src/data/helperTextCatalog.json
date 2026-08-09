@@ -945,7 +945,7 @@
   "icon": "FaRegTrashAlt"
  },
  {
-  "text": "Delete section",
+  "text": "Delete section — its beats move to Unsorted, they are not deleted",
   "kind": "tooltip",
   "sites": 1,
   "area": "Outline Window",

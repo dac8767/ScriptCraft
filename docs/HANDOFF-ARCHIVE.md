@@ -153,6 +153,26 @@ reliable; re-run before believing a weird worker failure.
 
 ## Version history — v6.53 and older (newest first)
 
+### v6.55 — freeform titles shrink so the title bar has room to grab
+
+- Derek: "make the beat title smaller so that the area for grabbing and
+  moving is bigger in the freeform view." TWO changes, because the font
+  alone would not have helped: the input was `flex: 1` and swallowed the
+  whole bar regardless of type size.
+  1. mindTitleSize's range 13–24 → 12–16 (divisor 15 → 18): a default
+     240px card now reads at 13px — the same size as every other beat
+     card's title — and a big card tops out at 16px instead of 24px. The
+     v2.33 emphasis (bigger card = bigger title) survives, just gentler.
+     The unit test carries the new numbers plus a monotonicity check.
+  2. `.beat-card-title` in a title bar takes `width: 46%` (flex 0 1 auto)
+     instead of flex:1, so bare band is always left between it and the
+     card's buttons — measured 43px on a 250px card, and the whole strip
+     is a drag surface. A long title ellipsizes at rest
+     (text-overflow works on an unfocused input) and `:focus` hands the
+     full row back for editing, so nothing is unreachable.
+- check-v653 (30 asserts) measures the outcome rather than the CSS: title
+  font ≤13px, ≥30px of bare bar between title and buttons, the title
+  spanning <70% of the bar, and the focus expansion.
 ### v6.54 — freeform beat cards wear a real TITLE BAR
 
 - Derek: "give beat windows in the freeform view proper headers that can be

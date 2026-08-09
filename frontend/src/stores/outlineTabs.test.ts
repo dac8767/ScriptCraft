@@ -2,7 +2,7 @@
 /**
  * Outline variation tabs (v2.30) — one shared pool of beats, many
  * arrangements. Pins the stash round-trip (switching tabs never loses an
- * arrangement or a beat), the Uncategorized behavior on fresh tabs, and the
+ * arrangement or a beat), the Unsorted behavior on fresh tabs, and the
  * bar-routing helpers that edit a non-viewed tab.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -25,7 +25,7 @@ function seedThreeActs() {
 }
 
 describe('outline tabs', () => {
-  it('a new tab starts empty but keeps every beat (as Uncategorized)', () => {
+  it('a new tab starts empty but keeps every beat (as Unsorted)', () => {
     const { b1, b2 } = seedThreeActs();
     S().addOutlineTab();
     expect(S().beatColumns).toHaveLength(0);                    // fresh arrangement
@@ -53,7 +53,7 @@ describe('outline tabs', () => {
     expect(S().beats.find((b) => b.id === b2)!.columnId).toBe(circle);
   });
 
-  it('a beat created in one tab shows up (uncategorized) in the others', () => {
+  it('a beat created in one tab shows up (unsorted) in the others', () => {
     seedThreeActs();
     const tab1 = S().viewedOutlineTab;
     S().addOutlineTab();

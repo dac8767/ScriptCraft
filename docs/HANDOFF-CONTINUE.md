@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.59 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.60 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,43 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.60 — deleting a SECTION no longer deletes its beats (Unsorted)
+
+- Derek: "if an outline section is deleted and it had beats inside it, the
+  beats should not be deleted. instead they should move to an Unsorted
+  section (make it the furthest left column). no beats should ever be
+  deleted unless they are individually deleted using the delete button on
+  the beat itself."
+- `deleteBeatColumn` was `beats: s.beats.filter(b => b.columnId !== id)` —
+  one click on a trash icon, no confirm, and every card in that section was
+  gone. Now it CUTS THEM LOOSE: `columnId: ''`, `barOffset: undefined` (a
+  pin is an offset inside a section that no longer exists), and the whole
+  loose pool is renumbered 0..n-1 — the beats already waiting keep their
+  order, the freed ones land after them, so two deletes in a row can't
+  collide on position. Still one undo step.
+- No new column type was invented: "Unsorted" is the v2.23 holding pen,
+  which already rendered before the first section and vanished when empty.
+  It only needed the beats pointed at it. `Uncategorized` → `Unsorted`
+  everywhere — label, hint, `unsortedBeats`, `keepUnsortedMounted`,
+  `.beat-column-unsorted*` CSS, comments, tests.
+- The trash tooltip now states the outcome up front: "Delete section — its
+  beats move to Unsorted, they are not deleted" (catalog rebuilt, the
+  standing rule).
+- AUDITED the whole "no beats are ever deleted" claim: the only other
+  places that drop beats are seven `setBeats([])` calls in MenuBar /
+  ScreenplayEditor, and every one is a document swap (new script, open,
+  import fdx/docx/pdf) where the beats belong to the document being
+  replaced. deleteOutlineTab keeps them (v6.58), applyPresetSections
+  re-homes them (v6.59), `deleteBeat` is the card's own button. So the
+  invariant now holds: inside a live script, only the beat's own trash
+  deletes a beat.
+- check-v660 (13) drives the real trash button: the section goes, all three
+  beats survive, they RENDER as cards in Unsorted, Unsorted measures
+  furthest left, a second delete appends after the waiting ones, one undo
+  restores, the card's own delete still deletes, and the column disappears
+  when the last beat is dragged back into a section.
+- Gates: tsc 0, vitest 1149, build ok, check-all 861/0.
+
 ### v6.59 — a preset USES the beats you have; page estimates go per-variation
 
 - Derek: "when a preset is used but beats already exist, it should use the
@@ -350,32 +387,12 @@ Durable bits kept live here:
   not contained by the strip), ≥8px clear of the + button, and within
   1.5px of the header row's vertical middle.
 
-### v6.55 — freeform titles shrink so the title bar has room to grab
-
-- Derek: "make the beat title smaller so that the area for grabbing and
-  moving is bigger in the freeform view." TWO changes, because the font
-  alone would not have helped: the input was `flex: 1` and swallowed the
-  whole bar regardless of type size.
-  1. mindTitleSize's range 13–24 → 12–16 (divisor 15 → 18): a default
-     240px card now reads at 13px — the same size as every other beat
-     card's title — and a big card tops out at 16px instead of 24px. The
-     v2.33 emphasis (bigger card = bigger title) survives, just gentler.
-     The unit test carries the new numbers plus a monotonicity check.
-  2. `.beat-card-title` in a title bar takes `width: 46%` (flex 0 1 auto)
-     instead of flex:1, so bare band is always left between it and the
-     card's buttons — measured 43px on a 250px card, and the whole strip
-     is a drag surface. A long title ellipsizes at rest
-     (text-overflow works on an unfocused input) and `:focus` hands the
-     full row back for editing, so nothing is unreachable.
-- check-v653 (30 asserts) measures the outcome rather than the CSS: title
-  font ≤13px, ≥30px of bare bar between title and buttons, the title
-  spanning <70% of the bar, and the focus expansion.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.55** — freeform beat titles shrunk (mindTitleSize 12–16, title width 46%) so the title bar has bare band to grab
 - **v6.54** — freeform beat cards got real title bars (windowChrome in BeatCardContent), the ⋮⋮ grip retired in freeform
 - **v6.53** — freeform header drag fixed (always preventDefault + tap-to-focus), any-edge resize, click-place-click links with edge anchors (mindAnchors)
 - **v6.52** — beat count beside the tabs; card/board contrast (color-mix step); Helper Text became a real dockable TOOL; freeform link highlights + header drag

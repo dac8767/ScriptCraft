@@ -5,7 +5,7 @@
    does not change it on other variations."
 
    1 a preset dropped on an outline that already has beats RE-HOMES them:
-     same cards, no second set piled on, nothing left in Uncategorized
+     same cards, no second set piled on, nothing left in Unsorted
    2 the re-fitted estimates still add up to each section's page budget
    3 the writing on a re-homed card survives (title, notes, color)
    4 the whole re-home is ONE undo step
@@ -70,8 +70,8 @@ try {
   await page.selectOption(`${W} .beat-board-preset`, 'savethecat');
   await page.waitForSelector('.fs-confirm-overlay', { timeout: 5000 });
   const dialog = await page.evaluate(() => document.querySelector('.fs-confirm-box')?.textContent ?? '');
-  ok(/NOT deleted/.test(dialog) && !/Uncategorized/.test(dialog),
-    'the confirm no longer promises a pile of Uncategorized cards');
+  ok(/NOT deleted/.test(dialog) && !/Unsorted/.test(dialog),
+    'the confirm no longer promises a pile of Unsorted cards');
   await page.click('.fs-confirm-ok');
   await settle(page);
 
@@ -79,7 +79,7 @@ try {
   ok(JSON.stringify(rehomed.ids) === JSON.stringify(seeded.ids),
     `the same 60 beats — none created, none deleted (${rehomed.ids.length})`);
   ok(rehomed.cols.length === 15, `Save the Cat's 15 sections replaced the acts (${rehomed.cols.length})`);
-  ok(rehomed.orphans === 0, `nothing waits in Uncategorized (${rehomed.orphans})`);
+  ok(rehomed.orphans === 0, `nothing waits in Unsorted (${rehomed.orphans})`);
   ok(rehomed.cols.every((c) => c.beats > 0), 'every section came out filled');
   const offBudget = rehomed.cols.filter((c) => c.pages !== c.budget);
   ok(offBudget.length === 0,
