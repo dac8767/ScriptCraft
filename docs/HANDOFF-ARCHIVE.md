@@ -151,7 +151,22 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.45 and older (newest first)
+## Version history — v6.46 and older (newest first)
+
+### v6.46 — theme legibility pass (the palette report's S1/S2/S6, applied)
+
+- Derek: "make suggested changes to themes" — SCOPE: only the THEME
+  suggestions from the palette-analysis artifact (claude.ai/code/artifact/
+  842e3485-…): S1 sepia (muted #8a7a5f→#6e5f45 5.01:1; accent
+  #a5673f→#7d4a26 5.89:1 — ONE accent slot, so chrome fills deepen with
+  it; tinted-page idea NOT applied, page/export pipeline), S2 solarized-
+  light (text #586e75→#49606a 6.15:1, muted #93a1a1→#657271 4.64:1),
+  S6 dracula muted #8a8fa8→#979db6 5.30:1 + light muted #666→#5d5d5d
+  (5.08:1 on panels). S3/S4/S5/S7 (note red, annotation colors, scene
+  wheel, palettes.ts consolidation) deliberately NOT applied — Derek said
+  "themes". All ratios were verified in the report's build script before
+  shipping. themeLadder.test.ts only orders surfaces — unaffected.
+- The artifact was republished with APPLIED tags on S1/S2/S6 (same URL).
 
 ### v6.45 — Upload Voice Clip removed from the character window
 

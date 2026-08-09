@@ -10,6 +10,10 @@
 // ghost text (placeholder=), and content hints registered through ht('…') —
 // empty-list texts, ? popover bodies, the element placeholder map. Labels,
 // menu items and button captions are UI text, not helper text, and stay out.
+// v6.51: title={…}/placeholder={…} EXPRESSIONS count too — every fixed
+// string literal inside one is harvested (ternary arms, || fallbacks).
+// Template literals interpolating live data (`Switch to ${name}`) have no
+// fixed default to key an override by and stay contextual.
 //
 // v6.22, Derek: each row must show WHICH control it belongs to — so every
 // tooltip site also captures the control's ICON component (<Fa…/>/<Lu…/>,
@@ -29,6 +33,94 @@ const TITLE_RE = /\btitle="([^"]+)"/g;
 const PLACEHOLDER_RE = /\bplaceholder="([^"]+)"/g;
 // ht('…') and useHt()('…') direct-content reads; both quote styles.
 const HT_RE = /\bht\(\s*(?:'((?:[^'\\]|\\.)+)'|"((?:[^"\\]|\\.)+)")\s*[),]/g;
+
+/* v6.51, Derek: "recheck the entire app for helper text that is not an
+   option in the helper text window. I've found many." The misses were the
+   DYNAMIC attribute sites — title={cond ? 'A' : 'B'}, title={'X'} — which
+   the literal-only regexes above never saw. The DOM applier overrides
+   whatever lands in the DOM (keyed by the default string), so these were
+   always EDITABLE at runtime; they just never got LISTED. This pass slices
+   the balanced {…} expression after title=/placeholder= and harvests every
+   fixed string literal inside it. */
+const ATTR_EXPR_RE = /\b(title|placeholder)=\{/g;
+// '…' / "…" / `…` — template literals with ${…} are CONTEXTUAL text (they
+// embed live data, so no fixed default exists to key an override by) and
+// are excluded by the [^`$] class.
+const EXPR_LITERAL_RE = /'((?:[^'\\\n]|\\.)+)'|"((?:[^"\\\n]|\\.)+)"|`((?:[^`\\$]|\\.)+)`/g;
+// A literal that is a comparison operand / lookup key, not display text:
+// mode === 'auto', obj['key'], s.includes('x'), case 'x'. The attr= guard
+// covers title={<span className="…">…} — a JSX-typed title prop whose
+// attribute values (classNames) are not helper text. (A literal title="…"
+// nested in such JSX is still caught by the file-level TITLE_RE pass.)
+const OPERAND_BEFORE_RE = /(?:===|!==|==|!=|\.includes\(|\.startsWith\(|\.endsWith\(|\[|\bcase|[A-Za-z-]+=)\s*$/;
+const OPERAND_AFTER_RE = /^\s*(?:===|!==|==|!=|\])/;
+
+/** The balanced {…} expression starting at src[open] === '{' — quote-aware
+ *  so braces inside strings don't unbalance the walk. Returns the inner
+ *  expression text, or null on an unterminated slice. */
+function sliceBalancedExpr(src, open) {
+  let depth = 0, quote = null;
+  for (let i = open; i < src.length; i++) {
+    const c = src[i];
+    if (quote) {
+      if (c === '\\') { i++; continue; }
+      if (c === quote) quote = null;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') { quote = c; continue; }
+    if (c === '{') depth++;
+    else if (c === '}') {
+      depth--;
+      if (depth === 0) return src.slice(open + 1, i);
+    }
+  }
+  return null;
+}
+
+/** Drop `…${…}…` templates from an expression WHOLE — the literals inside
+ *  their interpolations ('can'/'cannot', pluralizing 's') are fragments of
+ *  one contextual string, never standalone helper text. A template with no
+ *  interpolation survives (it IS a fixed string). */
+function stripInterpolatedTemplates(expr) {
+  let out = '';
+  for (let i = 0; i < expr.length; i++) {
+    const c = expr[i];
+    if (c !== '`') { out += c; continue; }
+    let j = i + 1, depth = 0, hasInterp = false, quote = null;
+    for (; j < expr.length; j++) {
+      const d = expr[j];
+      if (quote) {
+        if (d === '\\') j++;
+        else if (d === quote) quote = null;
+        continue;
+      }
+      if (d === '\\') { j++; continue; }
+      if (depth === 0 && d === '`') break;
+      if (d === '$' && expr[j + 1] === '{') { hasInterp = true; depth++; j++; continue; }
+      if (depth > 0) {
+        if (d === "'" || d === '"') { quote = d; continue; }
+        if (d === '{') depth++;
+        else if (d === '}') depth--;
+      }
+    }
+    if (!hasInterp) out += expr.slice(i, j + 1);
+    i = j;
+  }
+  return out;
+}
+
+/** Fixed string literals inside an attribute expression, operands skipped. */
+function literalsInExpr(rawExpr) {
+  const expr = stripInterpolatedTemplates(rawExpr);
+  const out = [];
+  for (const m of expr.matchAll(EXPR_LITERAL_RE)) {
+    const text = (m[1] ?? m[2] ?? m[3]).replace(/\\(['"`])/g, '$1');
+    if (OPERAND_BEFORE_RE.test(expr.slice(0, m.index))) continue;
+    if (OPERAND_AFTER_RE.test(expr.slice(m.index + m[0].length))) continue;
+    out.push(text);
+  }
+  return out;
+}
 
 // The terminator ([\s/>]) is REQUIRED — a bare \b also matches the end of
 // the sliced window, which once minted truncated names (FaDotCi, FaR).
@@ -122,6 +214,16 @@ export function buildCatalog() {
     for (const m of src.matchAll(TITLE_RE)) add(m[1], 'tooltip', f, contextAfter(src, m.index + m[0].length));
     for (const m of src.matchAll(PLACEHOLDER_RE)) add(m[1], 'placeholder', f);
     for (const m of src.matchAll(HT_RE)) add((m[1] ?? m[2]).replace(/\\(['"])/g, '$1'), 'hint', f);
+    // v6.51: dynamic attribute expressions — every fixed literal inside.
+    for (const m of src.matchAll(ATTR_EXPR_RE)) {
+      const expr = sliceBalancedExpr(src, m.index + m[0].length - 1);
+      if (expr === null) continue;
+      const kind = m[1] === 'title' ? 'tooltip' : 'placeholder';
+      const ctx = kind === 'tooltip'
+        ? contextAfter(src, m.index + m[0].length + expr.length + 1)
+        : {};
+      for (const text of literalsInExpr(expr)) add(text, kind, f, ctx);
+    }
   }
 
   const KIND_ORDER = { tooltip: 0, placeholder: 1, hint: 2 };

@@ -48,19 +48,29 @@ function applyToElement(el: Element, overrides: Record<string, string>) {
   for (const attr of ATTRS) {
     const cur = el.getAttribute(attr);
     if (cur === null) continue;
-    const orig = el.getAttribute(`${ORIG}-${attr}`) ?? cur;
+    const memoAttr = `${ORIG}-${attr}`;
+    let orig = el.getAttribute(memoAttr) ?? cur;
+    /* v6.51: a DYNAMIC title can legitimately re-render to a DIFFERENT
+       default (e.g. the outline bar checkbox's two ternary arms). When the
+       current value is neither the remembered default nor that default's
+       override, the component itself changed the text — adopt it as the
+       new original instead of painting the stale arm's override over it. */
+    if (cur !== orig && overrides[orig] !== undefined && cur !== overrides[orig]) {
+      orig = cur;
+      el.removeAttribute(memoAttr);
+    }
     const want = overrides[orig];
     if (want !== undefined) {
       if (cur !== want) {
-        el.setAttribute(`${ORIG}-${attr}`, orig);
+        el.setAttribute(memoAttr, orig);
         el.setAttribute(attr, want);
-      } else if (!el.hasAttribute(`${ORIG}-${attr}`)) {
-        el.setAttribute(`${ORIG}-${attr}`, orig);
+      } else if (!el.hasAttribute(memoAttr)) {
+        el.setAttribute(memoAttr, orig);
       }
-    } else if (el.hasAttribute(`${ORIG}-${attr}`)) {
+    } else if (el.hasAttribute(memoAttr)) {
       // override removed — restore the app's own text
       el.setAttribute(attr, orig);
-      el.removeAttribute(`${ORIG}-${attr}`);
+      el.removeAttribute(memoAttr);
     }
   }
 }

@@ -1,5 +1,15 @@
 [
  {
+  "version": "6.51",
+  "date": "2026-08-09",
+  "changes": [
+   "Helper Text: the window now lists every fixed tooltip and placeholder in the app — including the ~100 that were written as dynamic expressions (like the outline bar checkbox's hover text) and never showed up before. Editing them takes effect live, as always.",
+   "Helper Text: fixed a bug where a control whose tooltip changes with its state (checked vs unchecked) could show the wrong custom text after the state flipped.",
+   "Helper Text: the Outline window's ? help text is editable now too.",
+   "Standing rule going forward: any change that adds or removes helper text updates the Helper Text window's catalog as part of the same change — a build check enforces it."
+  ]
+ },
+ {
   "version": "6.50",
   "date": "2026-08-09",
   "changes": [

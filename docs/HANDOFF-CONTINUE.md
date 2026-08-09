@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.50 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.51 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,45 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.51 — Helper Text catalog covers DYNAMIC sites; applier arm-flip fix
+
+- Derek (with his screenshot of the bar checkbox's tooltip): "recheck the
+  entire app for helper text that is not an option in the helper text
+  window. I've found many." ROOT CAUSE: build-helper-catalog.mjs only
+  matched LITERAL title="…"/placeholder="…" attributes — every dynamic
+  site (title={cond ? 'A' : 'B'}, title={'X'}, ~147 of them) produced
+  overridable DOM text the window never LISTED. The DOM applier always
+  handled them at runtime (it keys whatever lands in the DOM by default
+  string); listing was the gap.
+- Builder now slices the balanced {…} expression after title=/
+  placeholder= (quote-aware walker) and harvests every FIXED string
+  literal inside. Guards: comparison operands/lookup keys skipped
+  (===, [key], .includes(, case, and attr= for JSX-typed title props
+  whose classNames aren't helper text); templates WITH ${…} dropped
+  WHOLE (their pieces — 'can'/'cannot', pluralizing 's' — are fragments
+  of one contextual string; no fixed default exists to key an override).
+  Catalog 365 → 462 entries (+96 tooltips/placeholders, +1 hint).
+- APPLIER BUG found by the new coverage: data-ht-orig memory went STALE
+  when a dynamic title re-rendered to its OTHER arm — it painted the old
+  arm's override over the new arm (or "restored" the wrong default).
+  applyToElement now adopts cur as the new original when it matches
+  neither the remembered default nor its override. helperText.test grew
+  the arm-flip case (12 tests).
+- BeatBoard's ? popover body now rides ht() (the TypewriterTool
+  convention it had missed) — editable like the rest.
+- STANDING RULE recorded in CLAUDE.md §3 (Derek, this batch): any change
+  that adds/removes/rewords helper text reruns build-helper-catalog.mjs
+  in the SAME change. check-helper-catalog enforces it in check-all.
+- NOT covered (by design): tooltips interpolating live data (`Switch to
+  ${tab name}`) have no fixed default to key an override by — contextual
+  labels, not fixed helper text. Raw EMPTY-STATE texts (~109 sites, e.g.
+  "No snapshots yet…") are also still outside ht() — a separate
+  mechanical sweep if Derek wants those editable too.
+- helperTextCatalog.test.ts pins the coverage + junk-guards at the data
+  level; check-v651 (8 asserts) drives the LIVE loop: override a ternary
+  tooltip → control updates; arm flips stay clean; ? popover editable;
+  the window lists the example strings.
+
 ### v6.50 — Outline polish: bare View trigger + option icons; add-button leads
 
 - Derek's four: (1) the View trigger drops the word "View" — icon + the
@@ -364,26 +403,12 @@ Durable bits kept live here:
   18<25<31≤43≤51. Screenshots of all three eyeballed (Vite+Chromium,
   data-theme swap) before shipping.
 
-### v6.46 — theme legibility pass (the palette report's S1/S2/S6, applied)
-
-- Derek: "make suggested changes to themes" — SCOPE: only the THEME
-  suggestions from the palette-analysis artifact (claude.ai/code/artifact/
-  842e3485-…): S1 sepia (muted #8a7a5f→#6e5f45 5.01:1; accent
-  #a5673f→#7d4a26 5.89:1 — ONE accent slot, so chrome fills deepen with
-  it; tinted-page idea NOT applied, page/export pipeline), S2 solarized-
-  light (text #586e75→#49606a 6.15:1, muted #93a1a1→#657271 4.64:1),
-  S6 dracula muted #8a8fa8→#979db6 5.30:1 + light muted #666→#5d5d5d
-  (5.08:1 on panels). S3/S4/S5/S7 (note red, annotation colors, scene
-  wheel, palettes.ts consolidation) deliberately NOT applied — Derek said
-  "themes". All ratios were verified in the report's build script before
-  shipping. themeLadder.test.ts only orders surfaces — unaffected.
-- The artifact was republished with APPLIED tags on S1/S2/S6 (same URL).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.46** — theme legibility pass (palette report S1/S2/S6: sepia/sol-light/dracula/light depth fixes, AA floors)
 - **v6.45** — Upload Voice Clip tool removed from the character window (Voice Profile writing fields stay; AssetAudio deleted)
 - **v6.44** — print round 4: sharedPrintInfo (nil-NSPrintInfo theory) + fsync breadcrumb log; Settings…→app menu above Quit
 - **v6.43** — print round 3: ACTIVE_PRINT keep-alive (async sheet lifetime); Settings→File (reversed v6.44); standard window buttons on FloatingWindow

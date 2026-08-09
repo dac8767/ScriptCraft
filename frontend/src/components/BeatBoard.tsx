@@ -30,6 +30,7 @@ import { readableTextOn } from '../utils/palettes';
 import { useEditorStore, type BeatInfo, type BeatLinkPreview } from '../stores/editorStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { confirmDialog, promptDialog } from './ConfirmDialog';
+import { ht } from '../utils/helperText';
 import { ControlDropdown, ControlSearch, type ToolChromeTab } from './ToolControls';
 import { showToast } from './Toast';
 import { saveFile, openTextFile } from '../utils/fileOps';
@@ -1238,15 +1239,11 @@ export function OutlineHeaderControls() {
       />
       <ControlSearch value={beatSearch} onChange={setBeatSearch} placeholder="Search beats..." />
       <button ref={helpBtnRef} className="fs-help-btn" title="How to use the Outline" onClick={toggleHelp}><FaRegQuestionCircle /></button>
+      {/* v6.51: the body rides ht() so the Helper Text window can edit it —
+          the TypewriterTool convention this popover had missed. */}
       {helpOpen && helpPos && createPortal(
         <div className="fs-help-pop" style={{ top: helpPos.top, left: helpPos.left }}>
-          Create sections (Act 1, Act 2…) and drop beats into them — or pick
-          a Preset. The header tabs are separate arrangements of the SAME
-          beats; "Show in Outline Bar" picks which tab the Outline Bar
-          mirrors. Double-click a tab to rename it. Freeform turns the
-          board into a mind map: drag cards anywhere; to connect two, push a
-          card's link button, then drag from that card onto the other. Click
-          a line and press Delete to remove it.
+          {ht('Create sections (Act 1, Act 2…) and drop beats into them — or pick a Preset. The header tabs are separate arrangements of the SAME beats; "Show this outline in the outline bar" picks which tab the Outline Bar mirrors. Double-click a tab to rename it. Freeform turns the board into a mind map: drag cards anywhere; to connect two, push a card\'s link button, then drag from that card onto the other. Click a line and press Delete to remove it.')}
         </div>,
         document.body,
       )}

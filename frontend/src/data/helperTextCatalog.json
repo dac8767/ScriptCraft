@@ -29,6 +29,17 @@
   ]
  },
  {
+  "text": "Add a character image",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Characters Window",
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ],
+  "icon": "FaRegUser",
+  "label": "Uploading…"
+ },
+ {
   "text": "Add a custom page — the script flows around it",
   "kind": "tooltip",
   "sites": 1,
@@ -55,6 +66,25 @@
   "where": [
    "components/CustomizePanelsDialog.tsx"
   ]
+ },
+ {
+  "text": "Add a pin — it follows the cursor until you click",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/LocationMapTab.tsx"
+  ]
+ },
+ {
+  "text": "Add a relationship",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/RelationshipMap.tsx"
+  ],
+  "label": "View Profile"
  },
  {
   "text": "Add a section or a beat",
@@ -91,6 +121,15 @@
   "area": "Customize Window",
   "where": [
    "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Add a synopsis for this scene",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/SceneNavigator.tsx"
   ]
  },
  {
@@ -151,6 +190,25 @@
   ]
  },
  {
+  "text": "Add this combo to the presets",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Annotations Window",
+  "where": [
+   "components/MarkupsCustomizeTab.tsx"
+  ],
+  "label": "Reset to Default"
+ },
+ {
+  "text": "Add to Dictionary writes here",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/DictionaryConfigPanel.tsx"
+  ]
+ },
+ {
   "text": "Add to the Quick Access Toolbar",
   "kind": "tooltip",
   "sites": 1,
@@ -200,6 +258,24 @@
   "icon": "FaExchangeAlt"
  },
  {
+  "text": "All colors",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Already associated",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Characters Window",
+  "where": [
+   "components/CharacterImageOverlays.tsx"
+  ]
+ },
+ {
   "text": "Annotation Visibility",
   "kind": "tooltip",
   "sites": 1,
@@ -220,6 +296,16 @@
   "label": "ant."
  },
  {
+  "text": "Apply a workspace first",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Workspaces",
+  "where": [
+   "components/WorkspacesTool.tsx"
+  ],
+  "label": "Save Changes to this Workspace"
+ },
+ {
   "text": "Apply an outline structure, or save your own",
   "kind": "tooltip",
   "sites": 1,
@@ -230,6 +316,16 @@
   "label": "Presets…"
  },
  {
+  "text": "Apply scene reorder to script",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/IndexCards.tsx"
+  ],
+  "label": "Apply"
+ },
+ {
   "text": "Apply this workspace",
   "kind": "tooltip",
   "sites": 1,
@@ -238,6 +334,26 @@
    "components/WorkspacesTool.tsx"
   ],
   "icon": "FaColumns"
+ },
+ {
+  "text": "Armed — drag from this card to another card to connect (click to cancel)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
+  ],
+  "icon": "FaLink"
+ },
+ {
+  "text": "At least one preset must remain",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Annotations Window",
+  "where": [
+   "components/MarkupsCustomizeTab.tsx"
+  ],
+  "label": "Add a Combo"
  },
  {
   "text": "Attach image",
@@ -267,6 +383,16 @@
   "where": [
    "components/TreatmentEditor.tsx"
   ]
+ },
+ {
+  "text": "Back to what the model offered",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Action Rewrite Window",
+  "where": [
+   "components/RewriteTool.tsx"
+  ],
+  "label": "Start from:"
  },
  {
   "text": "Block quote",
@@ -392,6 +518,44 @@
   ]
  },
  {
+  "text": "Clear this slot",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Action Rewrite Window",
+  "where": [
+   "components/RewriteTool.tsx"
+  ],
+  "label": "Start from:"
+ },
+ {
+  "text": "Click the map to set the pin, or press Escape",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/LocationMapTab.tsx"
+  ]
+ },
+ {
+  "text": "Click to choose a folder",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Dialogs",
+  "where": [
+   "components/SaveAsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Click to choose which location this is",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/LocationMapTab.tsx"
+  ],
+  "icon": "FaMapMarkerAlt"
+ },
+ {
   "text": "Click to edit",
   "kind": "tooltip",
   "sites": 1,
@@ -410,12 +574,30 @@
   ]
  },
  {
+  "text": "Click to make this an Add-to-Dictionary target",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/DictionaryConfigPanel.tsx"
+  ]
+ },
+ {
   "text": "Click to navigate to first appearance",
   "kind": "tooltip",
   "sites": 1,
   "area": "Characters Window",
   "where": [
    "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
+  "text": "Click to navigate to scene",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/IndexCards.tsx"
   ]
  },
  {
@@ -437,9 +619,18 @@
   ]
  },
  {
+  "text": "Click, then press the keys you want",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/KeyboardShortcutsTab.tsx"
+  ]
+ },
+ {
   "text": "Close",
   "kind": "tooltip",
-  "sites": 18,
+  "sites": 20,
   "area": "Dialogs",
   "where": [
    "components/ChangelogDialog.tsx",
@@ -498,6 +689,16 @@
   ]
  },
  {
+  "text": "Complete — click to reopen",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/MarkupPopover.tsx"
+  ],
+  "icon": "FaRegCheckCircle"
+ },
+ {
   "text": "Confirm delete",
   "kind": "tooltip",
   "sites": 1,
@@ -506,6 +707,16 @@
    "components/WorkspacesTool.tsx"
   ],
   "icon": "FaCheck"
+ },
+ {
+  "text": "Connect — click, then drag from this card to another card",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
+  ],
+  "icon": "FaLink"
  },
  {
   "text": "Connect this location to others — connected locations form a group",
@@ -579,6 +790,15 @@
   ]
  },
  {
+  "text": "Customizations are locked — click to unlock",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Customize Window",
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
   "text": "Customize ScriptCraft",
   "kind": "tooltip",
   "sites": 2,
@@ -599,6 +819,57 @@
   "label": "Cut selection to snippet"
  },
  {
+  "text": "Declutter — hide every other tool and the outline bar",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scrapbook Window",
+  "where": [
+   "components/NotebookTool.tsx"
+  ],
+  "icon": "FaRegEyeSlash"
+ },
+ {
+  "text": "Declutter — hide every other tool while this window is open",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Action Rewrite Window",
+  "where": [
+   "components/RewriteTool.tsx"
+  ],
+  "icon": "FaRegEyeSlash"
+ },
+ {
+  "text": "Decluttered — click to show the other tools again",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Action Rewrite Window",
+  "where": [
+   "components/RewriteTool.tsx"
+  ],
+  "icon": "FaRegEyeSlash"
+ },
+ {
+  "text": "Decluttered — click to show the other tools and the outline bar again",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scrapbook Window",
+  "where": [
+   "components/NotebookTool.tsx"
+  ],
+  "icon": "FaRegEyeSlash"
+ },
+ {
+  "text": "Default",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Design & Helper Text",
+  "where": [
+   "components/DesignPanel.tsx",
+   "components/HelperTextSection.tsx"
+  ],
+  "icon": "LuRotateCcw"
+ },
+ {
   "text": "Default size",
   "kind": "tooltip",
   "sites": 1,
@@ -611,10 +882,11 @@
  {
   "text": "Delete",
   "kind": "tooltip",
-  "sites": 4,
+  "sites": 5,
   "area": "Everything Else",
   "where": [
    "components/AssetManager.tsx",
+   "components/CustomizePanelsDialog.tsx",
    "components/StickyCard.tsx",
    "components/WorkspaceDialogs.tsx",
    "components/WorkspacesTool.tsx"
@@ -762,10 +1034,11 @@
  {
   "text": "Double-click to rename",
   "kind": "tooltip",
-  "sites": 2,
+  "sites": 3,
   "area": "Scrapbook Window",
   "where": [
-   "components/NotebookTool.tsx"
+   "components/NotebookTool.tsx",
+   "components/ToolControls.tsx"
   ]
  },
  {
@@ -789,12 +1062,40 @@
   "icon": "FaDownload"
  },
  {
+  "text": "Drag scenes into a new order",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/SceneNavigator.tsx"
+  ],
+  "label": "Change Order"
+ },
+ {
+  "text": "Drag sideways: item spacing · drag up/down: bar size",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/GapHandle.tsx"
+  ]
+ },
+ {
   "text": "Drag sideways: panel width · drag up/down: item size",
   "kind": "tooltip",
   "sites": 1,
   "area": "Side Panel & Window Chrome",
   "where": [
    "components/ToolDock.tsx"
+  ]
+ },
+ {
+  "text": "Drag to adjust the spacing between items",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/GapHandle.tsx"
   ]
  },
  {
@@ -825,6 +1126,15 @@
    "components/MarkupPickers.tsx"
   ],
   "label": "Drop items here"
+ },
+ {
+  "text": "Drag to move the Scrapbook menus",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Menus",
+  "where": [
+   "components/MenuBar.tsx"
+  ]
  },
  {
   "text": "Drag to move this boundary (resizes the previous section)",
@@ -877,6 +1187,24 @@
   ]
  },
  {
+  "text": "Drag to resize the menu bar and toolbar together",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Editor & Preview",
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
+  "text": "Drag to resize the outline bar",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Editor & Preview",
+  "where": [
+   "components/ScreenplayEditor.tsx"
+  ]
+ },
+ {
   "text": "Drag to resize this spacer",
   "kind": "tooltip",
   "sites": 1,
@@ -893,6 +1221,16 @@
   "where": [
    "components/OutlineBar.tsx"
   ]
+ },
+ {
+  "text": "Edit a name to enable",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Characters Window",
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ],
+  "label": "Update in Script"
  },
  {
   "text": "Edit this theme",
@@ -940,6 +1278,25 @@
    "components/LocationsGroupToggle.tsx"
   ],
   "label": "Ungrouped"
+ },
+ {
+  "text": "Exit full screen",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/MarkupPopover.tsx"
+  ]
+ },
+ {
+  "text": "Exit reorder mode (discards unapplied order)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/SceneNavigator.tsx"
+  ],
+  "label": "Change Order"
  },
  {
   "text": "Expand synopsis",
@@ -1114,12 +1471,31 @@
   ]
  },
  {
+  "text": "Freeze every customization: sizing, spacing, and layout edits",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Customize Window",
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Full screen",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/MarkupPopover.tsx"
+  ]
+ },
+ {
   "text": "Fullscreen",
   "kind": "tooltip",
-  "sites": 2,
+  "sites": 3,
   "area": "Characters Window",
   "where": [
    "components/CharacterProfiles.tsx",
+   "components/FloatingWindow.tsx",
    "components/ToolDock.tsx"
   ]
  },
@@ -1154,6 +1530,15 @@
   "icon": "FaHashtag"
  },
  {
+  "text": "Goal complete — click to clear it",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Goals Window",
+  "where": [
+   "components/GoalsTool.tsx"
+  ]
+ },
+ {
   "text": "Grammar & Spelling Settings",
   "kind": "tooltip",
   "sites": 1,
@@ -1162,6 +1547,35 @@
    "components/SpellCheckPanel.tsx"
   ],
   "label": "Settings…"
+ },
+ {
+  "text": "Hand tool — drag to pan the preview",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Editor & Preview",
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ],
+  "icon": "FaRegHandPaper"
+ },
+ {
+  "text": "Hand tool off",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Editor & Preview",
+  "where": [
+   "components/TitlePageEditor.tsx"
+  ],
+  "icon": "FaRegHandPaper"
+ },
+ {
+  "text": "Handled by your operating system",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/KeyboardShortcutsTab.tsx"
+  ]
  },
  {
   "text": "Has notes",
@@ -1179,6 +1593,15 @@
   "area": "Scenes / Pages / Locations Windows",
   "where": [
    "components/LocationMapRail.tsx"
+  ]
+ },
+ {
+  "text": "Hide (find it again under Hidden)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Customize Window",
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
   ]
  },
  {
@@ -1242,6 +1665,44 @@
   "label": "Hide All"
  },
  {
+  "text": "Hide occurrences",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Production Tags Window",
+  "where": [
+   "components/TagsPanel.tsx"
+  ],
+  "icon": "FaChevronUp"
+ },
+ {
+  "text": "Hide synopsis & length",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Hide tag highlights",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Production Tags Window",
+  "where": [
+   "components/TagsPanel.tsx"
+  ],
+  "icon": "FaRegEye"
+ },
+ {
+  "text": "Hide the Outline Bar",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
   "text": "Hide this element",
   "kind": "tooltip",
   "sites": 1,
@@ -1260,12 +1721,31 @@
   ]
  },
  {
+  "text": "Hide this item — it moves to the Hidden view",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Design & Helper Text",
+  "where": [
+   "components/HelperTextSection.tsx"
+  ],
+  "icon": "FaRegEye"
+ },
+ {
   "text": "Hide this theme",
   "kind": "tooltip",
   "sites": 1,
   "area": "Everything Else",
   "where": [
    "components/ThemesTab.tsx"
+  ]
+ },
+ {
+  "text": "Hide this transition",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Dialogs",
+  "where": [
+   "components/EditElementsDialog.tsx"
   ]
  },
  {
@@ -1365,6 +1845,15 @@
   ]
  },
  {
+  "text": "Include in save filename",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Dialogs",
+  "where": [
+   "components/SaveAsDialog.tsx"
+  ]
+ },
+ {
   "text": "Insert Custom Page",
   "kind": "tooltip",
   "sites": 1,
@@ -1373,6 +1862,24 @@
    "components/Toolbar.tsx"
   ],
   "icon": "FaRegFileAlt"
+ },
+ {
+  "text": "Insert Table — select a Scrapbook page first",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Insert Table (Scrapbook)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
  },
  {
   "text": "Insert this snippet into the script at the cursor",
@@ -1416,6 +1923,15 @@
    "components/HelperTextSection.tsx"
   ],
   "icon": "LuRotateCcw"
+ },
+ {
+  "text": "Join an existing group",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/LocationPlaceDetails.tsx"
+  ]
  },
  {
   "text": "Justify",
@@ -1485,6 +2001,15 @@
   "label": "Grouped"
  },
  {
+  "text": "Lock all sizing and spacing",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
   "text": "Lock previous text until the goal is done",
   "kind": "tooltip",
   "sites": 1,
@@ -1523,6 +2048,26 @@
    "components/ScriptStatistics.tsx"
   ],
   "label": "TOTAL"
+ },
+ {
+  "text": "Mark as complete",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/MarkupPopover.tsx"
+  ],
+  "icon": "FaRegCheckCircle"
+ },
+ {
+  "text": "Maximize section",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Menu (drag to reposition)",
@@ -1640,6 +2185,45 @@
   ]
  },
  {
+  "text": "No changes to apply",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/IndexCards.tsx"
+  ],
+  "label": "Apply"
+ },
+ {
+  "text": "No color",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx",
+   "components/OutlineBar.tsx"
+  ],
+  "label": "Set"
+ },
+ {
+  "text": "No groups yet — create one first",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/LocationPlaceDetails.tsx"
+  ]
+ },
+ {
+  "text": "None",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Dialogs",
+  "where": [
+   "components/SynopsisModal.tsx"
+  ]
+ },
+ {
   "text": "Notes",
   "kind": "tooltip",
   "sites": 1,
@@ -1696,12 +2280,30 @@
   ]
  },
  {
+  "text": "Overwrite this workspace",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Workspaces",
+  "where": [
+   "components/WorkspacesTool.tsx"
+  ]
+ },
+ {
   "text": "Page estimate — how many pages this beat spans on the Outline Bar",
   "kind": "tooltip",
   "sites": 1,
   "area": "Outline Window",
   "where": [
    "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Press a key combination… (Esc to cancel)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/KeyboardShortcutsTab.tsx"
   ]
  },
  {
@@ -1732,6 +2334,16 @@
    "components/Toolbar.tsx"
   ],
   "icon": "FaTags"
+ },
+ {
+  "text": "Put this item back in the list",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Design & Helper Text",
+  "where": [
+   "components/HelperTextSection.tsx"
+  ],
+  "icon": "FaRegEye"
  },
  {
   "text": "Re-seeds the colors below from this base",
@@ -1812,6 +2424,16 @@
   "icon": "FaRegTrashAlt"
  },
  {
+  "text": "Remove preset",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Annotations Window",
+  "where": [
+   "components/MarkupsCustomizeTab.tsx"
+  ],
+  "label": "Add a Combo"
+ },
+ {
   "text": "Remove preview",
   "kind": "tooltip",
   "sites": 1,
@@ -1869,6 +2491,26 @@
   "icon": "FaRegTrashAlt"
  },
  {
+  "text": "Remove this field from every character",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Characters Window",
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ],
+  "icon": "FaRegTrashAlt"
+ },
+ {
+  "text": "Remove this field from this character",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Characters Window",
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ],
+  "icon": "FaRegTrashAlt"
+ },
+ {
   "text": "Remove this language",
   "kind": "tooltip",
   "sites": 1,
@@ -1907,6 +2549,15 @@
   "label": "Clear"
  },
  {
+  "text": "Remove this transition",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Dialogs",
+  "where": [
+   "components/EditElementsDialog.tsx"
+  ]
+ },
+ {
   "text": "Rename",
   "kind": "tooltip",
   "sites": 2,
@@ -1928,6 +2579,15 @@
   "icon": "FaRegTrashAlt"
  },
  {
+  "text": "Rename this field (applies to every character)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Characters Window",
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ]
+ },
+ {
   "text": "Rename this group — the name shows everywhere the group does",
   "kind": "tooltip",
   "sites": 1,
@@ -1945,6 +2605,15 @@
    "components/LocationMapOptions.tsx"
   ],
   "label": "Options"
+ },
+ {
+  "text": "Reset all sizes & spacing to defaults",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
  },
  {
   "text": "Reset every customization to the defaults — sizes, toolbar layout, Quick Access, menu bar, panels, outline bar",
@@ -1966,6 +2635,26 @@
   "icon": "LuRotateCcw"
  },
  {
+  "text": "Reset to default",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Design & Helper Text",
+  "where": [
+   "components/DesignPanel.tsx"
+  ],
+  "icon": "LuRotateCcw"
+ },
+ {
+  "text": "Reset to the app’s own text",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Design & Helper Text",
+  "where": [
+   "components/HelperTextSection.tsx"
+  ],
+  "icon": "LuRotateCcw"
+ },
+ {
   "text": "Restore every shortcut to its default",
   "kind": "tooltip",
   "sites": 1,
@@ -1974,6 +2663,16 @@
    "components/KeyboardShortcutsTab.tsx"
   ],
   "label": "Reset All Shortcuts"
+ },
+ {
+  "text": "Restore section",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
+  ],
+  "icon": "FaRegTrashAlt"
  },
  {
   "text": "Restore the default shortcut",
@@ -1994,6 +2693,34 @@
    "components/VersionHistory.tsx"
   ],
   "label": "Restore"
+ },
+ {
+  "text": "Rewrite this character's name throughout the script",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Characters Window",
+  "where": [
+   "components/CharacterProfiles.tsx"
+  ],
+  "label": "Update in Script"
+ },
+ {
+  "text": "Row split line: hidden — click to show",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Row split line: shown — click to hide",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
  },
  {
   "text": "Run the same passage again — add a note first to steer it (e.g. avoid a phrase)",
@@ -2017,6 +2744,15 @@
   "label": "Save"
  },
  {
+  "text": "Save current layout",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Workspaces",
+  "where": [
+   "components/WorkspacesTool.tsx"
+  ]
+ },
+ {
   "text": "Save every customization choice to a file",
   "kind": "tooltip",
   "sites": 1,
@@ -2036,6 +2772,16 @@
    "components/WorkspacesTool.tsx"
   ],
   "icon": "FaCheck"
+ },
+ {
+  "text": "Save this script to a project to use the Asset Manager",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/LocationMapOptions.tsx"
+  ],
+  "label": "From Asset Manager…"
  },
  {
   "text": "Save your custom themes to a file",
@@ -2174,7 +2920,45 @@
   ]
  },
  {
+  "text": "Show occurrences",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Production Tags Window",
+  "where": [
+   "components/TagsPanel.tsx"
+  ],
+  "icon": "FaChevronUp"
+ },
+ {
+  "text": "Show synopsis & length",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/SceneNavigator.tsx"
+  ]
+ },
+ {
+  "text": "Show tag highlights",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Production Tags Window",
+  "where": [
+   "components/TagsPanel.tsx"
+  ],
+  "icon": "FaRegEye"
+ },
+ {
   "text": "Show the divider between these sections",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Show the Outline Bar",
   "kind": "tooltip",
   "sites": 1,
   "area": "Ribbon Toolbar",
@@ -2229,6 +3013,16 @@
   ]
  },
  {
+  "text": "Show this tab in the Outline Bar",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
+  ],
+  "label": "Show this outline in the outline bar"
+ },
+ {
   "text": "Show this theme",
   "kind": "tooltip",
   "sites": 1,
@@ -2249,10 +3043,29 @@
  {
   "text": "Shrink to a floating window",
   "kind": "tooltip",
-  "sites": 1,
-  "area": "Side Panel & Window Chrome",
+  "sites": 2,
+  "area": "Everything Else",
   "where": [
+   "components/FloatingWindow.tsx",
    "components/ToolDock.tsx"
+  ]
+ },
+ {
+  "text": "Sizing is locked — click to unlock",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Sizing is locked — unlock to reset",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
   ]
  },
  {
@@ -2309,6 +3122,15 @@
   ],
   "icon": "FaSuperscript",
   "label": "X"
+ },
+ {
+  "text": "Switch to this theme",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
  },
  {
   "text": "Switch to this theme (moves it to Shown)",
@@ -2376,6 +3198,37 @@
   ]
  },
  {
+  "text": "The Outline Bar shows this tab. To change that, switch to another tab and check the box there.",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
+  ],
+  "label": "Show this outline in the outline bar"
+ },
+ {
+  "text": "This combo is already a preset",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Annotations Window",
+  "where": [
+   "components/MarkupsCustomizeTab.tsx"
+  ],
+  "label": "Reset to Default"
+ },
+ {
+  "text": "This location has no pin on the map yet",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/LocationMapRail.tsx"
+  ],
+  "icon": "FaLock",
+  "label": "Unlock pin&rsquo;s position"
+ },
+ {
   "text": "This pin is locked",
   "kind": "tooltip",
   "sites": 1,
@@ -2384,6 +3237,16 @@
    "components/LocationMapRail.tsx"
   ],
   "icon": "FaRegEyeSlash"
+ },
+ {
+  "text": "This place already has every location",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Scenes / Pages / Locations Windows",
+  "where": [
+   "components/LocationPinMenu.tsx"
+  ],
+  "label": "Connect to location…"
  },
  {
   "text": "Title Page",
@@ -2459,6 +3322,15 @@
    "components/VersionHistory.tsx"
   ],
   "label": "View"
+ },
+ {
+  "text": "Writing goal — click to open Goals",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Goals Window",
+  "where": [
+   "components/GoalsTool.tsx"
+  ]
  },
  {
   "text": "Zoom",
@@ -2849,6 +3721,24 @@
   ]
  },
  {
+  "text": "hh",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/TimeField.tsx"
+  ]
+ },
+ {
+  "text": "HH",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/TimeField.tsx"
+  ]
+ },
+ {
   "text": "How does this character change through the story...",
   "kind": "placeholder",
   "sites": 1,
@@ -2918,6 +3808,15 @@
   "area": "Everything Else",
   "where": [
    "components/TimeField.tsx"
+  ]
+ },
+ {
+  "text": "Name\\nAgency\\nemail@example.com\\n(310) 555-0100",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Editor & Preview",
+  "where": [
+   "components/TitlePageEditor.tsx"
   ]
  },
  {
@@ -3158,6 +4057,15 @@
   ]
  },
  {
+  "text": "Search...",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Side Panel & Window Chrome",
+  "where": [
+   "components/ToolControls.tsx"
+  ]
+ },
+ {
   "text": "Section name...",
   "kind": "placeholder",
   "sites": 1,
@@ -3303,6 +4211,15 @@
   ]
  },
  {
+  "text": "Write it your way, or borrow beats below…",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Action Rewrite Window",
+  "where": [
+   "components/RewriteTool.tsx"
+  ]
+ },
+ {
   "text": "(direction)",
   "kind": "hint",
   "sites": 1,
@@ -3354,6 +4271,15 @@
   "area": "Thesaurus Window",
   "where": [
    "components/ThesaurusTool.tsx"
+  ]
+ },
+ {
+  "text": "Create sections (Act 1, Act 2…) and drop beats into them — or pick a Preset. The header tabs are separate arrangements of the SAME beats; \"Show this outline in the outline bar\" picks which tab the Outline Bar mirrors. Double-click a tab to rename it. Freeform turns the board into a mind map: drag cards anywhere; to connect two, push a card's link button, then drag from that card onto the other. Click a line and press Delete to remove it.",
+  "kind": "hint",
+  "sites": 1,
+  "area": "Outline Window",
+  "where": [
+   "components/BeatBoard.tsx"
   ]
  },
  {

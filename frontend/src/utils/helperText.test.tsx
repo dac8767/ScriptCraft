@@ -93,4 +93,33 @@ describe('installHelperTextDom', () => {
     expect(btn.getAttribute('title')).toBe('Keep me');
     expect(btn.hasAttribute('data-ht-orig-title')).toBe(false);
   });
+
+  /* v6.51: a DYNAMIC title (ternary arms — e.g. the outline bar checkbox)
+     re-renders between two DIFFERENT defaults. The stale data-ht-orig memory
+     must not paint the old arm's override over the new arm, and each arm
+     gets its own override. */
+  it('follows a dynamic title to its other arm instead of repainting the stale override', async () => {
+    document.body.innerHTML = '<label title="Show this tab in the Outline Bar">x</label>';
+    teardown = installHelperTextDom();
+    useEditorStore.getState().setHelperTextOverride('Show this tab in the Outline Bar', 'Put me in the bar');
+    await flush();
+    const el = document.querySelector('label')!;
+    expect(el.getAttribute('title')).toBe('Put me in the bar');
+
+    // React flips the ternary to the checked arm — a DIFFERENT default.
+    el.setAttribute('title', 'The Outline Bar shows this tab.');
+    await flush();
+    expect(el.getAttribute('title')).toBe('The Outline Bar shows this tab.');   // NOT 'Put me in the bar'
+    expect(el.hasAttribute('data-ht-orig-title')).toBe(false);
+
+    // The checked arm carries its own override once one exists.
+    useEditorStore.getState().setHelperTextOverride('The Outline Bar shows this tab.', 'This one feeds the bar');
+    await flush();
+    expect(el.getAttribute('title')).toBe('This one feeds the bar');
+
+    // Flipping back re-applies the first arm's override.
+    el.setAttribute('title', 'Show this tab in the Outline Bar');
+    await flush();
+    expect(el.getAttribute('title')).toBe('Put me in the bar');
+  });
 });

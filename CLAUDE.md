@@ -115,6 +115,14 @@ it actually produced — not by staring at the source and reasoning.
   Derek's standing rule): removing a tool that retires a library — or adding or
   swapping one — updates the "Made possible by open source" list in
   `AboutDialog.tsx` as part of the SAME change.
+- **The Helper Text window tracks the real helper text** (v6.51, Derek's
+  standing rule): any change that adds, removes, or rewords helper text
+  (tooltips, placeholders, `ht()` hints) reruns
+  `node devtools/build-helper-catalog.mjs` as part of the SAME change, so the
+  Helper Text window's list always matches the app. `check-helper-catalog`
+  fails the suite when the committed catalog drifts — and since v6.51 the
+  builder harvests string literals out of dynamic `title={…}` expressions
+  too, so ternary tooltips are covered, not just literal attributes.
 - **Icons are always monotone** (react-icons line style, currentColor). Never emoji
   in UI chrome — v2.08 swept the Scrapbook's 📄🗂🗑 for exactly this.
 - **Never comment on the time of day or suggest he sleep.**
