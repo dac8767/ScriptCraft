@@ -28,6 +28,7 @@ import { dockWidthFor, toolDef } from './ToolDock';
 import { computeSceneLengths } from '../editor/pagination';
 import AddMenu from './AddMenu';
 import { showToast } from './Toast';
+import { sendSectionsToScript } from '../utils/outlineScriptSync';
 import { confirmDialog } from './ConfirmDialog';
 import { BEAT_COLORS } from './BeatBoard';
 
@@ -419,15 +420,32 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
     }
   };
 
+  /* v6.64, Derek: "the 'send to script' button in the outline toolbar adds
+     the section header as an annotation at the indicated page location. if
+     section info changes, such as the name or the estimated page amount, the
+     change should be indicated in the annotation as well."
+     So it sends SECTIONS (it used to append one line per beat at the end of
+     the script), each at the page the outline puts it on, and each stamped
+     with its section id so the line keeps mirroring it — see
+     utils/outlineScriptSync. Sending twice updates instead of duplicating. */
+  const posForPage = (page: number): number | null => {
+    if (!scenes.length) return null;
+    // The same page→script mapping double-clicking a bar item already uses:
+    // the scene whose real page range contains that page.
+    const scene = scenes.find((sc) => page >= sc.start && page < sc.start + sc.pages);
+    if (scene) return scene.pos;
+    return page < scenes[0].start ? scenes[0].pos : null;   // past the end → end
+  };
+
   const sendToScript = () => {
-    if (!editor || editor.isDestroyed || beats.length === 0) return;
-    const ordered = [...beats].sort((a, b) => (layout.get(a.id)?.page ?? 0) - (layout.get(b.id)?.page ?? 0));
-    const nodes = ordered.map((b) => ({
-      type: 'general',
-      content: [{ type: 'text', text: `# ${b.title}${b.description ? ` — ${b.description}` : ''}` }],
-    }));
-    editor.chain().insertContentAt(editor.state.doc.content.size, nodes).run();
-    showToast(`Sent ${ordered.length} outline beat${ordered.length === 1 ? '' : 's'} to the script as sections.`, 'success');
+    if (!editor || editor.isDestroyed || acts.length === 0) return;
+    const sections = acts.map((a) => ({ id: a.id, title: a.title, pages: a.pages, page: a.start }));
+    const { added, updated } = sendSectionsToScript(editor, sections, posForPage);
+    const bits = [
+      added ? `Added ${added} section line${added === 1 ? '' : 's'}` : '',
+      updated ? `${added ? 'updated' : 'Updated'} ${updated}` : '',
+    ].filter(Boolean);
+    showToast(bits.length ? `${bits.join(', ')} in the script.` : 'The script is already up to date with this outline.', bits.length ? 'success' : 'info');
   };
 
   const jumpToScene = (pos: number) => {
@@ -560,12 +578,12 @@ export default function OutlineBar({ editor }: { editor: Editor | null }) {
           className="fs-ob-iconbtn"
           onClick={async () => {
             if (await confirmDialog(
-              `Insert all ${beats.length} beat${beats.length === 1 ? '' : 's'} into the script as section lines (# …)?`,
+              `Put all ${acts.length} section${acts.length === 1 ? '' : 's'} into the script as section lines (# …), each at its page?\n\nEach line keeps mirroring its section — rename it or change its pages and the line follows. Lines already there are updated, not duplicated.`,
               { title: 'Send to Script', confirmLabel: 'Insert' },
             )) sendToScript();
           }}
-          disabled={beats.length === 0}
-          title="Send to Script — insert each beat as a section line (# …)"
+          disabled={acts.length === 0}
+          title="Send to Script — put each section into the script as a section line (# …) that keeps mirroring it"
         >
           <FaFileExport />
         </button>

@@ -79,6 +79,17 @@ export const General = Node.create({
         renderHTML: (attrs) =>
           (attrs.todoColor ? { 'data-todo-color': attrs.todoColor } : {}),
       },
+      /** v6.64: the outline SECTION this line was sent from (Send to Script).
+       *  It makes the line a mirror rather than a copy — rename the section
+       *  or change its page budget and utils/outlineScriptSync rewrites the
+       *  line. Stored on the node like todoId, so the link travels with the
+       *  script and survives save/load. */
+      outlineSectionId: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).getAttribute('data-outline-section'),
+        renderHTML: (attrs) =>
+          (attrs.outlineSectionId ? { 'data-outline-section': attrs.outlineSectionId } : {}),
+      },
     };
   },
 

@@ -2892,7 +2892,7 @@
   ]
  },
  {
-  "text": "Send to Script — insert each beat as a section line (# …)",
+  "text": "Send to Script — put each section into the script as a section line (# …) that keeps mirroring it",
   "kind": "tooltip",
   "sites": 1,
   "area": "Everything Else",

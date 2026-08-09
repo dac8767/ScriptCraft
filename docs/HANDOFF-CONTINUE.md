@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.63 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.64 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -227,6 +227,48 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.64 — Send to Script writes LIVE section lines
+
+- Derek: "the 'send to script' button in the outline toolbar adds the
+  section header as an annotation at the indicated page location. if section
+  info changes, such as the name or the estimated page amount, the change
+  should be indicated in the annotation as well."
+- His first sentence did NOT describe the code: the button appended one
+  `# Beat title — description` line per BEAT at the END of the script — no
+  sections, no page placement, no page estimate. I asked rather than guess,
+  and he chose: SECTIONS, at their page, mirroring silently and always.
+- A sent line is now a MIRROR, not a copy. `General` gained an
+  `outlineSectionId` attribute (`data-outline-section`, parse/render like
+  todoId, so the link rides the saved document), and
+  `utils/outlineScriptSync.ts` owns the rest: `sectionLineText` is the ONE
+  text builder (Send and the mirror can't disagree), `collectOutlineSections`
+  gathers sections from EVERY variation (viewed columns + stash — a line sent
+  from one tab must keep mirroring after switching), `syncSectionLines`
+  rewrites what has fallen behind, `sendSectionsToScript` updates-then-inserts
+  so a second press can't duplicate.
+- The mirror lives in ScreenplayEditor, NOT the Outline Bar: the bar is
+  usually closed while the writer renames a section on the board, and a
+  mirror that only runs when a panel happens to be mounted is the silent
+  no-op this repo keeps re-learning. A signature of `id|title|pages` gates
+  it, so a column-resize drag (width changes, same names) doesn't walk the
+  document on every pointer move.
+- Two rules it does not break: `addToHistory: false` (Undo takes back the
+  RENAME, which re-fires the mirror, instead of peeling the mirror off), and
+  a section deleted in the outline leaves its line in the script untouched.
+- BUG the check caught, worth remembering: sections landing on the SAME
+  insertion point (pages the script hasn't reached yet all resolve to the
+  end) came out REVERSED. Inserting bottom-up needs the tie-break to reverse
+  too — each insert at position P pushes the previous one down, so equal
+  positions must be dealt latest-first. `b.at - a.at || b.i - a.i`.
+- The line is a `# ` section line, so it inherits the working-note rule
+  (hidden in Preview, suppressed in print, stripped from the Fountain
+  export) — the unit test asserts the prefix for exactly that reason.
+- check-v664 (16) drives the real document: placement (Act I at pos 0, Act II
+  at 3966), rename and page-estimate rewrites, mirroring with the bar CLOSED,
+  no duplicates on re-send, the undo behaviour, the deleted-section case, and
+  that `data-outline-section` reaches the saved HTML.
+- Gates: tsc 0, vitest 1170, build ok, check-all 910/0.
+
 ### v6.63 — Settings ▸ Presets is a CHECKLIST that makes ONE file
 
 - Derek: "the Settings > Presets tab is not what I want. I want one single
@@ -365,62 +407,12 @@ Durable bits kept live here:
   when the last beat is dragged back into a section.
 - Gates: tsc 0, vitest 1149, build ok, check-all 861/0.
 
-### v6.59 — a preset USES the beats you have; page estimates go per-variation
-
-- Derek: "when a preset is used but beats already exist, it should use the
-  existing beats instead of creating new ones. it can change the page
-  estimates of existing beats to work with the new preset structure.
-  changing the estimated page length on one outline variation does not
-  change it on other variations." Two changes, one release.
-- **Re-homing.** The v2.23 rule (a preset override orphans every beat into
-  Uncategorized and you drag them back one at a time) is retired. Now
-  `applyOutlinePreset` hands the store a PLAN: the sections, the span for
-  each slot, and `reuse` — the beat ids to deal into those slots, in
-  order. The store fills slots from that queue and only mints a fresh beat
-  when the queue runs dry. Nothing is ever deleted; a re-homed beat keeps
-  everything the writer wrote and gives up only columnId / position /
-  outlineSpan (and its bar pin, which means nothing in a new section).
-- The arithmetic is pure and lives in BeatBoard.tsx, so the invariants are
-  provable over every shape rather than the five presets we ship:
-  - `splitPages(pages, count)` — deal a budget across n beats, biggest
-    shares first, sum exact (and all-1s when there are more beats than
-    pages, since a beat can't be shorter than a page).
-  - `presetBeatSpans(pages)` = splitPages at the v6.57 two-pages-a-beat
-    ratio. Unchanged behaviour, now one line.
-  - `distributeBeats(pages[], count)` — how many beats each section gets.
-    One each first (biggest sections first, so a short supply covers the
-    sections carrying the most story), then D'Hondt on `pages/(count+1)`
-    capped at one beat per page, then an uncapped overflow pass so no beat
-    is ever dropped.
-  - `presetReuseOrder(beats, columns, mode)` — the deal order: board
-    reading order (column position, then position), orphans last. In
-    'append' the sections that are STAYING keep their beats; only loose
-    ones are dealt, so appending can't rip a settled outline apart.
-- **Per-variation estimates.** `OutlineTabData.beatSlots` gained `span?`,
-  parked/restored exactly like `barOffset` in addOutlineTab /
-  switchOutlineTab / deleteOutlineTab. An older save has no span in its
-  slots, so the restore reads `slot.span ?? b.outlineSpan` — every tab
-  keeps the shared value it used to have until it's edited, instead of
-  snapping back to one page.
-- The Outline Bar edits ITS tab: new `barSetBeatSpan` (viewed → updateBeat,
-  parked → the stash), and the bar's `items` now read the span off the slot
-  the same way they read columnId/position. The right-click popover splits
-  its two writes — the TITLE is the shared beat's, the estimate is the
-  tab's. That comment at OutlineBar.tsx:336 ("spans are shared across
-  tabs") was the bug describing itself; it's gone.
-- Confirm wording follows the behaviour: no more promise of a pile of
-  Uncategorized cards.
-- Gates: tsc 0, vitest 1145, build ok, check-all 848/0 — check-v659 (16)
-  drives the dropdown + confirm, proves the same 60 ids survive with every
-  section filled and summing to budget, that one undo puts the acts back,
-  and that a 9 / 3 / 12-page split across two variations stays split in the
-  store AND in what the bar draws.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.59** — presets re-home existing beats (splitPages/distributeBeats/presetReuseOrder); page estimates went per-variation (beatSlots.span, barSetBeatSpan)
 - **v6.58** — an outline tab is DELETED, not "closed" (the tab flow only; other Close buttons stay)
 - **v6.57** — presets fill their sections at ~2 pages a beat with sums exact (presetBeatSpans); divider before the + button
 - **v6.56** — the outline beat count left the tab pill (ToolChrome grew an AfterTabs slot outside the strip)

@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.64",
+  "date": "2026-08-09",
+  "changes": [
+   "Send to Script now puts your outline SECTIONS into the script \u2014 one section line each, at the page the outline puts that section on, carrying its name and its estimated pages (\u201c# Act I \u2014 40 pages\u201d). It used to append one line per beat at the end of the script.",
+   "Those lines stay live. Rename a section, or change its page estimate, and the line in the script rewrites itself on the spot \u2014 no need to send again, and it works whether the Outline Bar is open or not.",
+   "Pressing Send to Script again updates the lines already there and adds only what is missing, so you can never end up with duplicates. Deleting a section in the outline leaves its line in your script exactly as written \u2014 the mirror never deletes your text."
+  ]
+ },
+ {
   "version": "6.63",
   "date": "2026-08-09",
   "changes": [

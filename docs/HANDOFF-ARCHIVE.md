@@ -153,6 +153,56 @@ reliable; re-run before believing a weird worker failure.
 
 ## Version history — v6.53 and older (newest first)
 
+### v6.59 — a preset USES the beats you have; page estimates go per-variation
+
+- Derek: "when a preset is used but beats already exist, it should use the
+  existing beats instead of creating new ones. it can change the page
+  estimates of existing beats to work with the new preset structure.
+  changing the estimated page length on one outline variation does not
+  change it on other variations." Two changes, one release.
+- **Re-homing.** The v2.23 rule (a preset override orphans every beat into
+  Uncategorized and you drag them back one at a time) is retired. Now
+  `applyOutlinePreset` hands the store a PLAN: the sections, the span for
+  each slot, and `reuse` — the beat ids to deal into those slots, in
+  order. The store fills slots from that queue and only mints a fresh beat
+  when the queue runs dry. Nothing is ever deleted; a re-homed beat keeps
+  everything the writer wrote and gives up only columnId / position /
+  outlineSpan (and its bar pin, which means nothing in a new section).
+- The arithmetic is pure and lives in BeatBoard.tsx, so the invariants are
+  provable over every shape rather than the five presets we ship:
+  - `splitPages(pages, count)` — deal a budget across n beats, biggest
+    shares first, sum exact (and all-1s when there are more beats than
+    pages, since a beat can't be shorter than a page).
+  - `presetBeatSpans(pages)` = splitPages at the v6.57 two-pages-a-beat
+    ratio. Unchanged behaviour, now one line.
+  - `distributeBeats(pages[], count)` — how many beats each section gets.
+    One each first (biggest sections first, so a short supply covers the
+    sections carrying the most story), then D'Hondt on `pages/(count+1)`
+    capped at one beat per page, then an uncapped overflow pass so no beat
+    is ever dropped.
+  - `presetReuseOrder(beats, columns, mode)` — the deal order: board
+    reading order (column position, then position), orphans last. In
+    'append' the sections that are STAYING keep their beats; only loose
+    ones are dealt, so appending can't rip a settled outline apart.
+- **Per-variation estimates.** `OutlineTabData.beatSlots` gained `span?`,
+  parked/restored exactly like `barOffset` in addOutlineTab /
+  switchOutlineTab / deleteOutlineTab. An older save has no span in its
+  slots, so the restore reads `slot.span ?? b.outlineSpan` — every tab
+  keeps the shared value it used to have until it's edited, instead of
+  snapping back to one page.
+- The Outline Bar edits ITS tab: new `barSetBeatSpan` (viewed → updateBeat,
+  parked → the stash), and the bar's `items` now read the span off the slot
+  the same way they read columnId/position. The right-click popover splits
+  its two writes — the TITLE is the shared beat's, the estimate is the
+  tab's. That comment at OutlineBar.tsx:336 ("spans are shared across
+  tabs") was the bug describing itself; it's gone.
+- Confirm wording follows the behaviour: no more promise of a pile of
+  Uncategorized cards.
+- Gates: tsc 0, vitest 1145, build ok, check-all 848/0 — check-v659 (16)
+  drives the dropdown + confirm, proves the same 60 ids survive with every
+  section filled and summing to budget, that one undo puts the acts back,
+  and that a 9 / 3 / 12-page split across two variations stays split in the
+  store AND in what the bar draws.
 ### v6.58 — an outline tab is DELETED, not "closed"
 
 - Derek (screenshot of the confirm): "replace all instances of 'close'
