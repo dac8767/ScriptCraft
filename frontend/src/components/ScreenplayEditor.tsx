@@ -3578,7 +3578,9 @@ const ScreenplayEditor: React.FC = () => {
             )}
             <div className="editor-main" ref={attachEditorMain}>
               {/* v5.25: markup icons ride the scroll content (abs children of
-                  the scroller move with it) — recompute on doc change only. */}
+                  the scroller move with it). v6.67: their positions are
+                  MEASURED off the rendered page, so they recompute on zoom
+                  and on any resize too — not on doc change only. */}
               {!isHistoryMode && <MarkupIconLayer editor={editor} container={editorMainEl} />}
               {/* v2.95, Derek: Word-style rulers, toggled in View > Show Rulers */}
               {rulersVisible && <EditorRulers container={editorMainRef} continuous={viewStyle === 'continuous' && !previewMode} />}

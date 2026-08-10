@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.66 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.67 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,36 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.67 — annotation icons follow the ZOOM (and any resize)
+
+- Derek, two screenshots at 50% and 90%: "annotation do not scale or adapt
+  when the zoom is changed, putting them in the wrong place." At 90% an icon
+  sat INSIDE a line of dialogue.
+- Root cause, and it was written in the call site's own comment ("recompute
+  on doc change only"): every number in MarkupIconLayer is MEASURED off the
+  rendered page — `coordsAtPos`, `getBoundingClientRect` — and the page is
+  drawn with `transform: scale(zoom)`. `zoomLevel` was never in the effect's
+  deps, so the stored top/left stayed frozen while the text moved under them.
+  The chip's size ignored zoom too (Design knob only), so zoomed out it
+  swelled relative to the page.
+- Fix: `zoomLevel` in the deps; the chip's size is the Design knob TIMES the
+  measured page scale, carried per-spot as `IconSpot.size` (the icons are
+  absolute children of the SCROLLER, not of the scaled page, so nothing
+  scales them for us); and a ResizeObserver on the container covers every
+  OTHER geometry change — panel opening, window resize, page setup — since a
+  transform-scale leaves the layout box alone and an observer never sees the
+  zoom itself.
+- **NEGATIVE CONTROL, and do this more often.** check-v667 (10) was run
+  against the OLD code before the fix landed: 3 passed, 7 failed, with the
+  icon frozen at y=257 while the row moved to 185 (50%) and 313 (150%), and
+  the chip 22px at every zoom. That is the proof an assert measures the real
+  thing — the v6.62/v6.66 lesson twice over (a check that passes on broken
+  code is worse than no check).
+- This was a PRE-EXISTING bug in annotations generally, not something the
+  outline work introduced; it only became obvious once Send to Script
+  started placing them automatically.
+- Gates: tsc 0, vitest 1173, build ok, check-all 927/0.
 
 ### v6.64 → v6.66 — Send to Script makes LIVE ANNOTATIONS
 

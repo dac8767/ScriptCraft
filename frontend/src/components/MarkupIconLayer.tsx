@@ -20,7 +20,13 @@ import { useEditorStore } from '../stores/editorStore';
 import { findMarkupPos, createMarkupAtSelection } from '../utils/markupActions';
 import { MarkupIcon } from './markupIcons';
 
-interface IconSpot { id: string; top: number; left: number; icon: string; color: string; done: boolean }
+interface IconSpot {
+  id: string; top: number; left: number; icon: string; color: string; done: boolean;
+  /** v6.67: the icon's on-screen size — the Design knob TIMES the page's
+   *  zoom. The icons are absolute children of the SCROLLER, not of the
+   *  scaled page, so nothing scales them for us. */
+  size: number;
+}
 
 const ICON_BASE = 22;   // .markup-margin-icon box at 100% scale (px)
 
@@ -35,6 +41,12 @@ export default function MarkupIconLayer({ editor, container }: {
   const previewMode = useEditorStore((s) => s.previewMode);
   const pageLayout = useEditorStore((s) => s.pageLayout);
   const iconScalePct = useEditorStore((s) => s.markupIconScalePct);
+  /* v6.67, Derek: "annotation do not scale or adapt when the zoom is
+     changed, putting them in the wrong place." Every number below is
+     MEASURED off the rendered page (coordsAtPos, getBoundingClientRect), and
+     the page is drawn with transform: scale(zoom) — so the moment the zoom
+     changes, every stored position is stale. It was never in the deps. */
+  const zoomLevel = useEditorStore((s) => s.zoomLevel);
   const setMarkupEditorId = useEditorStore((s) => s.setMarkupEditorId);
   // v5.47, Derek: while the edit window is open, EVERY annotation shows on
   // the script — the layer toggle and the type/status filters stand down;
@@ -42,7 +54,9 @@ export default function MarkupIconLayer({ editor, container }: {
   const editOpen = useEditorStore((s) => s.markupEditorId != null);
   const [spots, setSpots] = useState<IconSpot[]>([]);
   const [tick, setTick] = useState(0);
-  // v5.27: Design ▸ Annotations drives the on-script icon size.
+  // v5.27: Design ▸ Annotations drives the on-script icon size. v6.67: the
+  // page's zoom multiplies it — see IconSpot.size. This is the unzoomed
+  // fallback for the rare spot measured before the page exists.
   const iconPx = Math.round(ICON_BASE * (iconScalePct / 100));
 
   useEffect(() => {
@@ -51,6 +65,17 @@ export default function MarkupIconLayer({ editor, container }: {
     editor.on('update', bump);
     return () => { editor.off('update', bump); };
   }, [editor]);
+
+  /* v6.67: positions are measured, so they must be re-measured whenever the
+     geometry moves — a panel opening, the window resizing, the page layout
+     changing. Zoom rides the dep list below (a transform: scale() leaves the
+     layout box alone, so an observer never sees it). */
+  useEffect(() => {
+    if (!container || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setTick((t) => t + 1));
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [container]);
 
   // v5.48, Derek: an "add annotation" with nothing selected ARMS this —
   // the next text selection in the script creates the annotation on it
@@ -115,6 +140,9 @@ export default function MarkupIconLayer({ editor, container }: {
     // on-screen size (zoom). The icon centers inside that band, ON the page.
     const scale = prect ? prect.width / (pageLayout.pageWidth * 96) : 1;
     const marginPx = pageLayout.leftMargin * 96 * scale;
+    // v6.67: the chip scales WITH the page, so it keeps its size relative to
+    // the text it annotates instead of swelling as the writer zooms out.
+    const px = Math.max(9, Math.round(ICON_BASE * (iconScalePct / 100) * scale));
     const next: IconSpot[] = [];
     for (const m of markups) {
       if (scriptFiltered(m)) continue;
@@ -143,18 +171,19 @@ export default function MarkupIconLayer({ editor, container }: {
       }
       next.push({
         id: m.id,
-        top: centerY - crect.top + container.scrollTop - iconPx / 2,
+        top: centerY - crect.top + container.scrollTop - px / 2,
         left: prect
-          ? prect.left - crect.left + container.scrollLeft + marginPx / 2 - iconPx / 2
+          ? prect.left - crect.left + container.scrollLeft + marginPx / 2 - px / 2
           : 8 + container.scrollLeft,
         icon: m.icon,
         color: m.color,
         done: m.done,
+        size: px,
       });
     }
     setSpots(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, container, markups, markupsVisible, markupHiddenIcons, markupScriptDone, editOpen, previewMode, pageLayout, iconPx, tick]);
+  }, [editor, container, markups, markupsVisible, markupHiddenIcons, markupScriptDone, editOpen, previewMode, pageLayout, iconPx, zoomLevel, tick]);
 
   if ((!markupsVisible && !editOpen) || previewMode) return null;
   return (
@@ -169,10 +198,10 @@ export default function MarkupIconLayer({ editor, container }: {
           style={{
             top: s.top,
             left: s.left,
-            width: iconPx,
-            height: iconPx,
+            width: s.size ?? iconPx,
+            height: s.size ?? iconPx,
             borderColor: s.color,
-            fontSize: Math.round(12 * (iconScalePct / 100)),
+            fontSize: Math.round((s.size ?? iconPx) * 0.55),
           }}
           title="Open annotation"
           onPointerDown={(e) => e.stopPropagation()}

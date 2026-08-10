@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.67",
+  "date": "2026-08-09",
+  "changes": [
+   "Annotation icons now follow the page zoom. They stayed exactly where they were when you zoomed, so at 90% an icon could end up sitting inside a line of dialogue \u2014 they now stay on the row they annotate, in the page\u2019s left margin, at every zoom.",
+   "The icons also scale with the page, keeping the same size relative to the text instead of swelling as you zoom out.",
+   "They re-place themselves after any layout change too \u2014 opening a panel, resizing the window, changing the page setup."
+  ]
+ },
+ {
   "version": "6.66",
   "date": "2026-08-09",
   "changes": [
