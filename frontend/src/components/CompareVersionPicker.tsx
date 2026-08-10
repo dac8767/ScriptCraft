@@ -3,6 +3,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
 import type { VersionInfo } from '../services/api';
 import { Modal } from './Modal';
+import { withTimeout, SNAPSHOT_LOAD_TIMEOUT_MS } from '../utils/withTimeout';
 
 function relativeTime(dateStr: string): string {
   const date = new Date(dateStr);
@@ -39,7 +40,12 @@ const CompareVersionPicker: React.FC<CompareVersionPickerProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getVersions(currentProject.id);
+      // v6.69: bounded, like the Snapshots window — same helper, same wait.
+      const data = await withTimeout(
+        api.getVersions(currentProject.id),
+        SNAPSHOT_LOAD_TIMEOUT_MS,
+        'Snapshots did not answer. The server may be unreachable — check Settings → System Settings.',
+      );
       setVersions(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load snapshots');
@@ -59,7 +65,12 @@ const CompareVersionPicker: React.FC<CompareVersionPickerProps> = ({
           {!currentProject && (
             <p className="compare-version-empty">No project selected.</p>
           )}
-          {error && <p className="compare-version-error">{error}</p>}
+          {error && (
+            <p className="compare-version-error">
+              {error}
+              <button className="version-history-retry" onClick={loadVersions}>Try again</button>
+            </p>
+          )}
           {loading && <p className="compare-version-loading">Loading snapshots...</p>}
 
           {!loading && versions.length === 0 && currentProject && (

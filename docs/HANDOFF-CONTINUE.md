@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.68 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.69 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,43 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.69 — Snapshots stopped hanging (a missing guard, not a slow server)
+
+- Derek: "clicking on 'Snapshots' shows a window that is forever stuck on
+  'Loading snapshots...'".
+- ROOT CAUSE, and it is a single-source violation: `services/api.ts`'s
+  `request()` had NO empty-base guard, while `services/cloudApi.ts` — the
+  OTHER client against the same server — has had one all along
+  (`if (!base) throw NOT_CONFIGURED`). config.ts is explicit that "on Tauri
+  the HTTP backend is NOT used" and `getApiBase()` returns '' on desktop
+  unless a cloud URL is configured, so every Snapshots load fired at a
+  RELATIVE url through the Tauri invoke bridge and waited on a request that
+  could never arrive. api.ts now carries the same guard, worded identically.
+- Script History is a SERVER feature. There is no sidecar, no uvicorn, no
+  Rust snapshot command — the desktop app is frontend + Rust only. So on
+  Derek's Mac the window could never have worked; it just failed silently
+  instead of saying so. (Local snapshots would be a real feature build —
+  NOT started, and worth asking about before anyone does.)
+- Belt and braces: `utils/withTimeout.ts` bounds the WAIT (12s) in both
+  snapshot loaders — the Snapshots window and the Compare picker — so no
+  transport behaviour can put the spinner back. It bounds the wait rather
+  than aborting the request, because the loader doesn't own the request. A
+  "Try again" button replaces the dead end.
+- HONESTY NOTE for whoever reads this next: the exact mechanism of the
+  hang on Derek's machine was NOT reproduced here — the harness has no
+  Tauri IPC, and in the browser the request always settles. The guard is
+  provably right (api.ts was missing what cloudApi.ts has); the timeout is
+  what makes "forever" impossible regardless of mechanism. If he ever
+  reports it again, the message on screen now names what it could not
+  reach.
+- v6.69 also exposes `window.__scProjectStore` in DEV beside `__scStore` /
+  `__scEditor`: Snapshots reads the PROJECT store, and a check could not
+  reproduce "a script is open" without it.
+- check-v669 (8) drives the real menu path in both states and asserts the
+  window never sits on "Loading…", says something actionable, offers a
+  retry, settles inside the budget, and does not re-arm.
+- Gates: tsc 0, vitest 1182, build ok, check-all 949/0.
 
 ### v6.68 — Annotation Filter + a plain View Annotations toggle
 

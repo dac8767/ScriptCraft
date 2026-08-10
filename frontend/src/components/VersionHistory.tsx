@@ -7,6 +7,7 @@ import type { VersionInfo } from '../services/api';
 import DiffViewer from './DiffViewer';
 import ScriptDiffView from './ScriptDiffView';
 import { showToast } from './Toast';
+import { withTimeout, SNAPSHOT_LOAD_TIMEOUT_MS } from '../utils/withTimeout';
 
 function relativeTime(dateStr: string): string {
   const date = new Date(dateStr);
@@ -127,13 +128,19 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
     }
   }, [currentProject, currentScriptId, compareSelection, versions]);
 
-  // Load versions when panel opens
+  /* Load versions when the panel opens. v6.69, Derek: "forever stuck on
+     Loading snapshots…". The wait is BOUNDED now — whatever the transport
+     does, the spinner ends in a message the writer can act on. */
   const loadVersions = useCallback(async () => {
     if (!currentProject) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getVersions(currentProject.id, currentScriptId || undefined);
+      const data = await withTimeout(
+        api.getVersions(currentProject.id, currentScriptId || undefined),
+        SNAPSHOT_LOAD_TIMEOUT_MS,
+        'Snapshots did not answer. The server may be unreachable — check Settings → System Settings.',
+      );
       setVersions(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load snapshots');
@@ -240,7 +247,14 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
         </div>
       )}
 
-      {error && <div className="version-history-error">{error}</div>}
+      {error && (
+        <div className="version-history-error">
+          {error}
+          {/* v6.69: never a dead end — the writer can try again without
+              closing and reopening the window. */}
+          <button className="version-history-retry" onClick={loadVersions}>Try again</button>
+        </div>
+      )}
 
       {loading && <div className="version-history-loading">Loading snapshots...</div>}
 

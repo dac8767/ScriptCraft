@@ -259,6 +259,21 @@ html.android .version-history-panel {
 .version-history-error {
   color: #ff6b6b;
 }
+/* v6.69: the way out of a failed snapshot load — no dead end, no need to
+   close and reopen the window. */
+.version-history-retry {
+  display: block;
+  margin: 10px auto 0;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-style: normal;
+  border: 1px solid var(--fd-border);
+  border-radius: 5px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  cursor: pointer;
+}
+.version-history-retry:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
 .version-item {
   padding: 10px 16px;
   border-bottom: 1px solid var(--fd-overlay-subtle);

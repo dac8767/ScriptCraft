@@ -1044,6 +1044,9 @@ const ScreenplayEditor: React.FC = () => {
     if (import.meta.env.DEV) {
       (window as unknown as Record<string, unknown>).__scEditor = editor;
       (window as unknown as Record<string, unknown>).__scStore = useEditorStore;
+      // v6.69: the PROJECT store too — Snapshots/Script History read from it,
+      // and a check can't reproduce "a script is open" without it.
+      (window as unknown as Record<string, unknown>).__scProjectStore = useProjectStore;
     }
   }, [editor]);
 

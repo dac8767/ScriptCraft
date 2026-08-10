@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.69",
+  "date": "2026-08-09",
+  "changes": [
+   "Snapshots no longer hangs on \u201cLoading snapshots\u2026\u201d. Script History talks to a ScriptCraft server, and the desktop app doesn\u2019t run one \u2014 the window now says so straight away instead of waiting on a request that can never arrive.",
+   "Any snapshot load is time-limited, so whatever the connection does the window ends up saying something you can act on, with a Try Again button rather than a dead end."
+  ]
+ },
+ {
   "version": "6.68",
   "date": "2026-08-09",
   "changes": [

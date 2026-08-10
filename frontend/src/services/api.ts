@@ -89,7 +89,18 @@ export async function handleNonOkResponse(res: Response, label: string): Promise
   );
 }
 
+/** v6.69, Derek ("Snapshots … forever stuck on Loading snapshots…"): this
+ *  client had NO empty-base guard, while cloudApi.ts — the other client
+ *  against the same server — has had one all along. With no base configured
+ *  (the DESKTOP default: config.ts, "on Tauri the HTTP backend is NOT used"),
+ *  every call here fired at a RELATIVE url through the Tauri invoke bridge
+ *  and waited on a request that could never arrive. One guard, the same
+ *  wording as cloudApi's, so both clients fail the same readable way. */
+export const API_NOT_CONFIGURED =
+  'ScriptCraft Cloud is not configured for this app. Open Settings → System Settings to set the ScriptCraft server URL.';
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  if (!API_BASE) throw new Error(API_NOT_CONFIGURED);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options?.headers as Record<string, string>),
