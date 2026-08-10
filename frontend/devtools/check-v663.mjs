@@ -43,8 +43,13 @@ try {
 
   /* ── 1–2: the shape of the tab ── */
   const list = await rows();
-  ok(list.length === 5 && list.map((r) => r.label).join(' · ') === 'Settings · Customizations · Themes · Workspaces · Outline Presets',
-    `one row per preset item (${list.map((r) => r.label).join(', ')})`);
+  /* v6.70, Derek: "add annotation presets … check the app for any additional
+     presets missing from that list." Four joined: annotation presets,
+     keyboard shortcuts, design and helper text. */
+  const WANT = ['Settings', 'Customizations', 'Themes', 'Workspaces',
+    'Annotation Presets', 'Keyboard Shortcuts', 'Design', 'Helper Text', 'Outline Presets'];
+  ok(list.length === WANT.length && list.map((r) => r.label).join(' · ') === WANT.join(' · '),
+    `one row per preset item, all ${WANT.length} of them (${list.map((r) => r.label).join(', ')})`);
   const checks = await page.evaluate((p) => document.querySelectorAll(`${p} .fs-presets-check`).length, P);
   ok(checks === list.length, `every row carries a checkbox (${checks}/${list.length})`);
   const buttons = await page.evaluate((p) => [...document.querySelectorAll(`${p} .fs-presets-btn`)].map((b) => b.textContent.trim()), P);
@@ -59,6 +64,13 @@ try {
   const outlineRow = list.find((r) => r.label === 'Outline Presets');
   ok(outlineRow.disabled && !outlineRow.checked,
     'an item the writer has none of is disabled and unticked, not quietly exported');
+  // v6.70: annotation presets always exist (six ship by default), so that
+  // row is always available; shortcuts/design/helper text start empty.
+  const annRow = list.find((r) => r.label === 'Annotation Presets');
+  ok(!annRow.disabled && annRow.checked, 'Annotation Presets is always available — six ship by default');
+  const emptyOnes = ['Keyboard Shortcuts', 'Design', 'Helper Text']
+    .filter((n) => list.find((r) => r.label === n)?.disabled);
+  ok(emptyOnes.length === 3, `the untouched ones are disabled until you change something (${emptyOnes.join(', ')})`);
 
   /* ── 4: select all / none ── */
   await page.click('.fs-presets-all');
@@ -110,7 +122,8 @@ try {
 
   /* ── 8: the rows say what each item is, in Derek's words not mine ── */
   const descs = await page.evaluate((p) => [...document.querySelectorAll(`${p} .fs-presets-desc`)].map((d) => d.textContent.trim()), P);
-  ok(descs.length === 5 && descs.every((d) => d.length > 20), 'every item explains what it carries');
+  ok(descs.length === WANT.length && descs.every((d) => d.length > 20),
+    `every one of the ${WANT.length} items explains what it carries (${descs.length} descriptions)`);
   const emptyTip = await page.evaluate((p) => {
     const row = [...document.querySelectorAll(`${p} .fs-presets-row`)].find((r) => r.querySelector('.fs-presets-label').textContent === 'Outline Presets');
     return row.querySelector('.fs-presets-check').getAttribute('title');

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.69 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.70 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,38 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.70 — four more preset parts (the audit Derek asked for)
+
+- Derek: "add annotation presets to the Settings > Presets tab options.
+  check the app for any additional presets missing from that list."
+- THE AUDIT. What the app lets a writer author, keep, and would want on
+  another machine — and which of it any preset part already carried:
+  | Thing | Where it lives | Verdict |
+  |---|---|---|
+  | Annotation presets | `viewState.markupPresets` | **ADDED** (his ask) |
+  | Keyboard shortcuts | `opendraft:shortcutOverrides` | **ADDED** |
+  | Design token values | `viewState.designVars` | **ADDED** |
+  | Helper text | `helperTextOverrides` + `helperTextHidden` | **ADDED** |
+  | Script Formats templates | `api.listFormattingTemplates()` | NOT added — they load through the HTTP backend the desktop app doesn't run (v6.69) |
+  | Snippets / shelf cards, tags, characters | per SCRIPT | NOT presets — they travel in the .odraft |
+  | Toolbar/menu/panel layout | captureCustomizations | already in Customizations |
+- FINDING worth acting on separately: `CUSTOMIZATION_FIELDS` does NOT list
+  `markupPresets`, though Customize ▸ Markups is where they're edited — so
+  Customize's **Cancel does not revert an annotation-preset change**, and the
+  customization export never carried them. Same family as the v4.79 "fields
+  that had DRIFTED out of this list" fix. NOT changed here (it alters Cancel
+  behaviour Derek hasn't asked about) — reported to him instead.
+- The registry did its job: adding the ids to `PresetPartId` broke the build
+  until `PART_DESC` gained all four, because it is typed
+  `Record<PresetPartId, …>`. A row cannot exist without a description, and a
+  description cannot exist without a row.
+- Care taken in the apply paths: a deliberate `null` shortcut (unbound on
+  purpose) survives the round trip; a corrupt annotation payload never wipes
+  the writer's presets; non-numeric design values are refused; and
+  helperTextHidden is RECONCILED rather than re-toggled, so applying the
+  same file twice doesn't flip things back on (a test pins that).
+- Gates: tsc 0, vitest 1190, build ok, check-all 951/0 (check-v663 now 19).
 
 ### v6.69 — Snapshots stopped hanging (a missing guard, not a slow server)
 

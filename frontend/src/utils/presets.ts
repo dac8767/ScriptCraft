@@ -27,6 +27,7 @@ import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { resolveMoresContds, DEFAULT_MORES_CONTDS, type MoresContds, type ThemeId } from '../stores/editorStore';
 import { gatherSettings, applyBackup } from './settingsBackup';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
+import { useShortcutStore } from '../stores/shortcutStore';
 
 /** `base` + `_<type>.json` — the one place the suffix convention lives. */
 export const typedExportName = (base: string, type: string): string => `${base}_${type}.json`;
@@ -272,7 +273,20 @@ export function applySettingsFromScriptFile(json: string): ScriptSettingsApplied
    that item's own export always wrote, so an old single-type file and a
    part of a bundle are the same shape. */
 
-export type PresetPartId = 'settings' | 'customize' | 'themes' | 'workspaces' | 'outline';
+/* v6.70, Derek: "add annotation presets to the Settings > Presets tab
+   options. check the app for any additional presets missing from that list."
+   The audit found four things a writer authors, keeps, and would want on
+   another machine, none of which any part carried by name:
+     • annotation presets (Customize ▸ Markups — his ask)
+     • keyboard shortcuts (his own bindings)
+     • design (the Design window's token values)
+     • helper text (his own rewritten tooltips, and the ones he hid)
+   Deliberately NOT rows: snippets/shelf cards and tags (per SCRIPT, they
+   travel in the .odraft), and Script Formats templates (they load through
+   the HTTP backend, which the desktop app doesn't run — see v6.69). */
+export type PresetPartId =
+  | 'settings' | 'customize' | 'themes' | 'workspaces' | 'outline'
+  | 'annotations' | 'shortcuts' | 'design' | 'helpertext';
 
 export interface PresetBundle {
   app: 'ScriptCraft';
@@ -344,6 +358,85 @@ export const PRESET_PARTS: PresetPart[] = [
       if (!map || typeof map !== 'object' || Array.isArray(map)) return '0 workspaces';
       const added = useEditorStore.getState().importWorkspaces(map);
       return `${added.length} workspace${added.length === 1 ? '' : 's'}`;
+    },
+  },
+  {
+    id: 'annotations',
+    label: 'Annotation Presets',
+    count: () => useEditorStore.getState().markupPresets.length,
+    collect: () => useEditorStore.getState().markupPresets,
+    apply: (p) => {
+      const list = (Array.isArray(p) ? p : [])
+        .map((x) => x as { icon?: unknown; color?: unknown })
+        .filter((x) => str(x.icon) && str(x.color))
+        .map((x) => ({ icon: x.icon as string, color: x.color as string }));
+      if (!list.length) return '0 annotation presets';
+      useEditorStore.getState().setMarkupPresets(list);
+      return `${list.length} annotation preset${list.length === 1 ? '' : 's'}`;
+    },
+  },
+  {
+    id: 'shortcuts',
+    label: 'Keyboard Shortcuts',
+    count: () => Object.keys(useShortcutStore.getState().overrides).length,
+    collect: () => useShortcutStore.getState().overrides,
+    apply: (p) => {
+      const src = (p ?? {}) as Record<string, unknown>;
+      if (typeof src !== 'object' || Array.isArray(src)) return '0 shortcuts';
+      const st = useShortcutStore.getState();
+      let n = 0;
+      for (const [id, combo] of Object.entries(src)) {
+        // null is a DELIBERATE unbind (see shortcuts.ts) — keep the
+        // difference between "never touched" and "cleared on purpose".
+        if (combo === null || str(combo)) { st.setBinding(id, combo as string | null); n++; }
+      }
+      return `${n} shortcut${n === 1 ? '' : 's'}`;
+    },
+  },
+  {
+    id: 'design',
+    label: 'Design',
+    count: () => Object.keys(useEditorStore.getState().designVars).length,
+    collect: () => useEditorStore.getState().designVars,
+    apply: (p) => {
+      const src = (p ?? {}) as Record<string, unknown>;
+      if (typeof src !== 'object' || Array.isArray(src)) return '0 design values';
+      const st = useEditorStore.getState();
+      let n = 0;
+      for (const [id, val] of Object.entries(src)) {
+        if (typeof val === 'number' && Number.isFinite(val)) { st.setDesignVar(id, val); n++; }
+      }
+      return `${n} design value${n === 1 ? '' : 's'}`;
+    },
+  },
+  {
+    id: 'helpertext',
+    label: 'Helper Text',
+    count: () => {
+      const st = useEditorStore.getState();
+      return Object.keys(st.helperTextOverrides).length + st.helperTextHidden.length;
+    },
+    collect: () => {
+      const st = useEditorStore.getState();
+      return { overrides: st.helperTextOverrides, hidden: st.helperTextHidden };
+    },
+    apply: (p) => {
+      const d = (p ?? {}) as { overrides?: unknown; hidden?: unknown };
+      const st = useEditorStore.getState();
+      let n = 0;
+      const overrides = (d.overrides ?? {}) as Record<string, unknown>;
+      if (typeof overrides === 'object' && !Array.isArray(overrides)) {
+        for (const [text, value] of Object.entries(overrides)) {
+          if (str(value)) { st.setHelperTextOverride(text, value); n++; }
+        }
+      }
+      // Hidden is a toggle, so reconcile rather than blindly re-toggling.
+      const want = new Set(strArr(d.hidden));
+      const cur = new Set(useEditorStore.getState().helperTextHidden);
+      for (const t of new Set([...want, ...cur])) {
+        if (want.has(t) !== cur.has(t)) { useEditorStore.getState().toggleHelperTextHidden(t); n++; }
+      }
+      return `${n} helper text change${n === 1 ? '' : 's'}`;
     },
   },
   {

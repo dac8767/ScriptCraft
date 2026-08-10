@@ -69,6 +69,12 @@ const PART_DESC: Record<PresetPartId, (n: number | null) => string> = {
   themes: (n) => (n ? `Your ${n} custom theme${n === 1 ? '' : 's'}.` : 'Your custom themes. None yet — create one in Customize ▸ Themes.'),
   workspaces: (n) => (n ? `Your ${n} saved layout${n === 1 ? '' : 's'} — which tools are open, where, and how big.` : 'Saved layouts — which tools are open, where and how big. None saved yet; save one from View ▸ Workspaces.'),
   outline: (n) => (n ? `Your ${n} saved outline arrangement${n === 1 ? '' : 's'}.` : 'Your saved outline arrangements. None saved yet — save one from the Outline’s Presets menu.'),
+  /* v6.70, Derek: "add annotation presets … check the app for any additional
+     presets missing from that list." */
+  annotations: (n) => `Your ${n ?? 0} annotation preset${n === 1 ? '' : 's'} — the icon and colour combinations offered when you add an annotation (Customize ▸ Markups).`,
+  shortcuts: (n) => (n ? `Your ${n} rebound keyboard shortcut${n === 1 ? '' : 's'}.` : 'Your keyboard shortcuts. None rebound yet — change one in Settings ▸ Shortcuts.'),
+  design: (n) => (n ? `Your ${n} adjusted design value${n === 1 ? '' : 's'} — sizes, spacing and padding from the Design window.` : 'Sizes, spacing and padding from the Design window. Nothing adjusted yet.'),
+  helpertext: (n) => (n ? `Your ${n} helper text change${n === 1 ? '' : 's'} — tooltips you have rewritten or hidden.` : 'Tooltips you have rewritten or hidden. None changed yet — edit one in the Helper Text window.'),
 };
 
 export default function PresetsPanel({ showImports = true }: { showImports?: boolean }) {

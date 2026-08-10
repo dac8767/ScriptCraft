@@ -16,9 +16,11 @@ import {
   buildCustomizeExport, applyCustomizeExport, parseCustomizeExport,
   buildFullPreset, applyFullPreset,
   applySettingsFromScriptFile,
-  buildPresetBundle, readPresetFile, applyPresetFile, PRESET_PARTS,
+  buildPresetBundle, readPresetFile, applyPresetFile, PRESET_PARTS, presetPart,
   type PresetBundle, type PresetPartId,
 } from './presets';
+import { useShortcutStore } from '../stores/shortcutStore';
+import { DEFAULT_MARKUP_PRESETS } from '../stores/slices/markupsSlice';
 import { useEditorStore } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { useThemeStore } from '../stores/themeStore';
@@ -253,5 +255,96 @@ describe('preset bundle (v6.63)', () => {
     expect(res.applied).toEqual(['1 theme']);
     expect(res.failed).toEqual(['Outline Presets']);
     expect(useThemeStore.getState().customThemes).toHaveLength(1);
+  });
+});
+
+/* v6.70, Derek: "add annotation presets to the Settings > Presets tab
+   options. check the app for any additional presets missing from that list."
+   The audit added four: annotation presets, keyboard shortcuts, design
+   values and helper text. Each has to ROUND-TRIP, or the file is a lie. */
+describe('the v6.70 preset parts', () => {
+  beforeEach(() => {
+    useEditorStore.setState({
+      markupPresets: [...DEFAULT_MARKUP_PRESETS],
+      designVars: {},
+      helperTextOverrides: {},
+      helperTextHidden: [],
+    });
+    useShortcutStore.setState({ overrides: {} });
+  });
+
+  it('every part on the list is a real, named row', () => {
+    expect(PRESET_PARTS.map((p) => p.id)).toEqual([
+      'settings', 'customize', 'themes', 'workspaces',
+      'annotations', 'shortcuts', 'design', 'helpertext', 'outline',
+    ]);
+    expect(presetPart('annotations')!.label).toBe('Annotation Presets');
+    expect(presetPart('shortcuts')!.label).toBe('Keyboard Shortcuts');
+    expect(presetPart('design')!.label).toBe('Design');
+    expect(presetPart('helpertext')!.label).toBe('Helper Text');
+  });
+
+  it('annotation presets round-trip', () => {
+    useEditorStore.getState().setMarkupPresets([{ icon: 'star', color: '#123456' }]);
+    const json = buildPresetBundle(['annotations'], '2026-08-09T00:00:00.000Z');
+    useEditorStore.getState().setMarkupPresets([...DEFAULT_MARKUP_PRESETS]);
+    expect(applyPresetFile(json).applied).toEqual(['1 annotation preset']);
+    expect(useEditorStore.getState().markupPresets).toEqual([{ icon: 'star', color: '#123456' }]);
+  });
+
+  it('a corrupt annotation payload never wipes the writer’s presets', () => {
+    const doc = JSON.parse(buildPresetBundle(['annotations'], '2026-08-09T00:00:00.000Z'));
+    doc.parts.annotations = [{ nope: 1 }, 'garbage'];
+    applyPresetFile(JSON.stringify(doc));
+    expect(useEditorStore.getState().markupPresets).toEqual(DEFAULT_MARKUP_PRESETS);
+  });
+
+  it('keyboard shortcuts round-trip, keeping a deliberate unbind', () => {
+    useShortcutStore.getState().setBinding('bold', 'Ctrl+Alt+B');
+    useShortcutStore.getState().setBinding('italic', null);          // cleared on purpose
+    const json = buildPresetBundle(['shortcuts'], '2026-08-09T00:00:00.000Z');
+    useShortcutStore.getState().resetAll();
+    expect(applyPresetFile(json).applied).toEqual(['2 shortcuts']);
+    expect(useShortcutStore.getState().overrides).toEqual({ bold: 'Ctrl+Alt+B', italic: null });
+  });
+
+  it('design values round-trip, and non-numbers are refused', () => {
+    useEditorStore.getState().setDesignVar('beatColMinW', 320);
+    const json = buildPresetBundle(['design'], '2026-08-09T00:00:00.000Z');
+    useEditorStore.setState({ designVars: {} });
+    applyPresetFile(json);
+    expect(useEditorStore.getState().designVars.beatColMinW).toBe(320);
+
+    const doc = JSON.parse(json);
+    doc.parts.design = { beatColMinW: 'wide', other: NaN };
+    useEditorStore.setState({ designVars: {} });
+    expect(applyPresetFile(JSON.stringify(doc)).applied).toEqual(['0 design values']);
+    expect(useEditorStore.getState().designVars).toEqual({});
+  });
+
+  it('helper text round-trips both the rewrites and the hidden list', () => {
+    useEditorStore.getState().setHelperTextOverride('Bold', 'Make it bold');
+    useEditorStore.getState().toggleHelperTextHidden('Italic');
+    const json = buildPresetBundle(['helpertext'], '2026-08-09T00:00:00.000Z');
+    useEditorStore.setState({ helperTextOverrides: {}, helperTextHidden: [] });
+    applyPresetFile(json);
+    expect(useEditorStore.getState().helperTextOverrides).toEqual({ Bold: 'Make it bold' });
+    expect(useEditorStore.getState().helperTextHidden).toEqual(['Italic']);
+  });
+
+  /* Hidden is a TOGGLE, so applying twice must not flip it back off — the
+     classic bug with reconciling a toggle from a list. */
+  it('applying helper text twice leaves the hidden list where it should be', () => {
+    useEditorStore.getState().toggleHelperTextHidden('Italic');
+    const json = buildPresetBundle(['helpertext'], '2026-08-09T00:00:00.000Z');
+    applyPresetFile(json);
+    applyPresetFile(json);
+    expect(useEditorStore.getState().helperTextHidden).toEqual(['Italic']);
+  });
+
+  it('all nine parts can go in one file and read back', () => {
+    const ids = PRESET_PARTS.map((p) => p.id);
+    const json = buildPresetBundle(ids, '2026-08-09T00:00:00.000Z');
+    expect(readPresetFile(json).ids).toEqual(ids);
   });
 });
