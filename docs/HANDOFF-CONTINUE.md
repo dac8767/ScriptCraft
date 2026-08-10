@@ -10,8 +10,22 @@
 > the mode, only explicit gestures WRITE it.
 
 
-> QUEUE — NEXT UP (Derek, 2026-07-31, verbatim): **ONE PRESET EXPORT
-> WINDOW.** "I want to combine all of the various preset exports into one
+> QUEUE — **PARTLY DELIVERED, v6.63 + v6.70.** (a) the CHECKLIST producing
+> ONE file and (b) WORKSPACES as a category are DONE — Settings ▸ Presets is
+> the checklist, `PRESET_PARTS` in utils/presets.ts is the registry, and the
+> file is `{kind:'preset-bundle', version:1, includes[], parts{}}`. v6.70
+> took it to nine parts (annotation presets, shortcuts, design, helper text).
+> STILL OPEN: **(c) every scattered export door opening THIS window** —
+> Customize footer's Export (CustomizePanelsDialog:757), Settings ▸ System's
+> "Export Settings…" (PreferencesDialog:758), Customize ▸ Themes' "Export
+> Themes..." (ThemesTab:330) and the Outline's preset export
+> (BeatBoard:1353) each still run their own flow. And the IMPORT side: the
+> checklist governs export only; import applies everything in the file after
+> a confirm naming it. `applyPresetFile(json, only?)` already takes the
+> filter, so a mirror-image import checklist is a UI change away — Derek was
+> asked and hasn't said. The original spec, verbatim:
+>
+> **ONE PRESET EXPORT WINDOW.** "I want to combine all of the various preset exports into one
 > tool. this is how it will work: anywhere in the app, if you click export
 > theme preset, export settings preset, export workspace... whatever you
 > choose, they all lead to the same preset export window. In this window,
