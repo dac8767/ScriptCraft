@@ -276,14 +276,13 @@
   ]
  },
  {
-  "text": "Annotation Visibility",
+  "text": "Annotation Filter",
   "kind": "tooltip",
   "sites": 1,
   "area": "Ribbon Toolbar",
   "where": [
    "components/Toolbar.tsx"
-  ],
-  "icon": "FaMarker"
+  ]
  },
  {
   "text": "Antonyms",
@@ -1604,6 +1603,15 @@
   ]
  },
  {
+  "text": "Hide annotations on the script",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
   "text": "Hide every built-in transition (custom ones stay)",
   "kind": "tooltip",
   "sites": 1,
@@ -2900,6 +2908,15 @@
    "components/OutlineBar.tsx"
   ],
   "icon": "FaFileExport"
+ },
+ {
+  "text": "Show annotations on the script",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
  },
  {
   "text": "Show every built-in transition",

@@ -9,7 +9,7 @@ import {
   migrateResetSizes, migrateTwoRows, migrateRibbon, migrateRibbonSections,
   normalizeToolbarZones, parseRibbon, serializeRibbon,
   DEFAULT_TOOLBAR_LEFT, BUILTIN_BY_KEY,
-  isTall, stripTall, makeTall,
+  isTall, stripTall, makeTall, migrateViewAnnotations,
 } from './toolbarBuiltins';
 
 describe('parseRibbon / serializeRibbon (v2.96)', () => {
@@ -159,5 +159,40 @@ describe('naked section boundaries (v4.75)', () => {
     // and parsing the serialized form lands in the same shape
     const again = parseRibbon(out);
     expect(again.sections.map((s) => !!s.noSepBefore)).toEqual([false, true, false]);
+  });
+});
+
+/* v6.68, Derek: "the current button 'annotation visibility' should be called
+   'Annotation Filter'. Make a new button that is called 'View Annotations'.
+   This is a simple on or off toggle." Both are palette-only (placed by
+   hand), so the new one has to find its way into a layout that already has
+   the filter — otherwise it exists only in Customize and the writer never
+   sees the button they asked for. */
+describe('migrateViewAnnotations (v6.68)', () => {
+  it('seats the toggle immediately before the filter it belongs with', () => {
+    expect(migrateViewAnnotations(['b:undo', 'b:annotationsMenu', 'b:customize']))
+      .toEqual(['b:undo', 'b:viewAnnotations', 'b:annotationsMenu', 'b:customize']);
+  });
+
+  it('leaves a layout without the filter completely alone', () => {
+    const plain = ['b:undo', 'b:redo', 'b:customize'];
+    expect(migrateViewAnnotations(plain)).toEqual(plain);
+    expect(migrateViewAnnotations([])).toEqual([]);
+  });
+
+  it('never adds it twice', () => {
+    const already = ['b:viewAnnotations', 'b:annotationsMenu'];
+    expect(migrateViewAnnotations(already)).toEqual(already);
+    expect(migrateViewAnnotations(migrateViewAnnotations(['b:annotationsMenu'])))
+      .toEqual(['b:viewAnnotations', 'b:annotationsMenu']);
+  });
+
+  /* The registry is what Customize's palette lists AND what the ribbon
+     renders — one list, so a button can't exist in one and not the other. */
+  it('both buttons are in the registry, named as Derek asked', () => {
+    expect(BUILTIN_BY_KEY.viewAnnotations?.label).toBe('View Annotations');
+    expect(BUILTIN_BY_KEY.annotationsMenu?.label).toBe('Annotation Filter');
+    // palette-visible: he places them himself
+    expect(BUILTIN_BY_KEY.viewAnnotations?.unlisted).toBeFalsy();
   });
 });

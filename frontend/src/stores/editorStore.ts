@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, migrateRibbon, migrateRibbonSections, migrateDropPanelToggles, migrateDropLegacyInserts, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
+import { normalizeToolbarZones, migrateToolbarBigZone, migrateSepDividers, migratePanelToggles, migrateLockResize, migrateResetSizes, migrateTwoRows, migrateRibbon, migrateRibbonSections, migrateDropPanelToggles, migrateDropLegacyInserts, migrateViewAnnotations, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolbarBuiltins';
 
 // ── View-state persistence helpers ──
 import { _vs, saveViewState, clamp, type ViewState } from './viewState';
@@ -53,6 +53,20 @@ try {
     const strippedR = migrateDropLegacyInserts(_tbZones.right);
     if (strippedL.length !== _tbZones.left.length || strippedR.length !== _tbZones.right.length) {
       _tbZones = { left: strippedL, right: strippedR };
+      saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: _tbZones.right });
+    }
+  }
+} catch { /* storage unavailable — keep what we have */ }
+// v6.68 one-time: the new "View Annotations" on/off toggle takes its place
+// beside the Annotation Filter in layouts that already carry the filter.
+try {
+  const VIEW_ANN_FLAG = 'opendraft:toolbarViewAnnotations668';
+  if (_vs.toolbarZonesSet && !localStorage.getItem(VIEW_ANN_FLAG)) {
+    localStorage.setItem(VIEW_ANN_FLAG, '1');
+    const withL = migrateViewAnnotations(_tbZones.left);
+    const withR = migrateViewAnnotations(_tbZones.right);
+    if (withL.length !== _tbZones.left.length || withR.length !== _tbZones.right.length) {
+      _tbZones = { left: withL, right: withR };
       saveViewState({ toolbarLeft: _tbZones.left, toolbarRight: _tbZones.right });
     }
   }

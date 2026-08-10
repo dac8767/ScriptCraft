@@ -30,7 +30,7 @@ import {
 import type { ScriptMarkup } from '../stores/slices/markupsSlice';
 
 /* (v5.28: DONE_LABELS, useTypesInUse and TypeGridPop moved to MarkupPickers —
-   the ribbon's Annotation Visibility button and the View submenu share them.) */
+   the ribbon's Annotation Filter button and the View submenu share them.) */
 
 export function MarkupsTitleExtra() {
   const markups = useEditorStore((s) => s.markups);

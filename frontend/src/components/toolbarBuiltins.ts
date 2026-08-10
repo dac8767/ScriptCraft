@@ -47,12 +47,18 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   // v5.25: Annotations — palette-only (like scriptNotes/tags); Derek places
   // them. v5.26: labels renamed with the tool (keys are persisted tokens).
   // v5.28: annotationsMenu opens the per-type script-visibility menu.
-  // v6.41, Derek: toggleMarkups ("Show/Hide Annotations") is REMOVED — the
-  // registry row is gone, so normalizeToolbarZones drops the token from any
-  // saved layout (unknown b: keys are discarded). Visibility still lives in
-  // annotationsMenu and the Annotations window's Show button.
+  // v6.41, Derek: toggleMarkups ("Show/Hide Annotations") was REMOVED — the
+  // registry row went, so normalizeToolbarZones dropped the token from any
+  // saved layout (unknown b: keys are discarded).
+  // v6.68, Derek: he wants the plain on/off back, as its own button, and the
+  // menu renamed for what it actually is — "the current button 'annotation
+  // visibility' should be called 'Annotation Filter'. Make a new button that
+  // is called 'View Annotations'. This is a simple on or off toggle." A NEW
+  // key (viewAnnotations), not the retired one: v6.41's discard rule means
+  // any layout still carrying b:toggleMarkups shed it long ago.
   { key: 'markupScript', label: 'Add Annotation' },
-  { key: 'annotationsMenu', label: 'Annotation Visibility' },
+  { key: 'viewAnnotations', label: 'View Annotations' },
+  { key: 'annotationsMenu', label: 'Annotation Filter' },
   // v5.40: custom pages — palette-only, like the annotation buttons.
   { key: 'insertCustomPage', label: 'Insert Custom Page' },
   { key: 'titlePage', label: 'Title Page' },
@@ -165,6 +171,17 @@ export function migrateDropLegacyInserts(tokens: string[]): string[] {
 }
 
 /** v2.55 one-time: existing saved layouts get the sizing lock appended. */
+/** v6.68 one-time: "View Annotations" joins the Annotation Filter wherever
+ *  a saved layout already has it — the pair belongs together, and the writer
+ *  shouldn't have to go find the new button in Customize. A layout without
+ *  the filter is left alone: both are palette-only, placed by hand. */
+export function migrateViewAnnotations(tokens: string[]): string[] {
+  if (tokens.includes('b:viewAnnotations')) return tokens;
+  const at = tokens.indexOf('b:annotationsMenu');
+  if (at < 0) return tokens;
+  return [...tokens.slice(0, at), 'b:viewAnnotations', ...tokens.slice(at)];
+}
+
 export function migrateLockResize(left: string[]): string[] {
   if (left.includes('b:lockResize')) return left;
   return [...left, 'b:lockResize'];

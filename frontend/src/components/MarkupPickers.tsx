@@ -382,7 +382,7 @@ export function MarkupComboPicker({ markup }: { markup: ScriptMarkup }) {
 
 /* ── The shared visibility popover (state row + type grid) ───────────────
    v5.28: moved here from MarkupsPanel — the panel's Filter/Show buttons,
-   the ribbon's Annotation Visibility button and the View submenu all draw
+   the ribbon's Annotation Filter button and the View submenu all draw
    on the same shapes (one source, three doors). */
 
 export const DONE_LABELS = { open: 'Open', done: 'Complete', all: 'All' } as const;
@@ -482,7 +482,7 @@ export function TypeGridPop({ boxRef, pos, ...section }: TypeGridSectionProps & 
 
 /** A self-contained trigger + the SCRIPT-visibility popover (status row +
  *  type grid bound to viewPrefs). The panel's "Show" button and the ribbon's
- *  Annotation Visibility button are both this component in different coats. */
+ *  Annotation Filter button are both this component in different coats. */
 export function AnnotationShowMenu({ className, title, children }: {
   className: string;
   title: string;

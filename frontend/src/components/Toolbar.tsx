@@ -135,6 +135,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     setEditingTagId,
     toolbarMode, chromeCustomPx, chromeGapPx,
     outlineBarOpen,
+    markupsVisible,
     uiResizeLocked,
     toolbarDdWidths,
     toolbarEditing, ribEdit,
@@ -978,11 +979,26 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <FaMarker />
         </button>
       );
+      /* v6.68, Derek: "This is a simple on or off toggle, like the toggle
+         for the side panels, and the ribbon toolbar." It drives
+         markupsVisible — the SAME state as View ▸ Annotations ▸ Show
+         Annotations in Script and the Annotations window's Show button, so
+         the three can never disagree. Icon carries the state (eye / crossed
+         eye), the way the sizing lock swaps its padlock. */
+      case 'viewAnnotations': return (
+        <button
+          className={`toolbar-btn${markupsVisible ? ' active' : ''}`}
+          title={markupsVisible ? 'Hide annotations on the script' : 'Show annotations on the script'}
+          onClick={() => useEditorStore.getState().setMarkupsVisible(!markupsVisible)}
+        >{markupsVisible ? TOOLBAR_ICONS.viewAnnotations : TOOLBAR_ICONS.viewAnnotationsOff}</button>
+      );
       // v5.28, Derek: a menu of which annotation types are visible on the
       // script — the same popover the Annotations window's Show button opens.
+      // v6.68: renamed Annotation Filter — it filters by type and status;
+      // plain on/off is the viewAnnotations button above.
       case 'annotationsMenu': return (
-        <AnnotationShowMenu className="toolbar-btn" title="Annotation Visibility">
-          <FaMarker />
+        <AnnotationShowMenu className="toolbar-btn" title="Annotation Filter">
+          {TOOLBAR_ICONS.annotationsMenu}
         </AnnotationShowMenu>
       );
       // v5.40, Derek: custom pages — a non-script page at the cursor.

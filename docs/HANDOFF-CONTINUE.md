@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.67 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.68 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -226,6 +226,40 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.68 — Annotation Filter + a plain View Annotations toggle
+
+- Derek: "the current button 'annotation visibility' should be called
+  'Annotation Filter'. Make a new button that is called 'View Annotations'.
+  This is a simple on or off toggle, like the toggle for the side panels,
+  and the ribbon toolbar."
+- Note the history: v6.41 REMOVED a `toggleMarkups` Show/Hide button at his
+  request. This is a NEW key (`viewAnnotations`), not the retired one —
+  v6.41's discard rule means any layout still carrying `b:toggleMarkups`
+  shed it long ago, so reviving the old token would have been a trap.
+- The toggle drives `markupsVisible` — the SAME state as View ▸ Annotations
+  ▸ Show Annotations in Script and the Annotations window's Show button.
+  Icon carries the state (eye / crossed eye) the way the sizing lock swaps
+  its padlock; `active` lights it.
+- Both buttons are palette-only (Derek places annotation buttons himself),
+  so `migrateViewAnnotations` seats the new one immediately before the
+  filter in any saved layout that already has it — the `migrateResetSizes`
+  pattern. A layout without the filter is left alone.
+- CHECK-WRITING LESSON, and it cost real time: **HoverTooltip moves a
+  button's `title` into `data-tip-stash` while the pointer is over it** (it
+  suppresses the native tooltip). A title-based selector therefore goes
+  blind exactly when a check is clicking — my first draft reported the
+  button "vanishing from the ribbon" mid-check. Address ribbon buttons by
+  `[data-key="<builtin>"]` and read the tip from either attribute.
+  Related: the first draft ALSO passed "the button goes unlit" while the
+  button was missing entirely (`btn?.classList` → null → `!null` is true).
+  A state reader must THROW when its element is absent, never report a
+  default — that is the third time this session an assert has passed on a
+  missing element.
+- check-v668 (14) drives both buttons: the rename, the filter popover still
+  opening, the toggle hiding and showing the icons for real, the state
+  round-trip with the View menu, and Customize's palette listing both.
+- Gates: tsc 0, vitest 1177, build ok, check-all 941/0.
 
 ### v6.67 — annotation icons follow the ZOOM (and any resize)
 

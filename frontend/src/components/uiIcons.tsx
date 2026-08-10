@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import {
-  FaFile, FaPencilAlt, FaPalette, FaClipboardList, FaRegEye, FaMarker, FaWrench, FaRegFileAlt,
+  FaFile, FaPencilAlt, FaPalette, FaClipboardList, FaRegEye, FaRegEyeSlash, FaFilter, FaMarker, FaWrench, FaRegFileAlt,
   FaColumns, FaRegQuestionCircle, FaStream,
   FaUndo, FaRedo, FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaBold, FaItalic, FaUnderline, FaStrikethrough, FaSubscript, FaSuperscript,
@@ -240,10 +240,14 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   goto: <FaHashtag />,
   scriptNotes: <FaStickyNote />,
   tags: <FaTags />,
-  // v5.25: Markups — create at cursor/selection, plus the visibility menu.
-  // (v6.41: the separate Show/Hide toggle button is retired.)
+  // v5.25: Markups — create at cursor/selection, plus the filter menu.
+  // v6.68: the plain on/off toggle is back as its own button; the Toolbar
+  // swaps to viewAnnotationsOff when annotations are hidden, the way the
+  // sizing lock swaps its padlock.
   markupScript: <FaMarker />,
-  annotationsMenu: <FaMarker />,
+  viewAnnotations: <FaRegEye />,
+  viewAnnotationsOff: <FaRegEyeSlash />,
+  annotationsMenu: <FaFilter />,
   // v5.40: custom pages (non-script, unnumbered)
   insertCustomPage: <FaRegFileAlt />,
   zoom: <CirclePlusIcon />,   // v4.31: zoom = the circled steppers (14-B)
