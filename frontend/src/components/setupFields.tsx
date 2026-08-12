@@ -77,7 +77,6 @@ export function SaveLocationsField() {
 export function AutosaveField() {
   const {
     autoSnapshotMinutes, setAutoSnapshotMinutes,
-    autoSnapshotKeep, setAutoSnapshotKeep,
     snapToLocalFolder, setSnapToLocalFolder,
     snapLocalFolder, setSnapLocalFolder,
   } = useSettingsStore();
@@ -108,15 +107,6 @@ export function AutosaveField() {
           <option value={15}>15 minutes</option>
           <option value={30}>30 minutes</option>
           <option value={60}>hour</option>
-        </select>
-      </label>
-      <label className="fs-setup-check">
-        <span>Keep</span>
-        <select value={autoSnapshotKeep} onChange={(e) => setAutoSnapshotKeep(Number(e.target.value))}>
-          <option value={0}>all of them</option>
-          <option value={20}>the last 20</option>
-          <option value={50}>the last 50</option>
-          <option value={100}>the last 100</option>
         </select>
       </label>
       <div className="fs-setup-folderrow">

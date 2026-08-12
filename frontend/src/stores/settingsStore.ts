@@ -112,6 +112,12 @@ interface SettingsState {
   setAutoSnapshotMinutes: (m: number) => void;
 
   // Preferences > General: snapshots kept before old ones are squashed (0 = keep all).
+  /** v6.72: NO UI drives this any more. It counted version check-ins, and
+   *  auto saves stopped making those — an auto save is a timestamped FILE
+   *  now. Capping those files needs a folder-listing permission the desktop
+   *  shell doesn't grant yet (capabilities has fs:allow-remove but no
+   *  read-dir, and the scope is AppData-only). Kept so the stored value
+   *  survives for whoever wires that up; nothing reads it today. */
   autoSnapshotKeep: number;
   setAutoSnapshotKeep: (n: number) => void;
 

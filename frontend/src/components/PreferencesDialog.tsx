@@ -233,7 +233,6 @@ async function pickFolder(title = 'Folder for auto save copies'): Promise<string
 function SaveLocationsTab({ editor }: { editor: Editor | null }) {
   const {
     autoSnapshotMinutes, setAutoSnapshotMinutes,
-    autoSnapshotKeep, setAutoSnapshotKeep,
     localSaveFolder, setLocalSaveFolder,
     saveToGDrive, setSaveToGDrive,
     saveToOneDrive, setSaveToOneDrive,
@@ -347,17 +346,12 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
 
       <section>
         <h3>Auto Save Locations</h3>
-        {/* v3.25, Derek (task #139): the two "local" rows read like the same
-            thing. Each row now says what it actually IS — invisible in-app
-            history vs real files in a folder you choose. */}
-        <label className="prefs-check-row">
-          <input type="checkbox" checked disabled />
-          <span>Local version history (always on)</span>
-        </label>
-        <p className="prefs-hint prefs-subhint">
-          Kept inside the app — not files on disk. Browse, compare and restore
-          any version from Project → Script History.
-        </p>
+        {/* v6.72, Derek: "remove the first option 'Local version history
+            (always on)' — this was adding autosaves to the snapshot window,
+            which we do not want." The row is gone AND so is the behaviour
+            behind it: ScreenplayEditor's auto-save timer no longer takes a
+            version check-in, so an auto save is a FILE in the locations
+            below and nothing else. Snapshots are only ever taken by hand. */}
         {/* v2.83, Derek: a chosen folder on this device gets a timestamped
             .odraft on every auto save. Checking with no folder yet opens the
             picker; the path shows beside the row. */}
@@ -374,9 +368,12 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
               setSnapToLocalFolder(true);
             }}
           />
+          {/* v6.72, Derek: "this has two choose folder buttons. change the
+              text to 'Local device folder'." The row said "— choose a folder"
+              beside a Choose Folder… button. One affordance now. */}
           <span>
-            Local folder — timestamped copies
-            {snapLocalFolder ? <code className="prefs-path-chip">{snapLocalFolder}</code> : ' — choose a folder'}
+            Local device folder
+            {snapLocalFolder && <code className="prefs-path-chip">{snapLocalFolder}</code>}
           </span>
           <button
             className="prefs-inline-btn"
@@ -387,10 +384,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
             }}
           >Choose Folder…</button>
         </label>
-        <p className="prefs-hint prefs-subhint">
-          Real .odraft files, one per auto save, named with the date and time —
-          in a folder you pick (for Finder, Time Machine, or a synced folder).
-        </p>
         {/* v6.41: no disabled guards here either — same rule as the script
             save rows above. */}
         <label className="prefs-check-row">
@@ -401,11 +394,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           <input type="checkbox" checked={snapToOneDrive} onChange={(e) => setSnapToOneDrive(e.target.checked)} />
           <span>OneDrive — Auto Saves folder{!oConnected ? ' — connect below first' : ''}</span>
         </label>
-        <p className="prefs-hint">
-          The local version history (Project → Script History) is always kept.
-          Every checked location additionally receives a timestamped copy of
-          the script whenever an auto save is taken, manual or automatic.
-        </p>
       </section>
 
       <section>
@@ -475,24 +463,18 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           />
           <span className="prefs-unit-label">minute(s)</span>
         </div>
-        <div className="prefs-field-row prefs-autosave-row">
-          <label htmlFor="prefs-autosnap-keep">Maximum Project Versions:</label>
-          <input
-            id="prefs-autosnap-keep"
-            type="number"
-            min={0}
-            max={999}
-            className="prefs-num-input"
-            value={autoSnapshotKeep}
-            onChange={(e) => setAutoSnapshotKeep(Math.max(0, parseInt(e.target.value, 10) || 0))}
-          />
-        </div>
+        {/* v6.72, Derek: an auto save is a spare copy for a crash, not a
+            snapshot. It writes a timestamped file to the Auto Save Locations
+            below and nothing else — no entry in the Snapshots window.
+            ("Maximum Project Versions" went with the version check-in it
+            counted; capping the FILES needs a folder-listing permission the
+            desktop shell doesn't grant yet.) */}
         <p className="prefs-hint">
-          Auto saves are version checkpoints of the whole project (Tools →
-          Script History → Auto Saves), taken silently and skipped when nothing
-          has changed. When a maximum is set, the oldest auto saves beyond it
-          are squashed into a single baseline checkpoint — retained versions are
-          preserved exactly. 0 keeps every version.
+          An auto save is a spare copy of the script in case the app closes
+          unexpectedly. Each one writes a timestamped file to every Auto Save
+          Location you choose below. Auto saves are not snapshots — they never
+          appear in the Snapshots window. Tick at least one location, or auto
+          saving has nowhere to write.
         </p>
       </section>
 

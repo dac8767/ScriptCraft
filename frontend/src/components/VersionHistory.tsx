@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import type { JSONContent } from '@tiptap/react';
 import { useProjectStore } from '../stores/projectStore';
+import { useEditorStore } from '../stores/editorStore';
 import { api } from '../services/api';
 import type { VersionInfo } from '../services/api';
 import DiffViewer from './DiffViewer';
@@ -226,6 +227,15 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
   return (
     <div className="version-history-panel">
       <div className="version-history-header">
+        {/* v6.72, Derek: "add a Take Snapshot button to the upper left of
+            this snapshot window". It arms the store flag MenuBar watches —
+            the check-in dialog lives there, so there is still ONE way to
+            name and take a snapshot. */}
+        <button
+          className="version-history-take"
+          title="Take a snapshot of this script"
+          onClick={() => useEditorStore.getState().setTakeSnapshotRequest(true)}
+        >+ Take Snapshot</button>
         <span className="version-history-title">{embedded ? 'Script History' : 'Snapshots'}</span>
         {!embedded && (
           <button

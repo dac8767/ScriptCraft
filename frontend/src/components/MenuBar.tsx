@@ -447,6 +447,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     setTimeout(() => checkinInputRef.current?.focus(), 100);
   }, [currentProject]);
 
+  /* v6.72: the Snapshots window's Take Snapshot button arms a store flag —
+     the dialog lives here, so it opens from here (one dialog, one flow). */
+  const takeSnapshotRequest = useEditorStore((s) => s.takeSnapshotRequest);
+  useEffect(() => {
+    if (!takeSnapshotRequest) return;
+    useEditorStore.getState().setTakeSnapshotRequest(false);
+    handleCheckinOpen();
+  }, [takeSnapshotRequest, handleCheckinOpen]);
+
   const handleCheckinSubmit = useCallback(async () => {
     if (!currentProject || !checkinMessage.trim()) return;
     setCheckinSaving(true);

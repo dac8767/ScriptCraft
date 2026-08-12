@@ -3190,6 +3190,15 @@
   ]
  },
  {
+  "text": "Take a snapshot of this script",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/VersionHistory.tsx"
+  ]
+ },
+ {
   "text": "Target pages for this section on the Outline Bar",
   "kind": "tooltip",
   "sites": 1,

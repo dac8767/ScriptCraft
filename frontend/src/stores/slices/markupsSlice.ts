@@ -95,6 +95,12 @@ export interface MarkupsSlice {
    *  chrome→body pattern. Ephemeral. */
   markupAddRequest: boolean;
   setMarkupAddRequest: (v: boolean) => void;
+  /** v6.72, Derek: the Snapshots window's own "Take Snapshot" button. The
+   *  check-in DIALOG lives in MenuBar (one dialog, one flow), so the button
+   *  arms this and MenuBar opens it — the same chrome→body hand-off
+   *  markupAddRequest uses. Ephemeral. */
+  takeSnapshotRequest: boolean;
+  setTakeSnapshotRequest: (v: boolean) => void;
   markupFilters: MarkupFilters;
   setMarkupFilters: (f: MarkupFilters) => void;
   /** v5.26: the side panel's search query (header ControlSearch). */
@@ -118,6 +124,8 @@ export const createMarkupsSlice: StateCreator<EditorState, [], [], MarkupsSlice>
   setMarkupCreatePick: (v) => set({ markupCreatePick: v }),
   markupAddRequest: false,
   setMarkupAddRequest: (v) => set({ markupAddRequest: v }),
+  takeSnapshotRequest: false,
+  setTakeSnapshotRequest: (v) => set({ takeSnapshotRequest: v }),
   markupFilters: EMPTY_MARKUP_FILTERS,
   setMarkupFilters: (f) => set({ markupFilters: f }),
   markupSearch: '',

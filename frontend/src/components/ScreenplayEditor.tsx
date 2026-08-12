@@ -1923,34 +1923,34 @@ const ScreenplayEditor: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Preferences: automatic snapshots (project version checkpoints) ---
-  // Silent api.checkin on the chosen interval; the backend commits only when
-  // something actually changed, so idle intervals create nothing.
+  /* --- Preferences: AUTO SAVE (a spare copy, not a snapshot) ---
+     v6.72, Derek: "remove the first option 'Local version history (always
+     on)' — this was adding autosaves to the snapshot window, which we do not
+     want." This used to call api.checkin('Auto save') on every tick, which
+     is the SAME call File ▸ Take Snapshot makes — so every auto save became
+     a snapshot, and pruneVersions then trimmed that shared history by
+     position, which could take deliberate snapshots with it. Both are gone.
+     An auto save now writes timestamped FILES to the chosen Auto Save
+     Locations and touches the version history not at all. Snapshots are
+     taken by hand, and nothing deletes them. */
   const autoSnapshotMinutes = useSettingsStore((s) => s.autoSnapshotMinutes);
   useEffect(() => {
     if (!autoSnapshotMinutes || !currentProject || isHistoryMode) return;
     const timer = setInterval(() => {
       if (scriptSwitchingRef.current) return;
-      api.checkin(currentProject.id, 'Auto save').then(() => {
-        const snapContent = buildSaveContent();
-        if (snapContent) {
-          void mirrorSnapshot({
-            projectId: currentProject.id,
-            projectName: currentProject.name,
-            title: useEditorStore.getState().documentTitle || 'Untitled',
-            content: snapContent,
-            message: 'Auto save',
-          });
-        }
-        const keep = useSettingsStore.getState().autoSnapshotKeep;
-        if (keep > 0) {
-          return api.pruneVersions(currentProject.id, keep).catch((err) => {
-            console.warn('Snapshot retention prune failed:', err);
-          });
-        }
+      const snapContent = buildSaveContent();
+      if (!snapContent) return;
+      // mirrorSnapshot no-ops when no location is ticked — the Settings hint
+      // says so rather than the app pretending to protect the writer.
+      void mirrorSnapshot({
+        projectId: currentProject.id,
+        projectName: currentProject.name,
+        title: useEditorStore.getState().documentTitle || 'Untitled',
+        content: snapContent,
+        message: 'Auto save',
       }).catch((err) => {
-        // Silent by design — a failed auto snapshot shouldn't interrupt writing.
-        console.warn('Auto snapshot failed:', err);
+        // Silent by design — a failed auto save shouldn't interrupt writing.
+        console.warn('Auto save failed:', err);
       });
     }, autoSnapshotMinutes * 60 * 1000);
     return () => clearInterval(timer);
