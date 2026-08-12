@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.81",
+  "date": "2026-08-12",
+  "changes": [
+   "Starting a comparison from the Script History tool's fullscreen view now works like every other path: the tool leaves fullscreen and seats itself into the side panel, so the comparison summary always appears there. (v6.80 covered the floating-window case; this covers fullscreen — the last way the panel could end up expanded but empty.)",
+   "+ Take Snapshot and Compare… now share the same blue button styling."
+  ]
+ },
+ {
   "version": "6.80",
   "date": "2026-08-12",
   "changes": [

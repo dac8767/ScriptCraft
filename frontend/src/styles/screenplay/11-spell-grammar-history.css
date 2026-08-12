@@ -263,19 +263,10 @@ html.android .grammar-issue.grammar-grammar {
   border-bottom: 1px solid var(--fd-border);
   flex-shrink: 0;
 }
-/* v6.72: the window's own Take Snapshot button. */
-.version-history-take {
-  flex: 0 0 auto;
-  padding: 4px 10px;
-  font-size: 12px;
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  background: var(--fd-toolbar-bg);
-  color: var(--fd-text);
-  cursor: pointer;
-  white-space: nowrap;
-}
-.version-history-take:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
+/* v6.72: the window's own Take Snapshot button. v6.81, Derek: "both in the
+   blue formatting" — it wears the shared .version-compare-btn accent now;
+   only the flex sizing is its own. */
+.version-history-take { flex: 0 0 auto; white-space: nowrap; }
 .version-history-content {
   flex: 1;
   display: flex;

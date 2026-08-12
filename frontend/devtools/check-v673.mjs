@@ -176,16 +176,19 @@ try {
   ok(restBoxes === 0, `there are no checkboxes, at rest or ever (${restBoxes})`);
   const atRest = await page.evaluate(() => {
     const take = document.querySelector('.version-history-actions .version-history-take');
-    const cmp = document.querySelector('.version-history-actions .version-compare-btn');
+    const cmp = document.querySelector('.version-history-actions .version-compare-btn:not(.version-history-take)');
     const midY = (el) => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; };
+    const bg = (el) => getComputedStyle(el).backgroundColor;
     return {
       together: !!take && !!cmp && Math.abs(midY(take) - midY(cmp)) < 6,
+      sameStyle: !!take && !!cmp && bg(take) === bg(cmp) && bg(take) !== 'rgba(0, 0, 0, 0)',
       bar: !!document.querySelector('.version-compare-bar'),
     };
   });
   ok(atRest.together, 'Compare… sits beside + Take Snapshot, same row');
+  ok(atRest.sameStyle, 'and both wear the SAME accent styling (v6.81)');
   ok(!atRest.bar, 'and the explaining sentence is hidden until it is clicked');
-  await page.click('.version-history-actions .version-compare-btn');   // Compare… enters the mode
+  await page.click('.version-history-actions .version-compare-btn:not(.version-history-take)');   // Compare… enters the mode
   await settle(page);
   const barText = await page.evaluate(() => document.querySelector('.version-compare-bar')?.textContent ?? '');
   ok(/Compare two snapshots side by side/.test(barText),
@@ -278,6 +281,40 @@ try {
   }));
   ok(!back.takeover && back.editor, 'closing the compare returns the editor');
   ok(back.rows === 2 && back.take, `and the snapshot list comes back in the panel (${back.rows} rows)`);
+
+  /* ── v6.81, Derek's second screenshot: he entered the compare from the
+     tool's FULLSCREEN takeover — the panel row sat expanded and EMPTY.
+     Comparing must leave the takeover and seat the tool docked. ── */
+  await page.evaluate(() => {
+    const st = window.__scStore.getState();
+    if (st.activeTool === 'history') st.setActiveTool(null);
+    if (st.activeToolRight === 'history') st.setActiveToolRight(null);
+    st.setTempTool(null);
+    st.setToolMode('history', 'fullscreen');           // his remembered shape
+    st.setFullscreenTool('history');                   // and currently fullscreen
+  });
+  await page.waitForSelector('.fs-tool-takeover .version-history-body', { timeout: 5000 });
+  await page.click('.version-history-actions .version-compare-btn:not(.version-history-take)');
+  await settle(page);
+  await page.locator('.version-item').nth(0).click();
+  await page.locator('.version-item').nth(1).click();
+  await page.waitForSelector('.fs-compare-takeover .script-diff-view', { timeout: 8000 });
+  await settle(page);
+  const fsSeat = await page.evaluate(() => {
+    const host = document.querySelector('.tool-inline[data-tool="history"] .version-summary-host');
+    const b = host?.getBoundingClientRect();
+    return {
+      fullscreen: window.__scStore.getState().fullscreenTool,
+      mode: window.__scStore.getState().toolMode['history'],
+      w: b ? Math.round(b.width) : 0,
+      h: b ? Math.round(b.height) : 0,
+    };
+  });
+  ok(fsSeat.fullscreen === null, 'comparing from FULLSCREEN leaves the takeover');
+  ok(fsSeat.mode === 'docked' && fsSeat.w > 100 && fsSeat.h > 60,
+    `and the summary seats into the docked panel there too (${fsSeat.w}×${fsSeat.h}px)`);
+  await page.click('.script-diff-close');
+  await settle(page);
 
   /* ── v6.80, Derek: "automatically create a snapshot when the draft
      number is changed. label it as the previous draft name." Driven

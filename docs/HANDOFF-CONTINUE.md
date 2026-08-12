@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.80 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.81 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -240,6 +240,29 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.81 — the FULLSCREEN entry point; one accent for both action buttons
+
+- Derek's second screenshot: he entered the compare from the tool's
+  FULLSCREEN takeover — v6.80's seating only converted 'floating', so
+  `fullscreenTool` stayed 'history' (caret down, no inline body, panel
+  empty AGAIN). The seating now covers every shape: set mode 'docked',
+  `setFullscreenTool(null)` if the tool owns the takeover, and if NO
+  surface holds the tool afterwards, `openTool('history')` (mode already
+  docked, so it seats in its panel slot; a row-less profile lands temp,
+  which also shows the summary).
+- "+ Take Snapshot" wears the shared `.version-compare-btn` accent
+  (Derek: "both in the blue formatting") — its bespoke background rule in
+  11-spell-grammar-history.css is GONE; only flex sizing remains own.
+  Lesson from a false start: that rule was invisible to a grep run against
+  a ROLLED-BACK tree — after any sandbox reset, re-verify "no rule exists"
+  claims.
+- check-v673 → 44: the fullscreen round is a driven regression (fullscreen
+  → compare → takeover left + summary docked at 277×112), style parity
+  asserted via computed background — and the Compare selectors are
+  `:not(.version-history-take)` now that BOTH buttons carry the class
+  (page.click's first-match would have hit Take Snapshot).
+- Gates: tsc 0, vitest 1196, build ok, check-all 1044/0.
 
 ### v6.80 — the empty-panel mystery SOLVED; Compare… moves; draft auto-snapshot
 

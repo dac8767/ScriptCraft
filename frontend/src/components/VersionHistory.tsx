@@ -132,15 +132,21 @@ const VersionHistory: React.FC = () => {
 
       setCompareMode(false);
       setCompareSelection([]);
-      /* v6.80, Derek (reported twice): the summary must show in the SIDE
-         PANEL — with the tool in a floating window his Mac showed an
-         expanded dock row and no window at all. Comparing SEATS the tool
-         into the docked panel, the one hosting with a definite-height
-         inline body. An explicit product rule, not a remembered-mode read
-         (v4.84: only explicit gestures write the mode — starting a compare
-         is one). */
+      /* v6.80/v6.81, Derek (three reports): the summary must show in the
+         SIDE PANEL. His tool reached the compare from a floating window
+         (v6.80) and then from the FULLSCREEN takeover (v6.81) — in both,
+         the panel row sat expanded with no body, the summary homeless.
+         Comparing SEATS the tool into the docked panel, whatever shape it
+         was in: set the mode, leave the takeover, and if no surface holds
+         the tool any more, open it (docked now). An explicit product rule
+         (v4.84: gestures write the mode — starting a compare is one). */
       const es = useEditorStore.getState();
       if (es.toolMode['history'] !== 'docked') es.setToolMode('history', 'docked');
+      if (es.fullscreenTool === 'history') es.setFullscreenTool(null);
+      const now = useEditorStore.getState();
+      if (now.activeTool !== 'history' && now.activeToolRight !== 'history' && now.tempTool !== 'history') {
+        now.openTool('history');
+      }
       const emptyDoc = { type: 'doc', content: [] };
       setScriptCompare({
         docA: (respA?.content || emptyDoc) as Record<string, unknown>,
@@ -331,8 +337,10 @@ const VersionHistory: React.FC = () => {
       {/* v6.80, Derek: Compare… sits beside Take Snapshot; the explaining
           sentence only appears once Compare… is clicked. */}
       <div className="version-history-actions">
+        {/* v6.81, Derek: "'take snapshot' and 'compare' should both be in
+            the blue formatting" — ONE accent class, shared with Compare…. */}
         <button
-          className="version-history-take"
+          className="version-compare-btn version-history-take"
           title="Take a snapshot of this script"
           onClick={() => useEditorStore.getState().setTakeSnapshotRequest(true)}
         >+ Take Snapshot</button>
