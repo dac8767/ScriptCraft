@@ -16,7 +16,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { CHROME_SCALES, chromePx, ICON_RAIL_W } from './chromeSizes';
 import AssetManager from './AssetManager';
-import VersionHistory, { SnapshotsTitleExtra } from './VersionHistory';
+import VersionHistory from './VersionHistory';
 import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
@@ -150,7 +150,10 @@ export const ALL_TOOLS: ToolDef[] = [
   { id: 'spelling', label: 'Spelling & Grammar', icon: <FaSpellCheck />, defaultSize: { w: 420, h: 640 }, group: 3 },
   // v0.84: Script History is dockable again — VersionHistory already had an
   // `embedded` mode, it just wasn't registered as a tool.
-  { id: 'history', label: 'Script History', icon: <FaHistory />, defaultSize: { w: 420, h: 480 }, group: 3 },
+  // v6.76: keepOpenOnEditorClick, the Scrapbook's reason exactly — its
+  // compare surface LIVES in the editor area, so clicking the diff's own
+  // buttons (or its ×) must not dismiss the panel that owns the compare.
+  { id: 'history', label: 'Script History', icon: <FaHistory />, defaultSize: { w: 420, h: 480 }, group: 3, keepOpenOnEditorClick: true },
   // v4.23, Derek: the Design (tokens) surface is dockable now — the same body
   // the floating window shows (DesignPanelBody), just in a panel column. Opens
   // FLOATING by default (its sliders want width), but the pop-in button docks it.
@@ -428,8 +431,6 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   feedback: { Controls: FeedbackShotControls },
   // v6.52: the "N changed" chip beside the Helper Text title.
   helpertext: { TitleExtra: HelperTextTitleExtra },
-  // v6.74: Take Snapshot rides the tool chrome, upper left beside the label.
-  history: { TitleExtra: SnapshotsTitleExtra },
 };
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.70 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.76 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -309,6 +309,34 @@ Durable bits kept live here:
   window never sits on "Loading…", says something actionable, offers a
   retry, settles inside the budget, and does not re-arm.
 - Gates: tsc 0, vitest 1182, build ok, check-all 949/0.
+
+### v6.76 — Take Snapshot into the body; the panel survives the compare
+
+- Derek: "move the 'Take Snapshot' button out of the window title section
+  and down into the script history window" + "when in the compare window,
+  hide the snapshot list from the side panel window (only show the
+  comparison summary)."
+- Take Snapshot renders in a `.version-history-actions` row at the top of
+  the tool BODY; `SnapshotsTitleExtra` and the `TOOL_CHROME.history` entry
+  are gone. While `scriptCompare` is set the body shows ONLY the summary
+  host — the list, listbar, compare bar and take button are all inside one
+  `{!compareSummary && <>…</>}` gate and return when the compare closes.
+- **THE BUG THAT LOOKED LIKE CHECK TIMING BUT WASN'T**: after closing the
+  compare the panel showed 0 rows — because the whole tool had DISMISSED.
+  `openTool('history')` seats the Snapshots tool in the temp slot, and the
+  temp slot closes on any pointerdown inside `.editor-center`
+  (ToolDock's click-outside rule). The compare takeover LIVES in
+  `.editor-center`, so clicking its own × (or Side-by-side/Unified) killed
+  the panel that owned the compare. Fix: `keepOpenOnEditorClick: true` on
+  the history tool — the Scrapbook's exemption for exactly this shape (a
+  panel whose surface renders in the editor area). Diagnosis pattern worth
+  keeping: subscribe to the store INSIDE the page and log changed keys +
+  `new Error().stack` — zustand notifies synchronously, so the stack names
+  the caller (here `setTempTool` ← ToolDock's document pointerdown).
+- check-v673 grew to 27 (only-summary during compare: 0 rows/no bar/no take;
+  list AND take button back after close). check-v672 asserts the button
+  lives in the body row, not the chrome.
+- Gates: tsc 0, vitest 1190, build ok, check-all 992/0.
 
 ### v6.75 — the compare flow, humanized (four Derek items)
 

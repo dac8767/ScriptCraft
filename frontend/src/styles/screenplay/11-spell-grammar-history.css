@@ -249,7 +249,14 @@ html.android .grammar-issue.grammar-grammar {
 }
 .version-deleteall-btn:hover { border-color: #c0392b; color: #c0392b; }
 
-/* v6.72: the window's own Take Snapshot button, upper left. */
+/* v6.76: the take-snapshot row at the top of the tool BODY (moved out of
+   the window title). */
+.version-history-actions {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+/* v6.72: the window's own Take Snapshot button. */
 .version-history-take {
   flex: 0 0 auto;
   padding: 4px 10px;

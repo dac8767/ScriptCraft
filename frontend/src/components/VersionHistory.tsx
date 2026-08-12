@@ -29,20 +29,10 @@ function relativeTime(dateStr: string): string {
 
 /* v6.74, Derek: "currently the snapshot window appears as a side bar of its
    own style. make this window appear in the side panel like all other tool
-   window." The fixed-position shell (.version-history-panel), its own title
-   bar and its X are GONE — this is a tool BODY now, hosted by ToolDock like
-   every other tool, with the label and Take Snapshot in the tool chrome
-   (TOOL_CHROME TitleExtra below). */
-export function SnapshotsTitleExtra() {
-  return (
-    <button
-      className="version-history-take"
-      title="Take a snapshot of this script"
-      onClick={() => useEditorStore.getState().setTakeSnapshotRequest(true)}
-    >+ Take Snapshot</button>
-  );
-}
-
+   window." The fixed-position shell is gone — this is a tool BODY hosted by
+   ToolDock like every other tool. (v6.76: Take Snapshot moved from the tool
+   chrome down into the body — Derek: "move the 'Take Snapshot' button out
+   of the window title section and down into the script history window.") */
 const VersionHistory: React.FC = () => {
   const navigate = useNavigate();
   const { currentProject, currentScriptId, versions, setVersions, setVersionHistoryOpen, triggerScriptReload } =
@@ -320,6 +310,22 @@ const VersionHistory: React.FC = () => {
 
   return (
     <div className="version-history-body">
+      {/* v6.76, Derek: while a compare owns the editor, this panel shows
+          ONLY the summary — the list, its bars and the take button stand
+          down until the compare closes. */}
+      {compareSummary && (
+        <div className="version-summary-host">
+          <DiffSummaryBlock summary={compareSummary} />
+        </div>
+      )}
+      {!compareSummary && <>
+      <div className="version-history-actions">
+        <button
+          className="version-history-take"
+          title="Take a snapshot of this script"
+          onClick={() => useEditorStore.getState().setTakeSnapshotRequest(true)}
+        >+ Take Snapshot</button>
+      </div>
       {!currentProject && (
         <div className="version-history-empty">
           No project selected. Import or create a script first.
@@ -362,14 +368,6 @@ const VersionHistory: React.FC = () => {
               </button>
             </>
           )}
-        </div>
-      )}
-
-      {/* v6.75: the compare summary rides THIS panel while the diff owns
-          the editor area. */}
-      {compareSummary && (
-        <div className="version-summary-host">
-          <DiffSummaryBlock summary={compareSummary} />
         </div>
       )}
 
@@ -473,6 +471,7 @@ const VersionHistory: React.FC = () => {
           </div>
         )}
       </div>
+      </>}
       {restoreConfirm && (
         <div className="dialog-overlay" onClick={() => setRestoreConfirm(null)}>
           <div className="dialog-box" onClick={(e) => e.stopPropagation()}>

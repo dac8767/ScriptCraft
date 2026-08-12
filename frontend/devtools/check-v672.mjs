@@ -18,19 +18,18 @@ try {
   await boot(page);
   await seedScript(page, SCENES_4);
 
-  /* ── 1: the Take Snapshot button (v6.74: it rides the TOOL chrome — the
-     Snapshots window is a standard side-panel tool now) ── */
+  /* ── 1: the Take Snapshot button (v6.76, Derek: "move the 'Take
+     Snapshot' button out of the window title section and down into the
+     script history window" — it lives in the tool BODY now) ── */
   await page.evaluate(() => window.__scStore.getState().openTool('history'));
   await page.waitForSelector('.version-history-body', { timeout: 8000 });
   const btn = await page.evaluate(() => {
-    const b = document.querySelector('.version-history-take');
-    const header = b?.closest('.tool-window-header, .tool-inline-header');
-    if (!b || !header) return null;
-    const br = b.getBoundingClientRect(), hr = header.getBoundingClientRect();
-    return { text: b.textContent.trim(), left: br.left - hr.left, width: hr.width };
+    const b = document.querySelector('.version-history-body .version-history-actions .version-history-take');
+    const inChrome = document.querySelector('.tool-window-header .version-history-take, .tool-inline-header .version-history-take');
+    return { inBody: !!b, text: b?.textContent.trim() ?? '', inChrome: !!inChrome };
   });
-  ok(btn && /Take Snapshot/i.test(btn.text), `the window has a Take Snapshot button ("${btn?.text}")`);
-  ok(btn && btn.left < btn.width / 2, `it sits in the LEFT half of the tool header (${Math.round(btn?.left ?? -1)}px in)`);
+  ok(btn.inBody && /Take Snapshot/i.test(btn.text), `the Take Snapshot button is IN the window body ("${btn.text}")`);
+  ok(!btn.inChrome, 'and no longer in the window title chrome');
   await page.evaluate(() => window.__scStore.getState().closeTool('history'));
 
   /* ── 2–5: the Save & Locations settings ── */

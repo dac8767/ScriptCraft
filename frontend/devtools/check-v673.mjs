@@ -182,6 +182,15 @@ try {
   });
   ok(sum.inPanel, 'the compare summary appears in the Snapshots side panel');
   ok(!sum.inDiff, 'and not as a second copy inside the diff view');
+  /* v6.76, Derek: "when in the compare window, hide the snapshot list from
+     the side panel window (only show the comparison summary)". */
+  const during = await page.evaluate(() => ({
+    rows: document.querySelectorAll('.version-history-body .version-item').length,
+    bar: !!document.querySelector('.version-history-body .version-compare-bar'),
+    take: !!document.querySelector('.version-history-body .version-history-take'),
+  }));
+  ok(during.rows === 0 && !during.bar && !during.take,
+    `while comparing, the panel shows ONLY the summary (${during.rows} rows, bar ${during.bar}, take ${during.take})`);
   ok(/added/.test(sum.text) && /modified/.test(sum.text), `it carries the counts ("${sum.text.slice(0, 40)}…")`);
   /* v6.75: no internal hash codes anywhere the writer reads. */
   const hashes = await page.evaluate(() => document.querySelectorAll('.version-hash').length);
@@ -193,8 +202,11 @@ try {
   const back = await page.evaluate(() => ({
     takeover: !!document.querySelector('.fs-compare-takeover'),
     editor: !!document.querySelector('.ProseMirror'),
+    rows: document.querySelectorAll('.version-history-body .version-item').length,
+    take: !!document.querySelector('.version-history-body .version-history-take'),
   }));
   ok(!back.takeover && back.editor, 'closing the compare returns the editor');
+  ok(back.rows === 2 && back.take, `and the snapshot list comes back in the panel (${back.rows} rows)`);
 
 } catch (e) {
   console.log('PROBE ERROR:', e.message);

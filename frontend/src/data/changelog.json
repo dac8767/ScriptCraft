@@ -1,28 +1,37 @@
 [
  {
+  "version": "6.76",
+  "date": "2026-08-12",
+  "changes": [
+   "The Take Snapshot button moved out of the window’s title area and into the Script History window itself — a row of its own above the snapshot list.",
+   "While a comparison is open in the editor, the Script History panel shows only the comparison summary. The snapshot list, its Compare… bar and the Take Snapshot button step aside, and all of them return the moment the compare closes.",
+   "Clicking the compare view’s own controls (Side-by-side, Unified, its close ×) no longer dismisses the Script History panel — the panel now stays put like the Scrapbook’s does, since its compare surface lives in the editor area."
+  ]
+ },
+ {
   "version": "6.75",
   "date": "2026-08-12",
   "changes": [
-   "While comparing, the Summary \u2014 added / deleted / modified and the scenes changed \u2014 now appears in the Script History side panel, beside the compare in the editor. The diff view no longer carries its own summary column.",
-   "Comparing starts from a single Compare\u2026 button. Click it and the list switches to picking mode; choosing your second snapshot opens the comparison right away. Rows carry no checkboxes until then.",
-   "Clicking a snapshot now shows a readable summary of what changed since the one before it \u2014 counts and scene names \u2014 instead of a wall of raw code.",
-   "The internal code on each snapshot (\u201c86d5e36\u201d and the like) is gone from the window. It was the snapshot\u2019s internal id; everything now refers to snapshots by the name you gave them."
+   "While comparing, the Summary — added / deleted / modified and the scenes changed — now appears in the Script History side panel, beside the compare in the editor. The diff view no longer carries its own summary column.",
+   "Comparing starts from a single Compare… button. Click it and the list switches to picking mode; choosing your second snapshot opens the comparison right away. Rows carry no checkboxes until then.",
+   "Clicking a snapshot now shows a readable summary of what changed since the one before it — counts and scene names — instead of a wall of raw code.",
+   "The internal code on each snapshot (“86d5e36” and the like) is gone from the window. It was the snapshot’s internal id; everything now refers to snapshots by the name you gave them."
   ]
  },
  {
   "version": "6.74",
   "date": "2026-08-12",
   "changes": [
-   "The Snapshots window is now a standard side-panel tool \u2014 same chrome, docking, and behaviour as every other tool window, instead of its own fixed sidebar. Take Snapshot sits in the tool\u2019s header, and File \u25b8 Script History \u25b8 Snapshots opens the tool.",
-   "Comparing two snapshots now opens in the main editor area, inside the app chrome \u2014 its Side-by-side / Unified / Changes controls can no longer collide with the ribbon or the window title bar. The Snapshots tool stays open beside it, and closing the compare returns the editor."
+   "The Snapshots window is now a standard side-panel tool — same chrome, docking, and behaviour as every other tool window, instead of its own fixed sidebar. Take Snapshot sits in the tool’s header, and File ▸ Script History ▸ Snapshots opens the tool.",
+   "Comparing two snapshots now opens in the main editor area, inside the app chrome — its Side-by-side / Unified / Changes controls can no longer collide with the ribbon or the window title bar. The Snapshots tool stays open beside it, and closing the compare returns the editor."
   ]
  },
  {
   "version": "6.73",
   "date": "2026-08-12",
   "changes": [
-   "Snapshots can be deleted. Every row in the Snapshots window has a Delete button, and the list has Delete All\u2026 \u2014 the one-click way to clear out the old \u201cAuto save\u201d entries earlier versions wrote into the list. Both warn first, and neither ever touches your script \u2014 a snapshot is a copy.",
-   "A snapshot taken from the Snapshots window\u2019s own button now appears in the list immediately \u2014 no closing and reopening.",
+   "Snapshots can be deleted. Every row in the Snapshots window has a Delete button, and the list has Delete All… — the one-click way to clear out the old “Auto save” entries earlier versions wrote into the list. Both warn first, and neither ever touches your script — a snapshot is a copy.",
+   "A snapshot taken from the Snapshots window’s own button now appears in the list immediately — no closing and reopening.",
    "Note: auto saves stopped being written into this list in v6.72; entries from before that stay until you delete them."
   ]
  },
@@ -30,33 +39,33 @@
   "version": "6.72",
   "date": "2026-08-11",
   "changes": [
-   "Auto saves are no longer snapshots. The auto-save timer used to take a version check-in \u2014 the very same thing File \u25b8 Take Snapshot does \u2014 so every auto save turned up in the Snapshots window. It now writes only timestamped files to the Auto Save Locations you choose, and never touches your snapshots.",
-   "The \u201cLocal version history (always on)\u201d auto-save location is gone; that row was what put auto saves into the Snapshots window.",
-   "The Snapshots window has its own \u201c+ Take Snapshot\u201d button in the top left.",
-   "Save Options: the auto-save folder row is called \u201cLocal device folder\u201d and offers one Choose Folder\u2026 button instead of two, the Auto Save Locations helper text is gone, and the auto-save description says what an auto save actually is.",
-   "\u201cMaximum Project Versions\u201d has been removed \u2014 it counted the version check-ins auto saving no longer makes. Capping the auto-save FILES is still to come; it needs a folder-listing permission the desktop shell does not grant yet."
+   "Auto saves are no longer snapshots. The auto-save timer used to take a version check-in — the very same thing File ▸ Take Snapshot does — so every auto save turned up in the Snapshots window. It now writes only timestamped files to the Auto Save Locations you choose, and never touches your snapshots.",
+   "The “Local version history (always on)” auto-save location is gone; that row was what put auto saves into the Snapshots window.",
+   "The Snapshots window has its own “+ Take Snapshot” button in the top left.",
+   "Save Options: the auto-save folder row is called “Local device folder” and offers one Choose Folder… button instead of two, the Auto Save Locations helper text is gone, and the auto-save description says what an auto save actually is.",
+   "“Maximum Project Versions” has been removed — it counted the version check-ins auto saving no longer makes. Capping the auto-save FILES is still to come; it needs a folder-listing permission the desktop shell does not grant yet."
   ]
  },
  {
   "version": "6.71",
   "date": "2026-08-10",
   "changes": [
-   "The Annotations window\u2019s \u201cDisplay\u201d button is now called \u201cFilter\u201d \u2014 the same word the ribbon\u2019s Annotation Filter uses for the same choice, so one idea has one name."
+   "The Annotations window’s “Display” button is now called “Filter” — the same word the ribbon’s Annotation Filter uses for the same choice, so one idea has one name."
   ]
  },
  {
   "version": "6.70",
   "date": "2026-08-09",
   "changes": [
-   "Settings \u25b8 Presets gained four more things to tick: Annotation Presets (the icon and colour combinations offered when you add an annotation), Keyboard Shortcuts, Design (the sizes and spacing from the Design window) and Helper Text (tooltips you have rewritten or hidden). Nine items now, all in the one preset file.",
-   "An item you have not touched yet is shown but can\u2019t be ticked, and says why \u2014 so an empty category can never be silently \u201cexported\u201d."
+   "Settings ▸ Presets gained four more things to tick: Annotation Presets (the icon and colour combinations offered when you add an annotation), Keyboard Shortcuts, Design (the sizes and spacing from the Design window) and Helper Text (tooltips you have rewritten or hidden). Nine items now, all in the one preset file.",
+   "An item you have not touched yet is shown but can’t be ticked, and says why — so an empty category can never be silently “exported”."
   ]
  },
  {
   "version": "6.69",
   "date": "2026-08-09",
   "changes": [
-   "Snapshots no longer hangs on \u201cLoading snapshots\u2026\u201d. Script History talks to a ScriptCraft server, and the desktop app doesn\u2019t run one \u2014 the window now says so straight away instead of waiting on a request that can never arrive.",
+   "Snapshots no longer hangs on “Loading snapshots…”. Script History talks to a ScriptCraft server, and the desktop app doesn’t run one — the window now says so straight away instead of waiting on a request that can never arrive.",
    "Any snapshot load is time-limited, so whatever the connection does the window ends up saying something you can act on, with a Try Again button rather than a dead end."
   ]
  },
@@ -64,18 +73,18 @@
   "version": "6.68",
   "date": "2026-08-09",
   "changes": [
-   "The ribbon\u2019s \u201cAnnotation Visibility\u201d button is now called \u201cAnnotation Filter\u201d \u2014 which is what it does: pick which annotation types and statuses show on the script.",
-   "New \u201cView Annotations\u201d button: a plain on/off toggle for annotations on the script, lit when they show, with an eye that closes when they don\u2019t. It is the same setting as View \u25b8 Annotations \u25b8 Show Annotations in Script, so the two always agree.",
-   "If your ribbon already had the filter button, the new toggle takes its place right beside it \u2014 no trip to Customize needed."
+   "The ribbon’s “Annotation Visibility” button is now called “Annotation Filter” — which is what it does: pick which annotation types and statuses show on the script.",
+   "New “View Annotations” button: a plain on/off toggle for annotations on the script, lit when they show, with an eye that closes when they don’t. It is the same setting as View ▸ Annotations ▸ Show Annotations in Script, so the two always agree.",
+   "If your ribbon already had the filter button, the new toggle takes its place right beside it — no trip to Customize needed."
   ]
  },
  {
   "version": "6.67",
   "date": "2026-08-09",
   "changes": [
-   "Annotation icons now follow the page zoom. They stayed exactly where they were when you zoomed, so at 90% an icon could end up sitting inside a line of dialogue \u2014 they now stay on the row they annotate, in the page\u2019s left margin, at every zoom.",
+   "Annotation icons now follow the page zoom. They stayed exactly where they were when you zoomed, so at 90% an icon could end up sitting inside a line of dialogue — they now stay on the row they annotate, in the page’s left margin, at every zoom.",
    "The icons also scale with the page, keeping the same size relative to the text instead of swelling as you zoom out.",
-   "They re-place themselves after any layout change too \u2014 opening a panel, resizing the window, changing the page setup."
+   "They re-place themselves after any layout change too — opening a panel, resizing the window, changing the page setup."
   ]
  },
  {
@@ -83,41 +92,41 @@
   "date": "2026-08-09",
   "changes": [
    "Send to Script now anchors each section annotation at the TOP OF THE PAGE that section starts on. With three one-page sections you get one at the top of page 1, one at the top of page 2 and one at the top of page 3. It had been landing on whichever scene happened to cover that page, which is not the same thing.",
-   "An element left carrying a deleted annotation\u2019s anchor no longer blocks that spot for good \u2014 a section can anchor there again."
+   "An element left carrying a deleted annotation’s anchor no longer blocks that spot for good — a section can anchor there again."
   ]
  },
  {
   "version": "6.65",
   "date": "2026-08-09",
   "changes": [
-   "Send to Script now makes real ANNOTATIONS \u2014 one per outline section, anchored at the page the outline puts that section on, reading \u201cAct I \u2014 40 pages\u201d. v6.64 wrote \u201c# \u2026\u201d section lines into the script instead; that was the wrong thing, and nothing is written into your script text any more.",
+   "Send to Script now makes real ANNOTATIONS — one per outline section, anchored at the page the outline puts that section on, reading “Act I — 40 pages”. v6.64 wrote “# …” section lines into the script instead; that was the wrong thing, and nothing is written into your script text any more.",
    "Each annotation keeps mirroring its section: rename it or change its page estimate and the annotation updates on the spot, whether the Outline Bar is open or not. Annotations you made yourself are never touched.",
-   "The next Send to Script clears out any \u201c# \u2026\u201d lines v6.64 left behind, so nothing is listed twice. Sending again updates what is there and adds only what is missing; deleting a section leaves its annotation alone."
+   "The next Send to Script clears out any “# …” lines v6.64 left behind, so nothing is listed twice. Sending again updates what is there and adds only what is missing; deleting a section leaves its annotation alone."
   ]
  },
  {
   "version": "6.64",
   "date": "2026-08-09",
   "changes": [
-   "Send to Script now puts your outline SECTIONS into the script \u2014 one section line each, at the page the outline puts that section on, carrying its name and its estimated pages (\u201c# Act I \u2014 40 pages\u201d). It used to append one line per beat at the end of the script.",
-   "Those lines stay live. Rename a section, or change its page estimate, and the line in the script rewrites itself on the spot \u2014 no need to send again, and it works whether the Outline Bar is open or not.",
-   "Pressing Send to Script again updates the lines already there and adds only what is missing, so you can never end up with duplicates. Deleting a section in the outline leaves its line in your script exactly as written \u2014 the mirror never deletes your text."
+   "Send to Script now puts your outline SECTIONS into the script — one section line each, at the page the outline puts that section on, carrying its name and its estimated pages (“# Act I — 40 pages”). It used to append one line per beat at the end of the script.",
+   "Those lines stay live. Rename a section, or change its page estimate, and the line in the script rewrites itself on the spot — no need to send again, and it works whether the Outline Bar is open or not.",
+   "Pressing Send to Script again updates the lines already there and adds only what is missing, so you can never end up with duplicates. Deleting a section in the outline leaves its line in your script exactly as written — the mirror never deletes your text."
   ]
  },
  {
   "version": "6.63",
   "date": "2026-08-09",
   "changes": [
-   "Settings \u25b8 Presets is now a checklist that makes ONE preset file. Tick the items you want included \u2014 Settings, Customizations, Themes, Workspaces, Outline Presets \u2014 and Export Preset writes them all into a single file. Six separate exports and six separate files are gone.",
-   "An item you have none of yet is shown but can\u2019t be ticked, and says why. Export stays dead until something is ticked, so you can never write an empty preset.",
-   "Import Preset takes one file and applies whatever is in it, after telling you what that is. It still opens every preset file ScriptCraft has ever written \u2014 old full presets, settings backups, customization, theme, workspace and outline-preset files all load as the item they hold."
+   "Settings ▸ Presets is now a checklist that makes ONE preset file. Tick the items you want included — Settings, Customizations, Themes, Workspaces, Outline Presets — and Export Preset writes them all into a single file. Six separate exports and six separate files are gone.",
+   "An item you have none of yet is shown but can’t be ticked, and says why. Export stays dead until something is ticked, so you can never write an empty preset.",
+   "Import Preset takes one file and applies whatever is in it, after telling you what that is. It still opens every preset file ScriptCraft has ever written — old full presets, settings backups, customization, theme, workspace and outline-preset files all load as the item they hold."
   ]
  },
  {
   "version": "6.62",
   "date": "2026-08-09",
   "changes": [
-   "Outline: deleting a section no longer makes it look like its beats jumped into the section next door. They were always going to Unsorted \u2014 but the surviving section stretched across the board and wrapped its cards into a grid, which read exactly like everything had been dumped there. A section only takes the whole board when it really is the only column, Unsorted included."
+   "Outline: deleting a section no longer makes it look like its beats jumped into the section next door. They were always going to Unsorted — but the surviving section stretched across the board and wrapped its cards into a grid, which read exactly like everything had been dumped there. A section only takes the whole board when it really is the only column, Unsorted included."
   ]
  },
  {
@@ -125,14 +134,14 @@
   "date": "2026-08-09",
   "changes": [
    "Outline: every column on the board now starts at the same width, Unsorted included. Its width used to be set by its own contents, so the one-line hint stretched it wider than the sections beside it.",
-   "Outline: columns resize by dragging their right edge, and the edge is now a proper 10px target that lights up when you are on it \u2014 the old handle sat half outside the column, which clipped it down to a 3px sliver you had to hit exactly. Unsorted resizes too. A section\u2019s width saves with the script."
+   "Outline: columns resize by dragging their right edge, and the edge is now a proper 10px target that lights up when you are on it — the old handle sat half outside the column, which clipped it down to a 3px sliver you had to hit exactly. Unsorted resizes too. A section’s width saves with the script."
   ]
  },
  {
   "version": "6.60",
   "date": "2026-08-09",
   "changes": [
-   "Deleting an outline section no longer deletes the beats inside it. They move to \u201cUnsorted\u201d \u2014 the dashed column furthest left on the board \u2014 in the order they were in, and you drag them wherever they belong. It is a single undo step, and the trash button now says so before you click it.",
+   "Deleting an outline section no longer deletes the beats inside it. They move to “Unsorted” — the dashed column furthest left on the board — in the order they were in, and you drag them wherever they belong. It is a single undo step, and the trash button now says so before you click it.",
    "The one and only way to delete a beat is the delete button on the beat itself.",
    "The holding column for beats with no section is now called Unsorted (it was Uncategorized)."
   ]
@@ -141,9 +150,9 @@
   "version": "6.59",
   "date": "2026-08-09",
   "changes": [
-   "Outline presets now use the beats you already have. Choosing a structure over an existing outline re-homes your cards into its sections and re-fits their page estimates to fit — instead of dumping them in \u201cUncategorized\u201d and laying a second set of blank cards on top. Every section comes out filled, its beats still add up to its page budget exactly, and nothing is created or deleted. It is still one undo step.",
-   "Beats are spread across the new sections in proportion to their page budgets, in the order they were already in \u2014 with more beats than sections, the bigger sections get more of them; with fewer, the sections carrying the most story get one each.",
-   "Page estimates now belong to each outline variation. Changing how many pages a beat spans on one variation no longer changes it on the others \u2014 the same beat can be a two-pager in one arrangement and a six-pager in another. Editing on the Outline Bar writes the variation the bar is showing, not the one open on the board."
+   "Outline presets now use the beats you already have. Choosing a structure over an existing outline re-homes your cards into its sections and re-fits their page estimates to fit — instead of dumping them in “Uncategorized” and laying a second set of blank cards on top. Every section comes out filled, its beats still add up to its page budget exactly, and nothing is created or deleted. It is still one undo step.",
+   "Beats are spread across the new sections in proportion to their page budgets, in the order they were already in — with more beats than sections, the bigger sections get more of them; with fewer, the sections carrying the most story get one each.",
+   "Page estimates now belong to each outline variation. Changing how many pages a beat spans on one variation no longer changes it on the others — the same beat can be a two-pager in one arrangement and a six-pager in another. Editing on the Outline Bar writes the variation the bar is showing, not the one open on the board."
   ]
  },
  {
