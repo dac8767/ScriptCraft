@@ -141,8 +141,17 @@ try {
       { hash: 'cmp-b', short_hash: 'cmpb', message: 'compare B', date: new Date().toISOString() },
     );
     window.__scProjectStore.getState().bumpVersionsTick?.();
+    /* v6.80 — DEREK'S EXACT HOSTING (his screenshot): a dock row on the
+       right, the tool open in FLOATING mode. On his Mac the summary showed
+       nowhere; comparing must SEAT the tool into the docked panel. */
+    const st = window.__scStore.getState();
+    st.setTempTool(null);
+    st.setToolConfig({ ...st.toolConfig, history: { side: 'right', enabled: true } });
+    st.setToolMode('history', 'floating');
   });
-  await page.evaluate(() => window.__scProjectStore.getState().setVersions([...window.__memVersions]));
+  await settle(page);
+  await page.evaluate(() => document.querySelector('[data-tool-row="history"]').click());
+  await settle(page);
   await page.waitForFunction(() => document.querySelectorAll('.version-item').length === 2, { timeout: 5000 });
 
   /* v6.79, Derek: "make the items in the snapshot list take up less room.
@@ -160,11 +169,27 @@ try {
 
   /* v6.75, Derek: "items start not selectable, but when I click 'Compare'
      it allows me to pick two items from the list." v6.79: no checkboxes —
-     "clicking anywhere on an item in the list should select it". */
+     "clicking anywhere on an item in the list should select it".
+     v6.80: Compare… lives BESIDE Take Snapshot, and the explaining sentence
+     only appears once it is clicked. */
   const restBoxes = await page.locator('.version-compare-checkbox').count();
   ok(restBoxes === 0, `there are no checkboxes, at rest or ever (${restBoxes})`);
-  await page.click('.version-compare-btn');            // Compare… enters the mode
+  const atRest = await page.evaluate(() => {
+    const take = document.querySelector('.version-history-actions .version-history-take');
+    const cmp = document.querySelector('.version-history-actions .version-compare-btn');
+    const midY = (el) => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; };
+    return {
+      together: !!take && !!cmp && Math.abs(midY(take) - midY(cmp)) < 6,
+      bar: !!document.querySelector('.version-compare-bar'),
+    };
+  });
+  ok(atRest.together, 'Compare… sits beside + Take Snapshot, same row');
+  ok(!atRest.bar, 'and the explaining sentence is hidden until it is clicked');
+  await page.click('.version-history-actions .version-compare-btn');   // Compare… enters the mode
   await settle(page);
+  const barText = await page.evaluate(() => document.querySelector('.version-compare-bar')?.textContent ?? '');
+  ok(/Compare two snapshots side by side/.test(barText),
+    `clicking Compare… shows the sentence ("${barText.slice(0, 52)}…")`);
   await page.locator('.version-item').nth(0).click();
   const picked = await page.evaluate(() => ({
     sel: document.querySelectorAll('.version-item.compare-selected').length,
@@ -179,6 +204,24 @@ try {
   await page.locator('.version-item').nth(1).click();
   // the second pick IS the go — no separate confirm click
   await page.waitForSelector('.fs-compare-takeover .script-diff-view', { timeout: 8000 });
+  await settle(page);
+  /* v6.80, Derek's screenshot: with the tool in FLOATING mode his Mac
+     showed an expanded dock row and NO summary anywhere. Starting a
+     compare must SEAT the tool into the docked panel — a definite-height
+     inline body the summary cannot vanish from. */
+  const seated = await page.evaluate(() => {
+    const host = document.querySelector('.tool-inline[data-tool="history"] .version-summary-host');
+    const b = host?.getBoundingClientRect();
+    return {
+      mode: window.__scStore.getState().toolMode['history'],
+      inlineHost: !!host,
+      w: b ? Math.round(b.width) : 0,
+      h: b ? Math.round(b.height) : 0,
+    };
+  });
+  ok(seated.mode === 'docked', `comparing seats the tool INTO the docked panel (mode ${seated.mode})`);
+  ok(seated.inlineHost && seated.w > 100 && seated.h > 60,
+    `and the summary lives in the panel's inline body, visibly sized (${seated.w}×${seated.h}px)`);
   const geo = await page.evaluate(() => {
     const take = document.querySelector('.fs-compare-takeover').getBoundingClientRect();
     const center = document.querySelector('.editor-center').getBoundingClientRect();
@@ -235,6 +278,46 @@ try {
   }));
   ok(!back.takeover && back.editor, 'closing the compare returns the editor');
   ok(back.rows === 2 && back.take, `and the snapshot list comes back in the panel (${back.rows} rows)`);
+
+  /* ── v6.80, Derek: "automatically create a snapshot when the draft
+     number is changed. label it as the previous draft name." Driven
+     through the real Project ▸ Set Draft Number… dialog. ── */
+  await page.evaluate(() => {
+    window.__checkinCalls.length = 0;
+    window.__scStore.getState().setDraftLabel('1st Draft');
+  });
+  const openMenu = async (name) => {
+    for (let i = 0; i < 3; i++) {
+      await page.click(`.menu-item:has-text("${name}")`);
+      await settle(page);
+      if (await page.evaluate(() => !!document.querySelector('.menu-dropdown'))) return;
+    }
+    throw new Error(`could not open the ${name} menu`);
+  };
+  const setDraftTo = async (label) => {
+    await openMenu('Project');
+    await page.click('.menu-dropdown :text("Set Draft Number")');
+    await page.waitForSelector('#draft-input', { timeout: 5000 });
+    await page.fill('#draft-input', label);
+    await page.click('.dialog-actions .dialog-primary');
+    await settle(page);
+  };
+  await setDraftTo('2nd Draft');
+  await page.waitForFunction(() => window.__checkinCalls.length === 1, { timeout: 5000 });
+  const draftCalls = await page.evaluate(() => window.__checkinCalls);
+  ok(draftCalls[0] === '1st Draft',
+    `changing the draft files a snapshot named after the OLD draft ("${draftCalls[0]}")`);
+  ok(await page.evaluate(() => window.__scStore.getState().draftLabel) === '2nd Draft',
+    'and the draft label itself changes');
+  await page.waitForFunction(() => [...document.querySelectorAll('.version-message')]
+    .some((m) => m.textContent === '1st Draft'), { timeout: 5000 }).catch(() => {});
+  ok(await page.evaluate(() => [...document.querySelectorAll('.version-message')]
+    .some((m) => m.textContent === '1st Draft')),
+    'the "1st Draft" snapshot appears in the open window right away');
+  await setDraftTo('2nd Draft');                       // unchanged label
+  await new Promise((r) => setTimeout(r, 600));
+  ok((await page.evaluate(() => window.__checkinCalls)).length === 1,
+    're-applying the SAME draft name takes no snapshot');
 
 } catch (e) {
   console.log('PROBE ERROR:', e.message);

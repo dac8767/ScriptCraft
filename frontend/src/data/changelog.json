@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.80",
+  "date": "2026-08-12",
+  "changes": [
+   "Starting a comparison now seats the Script History tool into the side panel itself. Before, if the tool was set to open as a floating window, the summary lived in that window — and on the Mac the window could fail to surface at all, leaving an expanded row with nothing under it. The summary now always has a real, fixed home in the panel while a compare is open.",
+   "The Compare… button sits beside + Take Snapshot at the top of the Script History window. The sentence explaining it (“Compare two snapshots side by side — pick two from the list”) only appears after you click Compare…, while you are picking.",
+   "Changing the draft number automatically files a snapshot of the script as it stood, named after the previous draft — change “1st Draft” to “2nd Draft” and a snapshot called “1st Draft” appears in Script History, its title page still reading 1st Draft. No snapshot is taken if the draft name did not actually change."
+  ]
+ },
+ {
   "version": "6.79",
   "date": "2026-08-12",
   "changes": [

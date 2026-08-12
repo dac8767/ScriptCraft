@@ -132,6 +132,15 @@ const VersionHistory: React.FC = () => {
 
       setCompareMode(false);
       setCompareSelection([]);
+      /* v6.80, Derek (reported twice): the summary must show in the SIDE
+         PANEL — with the tool in a floating window his Mac showed an
+         expanded dock row and no window at all. Comparing SEATS the tool
+         into the docked panel, the one hosting with a definite-height
+         inline body. An explicit product rule, not a remembered-mode read
+         (v4.84: only explicit gestures write the mode — starting a compare
+         is one). */
+      const es = useEditorStore.getState();
+      if (es.toolMode['history'] !== 'docked') es.setToolMode('history', 'docked');
       const emptyDoc = { type: 'doc', content: [] };
       setScriptCompare({
         docA: (respA?.content || emptyDoc) as Record<string, unknown>,
@@ -319,12 +328,24 @@ const VersionHistory: React.FC = () => {
         </div>
       )}
       {!compareSummary && <>
+      {/* v6.80, Derek: Compare… sits beside Take Snapshot; the explaining
+          sentence only appears once Compare… is clicked. */}
       <div className="version-history-actions">
         <button
           className="version-history-take"
           title="Take a snapshot of this script"
           onClick={() => useEditorStore.getState().setTakeSnapshotRequest(true)}
         >+ Take Snapshot</button>
+        {!compareMode && (
+          <button
+            className="version-compare-btn"
+            disabled={!currentScriptId || versions.length < 2}
+            title={!currentScriptId || versions.length < 2
+              ? 'You need an open script and at least two snapshots to compare'
+              : 'Compare two snapshots side by side'}
+            onClick={() => { setCompareSelection([]); setCompareMode(true); }}
+          >Compare…</button>
+        )}
       </div>
       {!currentProject && (
         <div className="version-history-empty">
@@ -343,31 +364,17 @@ const VersionHistory: React.FC = () => {
 
       {loading && <div className="version-history-loading">Loading snapshots...</div>}
 
-      {currentScriptId && versions.length >= 2 && (
+      {compareMode && (
         <div className="version-compare-bar">
-          {!compareMode ? (
-            <>
-              <span className="version-compare-info">Compare two snapshots side by side</span>
-              <button
-                className="version-compare-btn"
-                onClick={() => { setCompareSelection([]); setCompareMode(true); }}
-              >
-                Compare…
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="version-compare-info">
-                {compareSelection.length === 0 ? 'Pick two snapshots to compare' : 'Pick one more snapshot'}
-              </span>
-              <button
-                className="version-compare-clear"
-                onClick={() => { setCompareMode(false); setCompareSelection([]); }}
-              >
-                Cancel
-              </button>
-            </>
-          )}
+          <span className="version-compare-info">
+            Compare two snapshots side by side — {compareSelection.length === 0 ? 'pick two from the list' : 'pick one more'}
+          </span>
+          <button
+            className="version-compare-clear"
+            onClick={() => { setCompareMode(false); setCompareSelection([]); }}
+          >
+            Cancel
+          </button>
         </div>
       )}
 

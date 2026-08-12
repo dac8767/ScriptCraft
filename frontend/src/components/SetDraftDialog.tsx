@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
+import { useProjectStore } from '../stores/projectStore';
+import { api } from '../services/api';
+import { composeSaveContent } from '../utils/screenplaySaveContent';
 import { showToast } from './Toast';
 import { Modal } from './Modal';
 
@@ -25,6 +28,30 @@ export function applyDraftNumber(
   finalLabel: string,
   opts?: { toast?: boolean },   // v1.34: silent for background syncs (Save dialog)
 ): void {
+  /* v6.80, Derek: "automatically create a snapshot when the draft number is
+     changed. label it as the previous draft name." The payload is composed
+     SYNCHRONOUSLY, before the label and the title page change below — the
+     snapshot is the old draft exactly as it stood, its own name still on
+     its title page. Persisting is async and must never block or fail the
+     draft change itself. */
+  const prevLabel = useEditorStore.getState().draftLabel.trim();
+  if (prevLabel && prevLabel !== finalLabel && editor && !editor.isDestroyed) {
+    const ps = useProjectStore.getState();
+    const { currentProject, currentScriptId } = ps;
+    if (currentProject && currentScriptId) {
+      const content = composeSaveContent(editor.getJSON());
+      void (async () => {
+        try {
+          await api.saveScript(currentProject.id, currentScriptId, { content });
+          await api.checkin(currentProject.id, prevLabel);
+          ps.bumpVersionsTick();   // an open Snapshots window shows it right away
+          showToast(`Snapshot “${prevLabel}” saved`, 'success');
+        } catch (err) {
+          showToast(`Could not snapshot “${prevLabel}”: ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
+        }
+      })();
+    }
+  }
   useEditorStore.getState().setDraftLabel(finalLabel);
   if (editor) {
     let updated = false;

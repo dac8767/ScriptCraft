@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.79 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.80 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -240,6 +240,41 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.80 — the empty-panel mystery SOLVED; Compare… moves; draft auto-snapshot
+
+- Derek's screenshot cracked the "summary not appearing" case v6.79 could
+  only harden against: his Script History had a DOCK ROW with the tool open
+  in **floating mode** — `isToolOpen` true (caret down) but `isOpenInline`
+  false, so the row sat expanded with NO body and the summary lived in a
+  ToolWindowFrame that never surfaced on his Mac (Chromium shows that
+  window fine — engine/remembered-rect territory). THE FIX IS STRUCTURAL:
+  `runScriptCompare` seats the tool into the docked panel
+  (`setToolMode('history','docked')`) before `setScriptCompare` — the
+  summary's home is the accordion's definite-height inline body, which
+  cannot fail to surface. v4.84 note: this is an explicit product rule
+  writing the mode, not an open-path read.
+- Compare… button moved beside + Take Snapshot in
+  `.version-history-actions` (disabled until a script + 2 snapshots); the
+  `version-compare-bar` renders ONLY in compareMode, with Derek's sentence
+  "Compare two snapshots side by side — pick two from the list / pick one
+  more" + Cancel.
+- **Draft change auto-snapshot** (Derek: "label it as the previous draft
+  name"): `applyDraftNumber` (SetDraftDialog.tsx — the ONE choke point;
+  the dialog, the Settings mirror and Save-As's onDraftCommitted all run
+  it) composes the save payload SYNCHRONOUSLY (composeSaveContent) before
+  the label/title-page mutate — the snapshot's own title page still reads
+  the old draft — then async saveScript → checkin(prevLabel) →
+  bumpVersionsTick, toast "Snapshot “1st Draft” saved". Skipped when: no
+  prev label, label unchanged, no project/script (hosted no-op), editor
+  gone. Failure toasts but never blocks the draft change.
+- check-v673 → 41: Derek's floating-mode screenshot state is now a driven
+  regression (dock row + floating → compare → mode 'docked' + summary in
+  `.tool-inline[data-tool=history]` at 277×112px), Compare…-beside-Take,
+  sentence-only-in-mode, and the draft arc through the real Project ▸ Set
+  Draft Number… dialog (old-name checkin, row appears live, same-name =
+  no snapshot). Catalog 475 → 477 (Compare…'s two tooltip strings).
+- Gates: tsc 0, vitest 1196, build ok, check-all 1041/0.
 
 ### v6.79 — slim one-row snapshot list; rows ARE the compare pickers
 
