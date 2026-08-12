@@ -297,7 +297,7 @@ Durable bits kept live here:
   run 1017/2 — both fails were check-v669's bounded load-wait expiring
   under 4-way contention (solo: 9/9; the SPEED-AUDIT §3 "re-run before
   believing a weird parallel failure" case, made likelier by the suite
-  gaining the keyboard-heavy check-v677 as a neighbor).
+  gaining the keyboard-heavy check-v677 as a neighbor). Rerun: 1019/0.
 
 ### v6.76 — Take Snapshot into the body; the panel survives the compare
 
