@@ -144,16 +144,39 @@ try {
   });
   await page.evaluate(() => window.__scProjectStore.getState().setVersions([...window.__memVersions]));
   await page.waitForFunction(() => document.querySelectorAll('.version-item').length === 2, { timeout: 5000 });
+
+  /* v6.79, Derek: "make the items in the snapshot list take up less room.
+     move the item buttons so all info is in one row" — name, age and every
+     button share ONE line, and the row is genuinely slim. */
+  const row = await page.evaluate(() => {
+    const item = document.querySelector('.version-item');
+    const mid = (el) => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; };
+    const parts = ['.version-message', '.version-date', '.version-view-btn', '.version-restore-btn', '.version-delete-btn']
+      .map((sel) => { const el = item.querySelector(sel); if (!el) throw new Error(`missing ${sel}`); return mid(el); });
+    return { h: item.getBoundingClientRect().height, spread: Math.max(...parts) - Math.min(...parts) };
+  });
+  ok(row.spread < 8, `name, age and all three buttons sit on ONE row (spread ${Math.round(row.spread)}px)`);
+  ok(row.h <= 34, `and the row is slim (${Math.round(row.h)}px tall)`);
+
   /* v6.75, Derek: "items start not selectable, but when I click 'Compare'
-     it allows me to pick two items from the list." */
+     it allows me to pick two items from the list." v6.79: no checkboxes —
+     "clicking anywhere on an item in the list should select it". */
   const restBoxes = await page.locator('.version-compare-checkbox').count();
-  ok(restBoxes === 0, `at rest the rows carry NO checkboxes (${restBoxes})`);
+  ok(restBoxes === 0, `there are no checkboxes, at rest or ever (${restBoxes})`);
   await page.click('.version-compare-btn');            // Compare… enters the mode
-  await page.waitForSelector('.version-compare-checkbox', { timeout: 5000 });
-  const modeBoxes = await page.locator('.version-compare-checkbox').count();
-  ok(modeBoxes === 2, `Compare… turns the pick mode on (${modeBoxes} checkboxes)`);
-  await page.locator('.version-compare-checkbox').nth(0).click();
-  await page.locator('.version-compare-checkbox').nth(1).click();
+  await settle(page);
+  await page.locator('.version-item').nth(0).click();
+  const picked = await page.evaluate(() => ({
+    sel: document.querySelectorAll('.version-item.compare-selected').length,
+    buttons: document.querySelectorAll('.version-item .version-delete-btn').length,
+  }));
+  ok(picked.sel === 1, `clicking a ROW picks it (${picked.sel} selected)`);
+  ok(picked.buttons === 0, 'the row buttons stand down while picking — the row is the picker');
+  await page.locator('.version-item').nth(0).click();  // click again = unpick
+  ok(await page.evaluate(() => document.querySelectorAll('.version-item.compare-selected').length) === 0,
+    'clicking it again unpicks it');
+  await page.locator('.version-item').nth(0).click();
+  await page.locator('.version-item').nth(1).click();
   // the second pick IS the go — no separate confirm click
   await page.waitForSelector('.fs-compare-takeover .script-diff-view', { timeout: 8000 });
   const geo = await page.evaluate(() => {
@@ -178,9 +201,14 @@ try {
   const sum = await page.evaluate(() => {
     const host = document.querySelector('.version-history-body .version-summary-host .script-diff-summary');
     const inDiff = document.querySelector('.fs-compare-takeover .script-diff-summary');
-    return { inPanel: !!host, inDiff: !!inDiff, text: host?.textContent ?? '' };
+    const box = host?.getBoundingClientRect();
+    return { inPanel: !!host, inDiff: !!inDiff, text: host?.textContent ?? '', w: box?.width ?? 0, h: box?.height ?? 0 };
   });
   ok(sum.inPanel, 'the compare summary appears in the Snapshots side panel');
+  /* v6.79, Derek: "the compare summary is not appearing" — existence is not
+     enough; the block must have real on-screen SIZE (a %-height collapse
+     would leave it in the DOM at 0px, and this check would have lied). */
+  ok(sum.w > 100 && sum.h > 60, `and it is genuinely VISIBLE (${Math.round(sum.w)}×${Math.round(sum.h)}px)`);
   ok(!sum.inDiff, 'and not as a second copy inside the diff view');
   /* v6.76, Derek: "when in the compare window, hide the snapshot list from
      the side panel window (only show the comparison summary)". */

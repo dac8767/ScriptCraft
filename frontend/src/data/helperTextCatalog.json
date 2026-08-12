@@ -589,6 +589,15 @@
   ]
  },
  {
+  "text": "Click to pick this snapshot for the comparison",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/VersionHistory.tsx"
+  ]
+ },
+ {
   "text": "Click to preview",
   "kind": "tooltip",
   "sites": 2,
@@ -2923,15 +2932,6 @@
   "area": "Ribbon Toolbar",
   "where": [
    "components/Toolbar.tsx"
-  ]
- },
- {
-  "text": "Select for compare",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Everything Else",
-  "where": [
-   "components/VersionHistory.tsx"
   ]
  },
  {

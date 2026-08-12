@@ -54,13 +54,9 @@
   color: var(--fd-text-muted); padding: 4px 10px;
   border-radius: 4px; cursor: pointer; font-size: 11px;
 }
-.version-compare-checkbox {
-  margin-right: 6px; cursor: pointer;
-}
-.version-item.compare-selected {
-  background: var(--fd-overlay-light);
-  border-left: 3px solid var(--fd-accent);
-}
+/* (v6.79: the compare checkboxes are gone — the whole row is the picker;
+   .version-item.compare-selected lives with the row rules in
+   11-spell-grammar-history.css.) */
 
 /* v6.74, Derek: the compare view owns the EDITOR AREA (fs-tool-takeover in
    editor-center), never the viewport — the old fixed overlay put its

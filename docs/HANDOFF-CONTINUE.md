@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.78 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.79 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -240,6 +240,39 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.79 — slim one-row snapshot list; rows ARE the compare pickers
+
+- Derek, three items: the compare summary "is not appearing in the script
+  history window" (regression report), slim the snapshot rows to one line
+  with the buttons inline, and compare-picking by clicking the ROW, no
+  checkboxes.
+- **Summary "not appearing" — what was actually found.** It renders in the
+  Chromium harness in BOTH hostings (temp floating window AND docked in
+  the right panel — the docked path was probed this round; the checks had
+  only ever driven the temp slot, the v4.84 entry-point lesson again). Two
+  real fixes shipped anyway: `.version-summary-host`'s `max-height: 45%`
+  became **340px** — a percentage there resolves against the flex body's
+  height, which WebKit may treat as indefinite (the §4 percentage-sizing
+  family; the Mac app is WebKit and the sandbox has no WebKit to prove
+  it) — and check-v673 now asserts the summary's REAL getBoundingClientRect
+  size, not mere DOM presence, so an invisible-but-mounted summary can
+  never pass again. If Derek still sees nothing, the next question is
+  WHAT the window shows during a compare (list? empty? closed?) — and
+  note the Tools ▸ "Compare with Snapshot…" door is TRACK CHANGES, a
+  different feature, in case he means that one.
+- Rows: `.version-item` is one flex line — name (flex:1, ellipsis) · age ·
+  actions; 4px padding, ~27px tall. `.version-item-top` and the dead
+  `.version-hash` rule are gone.
+- Compare picking: in compareMode the row's onClick toggles selection
+  (`toggleCompareSelect`), the action buttons UNMOUNT while picking (a
+  mis-click can't restore/delete), row carries role=option +
+  aria-selected + a pick tooltip (catalog rebuilt — same 475). Checkboxes
+  and their CSS deleted. Second pick still auto-fires the compare.
+- check-v673 → 32: one-row geometry (mid-y spread < 8px, height ≤ 34px),
+  row-click pick/unpick, buttons absent in mode, summary VISIBLE at
+  418×111px.
+- Gates: tsc 0, vitest 1196, build ok, check-all 1032/0.
 
 ### v6.78 — plain EDITS in windows are undoable (Derek's retest)
 

@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.79",
+  "date": "2026-08-12",
+  "changes": [
+   "The snapshot list in Script History is compact now: one slim row per snapshot — name, age, and the View / Restore / Delete buttons all on the same line.",
+   "Picking snapshots to compare needs no checkboxes. Click Compare…, then click anywhere on a snapshot to pick it (click again to unpick); the second pick opens the comparison. While picking, the row buttons step aside so a click can’t restore or delete by accident.",
+   "The comparison summary’s box in the Script History window sizes itself in fixed pixels instead of a percentage — the likely reason it could come up empty on the Mac’s browser engine while looking fine elsewhere. The checks now also verify the summary’s real on-screen size, not just its presence."
+  ]
+ },
+ {
   "version": "6.78",
   "date": "2026-08-12",
   "changes": [

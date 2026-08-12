@@ -388,65 +388,62 @@ const VersionHistory: React.FC = () => {
               No snapshots yet. Use File &gt; Script History &gt; Take Snapshot to save one.
             </div>
           )}
+          {/* v6.79, Derek: ONE compact row per snapshot — name, age and the
+              buttons together. In compare mode the whole ROW is the picker
+              ("clicking anywhere on an item in the list should select it"),
+              so the buttons stand down while picking. */}
           {versions.map((v, i) => (
             <div
               key={v.hash}
               className={`version-item ${selectedVersion?.hash === v.hash ? 'selected' : ''}${compareSelection.includes(v.hash) ? ' compare-selected' : ''}`}
-              onClick={() => handleViewDiff(v, i)}
+              role={compareMode ? 'option' : undefined}
+              aria-selected={compareMode ? compareSelection.includes(v.hash) : undefined}
+              title={compareMode ? 'Click to pick this snapshot for the comparison' : undefined}
+              onClick={() => (compareMode ? toggleCompareSelect(v.hash) : handleViewDiff(v, i))}
             >
-              <div className="version-item-top">
-                {currentScriptId && compareMode && (
-                  <input
-                    type="checkbox"
-                    className="version-compare-checkbox"
-                    checked={compareSelection.includes(v.hash)}
-                    onChange={(e) => { e.stopPropagation(); toggleCompareSelect(v.hash); }}
-                    onClick={(e) => e.stopPropagation()}
-                    title="Select for compare"
-                  />
-                )}
-                <span className="version-date">{relativeTime(v.date)}</span>
-              </div>
-              <div className="version-message">{v.message}</div>
-              <div className="version-item-actions">
-                {currentScriptId && (
+              <span className="version-message">{v.message}</span>
+              <span className="version-date">{relativeTime(v.date)}</span>
+              {!compareMode && (
+                <span className="version-item-actions">
+                  {currentScriptId && (
+                    <button
+                      className="version-view-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (currentProject && currentScriptId) {
+                          setVersionHistoryOpen(false);
+                          setSelectedVersion(null);
+                          setRowSummary(null);
+                          navigate(`/project/${currentProject.id}/history/${currentScriptId}/${v.hash}`);
+                        }
+                      }}
+                      title="View this snapshot in the editor (read-only)"
+                    >
+                      View
+                    </button>
+                  )}
                   <button
-                    className="version-view-btn"
+                    className="version-restore-btn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (currentProject && currentScriptId) {
-                        setVersionHistoryOpen(false);
-                        setSelectedVersion(null);
-                        setRowSummary(null);
-                        navigate(`/project/${currentProject.id}/history/${currentScriptId}/${v.hash}`);
-                      }
+                      handleRestore(v);
                     }}
-                    title="View this snapshot in the editor (read-only)"
+                    title="Restore this snapshot"
                   >
-                    View
+                    Restore
                   </button>
-                )}
-                <button
-                  className="version-restore-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRestore(v);
-                  }}
-                  title="Restore this snapshot"
-                >
-                  Restore
-                </button>
-                <button
-                  className="version-delete-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void handleDelete(v);
-                  }}
-                  title="Delete this snapshot (your script is not touched)"
-                >
-                  Delete
-                </button>
-              </div>
+                  <button
+                    className="version-delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleDelete(v);
+                    }}
+                    title="Delete this snapshot (your script is not touched)"
+                  >
+                    Delete
+                  </button>
+                </span>
+              )}
             </div>
           ))}
         </div>

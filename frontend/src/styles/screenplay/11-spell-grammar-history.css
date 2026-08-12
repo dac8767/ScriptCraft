@@ -195,11 +195,15 @@ html.android .grammar-issue.grammar-grammar {
 }
 
 /* v6.75: the compare summary rides the Snapshots panel; the row click's
-   plain-words note replaces the old raw-JSON diff dump. */
+   plain-words note replaces the old raw-JSON diff dump.
+   v6.79: PIXEL max-height, not a percentage — Derek reported the summary
+   "not appearing" on the Mac. A % here resolves against the flex body's
+   height, which WebKit is entitled to treat as indefinite (§4's
+   percentage-sizing family); a px clamp cannot collapse on any engine. */
 .version-summary-host {
   flex-shrink: 0;
   border-bottom: 1px solid var(--fd-border);
-  max-height: 45%;
+  max-height: 340px;
   overflow-y: auto;
 }
 .version-summary-host .script-diff-summary {
@@ -307,8 +311,16 @@ html.android .grammar-issue.grammar-grammar {
   cursor: pointer;
 }
 .version-history-retry:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
+/* v6.79, Derek: "make the items in the script history snapshot list take
+   up less room. move the item buttons so all info is in one row." One flex
+   row: name (truncates) · age · buttons. In compare mode the whole row is
+   the picker, so the buttons unmount and the row slims further. */
 .version-item {
-  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  min-height: 26px;
   border-bottom: 1px solid var(--fd-overlay-subtle);
   cursor: pointer;
   transition: background 0.1s;
@@ -321,31 +333,30 @@ html.android .grammar-issue.grammar-grammar {
   background: rgba(74, 158, 255, 0.15);
   border-left: 3px solid var(--fd-accent);
 }
-.version-item-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-.version-hash {
-  font-family: 'Courier New', monospace;
-  font-size: 11px;
-  color: var(--fd-accent);
-  font-weight: 600;
+/* v6.79: a picked row in compare mode — the row IS the checkbox now. */
+.version-item.compare-selected {
+  background: rgba(74, 158, 255, 0.22);
+  border-left: 3px solid var(--fd-accent);
 }
 .version-date {
   font-size: 11px;
   color: var(--fd-text-muted);
+  flex-shrink: 0;
 }
 .version-message {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 12px;
   color: var(--fd-text);
   line-height: 1.4;
-  margin-bottom: 6px;
 }
 .version-item-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 .version-view-btn,
 .version-restore-btn {
