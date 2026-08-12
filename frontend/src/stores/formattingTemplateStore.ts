@@ -117,6 +117,8 @@ interface FormattingTemplateState {
   setTransitionHidden: (text: string, hidden: boolean) => void;
   setTransitionOrder: (order: string[]) => void;
   resetTransitions: () => void;
+  /** v6.77: exact restore — the Reset Transitions window-undo path. */
+  restoreTransitions: (snap: { custom: string[]; hidden: string[]; order: string[] }) => void;
   /** The effective transition list the editor's picker shows: the built-ins and
    *  the writer's own in the user's drag order, minus any hidden built-ins. */
   getEffectiveTransitions: () => string[];
@@ -269,6 +271,10 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
   resetTransitions: () => {
     saveTransitionOverrides({ custom: [], hidden: [], order: [] });
     set({ customTransitions: [], hiddenTransitions: [], transitionOrder: [] });
+  },
+  restoreTransitions: (snap) => {
+    saveTransitionOverrides(snap);
+    set({ customTransitions: snap.custom, hiddenTransitions: snap.hidden, transitionOrder: snap.order });
   },
   getEffectiveTransitions: () => {
     const { customTransitions, hiddenTransitions, transitionOrder } = get();

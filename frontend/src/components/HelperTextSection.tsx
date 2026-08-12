@@ -19,6 +19,7 @@ import { LuRotateCcw } from 'react-icons/lu';
 import { FaRegEye, FaRegEyeSlash, FaExternalLinkAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { helperDestination } from '../utils/helperTextDestinations';
+import { runMajorChange } from '../utils/majorChange';
 import { HELPER_ICONS } from '../data/helperTextIcons';
 import catalog from '../data/helperTextCatalog.json';
 
@@ -136,10 +137,55 @@ function HelperRow({ entry }: { entry: HelperEntry }) {
 export function HelperTextSection({ entries }: { entries: HelperEntry[] }) {
   const overrides = useEditorStore((s) => s.helperTextOverrides);
   const hiddenList = useEditorStore((s) => s.helperTextHidden);
-  const resetAllHelperText = useEditorStore((s) => s.resetAllHelperText);
   const [kind, setKind] = useState<(typeof KIND_FILTERS)[number]>('all');
   const [showHidden, setShowHidden] = useState(false);
   const [folded, setFolded] = useState<Set<string>>(() => new Set());
+
+  /* v6.77, Derek: "i accidentally hit the 'reset helper text' button and all
+     my hard work disappeared." A warning window first, and the reset lands
+     on the window-undo lane — ⌘Z brings the work back (majorChange). */
+  const handleResetAll = () => {
+    const st = useEditorStore.getState();
+    const n = Object.keys(st.helperTextOverrides).length;
+    const changes = `${n} helper text change${n === 1 ? '' : 's'}`;
+    void runMajorChange({
+      title: 'Reset Helper Text',
+      message: `Reset all ${changes} back to the app’s own words?\n\nEvery string you have rewritten — and every one you blanked — goes back to its default.`,
+      confirmLabel: 'Reset',
+      label: `Reset helper text (${changes})`,
+      capture: () => {
+        const prev = { ...st.helperTextOverrides };
+        return () => useEditorStore.getState().setHelperTextOverrides(prev);
+      },
+      run: () => useEditorStore.getState().resetAllHelperText(),
+    });
+  };
+
+  /* v6.77, Derek: "when 'Hidden' is clicked, show toggle button for
+     Hide/Show all." One button in the Hidden view: anything hidden →
+     Show all puts it ALL back; nothing hidden → Hide all checks every
+     item off. Warned and undoable like every bulk change. */
+  const handleBulkHidden = () => {
+    const st = useEditorStore.getState();
+    const hiding = st.helperTextHidden.length === 0;
+    const n = hiding ? HELPER_CATALOG.length : st.helperTextHidden.length;
+    const items = `${n} item${n === 1 ? '' : 's'}`;
+    void runMajorChange({
+      title: hiding ? 'Hide All Items' : 'Show All Items',
+      message: hiding
+        ? `Move all ${items} to the Hidden view?\n\nThe main list will be empty until you put items back.`
+        : `Put all ${items} back in the main list?\n\nThe Hidden view will be empty again.`,
+      confirmLabel: hiding ? 'Hide All' : 'Show All',
+      label: hiding ? `Hide all helper text items (${n})` : `Show all helper text items (${n})`,
+      capture: () => {
+        const prev = [...st.helperTextHidden];
+        return () => useEditorStore.getState().setHelperTextHidden(prev);
+      },
+      run: () => useEditorStore.getState().setHelperTextHidden(
+        hiding ? HELPER_CATALOG.map((e) => e.text) : [],
+      ),
+    });
+  };
 
   const hiddenSet = useMemo(() => new Set(hiddenList), [hiddenList]);
   const byKind = kind === 'all' ? entries : entries.filter((e) => e.kind === kind);
@@ -187,9 +233,18 @@ export function HelperTextSection({ entries }: { entries: HelperEntry[] }) {
             title="Items you've hidden from the list"
             onClick={() => setShowHidden((v) => !v)}
           >Hidden ({hiddenList.length})</button>
+          {showHidden && (
+            <button
+              className="dz-foot-btn ht-bulk-hidden"
+              title={hiddenList.length > 0
+                ? 'Put every hidden item back in the main list'
+                : 'Move every item to the Hidden view'}
+              onClick={handleBulkHidden}
+            >{hiddenList.length > 0 ? `Show all (${hiddenList.length})` : 'Hide all'}</button>
+          )}
         </div>
         {editedCount > 0 && (
-          <button className="dz-foot-btn ht-reset-all" onClick={resetAllHelperText}>
+          <button className="dz-foot-btn ht-reset-all" onClick={handleResetAll}>
             <LuRotateCcw /> Reset helper text ({editedCount})
           </button>
         )}

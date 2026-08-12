@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.76 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.77 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -241,74 +241,63 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
-### v6.70 — four more preset parts (the audit Derek asked for)
+### v6.77 — warnings on major-change buttons + window-action UNDO
 
-- Derek: "add annotation presets to the Settings > Presets tab options.
-  check the app for any additional presets missing from that list."
-- THE AUDIT. What the app lets a writer author, keep, and would want on
-  another machine — and which of it any preset part already carried:
-  | Thing | Where it lives | Verdict |
-  |---|---|---|
-  | Annotation presets | `viewState.markupPresets` | **ADDED** (his ask) |
-  | Keyboard shortcuts | `opendraft:shortcutOverrides` | **ADDED** |
-  | Design token values | `viewState.designVars` | **ADDED** |
-  | Helper text | `helperTextOverrides` + `helperTextHidden` | **ADDED** |
-  | Script Formats templates | `api.listFormattingTemplates()` | NOT added — they load through the HTTP backend the desktop app doesn't run (v6.69) |
-  | Snippets / shelf cards, tags, characters | per SCRIPT | NOT presets — they travel in the .odraft |
-  | Toolbar/menu/panel layout | captureCustomizations | already in Customizations |
-- FINDING worth acting on separately: `CUSTOMIZATION_FIELDS` does NOT list
-  `markupPresets`, though Customize ▸ Markups is where they're edited — so
-  Customize's **Cancel does not revert an annotation-preset change**, and the
-  customization export never carried them. Same family as the v4.79 "fields
-  that had DRIFTED out of this list" fix. NOT changed here (it alters Cancel
-  behaviour Derek hasn't asked about) — reported to him instead.
-- The registry did its job: adding the ids to `PresetPartId` broke the build
-  until `PART_DESC` gained all four, because it is typed
-  `Record<PresetPartId, …>`. A row cannot exist without a description, and a
-  description cannot exist without a row.
-- Care taken in the apply paths: a deliberate `null` shortcut (unbound on
-  purpose) survives the round trip; a corrupt annotation payload never wipes
-  the writer's presets; non-numeric design values are refused; and
-  helperTextHidden is RECONCILED rather than re-toggled, so applying the
-  same file twice doesn't flip things back on (a test pins that).
-- Gates: tsc 0, vitest 1190, build ok, check-all 951/0 (check-v663 now 19).
-
-### v6.69 — Snapshots stopped hanging (a missing guard, not a slow server)
-
-- Derek: "clicking on 'Snapshots' shows a window that is forever stuck on
-  'Loading snapshots...'".
-- ROOT CAUSE, and it is a single-source violation: `services/api.ts`'s
-  `request()` had NO empty-base guard, while `services/cloudApi.ts` — the
-  OTHER client against the same server — has had one all along
-  (`if (!base) throw NOT_CONFIGURED`). config.ts is explicit that "on Tauri
-  the HTTP backend is NOT used" and `getApiBase()` returns '' on desktop
-  unless a cloud URL is configured, so every Snapshots load fired at a
-  RELATIVE url through the Tauri invoke bridge and waited on a request that
-  could never arrive. api.ts now carries the same guard, worded identically.
-- Script History is a SERVER feature. There is no sidecar, no uvicorn, no
-  Rust snapshot command — the desktop app is frontend + Rust only. So on
-  Derek's Mac the window could never have worked; it just failed silently
-  instead of saying so. (Local snapshots would be a real feature build —
-  NOT started, and worth asking about before anyone does.)
-- Belt and braces: `utils/withTimeout.ts` bounds the WAIT (12s) in both
-  snapshot loaders — the Snapshots window and the Compare picker — so no
-  transport behaviour can put the spinner back. It bounds the wait rather
-  than aborting the request, because the loader doesn't own the request. A
-  "Try again" button replaces the dead end.
-- HONESTY NOTE for whoever reads this next: the exact mechanism of the
-  hang on Derek's machine was NOT reproduced here — the harness has no
-  Tauri IPC, and in the browser the request always settles. The guard is
-  provably right (api.ts was missing what cloudApi.ts has); the timeout is
-  what makes "forever" impossible regardless of mechanism. If he ever
-  reports it again, the message on screen now names what it could not
-  reach.
-- v6.69 also exposes `window.__scProjectStore` in DEV beside `__scStore` /
-  `__scEditor`: Snapshots reads the PROJECT store, and a check could not
-  reproduce "a script is open" without it.
-- check-v669 (8) drives the real menu path in both states and asserts the
-  window never sits on "Loading…", says something actionable, offers a
-  retry, settles inside the budget, and does not re-arm.
-- Gates: tsc 0, vitest 1182, build ok, check-all 949/0.
+- Derek, after losing his helper-text edits to one click: (1) "for this any
+  any button that makes major changes, always include a warning window";
+  (2) "when 'Hidden' is clicked, show toggle button for Hide/Show all";
+  (3) "using Undo button or ctrl+Z / cmd+Z should undo changes made in
+  windows as well."
+- **The architecture is a third undo LANE**, beside the script's
+  (ProseMirror) and the beat board's (v2.36): `stores/windowUndoStore.ts`
+  holds {label, at, undo(), redo()} stacks; `smartUndo`/`smartRedo` route
+  to whichever lane holds the NEWEST change (top-entry `at` vs
+  `lastDocEditAt` vs `lastBeatEditAt`). A window undo/redo toasts
+  "Undid: <label>" — the restored state may not be on screen, and a silent
+  restore would read as a dead key.
+- **`utils/majorChange.ts` is THE wrapper** (warn → capture → run → push):
+  every guarded button goes through `runMajorChange`, whose confirm text
+  ends by naming the undo key (formatCombo('Mod+Z') — ⌘Z/Ctrl+Z). Guarded:
+  Reset helper text; Hide all/Show all (new); Design's Reset all;
+  Annotation presets' Reset to Default; Reset All Shortcuts; ALL ten
+  customizeResets registry entries (each gained `what` for the warning and
+  optional `capture` — default capture is captureCustomizations/
+  restoreCustomizations, bespoke ones for pageLayout/transitions/elements);
+  Customize's Reset All keeps its type-to-confirm and now pushes undo too.
+  NOT undoable (stated in their existing warnings): snapshot deletes
+  (SQLite) and Settings ▸ Reset All Settings (multi-domain; warns already).
+- Bulk restore setters added for exact-replace (the preset appliers are
+  ADDITIVE and can't serve as undo): `setHelperTextOverrides`,
+  `setHelperTextHidden`, shortcutStore `restoreOverrides`,
+  formattingTemplateStore `restoreTransitions`, designSlice `setDesignVars`.
+- **⌘Z reaches windows**: undo/redo are owner:'system' in shortcuts.ts, so
+  the app's global keydown DELIBERATELY ignored them — outside the editor
+  nothing handled the key (Derek's "undo does not work"). MenuBar's capture
+  handler now routes undo/redo to smartUndo/smartRedo UNLESS the event
+  target is an input/textarea/contenteditable (native + TipTap keep those).
+  The DESKTOP app already routed ⌘Z through smartUndo via the native menu
+  accelerator (nativeMenuSync — "Undo/Redo stay OURS"), so it inherits the
+  window lane with no further wiring. Toolbar's undo/redo buttons subscribe
+  to the new store so a landed reset lights them.
+- Hidden view toggle: `.ht-bulk-hidden` renders only while showHidden —
+  "Show all (N)" when anything is hidden, "Hide all" when nothing is.
+- CHECK-WRITING LESSONS (both bit in the first run): (a) two `.click()`s on
+  `querySelectorAll(...)[0]` in ONE evaluate toggle the SAME row — React 18
+  batches, the list doesn't reflow between them; click [0] and [1]. (b) an
+  in-page BARE `import('/src/stores/shortcutStore.ts')` after a session of
+  HMR edits can be a SECOND module instance (the check-v642 trap) — my
+  setBinding went to the phantom store while the app reset the real one.
+  Fixed by driving the real recording UI (press Ctrl+Shift+F9 — F-keys
+  don't shift-transform like digits) and reading the ROW's text.
+- check-v677 (27): the full arc on helper text (warn → cancel → confirm →
+  Ctrl+Z → Ctrl+Shift+Z), Hidden bulk both directions, Design, a Customize
+  tab reset, Reset All Shortcuts — plus "the warning names the way back".
+- Helper catalog: 473 → 475 (the toggle's two tooltips).
+- Gates: tsc 0, vitest 1194, build ok, check-v677 27/27. First full-suite
+  run 1017/2 — both fails were check-v669's bounded load-wait expiring
+  under 4-way contention (solo: 9/9; the SPEED-AUDIT §3 "re-run before
+  believing a weird parallel failure" case, made likelier by the suite
+  gaining the keyboard-heavy check-v677 as a neighbor).
 
 ### v6.76 — Take Snapshot into the body; the panel survives the compare
 
@@ -412,281 +401,88 @@ Durable bits kept live here:
   check-v672 updated to the tool world.
 - Gates: tsc 0, vitest 1190, build ok, check-all 984/0.
 
-### v6.68 — Annotation Filter + a plain View Annotations toggle
+### v6.70 — four more preset parts (the audit Derek asked for)
 
-- Derek: "the current button 'annotation visibility' should be called
-  'Annotation Filter'. Make a new button that is called 'View Annotations'.
-  This is a simple on or off toggle, like the toggle for the side panels,
-  and the ribbon toolbar."
-- Note the history: v6.41 REMOVED a `toggleMarkups` Show/Hide button at his
-  request. This is a NEW key (`viewAnnotations`), not the retired one —
-  v6.41's discard rule means any layout still carrying `b:toggleMarkups`
-  shed it long ago, so reviving the old token would have been a trap.
-- The toggle drives `markupsVisible` — the SAME state as View ▸ Annotations
-  ▸ Show Annotations in Script and the Annotations window's Show button.
-  Icon carries the state (eye / crossed eye) the way the sizing lock swaps
-  its padlock; `active` lights it.
-- Both buttons are palette-only (Derek places annotation buttons himself),
-  so `migrateViewAnnotations` seats the new one immediately before the
-  filter in any saved layout that already has it — the `migrateResetSizes`
-  pattern. A layout without the filter is left alone.
-- CHECK-WRITING LESSON, and it cost real time: **HoverTooltip moves a
-  button's `title` into `data-tip-stash` while the pointer is over it** (it
-  suppresses the native tooltip). A title-based selector therefore goes
-  blind exactly when a check is clicking — my first draft reported the
-  button "vanishing from the ribbon" mid-check. Address ribbon buttons by
-  `[data-key="<builtin>"]` and read the tip from either attribute.
-  Related: the first draft ALSO passed "the button goes unlit" while the
-  button was missing entirely (`btn?.classList` → null → `!null` is true).
-  A state reader must THROW when its element is absent, never report a
-  default — that is the third time this session an assert has passed on a
-  missing element.
-- check-v668 (14) drives both buttons: the rename, the filter popover still
-  opening, the toggle hiding and showing the icons for real, the state
-  round-trip with the View menu, and Customize's palette listing both.
-- Gates: tsc 0, vitest 1177, build ok, check-all 941/0.
+- Derek: "add annotation presets to the Settings > Presets tab options.
+  check the app for any additional presets missing from that list."
+- THE AUDIT. What the app lets a writer author, keep, and would want on
+  another machine — and which of it any preset part already carried:
+  | Thing | Where it lives | Verdict |
+  |---|---|---|
+  | Annotation presets | `viewState.markupPresets` | **ADDED** (his ask) |
+  | Keyboard shortcuts | `opendraft:shortcutOverrides` | **ADDED** |
+  | Design token values | `viewState.designVars` | **ADDED** |
+  | Helper text | `helperTextOverrides` + `helperTextHidden` | **ADDED** |
+  | Script Formats templates | `api.listFormattingTemplates()` | NOT added — they load through the HTTP backend the desktop app doesn't run (v6.69) |
+  | Snippets / shelf cards, tags, characters | per SCRIPT | NOT presets — they travel in the .odraft |
+  | Toolbar/menu/panel layout | captureCustomizations | already in Customizations |
+- FINDING worth acting on separately: `CUSTOMIZATION_FIELDS` does NOT list
+  `markupPresets`, though Customize ▸ Markups is where they're edited — so
+  Customize's **Cancel does not revert an annotation-preset change**, and the
+  customization export never carried them. Same family as the v4.79 "fields
+  that had DRIFTED out of this list" fix. NOT changed here (it alters Cancel
+  behaviour Derek hasn't asked about) — reported to him instead.
+- The registry did its job: adding the ids to `PresetPartId` broke the build
+  until `PART_DESC` gained all four, because it is typed
+  `Record<PresetPartId, …>`. A row cannot exist without a description, and a
+  description cannot exist without a row.
+- Care taken in the apply paths: a deliberate `null` shortcut (unbound on
+  purpose) survives the round trip; a corrupt annotation payload never wipes
+  the writer's presets; non-numeric design values are refused; and
+  helperTextHidden is RECONCILED rather than re-toggled, so applying the
+  same file twice doesn't flip things back on (a test pins that).
+- Gates: tsc 0, vitest 1190, build ok, check-all 951/0 (check-v663 now 19).
 
-### v6.67 — annotation icons follow the ZOOM (and any resize)
+### v6.69 — Snapshots stopped hanging (a missing guard, not a slow server)
 
-- Derek, two screenshots at 50% and 90%: "annotation do not scale or adapt
-  when the zoom is changed, putting them in the wrong place." At 90% an icon
-  sat INSIDE a line of dialogue.
-- Root cause, and it was written in the call site's own comment ("recompute
-  on doc change only"): every number in MarkupIconLayer is MEASURED off the
-  rendered page — `coordsAtPos`, `getBoundingClientRect` — and the page is
-  drawn with `transform: scale(zoom)`. `zoomLevel` was never in the effect's
-  deps, so the stored top/left stayed frozen while the text moved under them.
-  The chip's size ignored zoom too (Design knob only), so zoomed out it
-  swelled relative to the page.
-- Fix: `zoomLevel` in the deps; the chip's size is the Design knob TIMES the
-  measured page scale, carried per-spot as `IconSpot.size` (the icons are
-  absolute children of the SCROLLER, not of the scaled page, so nothing
-  scales them for us); and a ResizeObserver on the container covers every
-  OTHER geometry change — panel opening, window resize, page setup — since a
-  transform-scale leaves the layout box alone and an observer never sees the
-  zoom itself.
-- **NEGATIVE CONTROL, and do this more often.** check-v667 (10) was run
-  against the OLD code before the fix landed: 3 passed, 7 failed, with the
-  icon frozen at y=257 while the row moved to 185 (50%) and 313 (150%), and
-  the chip 22px at every zoom. That is the proof an assert measures the real
-  thing — the v6.62/v6.66 lesson twice over (a check that passes on broken
-  code is worse than no check).
-- This was a PRE-EXISTING bug in annotations generally, not something the
-  outline work introduced; it only became obvious once Send to Script
-  started placing them automatically.
-- Gates: tsc 0, vitest 1173, build ok, check-all 927/0.
+- Derek: "clicking on 'Snapshots' shows a window that is forever stuck on
+  'Loading snapshots...'".
+- ROOT CAUSE, and it is a single-source violation: `services/api.ts`'s
+  `request()` had NO empty-base guard, while `services/cloudApi.ts` — the
+  OTHER client against the same server — has had one all along
+  (`if (!base) throw NOT_CONFIGURED`). config.ts is explicit that "on Tauri
+  the HTTP backend is NOT used" and `getApiBase()` returns '' on desktop
+  unless a cloud URL is configured, so every Snapshots load fired at a
+  RELATIVE url through the Tauri invoke bridge and waited on a request that
+  could never arrive. api.ts now carries the same guard, worded identically.
+- Script History is a SERVER feature. There is no sidecar, no uvicorn, no
+  Rust snapshot command — the desktop app is frontend + Rust only. So on
+  Derek's Mac the window could never have worked; it just failed silently
+  instead of saying so. (Local snapshots would be a real feature build —
+  NOT started, and worth asking about before anyone does.)
+- Belt and braces: `utils/withTimeout.ts` bounds the WAIT (12s) in both
+  snapshot loaders — the Snapshots window and the Compare picker — so no
+  transport behaviour can put the spinner back. It bounds the wait rather
+  than aborting the request, because the loader doesn't own the request. A
+  "Try again" button replaces the dead end.
+- HONESTY NOTE for whoever reads this next: the exact mechanism of the
+  hang on Derek's machine was NOT reproduced here — the harness has no
+  Tauri IPC, and in the browser the request always settles. The guard is
+  provably right (api.ts was missing what cloudApi.ts has); the timeout is
+  what makes "forever" impossible regardless of mechanism. If he ever
+  reports it again, the message on screen now names what it could not
+  reach.
+- v6.69 also exposes `window.__scProjectStore` in DEV beside `__scStore` /
+  `__scEditor`: Snapshots reads the PROJECT store, and a check could not
+  reproduce "a script is open" without it.
+- check-v669 (8) drives the real menu path in both states and asserts the
+  window never sits on "Loading…", says something actionable, offers a
+  retry, settles inside the budget, and does not re-arm.
+- Gates: tsc 0, vitest 1182, build ok, check-all 949/0.
 
-### v6.64 → v6.66 — Send to Script makes LIVE ANNOTATIONS
-
-- Derek: "the 'send to script' button in the outline toolbar adds the
-  section header as an annotation at the indicated page location. if section
-  info changes, such as the name or the estimated page amount, the change
-  should be indicated in the annotation as well."
-- The old button appended one `# Beat title — description` line per BEAT at
-  the END of the script — no sections, no page placement, no page estimate.
-  I asked rather than guess and he chose sections, at their page, mirroring
-  silently. **v6.64 then read "annotation" as the `# …` section LINE** and
-  built exactly that. He came straight back with a screenshot: "it adds them
-  to the script in the old section format instead of as an annotation like I
-  requested." He meant the app's ANNOTATIONS (markupsSlice) — the tool in
-  the right panel. THE LESSON: this app has a feature literally named
-  Annotations; when a word names a shipped feature, it means that feature.
-  Check the tool list before reading a term loosely.
-- v6.65 is what he asked for. A sent section is a `ScriptMarkup` with a new
-  `outlineSectionId` field, anchored by the element's `markupId` BLOCK
-  attribute (ScriptMarkup's point-anchor path — no text selection needed,
-  works on any annotatable element). Its text lives in the annotation's
-  content, so **the mirror is a plain store write and never touches the
-  document at all** — much safer than v6.64's text rewriting.
-- `utils/outlineScriptSync.ts`: `sectionAnnotationText` is the ONE builder;
-  `sectionAnnotationContent` wraps it as mini-editor JSON;
-  `annotationFirstLine` reads it back (the round-trip is what the mirror
-  compares on); `collectOutlineSections` spans every variation;
-  `syncSectionAnnotations` rewrites what fell behind; `freeAnchorPos` finds
-  the next annotatable element that isn't already anchored — two sections
-  can resolve to the same spot and one element holds ONE markupId, so
-  without it the second would silently evict the first;
-  `clearLegacySectionLines` sweeps v6.64's stamped lines on the next send
-  (the stamp proves the app wrote them — nothing unstamped is touched).
-- `General.outlineSectionId` is KEPT, marked legacy: the sweep can only find
-  those lines while the schema still parses the stamp.
-- The mirror lives in ScreenplayEditor, not the Outline Bar — the bar is
-  usually closed while a section is renamed on the board, and a mirror that
-  only runs when a panel happens to be mounted is the silent no-op this repo
-  keeps re-learning. A `id|title|pages` signature gates it so a column-resize
-  drag doesn't rewrite anything. A hand-made annotation (no
-  outlineSectionId) is never rewritten; a deleted section leaves its
-  annotation as it stands.
-- **v6.66 — the PAGE mapping.** Derek: "each section is 1 page, so section
-  1 should be at the top of page 1, the next at the top of page 2, etc. But
-  … that is not where the section annotations were placed." v6.65's
-  `posForPage` reused the Outline Bar's own scene arithmetic — the SCENE
-  whose estimated range covered the page — so a section landed wherever its
-  scene began. Only the paginator knows where a page starts:
-  `computePageBlocks` + `posAfterScriptPageIn(n - 1)` is the first block of
-  page n, the SAME pure boundary function the Pages tool and the Custom Page
-  dialog resolve through. Verified: page tops at element 0/18/36, three
-  1-page sections anchored at 0/18/36.
-- **v6.66 — orphaned anchors.** `freeAnchorPos` treated ANY element carrying
-  a markupId as occupied. An element still stamped with a DELETED
-  annotation's id was therefore blocked for ever. It now takes the set of
-  live annotation ids, so a stale stamp reads as free.
-- CHECK-WRITING LESSON: my first placement assert measured icon Y against
-  `.page` boxes — and there is only ONE `.page` container in the editor;
-  the page breaks are `margin-top` decorations on the element that OPENS
-  each page. The assert reported a failure the product didn't have, and the
-  fix was to measure the paginator's own ground truth (element 0 plus every
-  element with a big inline margin-top ARE the page tops).
-- check-v665 (23) drives it for real: annotations not script text (the doc's
-  textContent is byte-identical before and after), anchor placement, the
-  rename/page rewrites, mirroring with the bar CLOSED, no duplicates, no
-  eviction when four sections compete for anchors, the hand-made case, the
-  deleted-section case, and the v6.64 sweep.
-- Gates: tsc 0, vitest 1173, build ok, check-all 917/0.
-
-### v6.63 — Settings ▸ Presets is a CHECKLIST that makes ONE file
-
-- Derek: "the Settings > Presets tab is not what I want. I want one single
-  preset file that can include all the information for each item on the
-  current preset list. The tab has a checklist of each of these items. If
-  you check an item, preset information for that item will be included in
-  the single preset file." (This is the QUEUED "ONE PRESET EXPORT WINDOW"
-  spec from 2026-07-31, arriving as the Settings tab rather than a new
-  window — see the queue block at the top of this file for the rest of it.)
-- `PRESET_PARTS` (utils/presets.ts) is the registry and the ONE source: the
-  checklist renders from it, `buildPresetBundle` collects from it, and
-  `applyPresetFile` applies through it. A new preset type can't be in the
-  file but missing from the checkbox, or the reverse. Five parts: settings,
-  customize, themes, workspaces, outline.
-- Each part's payload is byte-for-byte what that item's own export always
-  wrote (gatherSettings, buildCustomizeExport, customThemes, workspaces +
-  order, outlinePresetStore.exportJson) — so what a category MEANS didn't
-  change, only how many files come out. The old "Full Preset" row retires
-  into "tick everything"; its payload was gatherSettings, which is the
-  settings part.
-- File: `{ kind: 'preset-bundle', version: 1, includes: [...], parts: {...} }`
-  written as `…_preset.json` (typedExportName, Derek's suffix rule).
-- BACKWARD COMPATIBILITY is the part worth keeping: `readPresetFile`
-  recognises the bundle AND every single-type file the app has ever written
-  (full-preset, settings-backup, customize-export, themes array,
-  workspaces-export, and a bare outline-preset array), each reading as the
-  one part it holds. A preset the app made must never become unopenable.
-- An item the writer has none of renders disabled with a title saying why;
-  Export is disabled until something is ticked (no empty preset file). One
-  part throwing is reported by name — `{ applied, failed }` — instead of
-  taking the rest of the import down.
-- SCOPE, stated to Derek: the checklist governs EXPORT (his words). Import
-  takes one file and applies everything in it after a confirm naming the
-  contents — `applyPresetFile(json, only?)` already takes the filter, so a
-  mirror-image import checklist is a UI change away if he wants it. The
-  other scattered export doors (Customize footer, ThemesTab, Settings ▸
-  Backup) still run their own flows — that half of the queued spec is
-  untouched.
-- Gates: tsc 0, vitest 1157, build ok, check-all 894/0 (presets.test.ts +8,
-  check-v663: 17).
-
-### v6.62 — the board LIED about where deleted beats went
-
-- Derek (screenshot): "when i deleted the Act II column, instead of the
-  beats going to the unsorted section (which they should), they went into
-  the act I column instead."
-- They hadn't. I reproduced his exact sequence and dumped the store: after
-  deleting down to one act, `Act I:20, LOOSE:40` — the v6.60 code did
-  precisely the right thing. What moved was the LAYOUT: `isSingleColumn`
-  counted only SECTIONS, so the moment the second-to-last one went, the
-  survivor took `flex: 1` + `.beat-column-cards-wrap` and its 20-card
-  vertical list blew open into a 994px-wide 2-across grid. That reads as
-  "everything landed in Act I" — and the measurement is in the repro:
-  340px/1-wide before, 994px/wrapped after.
-- Fix at the cause: Unsorted IS a column on the board, so a section is only
-  "the single column" when Unsorted isn't showing. `unsortedShowing` is now
-  computed ONCE (from keepUnsortedMounted) and read by both the layout flag
-  and the render — the same one-source rule that keeps drifting lists in
-  this codebase honest. A genuinely lone section still stretches (verified:
-  1150 of 1198px), and maximize is untouched.
-- LESSON for the file: a store assert is not a UI assert. check-v660 proved
-  the beats were in Unsorted and passed while the screen was telling Derek
-  the opposite. Its new asserts measure what he can SEE — the surviving
-  section is the same width as Unsorted, its cards are not wrapped, and the
-  card counts per column match the store.
-- Gates: tsc 0, vitest 1149, build ok, check-all 877/0 (check-v660 now 16).
-
-### v6.61 — one default column width; the edge is actually grabbable
-
-- Derek (screenshot): "the unsorted section should be the same width by
-  default as the other sections. allow resizing of the column widths by
-  dragging the edge."
-- WIDTH. `.beat-column` carried no `width` — only `min-width: 280` /
-  `max-width: 500` — so every column sized to its own max-content. Sections
-  settled at 340 (their widest card); Unsorted's one-line hint measured 483
-  and shoved it to the 500 cap. Fixed at the cause: `width: 340px` on
-  `.beat-column`, one default every column starts at. `min-width` still
-  reads the `--dz-beat-col-minw` design token, so raising it in the Design
-  window still grows them all together. Verified single-column
-  (`flex: 1 1 0%` beats `width`) and maximized still fill the row.
-- RESIZE. It EXISTED — `useColumnResize` + `.beat-column-resize-handle`, and
-  it worked — but the handle sat at `right: -3px; width: 6px` inside a
-  column with `overflow: hidden`, so the outer half was clipped away and
-  what was left was a ~3px strip with no visual cue. My first probe of it
-  reported "dead"; that was my own error (I aimed 200px below a 206px-tall
-  column). Root cause was reach, not wiring: the handle now lives fully
-  inside the edge at `width: 10px`, with an `::after` bar that fades in on
-  hover and a "Drag to change this column's width" tooltip.
-- Unsorted resizes too. A control you can see and can't drag is the silent
-  no-op Derek hates, and Unsorted is a phantom column with no record to
-  hold a width — so it gets one as a VIEW PREF (`outlineUnsortedWidth`,
-  saved through saveViewState like outlineBarZoom/RowScale, added to
-  CUSTOMIZATION_FIELDS). Real sections keep storing width on the column
-  record, which saves with the script.
-- check-v661 (13): all three columns equal at rest, the strip is a target at
-  2/4/6/8px in, col-resize cursor, the tint arrives on hover (waited for —
-  the .12s transition reads 0 if you measure too early), a section drag
-  moves only that column and lands on its record, Unsorted's drag persists
-  and survives the column unmounting, and the 200px floor holds.
-- Gates: tsc 0, vitest 1149, build ok, check-all 874/0.
-
-### v6.60 — deleting a SECTION no longer deletes its beats (Unsorted)
-
-- Derek: "if an outline section is deleted and it had beats inside it, the
-  beats should not be deleted. instead they should move to an Unsorted
-  section (make it the furthest left column). no beats should ever be
-  deleted unless they are individually deleted using the delete button on
-  the beat itself."
-- `deleteBeatColumn` was `beats: s.beats.filter(b => b.columnId !== id)` —
-  one click on a trash icon, no confirm, and every card in that section was
-  gone. Now it CUTS THEM LOOSE: `columnId: ''`, `barOffset: undefined` (a
-  pin is an offset inside a section that no longer exists), and the whole
-  loose pool is renumbered 0..n-1 — the beats already waiting keep their
-  order, the freed ones land after them, so two deletes in a row can't
-  collide on position. Still one undo step.
-- No new column type was invented: "Unsorted" is the v2.23 holding pen,
-  which already rendered before the first section and vanished when empty.
-  It only needed the beats pointed at it. `Uncategorized` → `Unsorted`
-  everywhere — label, hint, `unsortedBeats`, `keepUnsortedMounted`,
-  `.beat-column-unsorted*` CSS, comments, tests.
-- The trash tooltip now states the outcome up front: "Delete section — its
-  beats move to Unsorted, they are not deleted" (catalog rebuilt, the
-  standing rule).
-- AUDITED the whole "no beats are ever deleted" claim: the only other
-  places that drop beats are seven `setBeats([])` calls in MenuBar /
-  ScreenplayEditor, and every one is a document swap (new script, open,
-  import fdx/docx/pdf) where the beats belong to the document being
-  replaced. deleteOutlineTab keeps them (v6.58), applyPresetSections
-  re-homes them (v6.59), `deleteBeat` is the card's own button. So the
-  invariant now holds: inside a live script, only the beat's own trash
-  deletes a beat.
-- check-v660 (13) drives the real trash button: the section goes, all three
-  beats survive, they RENDER as cards in Unsorted, Unsorted measures
-  furthest left, a second delete appends after the waiting ones, one undo
-  restores, the card's own delete still deletes, and the column disappears
-  when the last beat is dragged back into a section.
-- Gates: tsc 0, vitest 1149, build ok, check-all 861/0.
 
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.68** — "Annotation Filter" rename + the plain View Annotations on/off toggle (new `viewAnnotations` key, migrated in beside the filter; NOT v6.41's retired toggleMarkups)
+- **v6.67** — annotation icons follow zoom/resize (zoomLevel in the measure deps; chip size × measured page scale; ResizeObserver) — negative control proved the check
+- **v6.64–66** — Send to Script writes LIVE annotations at real page tops (outlineScriptSync: one text builder, store-only mirror, freeAnchorPos with live-id set, paginator posForPage; v6.64's `# …` lines cleared by stamp)
+- **v6.63** — Settings ▸ Presets became a CHECKLIST making ONE bundle file (PRESET_PARTS registry; readPresetFile accepts every legacy single-type file)
+- **v6.62** — deleted column's beats now land in Unsorted ON SCREEN (position-vs-order layout lie; store asserts pass while the board lies — assert the UI)
+- **v6.61** — Unsorted shares the default column width; every column edge drag-resizes
+- **v6.60** — deleting an outline section moves its beats to Unsorted (farthest left); only the beat's own Delete deletes a beat
 - **v6.59** — presets re-home existing beats (splitPages/distributeBeats/presetReuseOrder); page estimates went per-variation (beatSlots.span, barSetBeatSpan)
 - **v6.58** — an outline tab is DELETED, not "closed" (the tab flow only; other Close buttons stay)
 - **v6.57** — presets fill their sections at ~2 pages a beat with sums exact (presetBeatSpans); divider before the + button

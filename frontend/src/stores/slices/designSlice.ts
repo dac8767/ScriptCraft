@@ -19,6 +19,8 @@ export interface DesignSlice {
   setDesignVar: (id: string, val: number) => void;
   resetDesignVar: (id: string) => void;
   resetAllDesign: () => void;
+  /** v6.77: bulk replace — Reset all's window-undo restore path. */
+  setDesignVars: (vars: Record<string, number>) => void;
   designPanelOpen: boolean;
   setDesignPanelOpen: (v: boolean) => void;
   /** v6.22: the Helper Text editor's open flag. v6.52: Helper Text is a
@@ -67,6 +69,10 @@ export const createDesignSlice: StateCreator<EditorState, [], [], DesignSlice> =
   resetAllDesign: () => set(() => {
     saveViewState({ designVars: {} });
     return { designVars: {} };
+  }),
+  setDesignVars: (vars) => set(() => {
+    saveViewState({ designVars: vars });
+    return { designVars: vars };
   }),
   designPanelOpen: false,
   setDesignPanelOpen: (v) => set({ designPanelOpen: v }),

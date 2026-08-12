@@ -16,6 +16,8 @@ import { createWorkspacesSlice, type WorkspacesSlice } from './slices/workspaces
 import { createViewPrefsSlice, type ViewPrefsSlice } from './slices/viewPrefsSlice';
 import { createSpellGrammarSlice, type SpellGrammarSlice } from './slices/spellGrammarSlice';
 import { createBeatsOutlineSlice, type BeatsOutlineSlice } from './slices/beatsOutlineSlice';
+import { useWindowUndoStore } from './windowUndoStore';
+import { showToast } from '../components/Toast';
 
 export interface SpellingSettings {
   /** When true, capitalized unknown words (likely proper nouns) are flagged. */
@@ -1300,10 +1302,14 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   helperTextOverrides: Record<string, string>;
   setHelperTextOverride: (text: string, value: string | null) => void;
   resetAllHelperText: () => void;
+  /** v6.77: bulk replace — the window-undo restore path (majorChange). */
+  setHelperTextOverrides: (overrides: Record<string, string>) => void;
   /** v6.24: rows cleared from the Helper Text list ("checked off") —
    *  recallable via the window's Hidden view. Persisted. */
   helperTextHidden: string[];
   toggleHelperTextHidden: (text: string) => void;
+  /** v6.77: bulk replace — Hide all / Show all and their undo. */
+  setHelperTextHidden: (hidden: string[]) => void;
   preferencesRequest: { open: boolean; tab?: 'saveloc' | 'keys' };
   openPreferences: (tab?: 'saveloc' | 'keys') => void;
   closePreferences: () => void;
@@ -1839,6 +1845,10 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ helperTextOverrides: {} });
     set({ helperTextOverrides: {} });
   },
+  setHelperTextOverrides: (overrides) => {
+    saveViewState({ helperTextOverrides: overrides });
+    set({ helperTextOverrides: overrides });
+  },
   helperTextHidden: (_vs.helperTextHidden as string[]) ?? [],
   toggleHelperTextHidden: (text) => set((s) => {
     const helperTextHidden = s.helperTextHidden.includes(text)
@@ -1847,6 +1857,10 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ helperTextHidden });
     return { helperTextHidden };
   }),
+  setHelperTextHidden: (hidden) => {
+    saveViewState({ helperTextHidden: hidden });
+    set({ helperTextHidden: hidden });
+  },
   goalShowIn: (_vs.goalShowIn as 'toolbar' | 'footer') ?? 'footer',
   setGoalShowIn: (v) => { saveViewState({ goalShowIn: v }); set({ goalShowIn: v }); },
   preferencesRequest: { open: false },
@@ -2341,14 +2355,35 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
 
 /** v2.36: ONE undo for the app — routes to the beat history when the most
  *  recent change was a beat edit (Derek: closing a beat then hitting Undo
- *  must bring it back), otherwise to the script editor's own history. */
+ *  must bring it back), otherwise to the script editor's own history.
+ *  v6.77: a third lane — window actions (Reset helper text, the Customize
+ *  resets…, pushed via utils/majorChange). Whichever lane holds the NEWEST
+ *  change gets the undo; a window undo announces itself in a toast, because
+ *  the state it restores may not be on screen (Derek: "I tried to undo my
+ *  accidental help text reset, but undo does not work for that"). */
 export function smartUndo(editor: { chain: () => { focus: () => { undo: () => { run: () => void } } } } | null): void {
   const s = useEditorStore.getState();
+  const w = useWindowUndoStore.getState();
+  const winTop = w.undoStack[w.undoStack.length - 1];
+  const beatAt = s.canBeatUndo ? s.lastBeatEditAt : -Infinity;
+  if (winTop && winTop.at > s.lastDocEditAt && winTop.at >= beatAt) {
+    const label = w.undoLast();
+    if (label) showToast(`Undid: ${label}`, 'success');
+    return;
+  }
   if (s.canBeatUndo && s.lastBeatEditAt > s.lastDocEditAt) { s.beatUndo(); return; }
   try { editor?.chain().focus().undo().run(); } catch { /* editor gone */ }
 }
 export function smartRedo(editor: { chain: () => { focus: () => { redo: () => { run: () => void } } } } | null): void {
   const s = useEditorStore.getState();
+  const w = useWindowUndoStore.getState();
+  const winTop = w.redoStack[w.redoStack.length - 1];
+  const beatAt = s.canBeatRedo ? s.lastBeatEditAt : -Infinity;
+  if (winTop && winTop.at > s.lastDocEditAt && winTop.at >= beatAt) {
+    const label = w.redoLast();
+    if (label) showToast(`Redid: ${label}`, 'success');
+    return;
+  }
   if (s.canBeatRedo && s.lastBeatEditAt > s.lastDocEditAt) { s.beatRedo(); return; }
   try { editor?.chain().focus().redo().run(); } catch { /* editor gone */ }
 }

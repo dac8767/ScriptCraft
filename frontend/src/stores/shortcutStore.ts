@@ -20,6 +20,8 @@ interface ShortcutState {
   resetBinding: (id: string) => void;
   /** Clear every override. */
   resetAll: () => void;
+  /** v6.77: bulk replace — Reset All Shortcuts' window-undo restore path. */
+  restoreOverrides: (overrides: ShortcutOverrides) => void;
 }
 
 const init = loadShortcutOverrides();
@@ -44,5 +46,10 @@ export const useShortcutStore = create<ShortcutState>((set, get) => ({
   resetAll: () => {
     saveShortcutOverrides({});
     set({ overrides: {}, bindings: effectiveBindings({}) });
+  },
+
+  restoreOverrides: (overrides) => {
+    saveShortcutOverrides(overrides);
+    set({ overrides, bindings: effectiveBindings(overrides) });
   },
 }));

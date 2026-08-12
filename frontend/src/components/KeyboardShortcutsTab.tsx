@@ -11,6 +11,7 @@
  */
 import React from 'react';
 import { useShortcutStore } from '../stores/shortcutStore';
+import { runMajorChange } from '../utils/majorChange';
 import {
   SHORTCUT_COMMANDS, SHORTCUT_GROUPS, COMMAND_BY_ID,
   eventToCombo, formatCombo, findConflict,
@@ -20,7 +21,6 @@ export default function KeyboardShortcutsTab() {
   const bindings = useShortcutStore((s) => s.bindings);
   const setBinding = useShortcutStore((s) => s.setBinding);
   const resetBinding = useShortcutStore((s) => s.resetBinding);
-  const resetAll = useShortcutStore((s) => s.resetAll);
 
   const [recording, setRecording] = React.useState<string | null>(null);
   const [note, setNote] = React.useState<string>('');
@@ -119,10 +119,28 @@ export default function KeyboardShortcutsTab() {
       })}
 
       <div className="fs-tbzone-adders fs-adders-equal">
+        {/* v6.77: warned + undoable like every bulk reset (majorChange). */}
         <button
           className="swn-add-btn"
           title="Restore every shortcut to its default"
-          onClick={() => { setRecording(null); setNote(''); resetAll(); }}
+          onClick={() => {
+            const st = useShortcutStore.getState();
+            const n = Object.keys(st.overrides).length;
+            void runMajorChange({
+              title: 'Reset All Shortcuts',
+              message: `Restore every keyboard shortcut to its default?\n\n${n} rebound or cleared shortcut${n === 1 ? '' : 's'} go${n === 1 ? 'es' : ''} back to the app's own keys.`,
+              confirmLabel: 'Reset',
+              label: `Reset all shortcuts (${n})`,
+              capture: () => {
+                const prev = { ...st.overrides };
+                return () => useShortcutStore.getState().restoreOverrides(prev);
+              },
+              run: () => {
+                setRecording(null); setNote('');
+                useShortcutStore.getState().resetAll();
+              },
+            });
+          }}
         >Reset All Shortcuts</button>
       </div>
     </section>

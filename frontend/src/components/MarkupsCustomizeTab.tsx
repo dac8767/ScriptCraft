@@ -9,6 +9,7 @@
  */
 import { useState } from 'react';
 import { useEditorStore } from '../stores/editorStore';
+import { runMajorChange } from '../utils/majorChange';
 import { DEFAULT_MARKUP_PRESETS } from '../stores/slices/markupsSlice';
 import { MARKUP_ICONS, MARKUP_EMOJI, MARKUP_COLORS, MarkupIcon } from './markupIcons';
 
@@ -100,7 +101,24 @@ export default function MarkupsCustomizeTab() {
       </div>
 
       <div className="fs-markup-cz-footrow">
-        <button className="dialog-btn" onClick={() => setPresets(DEFAULT_MARKUP_PRESETS)}>
+        {/* v6.77: warned + undoable like every bulk reset (majorChange). */}
+        <button
+          className="dialog-btn"
+          onClick={() => {
+            const st = useEditorStore.getState();
+            void runMajorChange({
+              title: 'Reset Annotation Presets',
+              message: `Replace your ${st.markupPresets.length} annotation preset${st.markupPresets.length === 1 ? '' : 's'} with the app's default set?`,
+              confirmLabel: 'Reset',
+              label: 'Reset annotation presets',
+              capture: () => {
+                const prev = st.markupPresets.map((p) => ({ ...p }));
+                return () => useEditorStore.getState().setMarkupPresets(prev);
+              },
+              run: () => useEditorStore.getState().setMarkupPresets(DEFAULT_MARKUP_PRESETS),
+            });
+          }}
+        >
           Reset to Default
         </button>
       </div>

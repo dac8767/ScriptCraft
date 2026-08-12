@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.77",
+  "date": "2026-08-12",
+  "changes": [
+   "Every button that makes a major change now shows a warning window first: Reset helper text, the Design window’s Reset all, every Reset in the Customize tabs (and Reset All), Reset Annotation Presets, Reset All Shortcuts, and the Helper Text window’s new Hide all / Show all. Each warning says what goes back to default — and names the undo key, because…",
+   "…Undo now reaches changes made in windows. ⌘Z (or the Undo button, or Edit ▸ Undo) takes back the most recent change wherever it happened — typing in the script, an outline edit, or a window action like a reset — and ⇧⌘Z brings it forward again. A window undo announces itself in a small message (“Undid: Reset helper text”), since the state it restores may not be on screen.",
+   "The Helper Text window: clicking Hidden now shows a bulk toggle beside it — Show all puts every hidden item back in the list, and when nothing is hidden it flips to Hide all."
+  ]
+ },
+ {
   "version": "6.76",
   "date": "2026-08-12",
   "changes": [

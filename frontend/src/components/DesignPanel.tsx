@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom';
 import { LuRotateCcw, LuSearch } from 'react-icons/lu';
 import { FaCopy, FaCheck, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
+import { runMajorChange } from '../utils/majorChange';
 import { DESIGN_GROUPS, buildOverrideCss, type DesignToken } from '../design/designTokens';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 
@@ -125,7 +126,6 @@ function TokenRow({ t }: { t: DesignToken }) {
  */
 export function DesignPanelBody() {
   const designVars = useEditorStore((s) => s.designVars);
-  const resetAllDesign = useEditorStore((s) => s.resetAllDesign);
   const [query, setQuery] = useState('');
   // v4.32 batch-v8 #4, Derek: sections start COLLAPSED and the state is
   // remembered across close/reopen (store-persisted; null = untouched, which
@@ -202,7 +202,27 @@ export function DesignPanelBody() {
       </div>
 
       <div className="dz-footer">
-        <button className="dz-foot-btn" onClick={resetAllDesign} disabled={overrideCount === 0}>
+        {/* v6.77: warned + undoable — a session of tuned sliders is exactly
+            the "hard work" Derek's helper-text reset lost. */}
+        <button
+          className="dz-foot-btn"
+          onClick={() => {
+            const st = useEditorStore.getState();
+            const n = Object.keys(st.designVars).length;
+            void runMajorChange({
+              title: 'Reset All Design Settings',
+              message: `Reset all ${n} changed design setting${n === 1 ? '' : 's'} back to the app defaults?\n\nEvery slider you have moved in this window goes back to factory.`,
+              confirmLabel: 'Reset',
+              label: `Reset all design settings (${n})`,
+              capture: () => {
+                const prev = { ...st.designVars };
+                return () => useEditorStore.getState().setDesignVars(prev);
+              },
+              run: () => useEditorStore.getState().resetAllDesign(),
+            });
+          }}
+          disabled={overrideCount === 0}
+        >
           <LuRotateCcw /> Reset all
         </button>
         <button className="dz-foot-btn" onClick={copyCss} disabled={overrideCount === 0}>

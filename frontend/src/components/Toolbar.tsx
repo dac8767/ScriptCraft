@@ -46,6 +46,7 @@ import { commandDef, type ToolbarCommand } from './toolbarCommands';
 import { resolvePickedElement } from './screenplayEditorConstants';
 import { BUILTIN_BY_KEY, DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT, normalizeToolbarZones, stripTall, parseRibbon, ribbonKindVars } from './toolbarBuiltins';
 import { smartUndo, smartRedo, useEditorStore } from '../stores/editorStore';
+import { useWindowUndoStore } from '../stores/windowUndoStore';
 import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { createMarkupAtSelection } from '../utils/markupActions';
 import { insertCustomPage } from '../editor/extensions';
@@ -109,6 +110,10 @@ const FONT_SIZES = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60
 const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // v6.15: the ribbon-mounted goal readout (Show in: Toolbar).
   const goalShowIn = useEditorStore((st) => st.goalShowIn);
+  // v6.77: the window-action undo lane lights the Undo/Redo buttons too —
+  // subscribed (not getState) so a Reset landing on the stack re-renders us.
+  const winUndoCount = useWindowUndoStore((s) => s.undoStack.length);
+  const winRedoCount = useWindowUndoStore((s) => s.redoStack.length);
   const goalChipWords = useGoalWords(editor);
   const {
     activeElement,
@@ -922,16 +927,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     }
     switch (key) {
       /* v2.36: smart routing — if the newest change was a beat edit (e.g. a
-         beat was just closed on the Outline), Undo restores IT. */
+         beat was just closed on the Outline), Undo restores IT. v6.77: the
+         window-action lane (Reset helper text…) lights the button too. */
       case 'undo': {
         const st = useEditorStore.getState();
         const beatWins = st.canBeatUndo && st.lastBeatEditAt > st.lastDocEditAt;
+        const winCan = winUndoCount > 0;
         return (
           <button
             className="toolbar-btn"
             title="Undo (⌘Z)"
             onClick={() => smartUndo(editor)}
-            disabled={!beatWins && (!editor || typeof (editor.can() as any).undo !== 'function' || !(editor.can() as any).undo())}
+            disabled={!beatWins && !winCan && (!editor || typeof (editor.can() as any).undo !== 'function' || !(editor.can() as any).undo())}
           >
             <FaUndo />
           </button>
@@ -940,12 +947,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       case 'redo': {
         const st = useEditorStore.getState();
         const beatWins = st.canBeatRedo && st.lastBeatEditAt > st.lastDocEditAt;
+        const winCan = winRedoCount > 0;
         return (
           <button
             className="toolbar-btn"
             title="Redo (⇧⌘Z)"
             onClick={() => smartRedo(editor)}
-            disabled={!beatWins && (!editor || typeof (editor.can() as any).redo !== 'function' || !(editor.can() as any).redo())}
+            disabled={!beatWins && !winCan && (!editor || typeof (editor.can() as any).redo !== 'function' || !(editor.can() as any).redo())}
           >
             <FaRedo />
           </button>

@@ -210,6 +210,8 @@
   font-variant-numeric: tabular-nums;
 }
 .ht-hiddenchip { margin-left: 8px; }
+/* v6.77: the Hidden view's bulk toggle — Show all / Hide all. */
+.ht-bulk-hidden { flex: 0 0 auto; margin-left: 4px; }
 .ht-row-head .ht-kind { margin-left: auto; }
 .ht-row-head .dz-reset, .ht-row-head .ht-iconbtn { margin-left: 0; flex: 0 0 auto; }
 /* v6.22: the Helper Text window (dz-panel shell, own default size). */

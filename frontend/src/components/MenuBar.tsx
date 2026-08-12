@@ -1091,6 +1091,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
   const sc = (id: string) => formatCombo(keyBindings[id] ?? null) || undefined;
 
   shortcutActionsRef.current = shortcutActions;
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1103,7 +1105,23 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       if (!id) return;
 
       const cmd = COMMAND_BY_ID[id];
-      // Cut/Copy/Paste/Undo/Redo/Select All belong to the OS and the browser's
+      /* v6.77, Derek: "using Undo button or ctrl+Z / cmd+Z should undo
+         changes made in windows as well." Outside a text field NOTHING
+         handled ⌘Z in the browser build (TipTap only sees it with editor
+         focus; the desktop's native Edit menu already routes to smartUndo)
+         — so the reset he tried to take back was unreachable. Route it to
+         smartUndo/smartRedo, which pick the newest lane: window action,
+         beat edit, or the script. Inside inputs, textareas and the editor
+         itself the native/TipTap pipeline keeps the key. */
+      if (id === 'undo' || id === 'redo') {
+        const t = e.target as HTMLElement | null;
+        if (t && t.closest('input, textarea, [contenteditable="true"]')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (id === 'undo') smartUndo(editorRef.current); else smartRedo(editorRef.current);
+        return;
+      }
+      // Cut/Copy/Paste/Select All belong to the OS and the browser's
       // native edit pipeline — let them through untouched.
       if (!cmd || cmd.owner === 'system') return;
 

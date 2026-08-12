@@ -196,8 +196,7 @@
   "area": "Annotations Window",
   "where": [
    "components/MarkupsCustomizeTab.tsx"
-  ],
-  "label": "Reset to Default"
+  ]
  },
  {
   "text": "Add to Dictionary writes here",
@@ -1948,8 +1947,7 @@
   "area": "Design & Helper Text",
   "where": [
    "components/HelperTextSection.tsx"
-  ],
-  "icon": "LuRotateCcw"
+  ]
  },
  {
   "text": "Join an existing group",
@@ -2155,6 +2153,15 @@
    "components/WorkspaceDialogs.tsx"
   ],
   "icon": "FaChevronDown"
+ },
+ {
+  "text": "Move every item to the Hidden view",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Design & Helper Text",
+  "where": [
+   "components/HelperTextSection.tsx"
+  ]
  },
  {
   "text": "Move up",
@@ -2382,6 +2389,15 @@
    "components/Toolbar.tsx"
   ],
   "icon": "FaTags"
+ },
+ {
+  "text": "Put every hidden item back in the main list",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Design & Helper Text",
+  "where": [
+   "components/HelperTextSection.tsx"
+  ]
  },
  {
   "text": "Put this item back in the list",
@@ -2709,8 +2725,7 @@
   "area": "Everything Else",
   "where": [
    "components/KeyboardShortcutsTab.tsx"
-  ],
-  "label": "Reset All Shortcuts"
+  ]
  },
  {
   "text": "Restore section",
@@ -3291,8 +3306,7 @@
   "area": "Annotations Window",
   "where": [
    "components/MarkupsCustomizeTab.tsx"
-  ],
-  "label": "Reset to Default"
+  ]
  },
  {
   "text": "This location has no pin on the map yet",
