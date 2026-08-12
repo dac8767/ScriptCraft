@@ -185,37 +185,15 @@ html.android .grammar-issue.grammar-grammar {
 .spell-modal-suggestions::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
 /* ============ VERSION HISTORY PANEL ============ */
-.version-history-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 420px;
-  height: 100vh;
-  background: var(--fd-navigator-bg);
-  border-left: 1px solid var(--fd-border);
+/* v6.74, Derek: the fixed sidebar shell is GONE — Snapshots is a tool body
+   hosted by ToolDock like every other tool. */
+.version-history-body {
   display: flex;
   flex-direction: column;
-  z-index: 3000;
-  box-shadow: -4px 0 20px rgba(0,0,0,.4);
+  height: 100%;
+  min-height: 0;
 }
-/* Android: the WebView extends behind the (transparent) status bar and
-   gesture-pill area. Without this, the panel header (and its close button)
-   sits in the system-bar touch region and taps are intercepted by the OS.
-   Inset top/bottom by the larger of env() or a safe fallback. */
-html.android .version-history-panel {
-  top: max(env(safe-area-inset-top), 28px);
-  bottom: max(env(safe-area-inset-bottom), 24px);
-  height: auto;
-  right: env(safe-area-inset-right, 0px);
-}
-.version-history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--fd-border);
-  flex-shrink: 0;
-}
+
 /* v6.73: per-row Delete + the list bar's count and Delete All. */
 .version-delete-btn {
   padding: 2px 8px;
@@ -260,26 +238,6 @@ html.android .version-history-panel {
   white-space: nowrap;
 }
 .version-history-take:hover { border-color: var(--fd-accent); color: var(--fd-accent); }
-.version-history-title {
-  font-weight: 600;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--fd-text);
-}
-.version-history-close {
-  background: none;
-  border: none;
-  color: var(--fd-text-muted);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-.version-history-close:hover {
-  background: var(--fd-menu-hover);
-  color: var(--fd-text);
-}
 .version-history-content {
   flex: 1;
   display: flex;

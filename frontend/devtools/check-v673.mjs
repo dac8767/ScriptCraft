@@ -52,11 +52,17 @@ try {
       return { message: 'deleted' };
     };
     api.deleteAllVersions = async () => { const n = mem.length; mem.length = 0; return { deleted: n }; };
+    // currentScriptId arms Take Snapshot's save-first step — stub it too
+    api.saveScript = async () => ({ message: 'saved' });
+    api.getScriptAtVersion = async (_p, hash) => ({
+      content: { type: 'doc', content: [{ type: 'action', content: [{ type: 'text', text: `Body of ${hash}` }] }] },
+    });
     const ps = window.__scProjectStore.getState();
     ps.setCurrentProject({ id: 'proj-1', name: 'Episode X', properties: {} });
-    ps.setVersionHistoryOpen(true);
+    ps.setCurrentScriptId('script-1');
+    window.__scStore.getState().openTool('history');   // v6.74: the tool
   });
-  await page.waitForSelector('.version-history-panel .version-item', { timeout: 8000 });
+  await page.waitForSelector('.version-history-body .version-item', { timeout: 8000 });
   await settle(page);
 
   /* ── 1: nothing takes a snapshot on its own ── */
@@ -123,6 +129,51 @@ try {
     `the new snapshot appears in the OPEN window, no reopen needed (${shown.join(' / ') || 'none'})`);
   ok((await page.evaluate(() => window.__checkinCalls)).length === 1,
     'and that was the only checkin the whole run made');
+
+  /* ── v6.74, Derek: "the compare feature will open in the main editor
+     window" — the diff owns the EDITOR AREA, inside the chrome, never over
+     it (his screenshot had its buttons on top of the ribbon). ── */
+  await page.evaluate(() => {
+    // exactly two snapshots to compare ("Fresh from the window" retires)
+    window.__memVersions.length = 0;
+    window.__memVersions.push(
+      { hash: 'cmp-a', short_hash: 'cmpa', message: 'compare A', date: new Date().toISOString() },
+      { hash: 'cmp-b', short_hash: 'cmpb', message: 'compare B', date: new Date().toISOString() },
+    );
+    window.__scProjectStore.getState().bumpVersionsTick?.();
+  });
+  await page.evaluate(() => window.__scProjectStore.getState().setVersions([...window.__memVersions]));
+  await page.waitForFunction(() => document.querySelectorAll('.version-item').length === 2, { timeout: 5000 });
+  const boxes = await page.locator('.version-compare-checkbox').count();
+  ok(boxes === 2, `compare checkboxes render in the tool (${boxes})`);
+  await page.locator('.version-compare-checkbox').nth(0).click();
+  await page.locator('.version-compare-checkbox').nth(1).click();
+  await page.click('.version-compare-btn');
+  await page.waitForSelector('.fs-compare-takeover .script-diff-view', { timeout: 8000 });
+  const geo = await page.evaluate(() => {
+    const take = document.querySelector('.fs-compare-takeover').getBoundingClientRect();
+    const center = document.querySelector('.editor-center').getBoundingClientRect();
+    const toolbar = document.querySelector('.toolbar')?.getBoundingClientRect();
+    const btns = [...document.querySelectorAll('.script-diff-mode-btn')].map((b) => b.textContent);
+    return {
+      insideCenter: take.left >= center.left - 1 && take.right <= center.right + 1 && take.top >= center.top - 1,
+      belowRibbon: !toolbar || take.top >= toolbar.bottom - 1,
+      btns,
+    };
+  });
+  ok(geo.insideCenter, 'the compare view renders INSIDE the editor area');
+  ok(geo.belowRibbon, 'and below the ribbon — its buttons cannot collide with the app chrome');
+  ok(geo.btns.join(',') === 'Side-by-side,Unified,Changes only',
+    `the view controls are all present (${geo.btns.join(' / ')})`);
+  const paneled = await page.evaluate(() => !!document.querySelector('.version-history-body'));
+  ok(paneled, 'the Snapshots tool stays open beside it');
+  await page.click('.script-diff-close');
+  await settle(page);
+  const back = await page.evaluate(() => ({
+    takeover: !!document.querySelector('.fs-compare-takeover'),
+    editor: !!document.querySelector('.ProseMirror'),
+  }));
+  ok(!back.takeover && back.editor, 'closing the compare returns the editor');
 
 } catch (e) {
   console.log('PROBE ERROR:', e.message);

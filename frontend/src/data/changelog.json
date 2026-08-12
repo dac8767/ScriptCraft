@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.74",
+  "date": "2026-08-12",
+  "changes": [
+   "The Snapshots window is now a standard side-panel tool \u2014 same chrome, docking, and behaviour as every other tool window, instead of its own fixed sidebar. Take Snapshot sits in the tool\u2019s header, and File \u25b8 Script History \u25b8 Snapshots opens the tool.",
+   "Comparing two snapshots now opens in the main editor area, inside the app chrome \u2014 its Side-by-side / Unified / Changes controls can no longer collide with the ribbon or the window title bar. The Snapshots tool stays open beside it, and closing the compare returns the editor."
+  ]
+ },
+ {
   "version": "6.73",
   "date": "2026-08-12",
   "changes": [

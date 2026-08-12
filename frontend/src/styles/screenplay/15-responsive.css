@@ -548,7 +548,7 @@
 /* ── Interaction hints for touch devices ── */
 @media (hover: none) and (pointer: coarse) {
   /* Larger close buttons on panels */
-  .navigator-close, .script-notes-close, .version-history-close, .search-close-btn,
+  .navigator-close, .script-notes-close, .search-close-btn,
   .asset-manager-close, .format-panel-close {
     min-width: 44px;
     min-height: 44px;

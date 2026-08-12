@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
+import type { JSONContent } from '@tiptap/react';
 import Document from '@tiptap/extension-document';
 import Text from '@tiptap/extension-text';
 import Bold from '@tiptap/extension-bold';
@@ -91,7 +92,6 @@ import { projectApi } from '../services/projectApi';
 import { scriptApi } from '../services/scriptApi';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
-import VersionHistory from './VersionHistory';
 import AssetManager from './AssetManager';
 import { useParams, useNavigate } from 'react-router';
 import OpenFile from './OpenFile';
@@ -106,6 +106,7 @@ import { mirrorSnapshot } from '../services/saveLocations';
 import TitlePageEditor from './TitlePageEditor';
 import MoresContdsDialog from './MoresContdsDialog';
 import CompareVersionPicker from './CompareVersionPicker';
+import ScriptDiffView from './ScriptDiffView';
 import ZoomPanel from './ZoomPanel';
 import { useIsTouchDevice, useSwipeEdge, usePinchZoom } from '../hooks/useTouch';
 import { usePanelResize } from '../hooks/usePanelResize';
@@ -1856,6 +1857,8 @@ const ScreenplayEditor: React.FC = () => {
 
   // v1.75: Outline Bar visibility (View > Outline Bar).
   const outlineBarOpen = useEditorStore((st) => st.outlineBarOpen);
+  // v6.74: the Snapshots tool's compare pair — owns the editor area while set.
+  const scriptCompare = useProjectStore((st) => st.scriptCompare);
   const rulersVisible = useEditorStore((st) => st.rulersVisible);
   // v4.22, Derek: a body flag so a popped-out tool window drops below the ruler
   // when it's on (and shifts back up when off).
@@ -3556,7 +3559,22 @@ const ScreenplayEditor: React.FC = () => {
         <div className="editor-center">
           {/* v1.96: the Notebook writing surface takes over the editor area
               while its panel window is open ("Return to editor" ends it). */}
-          {!isHistoryMode && notebookOpen ? (
+          {/* v6.74, Derek: "the compare feature will open in the main
+              editor window." The Snapshots tool sets scriptCompare; the
+              diff owns the editor area — INSIDE the app chrome, so its
+              controls can never collide with the ribbon the way the old
+              fixed overlay's did. */}
+          {!isHistoryMode && scriptCompare ? (
+            <div className="fs-tool-takeover fs-compare-takeover">
+              <ScriptDiffView
+                docA={scriptCompare.docA as JSONContent}
+                docB={scriptCompare.docB as JSONContent}
+                labelA={scriptCompare.labelA}
+                labelB={scriptCompare.labelB}
+                onClose={() => useProjectStore.getState().setScriptCompare(null)}
+              />
+            </div>
+          ) : !isHistoryMode && notebookOpen ? (
             <NotebookSurface />
           ) : !isHistoryMode && fullscreenTool ? (
             /* v4.35 batch-v9 #4: ONE takeover for every tool — same chrome
@@ -3831,7 +3849,6 @@ const ScreenplayEditor: React.FC = () => {
       {!isHistoryMode && grammarRulesPanelOpen && (
         <GrammarRulesPanel onClose={() => setGrammarRulesPanelOpen(false)} />
       )}
-      {!isHistoryMode && <VersionHistory />}
       {!isHistoryMode && currentProject && <AssetManager projectId={currentProject.id} />}
       {!isHistoryMode && openFileOpen && (
         <OpenFile

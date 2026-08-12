@@ -310,6 +310,54 @@ Durable bits kept live here:
   retry, settles inside the budget, and does not re-arm.
 - Gates: tsc 0, vitest 1182, build ok, check-all 949/0.
 
+### v6.71–v6.74 — the snapshot/auto-save UNTANGLING (one arc, four versions)
+
+- Derek's discovery, over several messages: auto saves and snapshots are
+  different things (spare crash copies vs deliberate keep-forever versions),
+  and the app treated them as ONE. The auto-save timer called
+  api.checkin('Auto save') — the SAME call File ▸ Take Snapshot makes — so
+  every auto save landed in the Snapshots window, and pruneVersions then
+  trimmed that shared history BY POSITION, which could delete deliberate
+  snapshots to make room for automatic ones.
+- **v6.71**: Annotations window's "Display" button → "Filter" (one idea, one
+  name with the ribbon's Annotation Filter).
+- **v6.72**: the split. The timer now writes timestamped FILES to the Auto
+  Save Locations (mirrorSnapshot) and never touches the version history; the
+  "Local version history (always on)" row is gone; "Maximum Project
+  Versions" retired from Settings AND setupFields (it counted check-ins that
+  no longer happen — a control governing nothing). autoSnapshotKeep is kept
+  in the store with a note: capping the FILES needs fs read-dir permission
+  the Tauri capabilities don't grant (AppData-scoped, no read-dir). The
+  Snapshots window gained "+ Take Snapshot" (store flag takeSnapshotRequest
+  → MenuBar owns the one dialog). Settings hint states plainly that auto
+  saving needs a location ticked.
+- **v6.73**: Delete per row + Delete All… (both confirm; delete-all names
+  the legacy 'Auto save' entries as what it clears). SQLite deleteVersion /
+  deleteAllVersions in local-storage.ts; hosted api stubs REJECT with "needs
+  the desktop app" instead of appearing to work. versionsTick in
+  projectStore: taking a snapshot bumps it, the open window reloads — no
+  close-and-reopen.
+- **v6.74**: Snapshots became a REAL TOOL. The bespoke fixed sidebar
+  (.version-history-panel, its own title bar, its X, the Android inset
+  override) is GONE — VersionHistory is a pure tool body hosted by ToolDock
+  ('history'), Take Snapshot rides TOOL_CHROME.history.TitleExtra, every
+  menu door runs openTool('history'). And compare renders in the EDITOR
+  AREA: scriptCompare pair in projectStore, ScreenplayEditor renders
+  .fs-compare-takeover FIRST in the editor-center swap chain (above
+  notebook/fullscreenTool), so the diff's controls can never collide with
+  the ribbon (Derek's screenshot). .script-diff-overlay (fixed, viewport) is
+  retired.
+- DEREK'S DATA: his opendraft.db still holds pre-v6.72 'Auto save' rows;
+  Delete All clears them. (An earlier answer pointed him at a projects/.git
+  folder — wrong backend; the desktop app is SQLite via local-storage.ts,
+  and services/api.ts + backend/ are the HOSTED path only.)
+- check-v673 (19) drives the tool against a patched api module (the browser
+  harness has no SQLite): deletes, warnings, instant refresh, zero
+  un-asked-for checkins, and the compare takeover's GEOMETRY (inside
+  editor-center, below the ribbon, editor returns on close). check-v669 and
+  check-v672 updated to the tool world.
+- Gates: tsc 0, vitest 1190, build ok, check-all 984/0.
+
 ### v6.68 — Annotation Filter + a plain View Annotations toggle
 
 - Derek: "the current button 'annotation visibility' should be called

@@ -16,7 +16,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { CHROME_SCALES, chromePx, ICON_RAIL_W } from './chromeSizes';
 import AssetManager from './AssetManager';
-import VersionHistory from './VersionHistory';
+import VersionHistory, { SnapshotsTitleExtra } from './VersionHistory';
 import SpellCheckPanel from './SpellCheckPanel';
 import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
@@ -428,6 +428,8 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   feedback: { Controls: FeedbackShotControls },
   // v6.52: the "N changed" chip beside the Helper Text title.
   helpertext: { TitleExtra: HelperTextTitleExtra },
+  // v6.74: Take Snapshot rides the tool chrome, upper left beside the label.
+  history: { TitleExtra: SnapshotsTitleExtra },
 };
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
@@ -567,7 +569,7 @@ export function ToolContent({ id, editor, scrollContainer, inTakeover = false }:
     case 'spelling':
       return <SpellCheckPanel editor={editor} />;
     case 'history':
-      return <VersionHistory embedded />;
+      return <VersionHistory />;
     case 'analytics':
       return <AnalyticsTool editor={editor} />;
     case 'goals':

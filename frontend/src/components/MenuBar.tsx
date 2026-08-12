@@ -251,7 +251,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     setCurrentProject,
     setCurrentScriptId,
     setScripts,
-    setVersionHistoryOpen,
   } = useProjectStore();
 
   // Build a saveable content object: editor JSON + store metadata at top level.
@@ -586,7 +585,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         case 'setDraft': setDraftDialogOpen(true); break;
         case 'rename': setRenameOpen(true); break;
         case 'takeSnapshot': handleCheckinOpen(); break;
-        case 'snapshots': setVersionHistoryOpen(true); break;
+        case 'snapshots': useEditorStore.getState().openTool('history'); break;   // v6.74: the tool, not the old sidebar
         case 'compareSnapshot': setCompareVersionOpen(true); break;
         case 'trackChanges': handleTrackChangesToggle(); break;
         case 'spellCheck': setSpellModalOpen(true); break;
@@ -1045,7 +1044,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     spellCheck: () => setSpellModalOpen(true),
     writingSuggestions: () => setGrammarModalOpen(true),
     takeSnapshot: () => handleCheckinOpen(),
-    scriptHistory: () => setVersionHistoryOpen(true),
+    scriptHistory: () => useEditorStore.getState().openTool('history'),
     trackChanges: () => { void handleTrackChangesToggle(); },
     // v2.97: ribbon-pinnable Edit actions. Their SHORTCUTS stay with the OS
     // (the keyboard handler bails on system-owned ids); these closures run
@@ -1334,7 +1333,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
           icon: <FaCodeBranch />, label: 'Script History',
           children: [
             { icon: <FaUpload />, label: 'Take Snapshot…', action: handleCheckinOpen },
-            { icon: <FaHistory />, label: 'Snapshots', action: () => setVersionHistoryOpen(true) },
+            { icon: <FaHistory />, label: 'Snapshots', action: () => useEditorStore.getState().openTool('history') },
             { separator: true, label: '' },
             {
               icon: <FaExchangeAlt />,

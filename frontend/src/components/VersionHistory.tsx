@@ -1,12 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import type { JSONContent } from '@tiptap/react';
 import { useProjectStore } from '../stores/projectStore';
 import { useEditorStore } from '../stores/editorStore';
 import { api } from '../services/api';
 import type { VersionInfo } from '../services/api';
 import DiffViewer from './DiffViewer';
-import ScriptDiffView from './ScriptDiffView';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
 import { withTimeout, SNAPSHOT_LOAD_TIMEOUT_MS } from '../utils/withTimeout';
@@ -27,14 +25,25 @@ function relativeTime(dateStr: string): string {
   return date.toLocaleDateString();
 }
 
-interface VersionHistoryProps {
-  /** Render as a dockable panel: always visible, no close button. */
-  embedded?: boolean;
+/* v6.74, Derek: "currently the snapshot window appears as a side bar of its
+   own style. make this window appear in the side panel like all other tool
+   window." The fixed-position shell (.version-history-panel), its own title
+   bar and its X are GONE — this is a tool BODY now, hosted by ToolDock like
+   every other tool, with the label and Take Snapshot in the tool chrome
+   (TOOL_CHROME TitleExtra below). */
+export function SnapshotsTitleExtra() {
+  return (
+    <button
+      className="version-history-take"
+      title="Take a snapshot of this script"
+      onClick={() => useEditorStore.getState().setTakeSnapshotRequest(true)}
+    >+ Take Snapshot</button>
+  );
 }
 
-const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => {
+const VersionHistory: React.FC = () => {
   const navigate = useNavigate();
-  const { currentProject, currentScriptId, versions, setVersions, versionHistoryOpen, setVersionHistoryOpen, triggerScriptReload } =
+  const { currentProject, currentScriptId, versions, setVersions, setVersionHistoryOpen, triggerScriptReload } =
     useProjectStore();
 
   const [selectedVersion, setSelectedVersion] = useState<VersionInfo | null>(null);
@@ -42,14 +51,12 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Compare mode — checkboxes on version rows
+  // Compare mode — checkboxes on version rows. v6.74, Derek: the diff pair
+  // lives in the PROJECT store — "the compare feature will open in the main
+  // editor window", so ScreenplayEditor renders it as an editor-area
+  // takeover instead of this window floating an overlay over the chrome.
   const [compareSelection, setCompareSelection] = useState<string[]>([]);  // commit hashes
-  const [scriptDiff, setScriptDiff] = useState<{
-    docA: Record<string, unknown>;
-    docB: Record<string, unknown>;
-    labelA: string;
-    labelB: string;
-  } | null>(null);
+  const setScriptCompare = useProjectStore((s) => s.setScriptCompare);
 
   const toggleCompareSelect = useCallback((hash: string) => {
     setCompareSelection((prev) => {
@@ -112,7 +119,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
       }
 
       const emptyDoc = { type: 'doc', content: [] };
-      setScriptDiff({
+      setScriptCompare({
         docA: (respA?.content || emptyDoc) as Record<string, unknown>,
         docB: (respB?.content || emptyDoc) as Record<string, unknown>,
         labelA: respA
@@ -155,10 +162,8 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
   // a snapshot taken from here appears right away.
   const versionsTick = useProjectStore((s) => s.versionsTick);
   useEffect(() => {
-    if ((embedded || versionHistoryOpen) && currentProject) {
-      loadVersions();
-    }
-  }, [embedded, versionHistoryOpen, currentProject, loadVersions, versionsTick]);
+    if (currentProject) loadVersions();
+  }, [currentProject, loadVersions, versionsTick]);
 
   const handleViewDiff = useCallback(
     async (version: VersionInfo, index: number) => {
@@ -266,35 +271,9 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
     [currentProject, currentScriptId, restoreConfirm, loadVersions, navigate, setVersionHistoryOpen, triggerScriptReload]
   );
 
-  if (!embedded && !versionHistoryOpen) return null;
 
   return (
-    <div className="version-history-panel">
-      <div className="version-history-header">
-        {/* v6.72, Derek: "add a Take Snapshot button to the upper left of
-            this snapshot window". It arms the store flag MenuBar watches —
-            the check-in dialog lives there, so there is still ONE way to
-            name and take a snapshot. */}
-        <button
-          className="version-history-take"
-          title="Take a snapshot of this script"
-          onClick={() => useEditorStore.getState().setTakeSnapshotRequest(true)}
-        >+ Take Snapshot</button>
-        <span className="version-history-title">{embedded ? 'Script History' : 'Snapshots'}</span>
-        {!embedded && (
-          <button
-            className="version-history-close"
-            onClick={() => {
-              setVersionHistoryOpen(false);
-              setSelectedVersion(null);
-              setDiffText(null);
-            }}
-          >
-            x
-          </button>
-        )}
-      </div>
-
+    <div className="version-history-body">
       {!currentProject && (
         <div className="version-history-empty">
           No project selected. Import or create a script first.
@@ -438,17 +417,6 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
           </div>
         )}
       </div>
-      {scriptDiff && (
-        <div className="script-diff-overlay">
-          <ScriptDiffView
-            docA={scriptDiff.docA as JSONContent}
-            docB={scriptDiff.docB as JSONContent}
-            labelA={scriptDiff.labelA}
-            labelB={scriptDiff.labelB}
-            onClose={() => setScriptDiff(null)}
-          />
-        </div>
-      )}
       {restoreConfirm && (
         <div className="dialog-overlay" onClick={() => setRestoreConfirm(null)}>
           <div className="dialog-box" onClick={(e) => e.stopPropagation()}>

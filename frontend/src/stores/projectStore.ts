@@ -90,6 +90,12 @@ interface ProjectState {
    *  window reloads on it — no close-and-reopen. */
   versionsTick: number;
   bumpVersionsTick: () => void;
+  /** v6.74, Derek: "the compare feature will open in the main editor
+   *  window." The Snapshots tool SETS this pair; ScreenplayEditor renders
+   *  it as an editor-area takeover — inside the app chrome, never over it
+   *  (the old fixed overlay's buttons collided with the ribbon). */
+  scriptCompare: { docA: unknown; docB: unknown; labelA: string; labelB: string } | null;
+  setScriptCompare: (c: { docA: unknown; docB: unknown; labelA: string; labelB: string } | null) => void;
 
   setActiveScriptSource: (src: ScriptSource) => void;
   markCloudScript: (projectId: string, scriptId: string) => void;
@@ -126,6 +132,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   triggerScriptReload: () => set((state) => ({ scriptReloadKey: state.scriptReloadKey + 1 })),
   versionsTick: 0,
   bumpVersionsTick: () => set((state) => ({ versionsTick: state.versionsTick + 1 })),
+  scriptCompare: null,
+  setScriptCompare: (c) => set({ scriptCompare: c }),
 
   setActiveScriptSource: (src) => set({ activeScriptSource: src }),
   markCloudScript: (projectId, scriptId) => {

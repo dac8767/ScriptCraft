@@ -21,7 +21,8 @@ let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓', m); } else { fail++; console.log('  ✗ FAIL', m); } };
 
 const look = () => page.evaluate(() => {
-  const box = document.querySelector('[class*="version-history"]');
+  // v6.74: Snapshots is a side-panel TOOL — the body class is the marker
+  const box = document.querySelector('.version-history-body');
   return {
     open: !!box,
     loading: !!document.querySelector('.version-history-loading'),
@@ -50,9 +51,14 @@ try {
   await page.click('.menu-dropdown :text-is("Snapshots")');
   await settle(page);
   let s = await look();
-  ok(s.open, 'File ▸ Script History ▸ Snapshots opens the window');
+  ok(s.open, 'File ▸ Script History ▸ Snapshots opens the TOOL in the side panel');
+  const asTool = await page.evaluate(() => {
+    const w = document.querySelector('.version-history-body')?.closest('.tool-window, .tool-inline-body, .fs-tool-takeover, [data-tool]');
+    return !!w;
+  });
+  ok(asTool, 'and it is hosted by the standard tool chrome, not a bespoke sidebar');
   ok(!s.loading && !!s.empty, `with nothing open it says so instead of spinning ("${s.empty}")`);
-  await page.evaluate(() => window.__scProjectStore.getState().setVersionHistoryOpen(false));
+  await page.evaluate(() => window.__scStore.getState().closeTool?.('history'));
   await settle(page);
 
   /* ── 1–5: Derek's state — a script IS open ── */
@@ -61,7 +67,7 @@ try {
     const ps = window.__scProjectStore.getState();
     ps.setCurrentProject({ id: 'proj-1', name: 'Episode X', properties: {} });
     ps.setCurrentScriptId('script-1');
-    ps.setVersionHistoryOpen(true);
+    window.__scStore.getState().openTool('history');
   });
   await settle(page);
   s = await look();

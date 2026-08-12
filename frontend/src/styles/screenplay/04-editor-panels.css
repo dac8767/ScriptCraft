@@ -62,10 +62,17 @@
   border-left: 3px solid var(--fd-accent);
 }
 
-.script-diff-overlay {
-  position: fixed; inset: 0; z-index: 200;
+/* v6.74, Derek: the compare view owns the EDITOR AREA (fs-tool-takeover in
+   editor-center), never the viewport — the old fixed overlay put its
+   controls on top of the ribbon. */
+.fs-compare-takeover {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
   background: var(--fd-background);
 }
+.fs-compare-takeover .script-diff-view { min-height: 0; }
 .script-diff-view {
   display: flex; flex-direction: column;
   height: 100%; width: 100%;
