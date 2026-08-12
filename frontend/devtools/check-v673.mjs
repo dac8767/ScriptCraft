@@ -144,11 +144,17 @@ try {
   });
   await page.evaluate(() => window.__scProjectStore.getState().setVersions([...window.__memVersions]));
   await page.waitForFunction(() => document.querySelectorAll('.version-item').length === 2, { timeout: 5000 });
-  const boxes = await page.locator('.version-compare-checkbox').count();
-  ok(boxes === 2, `compare checkboxes render in the tool (${boxes})`);
+  /* v6.75, Derek: "items start not selectable, but when I click 'Compare'
+     it allows me to pick two items from the list." */
+  const restBoxes = await page.locator('.version-compare-checkbox').count();
+  ok(restBoxes === 0, `at rest the rows carry NO checkboxes (${restBoxes})`);
+  await page.click('.version-compare-btn');            // Compare… enters the mode
+  await page.waitForSelector('.version-compare-checkbox', { timeout: 5000 });
+  const modeBoxes = await page.locator('.version-compare-checkbox').count();
+  ok(modeBoxes === 2, `Compare… turns the pick mode on (${modeBoxes} checkboxes)`);
   await page.locator('.version-compare-checkbox').nth(0).click();
   await page.locator('.version-compare-checkbox').nth(1).click();
-  await page.click('.version-compare-btn');
+  // the second pick IS the go — no separate confirm click
   await page.waitForSelector('.fs-compare-takeover .script-diff-view', { timeout: 8000 });
   const geo = await page.evaluate(() => {
     const take = document.querySelector('.fs-compare-takeover').getBoundingClientRect();
@@ -167,6 +173,21 @@ try {
     `the view controls are all present (${geo.btns.join(' / ')})`);
   const paneled = await page.evaluate(() => !!document.querySelector('.version-history-body'));
   ok(paneled, 'the Snapshots tool stays open beside it');
+  /* v6.75: the SUMMARY rides the side panel while comparing — and the diff
+     view no longer carries its own summary sidebar. */
+  const sum = await page.evaluate(() => {
+    const host = document.querySelector('.version-history-body .version-summary-host .script-diff-summary');
+    const inDiff = document.querySelector('.fs-compare-takeover .script-diff-summary');
+    return { inPanel: !!host, inDiff: !!inDiff, text: host?.textContent ?? '' };
+  });
+  ok(sum.inPanel, 'the compare summary appears in the Snapshots side panel');
+  ok(!sum.inDiff, 'and not as a second copy inside the diff view');
+  ok(/added/.test(sum.text) && /modified/.test(sum.text), `it carries the counts ("${sum.text.slice(0, 40)}…")`);
+  /* v6.75: no internal hash codes anywhere the writer reads. */
+  const hashes = await page.evaluate(() => document.querySelectorAll('.version-hash').length);
+  ok(hashes === 0, `the snapshot rows show no internal hash codes (${hashes})`);
+  const rowClickRed = await page.evaluate(() => !!document.querySelector('.version-diff-area pre, .version-diff-area .diff-viewer'));
+  ok(!rowClickRed, 'and no raw JSON diff dump is mounted anywhere');
   await page.click('.script-diff-close');
   await settle(page);
   const back = await page.evaluate(() => ({

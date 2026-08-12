@@ -1,5 +1,15 @@
 [
  {
+  "version": "6.75",
+  "date": "2026-08-12",
+  "changes": [
+   "While comparing, the Summary \u2014 added / deleted / modified and the scenes changed \u2014 now appears in the Script History side panel, beside the compare in the editor. The diff view no longer carries its own summary column.",
+   "Comparing starts from a single Compare\u2026 button. Click it and the list switches to picking mode; choosing your second snapshot opens the comparison right away. Rows carry no checkboxes until then.",
+   "Clicking a snapshot now shows a readable summary of what changed since the one before it \u2014 counts and scene names \u2014 instead of a wall of raw code.",
+   "The internal code on each snapshot (\u201c86d5e36\u201d and the like) is gone from the window. It was the snapshot\u2019s internal id; everything now refers to snapshots by the name you gave them."
+  ]
+ },
+ {
   "version": "6.74",
   "date": "2026-08-12",
   "changes": [

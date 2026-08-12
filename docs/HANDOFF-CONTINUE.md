@@ -310,6 +310,32 @@ Durable bits kept live here:
   retry, settles inside the budget, and does not re-arm.
 - Gates: tsc 0, vitest 1182, build ok, check-all 949/0.
 
+### v6.75 — the compare flow, humanized (four Derek items)
+
+- (1) The compare SUMMARY (counts + scenes changed + dialogue delta) renders
+  in the Snapshots side panel while the compare owns the editor area —
+  `DiffSummaryBlock` extracted from ScriptDiffView and exported, rendered by
+  the tool from the SAME `scriptCompare` pair (computeScriptDiff in a
+  useMemo), so panel and diff can't disagree. The diff view's own summary
+  sidebar and its Show/Hide Summary button are gone.
+- (2) Compare is a MODE: one `Compare…` button at rest (no checkboxes on
+  rows), clicking it arms picking, and the SECOND pick fires the compare
+  (a useEffect on compareSelection.length === 2) — no separate confirm
+  click. Cancel exits.
+- (3) The row click's raw-JSON dump (`api.getVersionDiff` → DiffViewer, the
+  "strange red code") is REPLACED by the same human summary vs the previous
+  snapshot — getScriptAtVersion both sides, computeScriptDiff, plain-words
+  notes for initial-snapshot / script-missing cases. DiffViewer is out of
+  VersionHistory (component still exists; check importers before deleting).
+- (4) `version-hash` chips are gone from rows; compare labels, confirm and
+  toasts all speak the snapshot's NAME (message + relative time), never the
+  internal short hash. Derek asked what "86d5e36" was — the commit id's
+  first 7 chars; internal only now.
+- check-v673 grew to 25: no checkboxes at rest, Compare… arms them, second
+  pick opens the takeover, summary IN the panel and NOT duplicated in the
+  diff, zero hash chips, no raw-JSON mount anywhere.
+- Gates: tsc 0, vitest 1190, build ok, check-all 990/0.
+
 ### v6.71–v6.74 — the snapshot/auto-save UNTANGLING (one arc, four versions)
 
 - Derek's discovery, over several messages: auto saves and snapshots are

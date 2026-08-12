@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { JSONContent } from '@tiptap/react';
-import { computeScriptDiff, type DiffBlock, type WordDiff } from '../utils/scriptDiff';
+import { computeScriptDiff, type DiffBlock, type DiffSummary, type WordDiff } from '../utils/scriptDiff';
 
 interface Props {
   docA: JSONContent;
@@ -25,9 +25,60 @@ const ELEMENT_LABEL: Record<string, string> = {
   endOfAct: 'End of Act',
 };
 
+/* v6.75, Derek: "this summary should appear in the script history side
+   panel window when in the comparison window." ONE block, exported — the
+   Snapshots tool renders it beside the editor-area compare, and the row
+   click renders the same block for changes-since-the-previous-snapshot, so
+   the two can never drift. */
+export function DiffSummaryBlock({ summary }: { summary: DiffSummary }) {
+  return (
+    <div className="script-diff-summary">
+      <h4>Summary</h4>
+      <div className="script-diff-summary-row">
+        <span className="script-diff-chip-added">+{summary.totalAdded}</span>
+        added
+      </div>
+      <div className="script-diff-summary-row">
+        <span className="script-diff-chip-removed">−{summary.totalDeleted}</span>
+        deleted
+      </div>
+      <div className="script-diff-summary-row">
+        <span className="script-diff-chip-modified">~{summary.totalModified}</span>
+        modified
+      </div>
+      {summary.scenesChanged.length > 0 && (
+        <>
+          <h5>Scenes changed ({summary.scenesChanged.length})</h5>
+          <ul className="script-diff-scenes">
+            {summary.scenesChanged.slice(0, 20).map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+            {summary.scenesChanged.length > 20 && (
+              <li><em>+{summary.scenesChanged.length - 20} more</em></li>
+            )}
+          </ul>
+        </>
+      )}
+      {summary.dialogueDelta.length > 0 && (
+        <>
+          <h5>Dialogue changes</h5>
+          <ul className="script-diff-dialogue-delta">
+            {summary.dialogueDelta.map((d) => (
+              <li key={d.character}>
+                <strong>{d.character}</strong>
+                <span className="script-diff-chip-added">+{d.added}</span>
+                <span className="script-diff-chip-removed">−{d.removed}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 const ScriptDiffView: React.FC<Props> = ({ docA, docB, labelA, labelB, onClose }) => {
   const [mode, setMode] = useState<ViewMode>('side-by-side');
-  const [showSummary, setShowSummary] = useState(true);
 
   const diff = useMemo(() => computeScriptDiff(docA, docB), [docA, docB]);
 
@@ -63,10 +114,6 @@ const ScriptDiffView: React.FC<Props> = ({ docA, docB, labelA, labelB, onClose }
             className={`script-diff-mode-btn${mode === 'changes-only' ? ' active' : ''}`}
             onClick={() => setMode('changes-only')}
           >Changes only</button>
-          <button
-            className="script-diff-summary-btn"
-            onClick={() => setShowSummary((v) => !v)}
-          >{showSummary ? 'Hide Summary' : 'Show Summary'}</button>
           {onClose && (
             <button className="script-diff-close" onClick={onClose} title="Close diff">×</button>
           )}
@@ -83,50 +130,6 @@ const ScriptDiffView: React.FC<Props> = ({ docA, docB, labelA, labelB, onClose }
             <UnifiedDiff blocks={displayBlocks} />
           )}
         </div>
-        {showSummary && (
-          <div className="script-diff-summary">
-            <h4>Summary</h4>
-            <div className="script-diff-summary-row">
-              <span className="script-diff-chip-added">+{diff.summary.totalAdded}</span>
-              added
-            </div>
-            <div className="script-diff-summary-row">
-              <span className="script-diff-chip-removed">−{diff.summary.totalDeleted}</span>
-              deleted
-            </div>
-            <div className="script-diff-summary-row">
-              <span className="script-diff-chip-modified">~{diff.summary.totalModified}</span>
-              modified
-            </div>
-            {diff.summary.scenesChanged.length > 0 && (
-              <>
-                <h5>Scenes changed ({diff.summary.scenesChanged.length})</h5>
-                <ul className="script-diff-scenes">
-                  {diff.summary.scenesChanged.slice(0, 20).map((s, i) => (
-                    <li key={i}>{s}</li>
-                  ))}
-                  {diff.summary.scenesChanged.length > 20 && (
-                    <li><em>+{diff.summary.scenesChanged.length - 20} more</em></li>
-                  )}
-                </ul>
-              </>
-            )}
-            {diff.summary.dialogueDelta.length > 0 && (
-              <>
-                <h5>Dialogue changes</h5>
-                <ul className="script-diff-dialogue-delta">
-                  {diff.summary.dialogueDelta.map((d) => (
-                    <li key={d.character}>
-                      <strong>{d.character}</strong>
-                      <span className="script-diff-chip-added">+{d.added}</span>
-                      <span className="script-diff-chip-removed">−{d.removed}</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

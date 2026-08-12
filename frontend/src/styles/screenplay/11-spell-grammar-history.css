@@ -194,6 +194,30 @@ html.android .grammar-issue.grammar-grammar {
   min-height: 0;
 }
 
+/* v6.75: the compare summary rides the Snapshots panel; the row click's
+   plain-words note replaces the old raw-JSON diff dump. */
+.version-summary-host {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--fd-border);
+  max-height: 45%;
+  overflow-y: auto;
+}
+.version-summary-host .script-diff-summary {
+  width: auto;
+  border-left: none;
+  padding: 10px 16px;
+}
+.version-summary-note {
+  padding: 12px 16px;
+  font-size: 12.5px;
+  color: var(--fd-text-muted);
+}
+.version-diff-area .script-diff-summary {
+  width: auto;
+  border-left: none;
+  padding: 8px 16px;
+}
+
 /* v6.73: per-row Delete + the list bar's count and Delete All. */
 .version-delete-btn {
   padding: 2px 8px;

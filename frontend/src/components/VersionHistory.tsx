@@ -1,10 +1,12 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useProjectStore } from '../stores/projectStore';
 import { useEditorStore } from '../stores/editorStore';
 import { api } from '../services/api';
 import type { VersionInfo } from '../services/api';
-import DiffViewer from './DiffViewer';
+import { DiffSummaryBlock } from './ScriptDiffView';
+import { computeScriptDiff, type DiffSummary } from '../utils/scriptDiff';
+import type { JSONContent } from '@tiptap/react';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
 import { withTimeout, SNAPSHOT_LOAD_TIMEOUT_MS } from '../utils/withTimeout';
@@ -47,7 +49,12 @@ const VersionHistory: React.FC = () => {
     useProjectStore();
 
   const [selectedVersion, setSelectedVersion] = useState<VersionInfo | null>(null);
-  const [diffText, setDiffText] = useState<string | null>(null);
+  /* v6.75, Derek: "strange red code appears when a snapshot is clicked" —
+     the row click used to show the backend's RAW text diff of the document
+     JSON. It now shows the same human summary the compare uses, computed
+     against the previous snapshot. `note` carries the plain-words cases
+     (initial snapshot, script missing). */
+  const [rowSummary, setRowSummary] = useState<{ summary?: DiffSummary; note?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,7 +63,22 @@ const VersionHistory: React.FC = () => {
   // editor window", so ScreenplayEditor renders it as an editor-area
   // takeover instead of this window floating an overlay over the chrome.
   const [compareSelection, setCompareSelection] = useState<string[]>([]);  // commit hashes
+  /* v6.75, Derek: "items start not selectable, but when I click 'Compare'
+     it allows me to pick two items from the list." The checkboxes only
+     exist inside this mode; picking the second one runs the compare and
+     leaves the mode. */
+  const [compareMode, setCompareMode] = useState(false);
   const setScriptCompare = useProjectStore((s) => s.setScriptCompare);
+  /* v6.75, Derek: the compare SUMMARY lives in this side panel while the
+     compare owns the editor area. Computed from the same pair the diff
+     renders, so the two can never disagree. */
+  const scriptCompare = useProjectStore((s) => s.scriptCompare);
+  const compareSummary = useMemo(
+    () => (scriptCompare
+      ? computeScriptDiff(scriptCompare.docA as JSONContent, scriptCompare.docB as JSONContent).summary
+      : null),
+    [scriptCompare],
+  );
 
   const toggleCompareSelect = useCallback((hash: string) => {
     setCompareSelection((prev) => {
@@ -107,27 +129,30 @@ const VersionHistory: React.FC = () => {
       }
       if (!respA) {
         showToast(
-          `Script was added in ${later.short_hash}. It does not exist in ${earlier.short_hash}.`,
+          `This script was added in “${later.message}” — it does not exist in “${earlier.message}”.`,
           'info',
         );
       }
       if (!respB) {
         showToast(
-          `Script was removed before ${later.short_hash}. Showing only ${earlier.short_hash}.`,
+          `This script was removed before “${later.message}” — showing only “${earlier.message}”.`,
           'info',
         );
       }
 
+      setCompareMode(false);
+      setCompareSelection([]);
       const emptyDoc = { type: 'doc', content: [] };
       setScriptCompare({
         docA: (respA?.content || emptyDoc) as Record<string, unknown>,
         docB: (respB?.content || emptyDoc) as Record<string, unknown>,
+        // v6.75: names and times, not internal hashes.
         labelA: respA
-          ? `${earlier.short_hash} · ${earlier.message}`
-          : `${earlier.short_hash} · (script not in this snapshot)`,
+          ? `${earlier.message} — ${relativeTime(earlier.date)}`
+          : `${earlier.message} — (script not in this snapshot)`,
         labelB: respB
-          ? `${later.short_hash} · ${later.message}`
-          : `${later.short_hash} · (script not in this snapshot)`,
+          ? `${later.message} — ${relativeTime(later.date)}`
+          : `${later.message} — (script not in this snapshot)`,
       });
     } catch (err) {
       showToast(
@@ -136,6 +161,12 @@ const VersionHistory: React.FC = () => {
       );
     }
   }, [currentProject, currentScriptId, compareSelection, versions]);
+
+  /* v6.75: the second pick IS the go — no separate confirm click. */
+  useEffect(() => {
+    if (compareMode && compareSelection.length === 2) void runScriptCompare();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compareMode, compareSelection]);
 
   /* Load versions when the panel opens. v6.69, Derek: "forever stuck on
      Loading snapshots…". The wait is BOUNDED now — whatever the transport
@@ -170,21 +201,36 @@ const VersionHistory: React.FC = () => {
       if (!currentProject) return;
       setSelectedVersion(version);
 
-      // Diff against previous commit (or show first commit as-is)
       if (index >= versions.length - 1) {
-        setDiffText('(Initial snapshot -- no previous snapshot to compare against)');
+        setRowSummary({ note: 'Initial snapshot — there is nothing earlier to compare against.' });
+        return;
+      }
+      if (!currentScriptId) {
+        setRowSummary({ note: 'Open a script to see what changed in it.' });
         return;
       }
 
       const prevVersion = versions[index + 1]; // versions are newest-first
       try {
-        const result = await api.getVersionDiff(currentProject.id, prevVersion.hash, version.hash);
-        setDiffText(result.diff || '(No changes)');
+        const fetchOrNull = async (hash: string) => {
+          try {
+            return await api.getScriptAtVersion(currentProject.id, hash, currentScriptId);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            if (msg.includes('404') || /not found/i.test(msg)) return null;
+            throw e;
+          }
+        };
+        const [prev, cur] = await Promise.all([fetchOrNull(prevVersion.hash), fetchOrNull(version.hash)]);
+        if (!cur) { setRowSummary({ note: 'This script is not in this snapshot.' }); return; }
+        if (!prev) { setRowSummary({ note: 'This script was added in this snapshot.' }); return; }
+        const diff = computeScriptDiff(prev.content as JSONContent, cur.content as JSONContent);
+        setRowSummary({ summary: diff.summary });
       } catch (err) {
-        setDiffText(`Error loading diff: ${err instanceof Error ? err.message : 'unknown error'}`);
+        setRowSummary({ note: `Could not load this snapshot: ${err instanceof Error ? err.message : 'unknown error'}` });
       }
     },
-    [currentProject, versions]
+    [currentProject, currentScriptId, versions]
   );
 
   const [restoreConfirm, setRestoreConfirm] = useState<VersionInfo | null>(null);
@@ -204,16 +250,16 @@ const VersionHistory: React.FC = () => {
   const handleDelete = useCallback(async (version: VersionInfo) => {
     if (!currentProject) return;
     const ok = await confirmDialog(
-      `Delete snapshot ${version.short_hash} — "${version.message}"?\n\nOnly this saved version is deleted. Your script is not touched. This cannot be undone.`,
+      `Delete snapshot “${version.message}”?\n\nOnly this saved version is deleted. Your script is not touched. This cannot be undone.`,
       { title: 'Delete Snapshot', confirmLabel: 'Delete', danger: true },
     );
     if (!ok) return;
     try {
       await api.deleteVersion(currentProject.id, version.hash);
-      if (selectedVersion?.hash === version.hash) { setSelectedVersion(null); setDiffText(null); }
+      if (selectedVersion?.hash === version.hash) { setSelectedVersion(null); setRowSummary(null); }
       setCompareSelection((sel) => sel.filter((h) => h !== version.hash));
       await loadVersions();
-      showToast(`Snapshot ${version.short_hash} deleted`, 'success');
+      showToast(`Snapshot “${version.message}” deleted`, 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Could not delete that snapshot', 'error');
     }
@@ -228,7 +274,7 @@ const VersionHistory: React.FC = () => {
     if (!ok) return;
     try {
       const { deleted } = await api.deleteAllVersions(currentProject.id);
-      setSelectedVersion(null); setDiffText(null); setCompareSelection([]);
+      setSelectedVersion(null); setRowSummary(null); setCompareSelection([]);
       await loadVersions();
       showToast(`Deleted ${deleted} snapshot${deleted === 1 ? '' : 's'}`, 'success');
     } catch (err) {
@@ -245,7 +291,7 @@ const VersionHistory: React.FC = () => {
         await api.restoreVersion(currentProject.id, version.hash);
         await loadVersions();
         setSelectedVersion(null);
-        setDiffText(null);
+        setRowSummary(null);
 
         // Check if the current script still exists after restore
         if (currentScriptId) {
@@ -257,13 +303,13 @@ const VersionHistory: React.FC = () => {
             // Script was removed by the restore — go to project view
             setVersionHistoryOpen(false);
             navigate(`/project/${currentProject.id}`, { replace: true });
-            showToast(`Restored to snapshot ${version.short_hash}. The open script no longer exists in this snapshot.`, 'info');
+            showToast(`Restored to “${version.message}”. The open script no longer exists in this snapshot.`, 'info');
             return;
           }
         } else {
           triggerScriptReload();
         }
-        showToast(`Restored to snapshot ${version.short_hash}`, 'success');
+        showToast(`Restored to “${version.message}”`, 'success');
       } catch (err) {
         showToast(`Restore failed: ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
       }
@@ -293,26 +339,37 @@ const VersionHistory: React.FC = () => {
 
       {currentScriptId && versions.length >= 2 && (
         <div className="version-compare-bar">
-          <span className="version-compare-info">
-            {compareSelection.length === 0 && 'Check two snapshots to compare'}
-            {compareSelection.length === 1 && 'Select one more snapshot to compare'}
-            {compareSelection.length === 2 && 'Ready to compare'}
-          </span>
-          <button
-            className="version-compare-btn"
-            disabled={compareSelection.length !== 2}
-            onClick={runScriptCompare}
-          >
-            Compare Selected
-          </button>
-          {compareSelection.length > 0 && (
-            <button
-              className="version-compare-clear"
-              onClick={() => setCompareSelection([])}
-            >
-              Clear
-            </button>
+          {!compareMode ? (
+            <>
+              <span className="version-compare-info">Compare two snapshots side by side</span>
+              <button
+                className="version-compare-btn"
+                onClick={() => { setCompareSelection([]); setCompareMode(true); }}
+              >
+                Compare…
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="version-compare-info">
+                {compareSelection.length === 0 ? 'Pick two snapshots to compare' : 'Pick one more snapshot'}
+              </span>
+              <button
+                className="version-compare-clear"
+                onClick={() => { setCompareMode(false); setCompareSelection([]); }}
+              >
+                Cancel
+              </button>
+            </>
           )}
+        </div>
+      )}
+
+      {/* v6.75: the compare summary rides THIS panel while the diff owns
+          the editor area. */}
+      {compareSummary && (
+        <div className="version-summary-host">
+          <DiffSummaryBlock summary={compareSummary} />
         </div>
       )}
 
@@ -340,7 +397,7 @@ const VersionHistory: React.FC = () => {
               onClick={() => handleViewDiff(v, i)}
             >
               <div className="version-item-top">
-                {currentScriptId && (
+                {currentScriptId && compareMode && (
                   <input
                     type="checkbox"
                     className="version-compare-checkbox"
@@ -350,7 +407,6 @@ const VersionHistory: React.FC = () => {
                     title="Select for compare"
                   />
                 )}
-                <span className="version-hash">{v.short_hash}</span>
                 <span className="version-date">{relativeTime(v.date)}</span>
               </div>
               <div className="version-message">{v.message}</div>
@@ -363,7 +419,7 @@ const VersionHistory: React.FC = () => {
                       if (currentProject && currentScriptId) {
                         setVersionHistoryOpen(false);
                         setSelectedVersion(null);
-                        setDiffText(null);
+                        setRowSummary(null);
                         navigate(`/project/${currentProject.id}/history/${currentScriptId}/${v.hash}`);
                       }
                     }}
@@ -397,23 +453,23 @@ const VersionHistory: React.FC = () => {
           ))}
         </div>
 
-        {diffText !== null && selectedVersion && (
+        {rowSummary !== null && selectedVersion && (
           <div className="version-diff-area">
             <div className="version-diff-header">
-              <span>
-                Changes in {selectedVersion.short_hash}: {selectedVersion.message}
-              </span>
+              <span>Changes in “{selectedVersion.message}”</span>
               <button
                 className="version-diff-close"
                 onClick={() => {
                   setSelectedVersion(null);
-                  setDiffText(null);
+                  setRowSummary(null);
                 }}
               >
                 x
               </button>
             </div>
-            <DiffViewer diff={diffText} />
+            {rowSummary.note
+              ? <div className="version-summary-note">{rowSummary.note}</div>
+              : <DiffSummaryBlock summary={rowSummary.summary!} />}
           </div>
         )}
       </div>
@@ -423,7 +479,7 @@ const VersionHistory: React.FC = () => {
             <div className="dialog-header">Restore Snapshot</div>
             <div className="dialog-body">
               <p style={{ margin: 0 }}>
-                Restore to snapshot <strong>{restoreConfirm.short_hash}</strong>?
+                Restore to <strong>“{restoreConfirm.message}”</strong>?
                 This will create a new snapshot with the restored content.
               </p>
             </div>
