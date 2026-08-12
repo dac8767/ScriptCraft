@@ -477,6 +477,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       const result = await api.checkin(currentProject.id, checkinMessage.trim());
       if (result.hash) {
         showToast(`Snapshot saved: ${result.short_hash}`, 'success');
+        // v6.73: the open Snapshots window reloads on this tick — taking a
+        // snapshot FROM that window must show it without close-and-reopen.
+        useProjectStore.getState().bumpVersionsTick();
         const snapContent = buildSaveContent();
         if (snapContent) {
           void mirrorSnapshot({

@@ -319,6 +319,34 @@ export async function createLocalStorage() {
       return { message: 'deleted' };
     },
 
+    /* v6.73, Derek: "add a delete option for the snapshots in the snapshot
+       window." A snapshot is a commit plus its per-script rows; both go.
+       Nothing else in the database refers to them, and the SCRIPTS are
+       untouched — a snapshot is a copy, never the living script. */
+    async deleteVersion(projectId: string, commitId: string): Promise<{ message: string }> {
+      await db.execute(
+        'DELETE FROM version_scripts WHERE commit_id IN (SELECT id FROM version_commits WHERE id = $1 AND project_id = $2)',
+        [commitId, projectId],
+      );
+      await db.execute('DELETE FROM version_commits WHERE id = $1 AND project_id = $2', [commitId, projectId]);
+      return { message: 'deleted' };
+    },
+
+    /** Every snapshot in this project — the one-click way to clear the auto
+     *  saves versions before v6.72 wrote into this table. */
+    async deleteAllVersions(projectId: string): Promise<{ deleted: number }> {
+      const rows = await db.select<Array<{ n: number }>>(
+        'SELECT COUNT(*) AS n FROM version_commits WHERE project_id = $1',
+        [projectId],
+      );
+      await db.execute(
+        'DELETE FROM version_scripts WHERE commit_id IN (SELECT id FROM version_commits WHERE project_id = $1)',
+        [projectId],
+      );
+      await db.execute('DELETE FROM version_commits WHERE project_id = $1', [projectId]);
+      return { deleted: Number(rows?.[0]?.n ?? 0) };
+    },
+
     async reorderScripts(
       projectId: string,
       items: Array<{ id: string; sort_order: number }>,

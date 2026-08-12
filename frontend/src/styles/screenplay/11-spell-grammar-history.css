@@ -216,6 +216,37 @@ html.android .version-history-panel {
   border-bottom: 1px solid var(--fd-border);
   flex-shrink: 0;
 }
+/* v6.73: per-row Delete + the list bar's count and Delete All. */
+.version-delete-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+}
+.version-delete-btn:hover { border-color: #c0392b; color: #c0392b; }
+.version-history-listbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 4px 8px;
+}
+.version-history-count { font-size: 11.5px; color: var(--fd-text-muted); }
+.version-deleteall-btn {
+  padding: 3px 9px;
+  font-size: 11.5px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.version-deleteall-btn:hover { border-color: #c0392b; color: #c0392b; }
+
 /* v6.72: the window's own Take Snapshot button, upper left. */
 .version-history-take {
   flex: 0 0 auto;

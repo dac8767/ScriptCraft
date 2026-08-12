@@ -319,6 +319,15 @@ export const api = {
       body: JSON.stringify({ keep }),
     }),
 
+  /* v6.73: deleting a snapshot. The desktop app replaces these with the
+     SQLite versions (createLocalStorage); the hosted path has no route for
+     it yet, so it says so instead of appearing to work. */
+  deleteVersion: (_projectId: string, _hash: string): Promise<{ message: string }> =>
+    Promise.reject(new Error('Deleting a snapshot needs the desktop app.')),
+
+  deleteAllVersions: (_projectId: string): Promise<{ deleted: number }> =>
+    Promise.reject(new Error('Deleting snapshots needs the desktop app.')),
+
   restoreVersion: (projectId: string, hash: string) =>
     request<VersionInfo>(`/projects/${projectId}/versions/restore/${hash}`, {
       method: 'POST',

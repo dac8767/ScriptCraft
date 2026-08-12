@@ -85,6 +85,11 @@ interface ProjectState {
   setVersions: (versions: VersionInfo[]) => void;
   setVersionHistoryOpen: (open: boolean) => void;
   triggerScriptReload: () => void;
+  /** v6.73, Derek: "if I add a snapshot from the snapshot window, it doesn't
+   *  show on the list." Whoever takes one bumps this; the open Snapshots
+   *  window reloads on it — no close-and-reopen. */
+  versionsTick: number;
+  bumpVersionsTick: () => void;
 
   setActiveScriptSource: (src: ScriptSource) => void;
   markCloudScript: (projectId: string, scriptId: string) => void;
@@ -119,6 +124,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setVersions: (versions) => set({ versions }),
   setVersionHistoryOpen: (open) => set({ versionHistoryOpen: open }),
   triggerScriptReload: () => set((state) => ({ scriptReloadKey: state.scriptReloadKey + 1 })),
+  versionsTick: 0,
+  bumpVersionsTick: () => set((state) => ({ versionsTick: state.versionsTick + 1 })),
 
   setActiveScriptSource: (src) => set({ activeScriptSource: src }),
   markCloudScript: (projectId, scriptId) => {

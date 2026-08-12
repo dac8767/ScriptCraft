@@ -914,6 +914,16 @@
   "icon": "FaRegTrashAlt"
  },
  {
+  "text": "Delete every snapshot of this project (your script is not touched)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/VersionHistory.tsx"
+  ],
+  "label": "Delete All…"
+ },
+ {
   "text": "Delete note",
   "kind": "tooltip",
   "sites": 1,
@@ -971,6 +981,16 @@
   "where": [
    "components/BeatBoard.tsx"
   ]
+ },
+ {
+  "text": "Delete this snapshot (your script is not touched)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/VersionHistory.tsx"
+  ],
+  "label": "Delete"
  },
  {
   "text": "Delete this theme",

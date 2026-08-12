@@ -8,6 +8,7 @@ import type { VersionInfo } from '../services/api';
 import DiffViewer from './DiffViewer';
 import ScriptDiffView from './ScriptDiffView';
 import { showToast } from './Toast';
+import { confirmDialog } from './ConfirmDialog';
 import { withTimeout, SNAPSHOT_LOAD_TIMEOUT_MS } from '../utils/withTimeout';
 
 function relativeTime(dateStr: string): string {
@@ -150,11 +151,14 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
     }
   }, [currentProject, currentScriptId, setVersions]);
 
+  // v6.73: versionsTick reloads the OPEN window — Take Snapshot bumps it, so
+  // a snapshot taken from here appears right away.
+  const versionsTick = useProjectStore((s) => s.versionsTick);
   useEffect(() => {
     if ((embedded || versionHistoryOpen) && currentProject) {
       loadVersions();
     }
-  }, [embedded, versionHistoryOpen, currentProject, loadVersions]);
+  }, [embedded, versionHistoryOpen, currentProject, loadVersions, versionsTick]);
 
   const handleViewDiff = useCallback(
     async (version: VersionInfo, index: number) => {
@@ -186,6 +190,46 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
     },
     []
   );
+
+  /* v6.73, Derek: "add a delete option for the snapshots in the snapshot
+     window. show a warning window before deleting." Delete-one on each row,
+     and Delete All in the footer — the one-click way out of the pile of
+     'Auto save' entries versions before v6.72 wrote into this list. Both
+     warn first; a snapshot deletes nothing but itself. */
+  const handleDelete = useCallback(async (version: VersionInfo) => {
+    if (!currentProject) return;
+    const ok = await confirmDialog(
+      `Delete snapshot ${version.short_hash} — "${version.message}"?\n\nOnly this saved version is deleted. Your script is not touched. This cannot be undone.`,
+      { title: 'Delete Snapshot', confirmLabel: 'Delete', danger: true },
+    );
+    if (!ok) return;
+    try {
+      await api.deleteVersion(currentProject.id, version.hash);
+      if (selectedVersion?.hash === version.hash) { setSelectedVersion(null); setDiffText(null); }
+      setCompareSelection((sel) => sel.filter((h) => h !== version.hash));
+      await loadVersions();
+      showToast(`Snapshot ${version.short_hash} deleted`, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not delete that snapshot', 'error');
+    }
+  }, [currentProject, selectedVersion, loadVersions]);
+
+  const handleDeleteAll = useCallback(async () => {
+    if (!currentProject || versions.length === 0) return;
+    const ok = await confirmDialog(
+      `Delete all ${versions.length} snapshot${versions.length === 1 ? '' : 's'} of this project?\n\nEvery saved version is deleted — including any old "Auto save" entries. Your script is not touched. This cannot be undone.`,
+      { title: 'Delete All Snapshots', confirmLabel: 'Delete All', danger: true },
+    );
+    if (!ok) return;
+    try {
+      const { deleted } = await api.deleteAllVersions(currentProject.id);
+      setSelectedVersion(null); setDiffText(null); setCompareSelection([]);
+      await loadVersions();
+      showToast(`Deleted ${deleted} snapshot${deleted === 1 ? '' : 's'}`, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not delete the snapshots', 'error');
+    }
+  }, [currentProject, versions.length, loadVersions]);
 
   const handleRestoreConfirm = useCallback(
     async () => {
@@ -295,6 +339,16 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
 
       <div className="version-history-content">
         <div className="version-history-list">
+          {versions.length > 0 && (
+            <div className="version-history-listbar">
+              <span className="version-history-count">{versions.length} snapshot{versions.length === 1 ? '' : 's'}</span>
+              <button
+                className="version-deleteall-btn"
+                onClick={() => void handleDeleteAll()}
+                title="Delete every snapshot of this project (your script is not touched)"
+              >Delete All…</button>
+            </div>
+          )}
           {versions.length === 0 && !loading && currentProject && (
             <div className="version-history-empty">
               No snapshots yet. Use File &gt; Script History &gt; Take Snapshot to save one.
@@ -348,6 +402,16 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({ embedded = false }) => 
                   title="Restore this snapshot"
                 >
                   Restore
+                </button>
+                <button
+                  className="version-delete-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleDelete(v);
+                  }}
+                  title="Delete this snapshot (your script is not touched)"
+                >
+                  Delete
                 </button>
               </div>
             </div>
