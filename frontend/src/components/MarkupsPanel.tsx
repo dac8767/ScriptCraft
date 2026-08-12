@@ -56,7 +56,7 @@ export function MarkupsControls() {
   const setSearch = useEditorStore((s) => s.setMarkupSearch);
 
   // v5.43, Derek: ONE filter — every control here drives the SCRIPT and the
-  // WINDOW together. Display reads the union (a type hidden in either shows
+  // WINDOW together. Filter reads the union (a type hidden in either shows
   // as hidden; one click converges the two), so legacy per-scope state from
   // the other doors (⋮ menus, ribbon, Navigator) can't hide a mismatch.
   const hiddenUnion = useMemo(
@@ -106,13 +106,14 @@ export function MarkupsControls() {
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); useEditorStore.getState().setMarkupAddRequest(true); }}
       ><FaPlus /></button>
-      {/* v6.42, Derek: the button says "Display" now — it chooses what
-          displays, in the script and this window together. The class and
-          data-ctl keep their old names: they are persisted/check ids. */}
-      <button ref={filterBtn} data-ctl="filter" className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Choose which annotations display (script and window together)"
+      {/* v6.42: the button said "Display". v6.71, Derek: it says FILTER —
+          the same word the ribbon's Annotation Filter uses for the same
+          choice, so one idea has one name. The class and data-ctl keep
+          their old names: they are persisted/check ids. */}
+      <button ref={filterBtn} data-ctl="filter" className={`tool-ctl markup-ctl-filter${filterOpen ? ' open' : ''}`} title="Choose which annotations show (script and window together)"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setFilterOpen((v) => !v); }}>
-        <span className="tool-ctl-label">Display</span>
+        <span className="tool-ctl-label">Filter</span>
         {chip > 0 && <span className="tool-ctl-chip">{chip}</span>}
       </button>
       {filterOpen && createPortal(

@@ -7,7 +7,8 @@
    5 the System tab is login-free (Reset only)
    6 Settings is a real WINDOW: standard header, drag moves it, resize
      handles present, fullscreen fills the viewport
-   7 the Annotations window's button says "Display" (class/id unchanged) */
+   7 the Annotations window's button says "Filter" (v6.71 rename; the
+     class and data-ctl id are unchanged — they are persisted ids) */
 import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
@@ -108,11 +109,11 @@ try {
   });
   await settle(page);
 
-  // ── 7: the Annotations button says Display ──
+  // ── 7: the Annotations button says Filter (v6.71) ──
   await openTool(page, 'Annotations');
   await settle(page);
   const label = await page.evaluate(() => document.querySelector('.markup-ctl-filter .tool-ctl-label')?.textContent);
-  ok(label === 'Display', `the annotations button reads "Display" (${label})`);
+  ok(label === 'Filter', `the annotations button reads "Filter" (${label})`);
   // and still opens the popover through the unchanged class
   await page.click('.markup-ctl-filter');
   await settle(page);

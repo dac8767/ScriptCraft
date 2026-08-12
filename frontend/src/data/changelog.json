@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.71",
+  "date": "2026-08-10",
+  "changes": [
+   "The Annotations window\u2019s \u201cDisplay\u201d button is now called \u201cFilter\u201d \u2014 the same word the ribbon\u2019s Annotation Filter uses for the same choice, so one idea has one name."
+  ]
+ },
+ {
   "version": "6.70",
   "date": "2026-08-09",
   "changes": [

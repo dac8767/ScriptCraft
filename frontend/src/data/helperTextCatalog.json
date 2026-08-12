@@ -488,14 +488,14 @@
   "label": "Additional save locations:"
  },
  {
-  "text": "Choose which annotations display (script and window together)",
+  "text": "Choose which annotations show (script and window together)",
   "kind": "tooltip",
   "sites": 1,
   "area": "Annotations Window",
   "where": [
    "components/MarkupsPanel.tsx"
   ],
-  "label": "Display"
+  "label": "Filter"
  },
  {
   "text": "Choose which outline the bar shows",
