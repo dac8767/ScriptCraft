@@ -15,6 +15,7 @@ import { LuRotateCcw, LuSearch } from 'react-icons/lu';
 import { FaCopy, FaCheck, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { runMajorChange } from '../utils/majorChange';
+import { pushWindowAction } from '../stores/windowUndoStore';
 import { DESIGN_GROUPS, buildOverrideCss, type DesignToken } from '../design/designTokens';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 
@@ -40,16 +41,41 @@ function TokenRow({ t }: { t: DesignToken }) {
   const cssOverride = useEditorStore((s) => (isStore ? undefined : s.designVars[t.id]));
   const storeVal = useEditorStore((s) => (t.store ? t.store.get(s) : 0));
   const setDesignVar = useEditorStore((s) => s.setDesignVar);
-  const resetDesignVar = useEditorStore((s) => s.resetDesignVar);
   const value = isStore ? storeVal : (cssOverride ?? t.def);
   const isOverridden = isStore ? storeVal !== t.def : cssOverride !== undefined && cssOverride !== t.def;
 
+  /* v6.78: every committed change is undoable (window-undo lane). A range
+     drag commits once per input event — the coalesceKey merges the burst so
+     ⌘Z returns to the value from BEFORE the drag, in one step. `prev` is
+     three-state for CSS tokens: a number override or undefined (default). */
+  const apply = (val: number) => { if (t.store) t.store.set(val); else setDesignVar(t.id, val); };
+  const restore = (prev: number | undefined) => {
+    if (t.store) t.store.set(prev ?? t.def);
+    else if (prev === undefined) useEditorStore.getState().resetDesignVar(t.id);
+    else useEditorStore.getState().setDesignVar(t.id, prev);
+  };
   const commit = (raw: number) => {
     if (Number.isNaN(raw)) return;
     const clamped = Math.min(t.max, Math.max(t.min, snap(raw, t.step)));
-    if (t.store) t.store.set(clamped); else setDesignVar(t.id, clamped);
+    if (clamped === value) return;
+    const prev = isStore ? storeVal : cssOverride;
+    apply(clamped);
+    pushWindowAction(
+      `Design change — ${t.label}`,
+      () => restore(prev),
+      () => apply(clamped),
+      { coalesceKey: `dz:${t.id}` },
+    );
   };
-  const reset = () => { if (t.store) t.store.set(t.def); else resetDesignVar(t.id); };
+  const reset = () => {
+    if (!isOverridden) return;
+    const prev = isStore ? storeVal : cssOverride;
+    // the redo closure applies WITHOUT pushing — pushing from inside redo
+    // would grow the stack on every redo
+    const applyReset = () => { if (t.store) t.store.set(t.def); else useEditorStore.getState().resetDesignVar(t.id); };
+    applyReset();
+    pushWindowAction(`Reset — ${t.label}`, () => restore(prev), applyReset);
+  };
 
   return (
     <div className={`dz-row${isOverridden ? ' dz-row-on' : ''}`}>

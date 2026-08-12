@@ -25,13 +25,17 @@ export interface WindowAction {
   at: number;
   undo: () => void;
   redo: () => void;
+  /** v6.78: entries sharing a key within `within` ms MERGE — a slider drag
+   *  fires a commit per input event and must undo as ONE change. */
+  coalesceKey?: string;
 }
 
 interface WindowUndoState {
   undoStack: WindowAction[];
   redoStack: WindowAction[];
   /** Record a just-run action. Clears the redo lane, like every editor. */
-  push: (label: string, undo: () => void, redo: () => void) => void;
+  push: (label: string, undo: () => void, redo: () => void,
+    opts?: { coalesceKey?: string; within?: number }) => void;
   /** Run + pop the newest entry. Returns its label, or null if empty. */
   undoLast: () => string | null;
   redoLast: () => string | null;
@@ -40,14 +44,25 @@ interface WindowUndoState {
 /** Plenty for a session of window actions; closures hold real state, so the
  *  stack is capped rather than unbounded. */
 const MAX_ENTRIES = 20;
+const COALESCE_MS = 2500;
 
 export const useWindowUndoStore = create<WindowUndoState>((set, get) => ({
   undoStack: [],
   redoStack: [],
-  push: (label, undo, redo) => set((s) => ({
-    undoStack: [...s.undoStack, { label, at: Date.now(), undo, redo }].slice(-MAX_ENTRIES),
-    redoStack: [],
-  })),
+  push: (label, undo, redo, opts) => set((s) => {
+    const top = s.undoStack[s.undoStack.length - 1];
+    if (opts?.coalesceKey && top?.coalesceKey === opts.coalesceKey
+        && Date.now() - top.at < (opts.within ?? COALESCE_MS)) {
+      // merge: the ORIGINAL undo (back to before the run began), the newest
+      // redo. `at` refreshes so an ongoing drag keeps merging.
+      const merged: WindowAction = { label, at: Date.now(), undo: top.undo, redo, coalesceKey: opts.coalesceKey };
+      return { undoStack: [...s.undoStack.slice(0, -1), merged], redoStack: [] };
+    }
+    return {
+      undoStack: [...s.undoStack, { label, at: Date.now(), undo, redo, coalesceKey: opts?.coalesceKey }].slice(-MAX_ENTRIES),
+      redoStack: [],
+    };
+  }),
   undoLast: () => {
     const s = get();
     const entry = s.undoStack[s.undoStack.length - 1];
@@ -72,3 +87,12 @@ export const useWindowUndoStore = create<WindowUndoState>((set, get) => ({
     return entry.label;
   },
 }));
+
+/** The call-site shorthand — window edits push through this (v6.78: plain
+ *  edits in windows are undoable too, not just the warned resets). */
+export function pushWindowAction(
+  label: string, undo: () => void, redo: () => void,
+  opts?: { coalesceKey?: string; within?: number },
+): void {
+  useWindowUndoStore.getState().push(label, undo, redo, opts);
+}

@@ -45,6 +45,17 @@ try {
   ok(edited === 'My hard work', `an edit through the window commits ("${edited}")`);
   await page.waitForSelector('.ht-reset-all', { timeout: 5000 });
 
+  /* v6.78, Derek's retest: "i changed helper text in the window, and then
+     tried to use Undo, but it did not revert back." The EDIT ITSELF must
+     undo — not only the reset buttons. */
+  await pressUndo();
+  const editUndone = await page.evaluate(() => document.querySelector('.ht-input').value);
+  ok(editUndone === original, `Ctrl+Z undoes the edit itself ("${editUndone.slice(0, 30)}…")`);
+  ok(await bodyHas('Undid: Helper text edit'), 'and the toast names it');
+  await pressUndo(true);
+  ok(await page.evaluate(() => document.querySelector('.ht-input').value) === 'My hard work',
+    'Ctrl+Shift+Z brings the edit back');
+
   await page.click('.ht-reset-all');
   await page.waitForSelector('.fs-confirm-overlay', { timeout: 5000 });
   const warn1 = await confirmBox();
@@ -126,6 +137,30 @@ try {
   /* ── 1+3 on the Design window: a session of sliders is hard work too ── */
   await page.evaluate(() => window.__scStore.getState().openTool('design'));
   await page.waitForSelector('.dz-footer', { timeout: 8000 });
+
+  /* v6.78: a REAL slider drag (three input events) undoes as ONE step. */
+  await page.evaluate(() => document.querySelector('.dz-group-head')?.click());  // groups start folded
+  await page.waitForSelector('.dz-range', { timeout: 5000 });
+  const drag = await page.evaluate(() => {
+    const range = document.querySelector('.dz-range');
+    const before = range.value;
+    const min = parseFloat(range.min), max = parseFloat(range.max), step = parseFloat(range.step) || 1;
+    const target = parseFloat(before) === max ? min : max;
+    const mid = Math.min(max, Math.max(min, parseFloat(before) + (target > parseFloat(before) ? step : -step)));
+    const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    for (const v of [mid, target === mid ? max : target, target]) {
+      set.call(range, String(v));
+      range.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    return { before, after: range.value };
+  });
+  await settle(page);
+  ok(drag.after !== drag.before, `a slider drag lands (${drag.before} → ${drag.after})`);
+  await pressUndo();
+  const dragged = await page.evaluate(() => document.querySelector('.dz-range').value);
+  ok(dragged === drag.before, `ONE Ctrl+Z takes the whole drag back (${dragged})`);
+  ok(await bodyHas('Undid: Design change'), 'and the toast names the design change');
+
   await page.evaluate(() => window.__scStore.getState().setDesignVar('pageGap', 44));
   await settle(page);
   await page.evaluate(() => [...document.querySelectorAll('.dz-foot-btn')]
@@ -190,6 +225,11 @@ try {
   await page.keyboard.press('Control+Shift+F9');       // F-key: no shift-transform
   await settle(page);
   ok(await findKey() === 'Ctrl+Shift+F9', `rebinding through the window sticks (${await findKey()})`);
+  /* v6.78: a single rebinding is itself undoable. */
+  await pressUndo();
+  ok(await findKey() === 'Ctrl+F', `Ctrl+Z undoes the single rebinding (${await findKey()})`);
+  await pressUndo(true);
+  ok(await findKey() === 'Ctrl+Shift+F9', `and Ctrl+Shift+Z re-applies it (${await findKey()})`);
   await page.evaluate(() => [...document.querySelectorAll('button')]
     .find((b) => b.textContent === 'Reset All Shortcuts')?.click());
   await page.waitForSelector('.fs-confirm-overlay', { timeout: 5000 });

@@ -12,10 +12,27 @@
 import React from 'react';
 import { useShortcutStore } from '../stores/shortcutStore';
 import { runMajorChange } from '../utils/majorChange';
+import { pushWindowAction } from '../stores/windowUndoStore';
 import {
   SHORTCUT_COMMANDS, SHORTCUT_GROUPS, COMMAND_BY_ID,
   eventToCombo, formatCombo, findConflict,
 } from './shortcuts';
+
+/* v6.78: single-binding changes are undoable. An override is three-state
+   (combo / null = deliberately unbound / absent = the default), so a
+   snapshot keeps `has` beside the combo and the restore picks the right
+   setter. A recording that STEALS a key from another command restores both
+   in one ⌘Z. */
+const bindingSnapshot = (id: string) => {
+  const o = useShortcutStore.getState().overrides;
+  return Object.prototype.hasOwnProperty.call(o, id)
+    ? { has: true as const, combo: o[id] }
+    : { has: false as const, combo: null };
+};
+const restoreBinding = (id: string, snap: { has: boolean; combo: string | null }) => {
+  const st = useShortcutStore.getState();
+  if (snap.has) st.setBinding(id, snap.combo); else st.resetBinding(id);
+};
 
 export default function KeyboardShortcutsTab() {
   const bindings = useShortcutStore((s) => s.bindings);
@@ -39,6 +56,8 @@ export default function KeyboardShortcutsTab() {
       if (!combo) return;   // modifier held on its own — keep listening
 
       const clash = findConflict(bindings, combo, recording);
+      const prevSelf = bindingSnapshot(recording);
+      const prevClash = clash ? bindingSnapshot(clash) : null;
       if (clash) {
         // One key can only run one command, so take it from the other and say so.
         setBinding(clash, null);
@@ -47,6 +66,12 @@ export default function KeyboardShortcutsTab() {
         setNote('');
       }
       setBinding(recording, combo);
+      const id = recording;
+      pushWindowAction(
+        `Shortcut change — ${COMMAND_BY_ID[id]?.label ?? id}`,
+        () => { restoreBinding(id, prevSelf); if (clash && prevClash) restoreBinding(clash, prevClash); },
+        () => { const st = useShortcutStore.getState(); if (clash) st.setBinding(clash, null); st.setBinding(id, combo); },
+      );
       setRecording(null);
     };
     window.addEventListener('keydown', onKey, true);
@@ -83,6 +108,25 @@ export default function KeyboardShortcutsTab() {
               // whenever a key is bound, Reset whenever the binding differs
               // from the default (including after a Clear).
               const atDefault = combo === c.defaultCombo;
+              /* v6.78: single-binding changes are undoable — hoisted so the
+                 buttons stay one-liners (the helper-catalog builder reads a
+                 button's label from the lines right after its title). */
+              const clearOne = () => {
+                setNote('');
+                const prev = bindingSnapshot(c.id);
+                setBinding(c.id, null);
+                pushWindowAction(`Clear shortcut — ${c.label}`,
+                  () => restoreBinding(c.id, prev),
+                  () => useShortcutStore.getState().setBinding(c.id, null));
+              };
+              const resetOne = () => {
+                setNote('');
+                const prev = bindingSnapshot(c.id);
+                resetBinding(c.id);
+                pushWindowAction(`Reset shortcut — ${c.label}`,
+                  () => restoreBinding(c.id, prev),
+                  () => useShortcutStore.getState().resetBinding(c.id));
+              };
               return (
                 <div className="fs-customize-row fs-shortcut-row" key={c.id}>
                   <span className="fs-customize-tool">{c.label}</span>
@@ -102,13 +146,13 @@ export default function KeyboardShortcutsTab() {
                       className="fs-shortcut-clear"
                       disabled={locked || !combo}
                       title="Remove this shortcut"
-                      onClick={() => { setNote(''); setBinding(c.id, null); }}
+                      onClick={clearOne}
                     >Clear</button>
                     <button
                       className="fs-shortcut-clear"
                       disabled={locked || atDefault}
                       title="Restore the default shortcut"
-                      onClick={() => { setNote(''); resetBinding(c.id); }}
+                      onClick={resetOne}
                     >Reset</button>
                   </span>
                 </div>

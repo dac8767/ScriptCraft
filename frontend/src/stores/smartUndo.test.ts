@@ -98,4 +98,27 @@ describe('smartUndo — the window-action lane (v6.77)', () => {
     W().push('B', () => {}, () => {});
     expect(W().redoStack).toHaveLength(0);
   });
+
+  /* v6.78: a slider drag commits once per input event — those must undo as
+     ONE step, back to the value from before the drag. */
+  it('a burst sharing a coalesce key merges into one entry', () => {
+    let v = 10;
+    W().push('Design change', () => { v = 10; }, () => { v = 20; }, { coalesceKey: 'dz:x' });
+    v = 20;
+    W().push('Design change', () => { v = 20; }, () => { v = 30; }, { coalesceKey: 'dz:x' });
+    v = 30;
+    expect(W().undoStack).toHaveLength(1);
+    smartUndo(null);
+    expect(v).toBe(10);                              // ONE ⌘Z — pre-drag value
+    smartRedo(null);
+    expect(v).toBe(30);                              // redo lands on the last value
+  });
+
+  it('different keys — and deliberate edits with no key — never merge', () => {
+    W().push('Design change', () => {}, () => {}, { coalesceKey: 'dz:x' });
+    W().push('Design change', () => {}, () => {}, { coalesceKey: 'dz:y' });
+    W().push('Helper text edit', () => {}, () => {});
+    W().push('Helper text edit', () => {}, () => {});
+    expect(W().undoStack).toHaveLength(4);
+  });
 });

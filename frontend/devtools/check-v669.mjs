@@ -70,6 +70,14 @@ try {
     window.__scStore.getState().openTool('history');
   });
   await settle(page);
+  /* The product's promise is "the spinner ENDS inside the budget", not
+     "the spinner is gone after one settle" — under check-all's 4-way load
+     a single settle raced the fetch and this file flaked twice (v6.77/78).
+     Wait on the promise itself; the asserts below say what happened. */
+  await page.waitForFunction(
+    () => !document.querySelector('.version-history-loading'),
+    { timeout: 12_000 },
+  ).catch(() => {});
   s = await look();
   ok(s.open, 'it opens with a script loaded too');
   ok(!s.loading, `and does NOT sit on "Loading snapshots..." (loading ${s.loading})`);

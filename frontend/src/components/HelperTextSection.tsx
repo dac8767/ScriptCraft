@@ -20,6 +20,7 @@ import { FaRegEye, FaRegEyeSlash, FaExternalLinkAlt, FaChevronDown, FaChevronRig
 import { useEditorStore } from '../stores/editorStore';
 import { helperDestination } from '../utils/helperTextDestinations';
 import { runMajorChange } from '../utils/majorChange';
+import { pushWindowAction } from '../stores/windowUndoStore';
 import { HELPER_ICONS } from '../data/helperTextIcons';
 import catalog from '../data/helperTextCatalog.json';
 
@@ -74,13 +75,30 @@ function HelperRow({ entry }: { entry: HelperEntry }) {
   /* v6.24, Derek: the found-in info renders ON SCREEN, not as hover text. */
   const foundIn = entry.where.map(prettyFile).join(', ');
 
+  /* v6.78, Derek: "i changed helper text in the window, and then tried to
+     use Undo, but it did not revert back." Every commit — an edit, a blank,
+     or a per-row reset — lands on the window-undo lane, so ⌘Z takes it
+     back. `prev` keeps the v6.38 three-state exactly: a string override,
+     '' (deliberately blank), or undefined (the app's own text). */
+  const short = (entry.label ?? entry.text).slice(0, 28);
+  const pushEdit = (label: string, prev: string | undefined, next: string | null) => {
+    pushWindowAction(
+      label,
+      () => useEditorStore.getState().setHelperTextOverride(entry.text, prev === undefined ? null : prev),
+      () => useEditorStore.getState().setHelperTextOverride(entry.text, next),
+    );
+  };
+
   const commit = (raw: string) => {
     const v = raw.trim();
     /* v6.38, Derek: a BLANK field is a real choice — "there is no helper
        text for that item". Empty commits as an '' override (title/placeholder
        go empty wherever the string appears); the reset button is the way
        back to the app's own text. Only typing the default verbatim clears. */
-    setOverride(entry.text, v === entry.text ? null : v);
+    const next = v === entry.text ? null : v;
+    const changed = (override ?? null) !== next;
+    setOverride(entry.text, next);
+    if (changed) pushEdit(`Helper text edit — “${short}”`, override, next);
     setDraft(null);
   };
 
@@ -108,7 +126,11 @@ function HelperRow({ entry }: { entry: HelperEntry }) {
           className="dz-reset"
           title={edited ? 'Reset to the app’s own text' : 'Default'}
           disabled={!edited}
-          onClick={() => { setDraft(null); setOverride(entry.text, null); }}
+          onClick={() => {
+            setDraft(null);
+            setOverride(entry.text, null);
+            pushEdit(`Reset helper text — “${short}”`, override, null);
+          }}
         ><LuRotateCcw /></button>
       </div>
       <div className="ht-where">Found in: {foundIn}</div>

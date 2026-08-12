@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.77 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.78 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -240,6 +240,43 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.78 — plain EDITS in windows are undoable (Derek's retest)
+
+- Derek, testing v6.77: "i changed helper text in the window, and then
+  tried to use Undo, but it did not revert back." v6.77 had scoped the
+  undo lane to the WARNED buttons; his sentence was "changes made in
+  windows" — the first thing he tried was an ordinary edit. The lane now
+  takes value edits too:
+  • Helper Text: every commit (edit / blank / typing-the-default) and the
+    per-row reset push {prev, next} closures — prev keeps v6.38's
+    three-state (override / '' deliberate blank / undefined = default).
+  • Keyboard Shortcuts: a recorded rebind (ONE entry restores both sides
+    when it steals a key from another command), per-row Clear, per-row
+    Reset. bindingSnapshot/restoreBinding keep the has-override-vs-default
+    distinction.
+  • Design: TokenRow.commit pushes with `coalesceKey: dz:<id>` — pushes
+    sharing a key within 2.5s MERGE (original undo, newest redo, `at`
+    refreshed so an ongoing drag keeps merging). A range drag = one ⌘Z
+    back to the pre-drag value. Per-row reset pushes too; its redo closure
+    applies WITHOUT pushing (a redo that pushes would grow the stack).
+- NOT pushed on purpose: the hide/unhide eye toggles and similar one-click
+  reversibles — they'd flood the 20-entry stack and bury a reset five
+  clicks deep. If Derek wants them, raise the cap alongside.
+- check-v677 grew to 35 (edit→⌘Z→⇧⌘Z at the top — his exact retest — a
+  real 3-event slider drag undone in ONE step, single-rebind undo/redo);
+  smartUndo.test.ts 8 (coalesce merge + no-merge).
+- TWO suite-hygiene fixes found by the gates themselves: (a) the catalog
+  guard caught that hoisting the Clear/Reset onClick bodies out of the
+  BUTTONS restores the builder's label context (it reads a button's label
+  from the lines right after its title= — keep guarded buttons one-liners
+  and hoist handlers); (b) check-v669 flaked twice under 4-way load once
+  the keyboard-heavy check-v677 joined — it asserted !loading after ONE
+  settle, but the product's promise is "the spinner ends inside the 12s
+  budget"; it now waitForFunction's on that promise. Solo AND in-suite
+  green since.
+- Gates: tsc 0, vitest 1196, build ok, check-all 1027/0 (in-suite, after
+  the v669 hardening).
 
 ### v6.77 — warnings on major-change buttons + window-action UNDO
 

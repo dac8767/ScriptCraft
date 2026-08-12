@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.78",
+  "date": "2026-08-12",
+  "changes": [
+   "Undo now covers ordinary edits made in windows, not just the big reset buttons. Retyping a helper text string (or blanking it, or its per-row reset), rebinding a keyboard shortcut (Clear and per-row Reset too — and a rebind that steals a key from another command restores both in one step), and changing a Design value all land on the same undo as everything else: ⌘Z takes the last one back, ⇧⌘Z brings it forward.",
+   "Dragging a Design slider counts as one change — a single ⌘Z returns to the value from before the drag, not one notch at a time."
+  ]
+ },
+ {
   "version": "6.77",
   "date": "2026-08-12",
   "changes": [
