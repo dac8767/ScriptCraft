@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.85",
+  "date": "2026-08-13",
+  "changes": [
+   "The reset buttons in Settings ▸ Defaults now warn first and can be undone with ⌘Z, exactly like the same buttons at the bottom of each Customize tab. They had been missed when the warnings were added in v6.77 — both surfaces now run one shared path, so they can never differ again."
+  ]
+ },
+ {
   "version": "6.84",
   "date": "2026-08-13",
   "changes": [

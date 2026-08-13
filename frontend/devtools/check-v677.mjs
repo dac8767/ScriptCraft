@@ -206,6 +206,22 @@ try {
   }
   await settle(page);
 
+  /* ── v6.85: Settings ▸ Defaults compiles the SAME resets — it must run
+     the SAME warn+undo wrapper (it was still resetting bare, the drift the
+     one-registry design forbids) ── */
+  await page.evaluate(() => window.__scStore.getState().openPreferences());
+  await page.waitForSelector('.prefs-tabs', { timeout: 8000 });
+  await page.evaluate(() => [...document.querySelectorAll('.prefs-tab')]
+    .find((b) => b.textContent.trim() === 'Defaults')?.click());
+  await page.waitForSelector('.fs-defaults-tab', { timeout: 5000 });
+  await page.evaluate(() => [...document.querySelectorAll('.fs-defaults-tab .swn-add-btn')]
+    .find((b) => b.textContent === 'Reset Items')?.click());
+  await page.waitForSelector('.fs-confirm-overlay', { timeout: 5000 });
+  ok(/back to the app defaults/.test(await confirmBox()),
+    'Settings ▸ Defaults resets warn too — same wrapper as the Customize tabs');
+  await clickCancel();
+  await settle(page);
+
   /* ── Reset All Shortcuts — rebound through the REAL recording UI, and
      every assert reads the ROW, not a store import (an HMR-split module
      instance would make store reads lie — the check-v642 lesson) ── */

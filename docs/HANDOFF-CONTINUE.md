@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.84 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.85 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -258,6 +258,29 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.85 — Settings ▸ Defaults joins the warn+undo wrapper (v6.77 drift)
+
+- The Defaults tab COMPILES the same CUSTOMIZE_RESETS registry but was
+  still calling a.run() bare — no warning, no undo — while the per-tab
+  Reset sections wrapped. Extracted `runCustomizeReset(a)` in
+  customizeResets.tsx; BOTH surfaces call it now (the one-registry design
+  actually enforced). check-v677 → 36 (Defaults reset warns; cancel).
+- FEEDBACK STATUS (mid-decision, Derek asked "is this really the
+  easiest?"): the v6.84 email-code sign-in needs custom SMTP to edit the
+  Supabase mail templates (stock template sends a LINK, not the code —
+  his desktop can't use links). Offered: (a) SIMPLIFY — drop verified
+  sign-in for a typed-once name/email profile, anon-insert RLS (3-line
+  SQL for him), no SMTP/Resend at all — RECOMMENDED; or (b) finish
+  Resend + his domain curiousarcana.com (DNS records) for verified
+  login. AWAITING HIS PICK — build NEITHER until he answers. Also: new
+  sessions carry SUPABASE_SECRET_KEY + open network to supabase.co
+  (verified live: auth 200, feedback table exists w/ RLS filtering,
+  bucket denies anon — and a fresh session read the table: zero rows).
+  Warn future sessions: fresh clones land on MAIN (stale v0.6, still
+  says OpenDraft) — another session already mis-diagnosed "no feedback
+  code in the repo" from there; the work lives on claude/v0_32.
+- Gates: tsc 0, vitest 1193, build ok, check-all 1068/0.
 
 ### v6.84 — NATIVE Feedback + email-code sign-in (Airtable retired)
 

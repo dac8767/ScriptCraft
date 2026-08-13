@@ -2,7 +2,7 @@ import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
 import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaMarker } from 'react-icons/fa';
 import PresetsPanel from './PresetsPanel';
-import { CUSTOMIZE_RESETS, ResetAllButton, type CustomizeTabId } from './customizeResets';
+import { CUSTOMIZE_RESETS, ResetAllButton, runCustomizeReset, type CustomizeTabId } from './customizeResets';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -103,7 +103,10 @@ function DefaultsTab() {
               <button
                 key={a.id}
                 className="swn-add-btn"
-                onClick={() => { a.run(); showToast(`${a.label} — done`, 'success'); }}
+                /* v6.85: the SAME warn+undo wrapper as the per-tab Reset
+                   sections — this tab was still resetting bare (missed in
+                   v6.77), the exact drift the shared registry forbids. */
+                onClick={() => runCustomizeReset(a)}
               >{a.label}</button>
             ))}
           </div>

@@ -154,6 +154,25 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
   },
 ];
 
+/** THE way a registry reset runs — warn, capture, run, land on the
+ *  window-undo lane (v6.77's rule). v6.85: extracted so Settings ▸ Defaults
+ *  runs the SAME wrapper as the per-tab Reset sections — it was still
+ *  calling a.run() bare, the drift the one-registry design exists to
+ *  prevent. Every surface that renders CUSTOMIZE_RESETS calls this. */
+export function runCustomizeReset(a: ResetAction): void {
+  void runMajorChange({
+    title: a.label,
+    message: `Put ${a.what} back to the app defaults?`,
+    confirmLabel: 'Reset',
+    // three tabs share the bare "Reset Items" label — the undo
+    // toast names WHAT came back, not which button was pressed
+    label: `Reset — ${a.what}`,
+    capture: a.capture ?? captureCustomizeState,
+    run: a.run,
+    toast: `${a.label} — done`,
+  });
+}
+
 /** The bottom-of-tab Reset section — every tab's reset buttons in one place.
  *  v6.77, Derek: "any button that makes major changes, always include a
  *  warning window" — every entry warns first and lands on the window-undo
@@ -170,17 +189,7 @@ export function ResetSection({ tab }: { tab: CustomizeTabId }) {
           <button
             key={a.id}
             className="swn-add-btn"
-            onClick={() => void runMajorChange({
-              title: a.label,
-              message: `Put ${a.what} back to the app defaults?`,
-              confirmLabel: 'Reset',
-              // three tabs share the bare "Reset Items" label — the undo
-              // toast names WHAT came back, not which button was pressed
-              label: `Reset — ${a.what}`,
-              capture: a.capture ?? captureCustomizeState,
-              run: a.run,
-              toast: `${a.label} — done`,
-            })}
+            onClick={() => runCustomizeReset(a)}
           >{a.label}</button>
         ))}
       </div>
