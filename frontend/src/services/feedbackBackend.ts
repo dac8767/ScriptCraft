@@ -25,7 +25,9 @@
  * attachment can be any image file — so the upload keeps the file's real
  * format instead of assuming PNG. The table also gained a `status` column
  * (Pending / In Progress / Complete); that is Derek's triage state, edited
- * in the dashboard — the app never writes it.
+ * in the dashboard — the app never writes it. v6.89: MULTIPLE attachments
+ * — each uploads separately and `attachments` holds the paths
+ * comma-joined (generated names never contain commas).
  */
 import { isTauri } from './platform';
 import { APP_VERSION } from '../data/changelog';
@@ -52,7 +54,9 @@ export interface FeedbackPayload {
 
 export interface QueuedFeedback {
   payload: FeedbackPayload;
-  /** data: URL of the image, so a queued attachment survives a restart */
+  /** data: URLs of the images, so queued attachments survive a restart */
+  shotDataUrls?: string[];
+  /** pre-v6.89 single-attachment entries — still drained */
   shotDataUrl?: string;
   queuedAt: string;
 }
@@ -108,21 +112,22 @@ export function extFromType(type: string): string {
   return sub.replace(/[^a-z0-9]/g, '') || 'png';
 }
 
-/** Upload the attachment, then insert the row. Throws FeedbackError with a
- *  message the form can show verbatim. Requires a saved profile. */
-export async function submitFeedback(payload: FeedbackPayload, shot?: Blob | null): Promise<void> {
+/** Upload every attachment, then insert the row. Throws FeedbackError with
+ *  a message the form can show verbatim. Requires a saved profile. */
+export async function submitFeedback(payload: FeedbackPayload, shots?: Blob[] | null): Promise<void> {
   const profile = loadFeedbackProfile();
   if (!profile) throw new FeedbackError('Add your name and email first — the form asks once.');
 
-  let attachmentPath: string | null = null;
-  if (shot) {
-    attachmentPath = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extFromType(shot.type)}`;
-    const up = await fetch(`${base()}/storage/v1/object/feedback-shots/${attachmentPath}`, {
+  const paths: string[] = [];
+  for (const shot of shots ?? []) {
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extFromType(shot.type)}`;
+    const up = await fetch(`${base()}/storage/v1/object/feedback-shots/${path}`, {
       method: 'POST',
       headers: { ...keyHeaders(), 'Content-Type': shot.type || 'image/png' },
       body: shot,
     });
     if (!up.ok) await readError(up, 'The image upload failed — check the feedback-shots bucket allows uploads.');
+    paths.push(path);
   }
 
   const res = await fetch(`${base()}/rest/v1/feedback`, {
@@ -135,7 +140,7 @@ export async function submitFeedback(payload: FeedbackPayload, shot?: Blob | nul
       message: payload.message,
       app_version: APP_VERSION,
       platform: platformLabel(),
-      attachments: attachmentPath,
+      attachments: paths.length ? paths.join(',') : null,
     }),
   });
   if (!res.ok) await readError(res, 'The feedback table did not accept the submission — check its insert rule allows anonymous submissions.');
@@ -178,8 +183,8 @@ export async function drainFeedbackQueue(): Promise<{ sent: number; left: number
   let sent = 0;
   for (const entry of q) {
     try {
-      const shot = entry.shotDataUrl ? await dataUrlToBlob(entry.shotDataUrl) : null;
-      await submitFeedback(entry.payload, shot);
+      const urls = entry.shotDataUrls ?? (entry.shotDataUrl ? [entry.shotDataUrl] : []);
+      await submitFeedback(entry.payload, await Promise.all(urls.map(dataUrlToBlob)));
       sent++;
     } catch {
       still.push(entry);

@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.89",
+  "date": "2026-08-13",
+  "changes": [
+   "The Feedback form takes multiple attachments — the Screenshot, Area, and Browse… buttons stay put after something is attached, Browse… can pick several files at once, and each attachment gets its own removable chip.",
+   "Sending feedback confirms itself properly: the window blurs for a moment with 'Your feedback has been sent. Thank you!' front and center, then clears — replacing the small green note that was easy to miss."
+  ]
+ },
+ {
   "version": "6.88",
   "date": "2026-08-13",
   "changes": [

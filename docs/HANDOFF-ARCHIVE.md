@@ -151,7 +151,46 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.83 and older (newest first)
+## Version history — v6.84 and older (newest first)
+
+### v6.84 — NATIVE Feedback + email-code sign-in (Airtable retired)
+
+- Derek picked the Supabase route and set up the project himself (email
+  provider on, `feedback` table + RLS insert policy, private
+  `feedback-shots` bucket — he confirmed "3, 4 and 5 are done").
+  Project: https://agfdfkpoxnmmisifbrdj.supabase.co, key
+  `sb_publishable_…` (the NEW key style — successor to `anon`, safe to
+  ship; the secret key never appears anywhere).
+- **services/feedbackBackend.ts** — plain fetch, NO supabase-js dep (three
+  endpoints don't earn a dependency; About list unchanged): OTP request
+  (`/auth/v1/otp` create_user), verify (`/auth/v1/verify` type email) →
+  session {access/refresh/expiresAt/userId/email/name} in localStorage
+  `opendraft:feedbackSession`; refresh at <120s margin
+  (`sessionNeedsRefresh` is pure+tested); display name via PUT
+  `/auth/v1/user` user_metadata; submit = optional PNG to
+  `/storage/v1/object/feedback-shots/<uid>/<ts>.png` then INSERT
+  `/rest/v1/feedback` (user_id/name/email/category/message/app_version/
+  platform/screenshot_path — user_id MUST match auth.uid() for RLS).
+  fetch resolved at CALL time so checks stub window.fetch.
+- **Failure queue**: `opendraft:feedbackQueue`, cap 10 oldest-drop
+  (`capQueue` pure), screenshots ride as data URLs; drain stops on
+  SignedOutError. The form shows "N waiting + Retry now" — never silent.
+- **FeedbackTool.tsx REWRITTEN** as the native form (email→code→name→form
+  steps; sign out; capture buttons reuse captureToCanvas). RETIRED: the
+  Airtable iframe, FeedbackFrameHost (App.tsx), HELP_FORMS
+  (data/helpForms.ts DELETED), MenuBar's helpForm modal, TOOL_CHROME
+  feedback entry + FeedbackShotControls/chip, and their CSS
+  (22-tools-extra: help-form/feedback-frame-host/feedback-shot-* → fb-*
+  form styles). Both doors (Help ▸ Feedback…, the tool) = openTool.
+- SANDBOX LIMIT, stated to Derek: the agent proxy 403s *.supabase.co, so
+  the REAL round-trip (email delivery included) is proven by his first
+  sign-in on the Mac. FeedbackTool.test.tsx (3, house createRoot+act
+  idiom — no testing-library here) pins the request contract;
+  check-v684 (12) drives the whole flow in-app against a stubbed
+  window.fetch (menu door, no iframe, sign-in steps, row contents,
+  queue+retry, sign out).
+- Gates: tsc 0, vitest 1193 (the v4.70 chip tests retired with the chip),
+  build ok, check-all 1067/0. Catalog 481.
 
 ### v6.83 — four ribbon-editing items (dropdown resize, click dividers, Settings handover, right alignment)
 

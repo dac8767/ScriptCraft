@@ -88,8 +88,16 @@ try {
     'the row carries name + email — feedback already knows the tester');
   ok(row.message === 'The dialogue margin drifts on page 3.' && typeof row.app_version === 'string' && row.app_version.length > 0,
     `and the message + app version (${row.app_version})`);
-  ok(await page.evaluate(() => document.querySelector('.feedback-tool-wrap').textContent.includes('Sent — thank you!')),
-    'the form says it sent');
+  await page.waitForSelector('.fb-sent-veil', { timeout: 5000 });
+  const veil = await page.evaluate(() => {
+    const v = document.querySelector('.fb-sent-veil');
+    const cs = getComputedStyle(v);
+    return { text: v.textContent, blur: cs.backdropFilter || cs.webkitBackdropFilter || '' };
+  });
+  ok(/Your feedback has been sent\. Thank you!/.test(veil.text) && /blur/.test(veil.blur),
+    `v6.89 sent = a centered thank-you above a real blur veil (${veil.blur})`);
+  await page.waitForFunction(() => !document.querySelector('.fb-sent-veil'), { timeout: 6000 });
+  ok(true, 'and the veil clears itself after a few seconds');
 
   /* ── failure is queued VISIBLY, and Retry drains it ── */
   await page.evaluate(() => { window.__fbFail = true; });
@@ -126,20 +134,30 @@ try {
   });
   await page.waitForSelector('.fb-shotchip', { timeout: 5000 });
   ok(await page.evaluate(() => document.querySelector('.fb-shotchip').textContent.includes('margin-bug.jpeg')),
-    'picking a file shows the chip with ITS name — not a silent no-op');
-  await page.fill('.fb-text', 'See the attached image.');
-  await button('Send Feedback');
-  await page.waitForFunction(() => window.__fbCalls.some((c) => c.url.includes('/storage/v1/object/feedback-shots/')), { timeout: 5000 });
-  const uploaded = await page.evaluate(() => {
-    const up = window.__fbCalls.find((c) => c.url.includes('/storage/v1/object/feedback-shots/'));
-    const row = [...window.__fbCalls].reverse().find((c) => c.url.includes('/rest/v1/feedback'));
-    return { url: up?.url ?? '', type: up?.type ?? '', row: row?.body ? JSON.parse(row.body) : {} };
+    'picking a file shows a chip with ITS name — not a silent no-op');
+  ok(await page.evaluate(() => [...document.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent.trim()).join(',')) === 'Screenshot,Area,Browse…',
+    'v6.89: the three buttons STAY after attaching');
+  await page.setInputFiles('.fb-attach input[type="file"]', {
+    name: 'second-shot.png', mimeType: 'image/png',
+    buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]),
   });
-  ok(/\.jpg$/.test(uploaded.url) && uploaded.type === 'image/jpeg',
-    `the upload keeps the file's real format (…${uploaded.url.split('/').pop()}, ${uploaded.type})`);
-  ok(typeof uploaded.row.attachments === 'string' && uploaded.url.endsWith(uploaded.row.attachments)
-      && !('screenshot_path' in uploaded.row),
-    'and the row records it in the attachments column (screenshot_path is gone)');
+  await page.waitForFunction(() => document.querySelectorAll('.fb-shotchip').length === 2, { timeout: 5000 });
+  ok(true, 'a second pick APPENDS — two chips now');
+  await page.fill('.fb-text', 'See the attached images.');
+  await button('Send Feedback');
+  await page.waitForFunction(() => window.__fbCalls.filter((c) => c.url.includes('/storage/v1/object/feedback-shots/')).length === 2, { timeout: 5000 });
+  const uploaded = await page.evaluate(() => {
+    const ups = window.__fbCalls.filter((c) => c.url.includes('/storage/v1/object/feedback-shots/'));
+    const row = [...window.__fbCalls].reverse().find((c) => c.url.includes('/rest/v1/feedback'));
+    return { ups: ups.map((u) => ({ url: u.url, type: u.type })), row: row?.body ? JSON.parse(row.body) : {} };
+  });
+  ok(/\.jpg$/.test(uploaded.ups[0].url) && uploaded.ups[0].type === 'image/jpeg'
+      && /\.png$/.test(uploaded.ups[1].url) && uploaded.ups[1].type === 'image/png',
+    'each upload keeps its own real format (jpg + png)');
+  const attPaths = uploaded.ups.map((u) => u.url.split('/feedback-shots/')[1]);
+  ok(uploaded.row.attachments === attPaths.join(',') && !('screenshot_path' in uploaded.row),
+    'the row records BOTH paths comma-joined in attachments (screenshot_path gone)');
+  await page.waitForFunction(() => !document.querySelector('.fb-sent-veil'), { timeout: 6000 });
 
   /* ── v6.88: the draft SURVIVES the window moving between hosts ── */
   await page.fill('.fb-text', 'Half-written report — do not lose me.');

@@ -120,7 +120,8 @@ describe('FeedbackTool — submitting', () => {
     const headers = post!.init?.headers as Record<string, string>;
     expect(headers.apikey).toBe(FEEDBACK_BACKEND.publishableKey);
     expect(headers.Authorization).toBeUndefined();     // no auth — insert-only rule
-    expect(container.textContent).toContain('Sent — thank you!');
+    expect(container.querySelector('.fb-sent-veil')?.textContent)
+      .toContain('Your feedback has been sent. Thank you!');
   });
 
   it('a failed send lands in the VISIBLE queue, never the void', async () => {
@@ -175,6 +176,37 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
     expect(typeof body.attachments).toBe('string');
     expect(up!.url.endsWith(body.attachments)).toBe(true);
     expect(container.querySelector('.fb-shotchip')).toBeNull();   // cleared after send
+  });
+
+  it('takes MORE than one attachment and the buttons stay (v6.89)', async () => {
+    savedProfile();
+    mount();
+    const input = container.querySelector('.fb-attach input[type="file"]') as HTMLInputElement;
+    expect(input.multiple).toBe(true);
+    const one = new File([new Uint8Array([1])], 'one.jpeg', { type: 'image/jpeg' });
+    Object.defineProperty(input, 'files', { value: [one], configurable: true });
+    act(() => { input.dispatchEvent(new Event('change', { bubbles: true })); });
+    await flush(6);
+    // the three buttons are still there, and a second pick APPENDS
+    const labels = [...container.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent?.trim());
+    expect(labels).toEqual(['Screenshot', 'Area', 'Browse…']);
+    const two = new File([new Uint8Array([2])], 'two.png', { type: 'image/png' });
+    Object.defineProperty(input, 'files', { value: [two], configurable: true });
+    act(() => { input.dispatchEvent(new Event('change', { bubbles: true })); });
+    await flush(6);
+    expect(container.querySelectorAll('.fb-shotchip')).toHaveLength(2);
+
+    setValue(byPlaceholder('Describe it'), 'Two shots attached.');
+    clickText('Send Feedback');
+    await flush(6);
+    const ups = calls.filter((c) => c.url.includes('/storage/v1/object/feedback-shots/'));
+    expect(ups).toHaveLength(2);
+    expect(ups[0].url).toMatch(/\.jpg$/);
+    expect(ups[1].url).toMatch(/\.png$/);
+    const post = calls.find((c) => c.url.includes('/rest/v1/feedback'));
+    const body = JSON.parse(String(post!.init?.body));
+    expect(body.attachments).toBe(ups.map((u) => u.url.split('/feedback-shots/')[1]).join(','));
+    expect(container.querySelectorAll('.fb-shotchip')).toHaveLength(0);   // cleared after send
   });
 
   it('extFromType keeps the real format and falls back to png', () => {

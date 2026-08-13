@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.88 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.89 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -28,13 +28,16 @@
 > render.) Each entry = label lines in this order, no numbering:
 >   Status / From (name ONLY, no email) / Created / Category / Message /
 >   App Version / Attachment
-> Omit platform. ACTUALLY PULL each attachment (download from
-> feedback-shots with the secret key, then SendUserFile BEFORE the final
-> message, caption naming its entry) — cards can only render above the
-> final text, so the Attachment line reads "sent above ⬆ (filename)";
-> never just the path, and NEVER Read the image in chat (a Read renders
-> a second copy; Derek flagged the duplicate — Read only when diagnosis
-> needs eyes on it, and say so). DEFAULT FILTER: only INCOMPLETE items
+> Omit platform. ATTACHMENTS RENDER INLINE (Derek 2026-08-13: "that
+> works"): `attachments` may hold SEVERAL comma-joined paths (v6.89) —
+> split on ',', then for each path POST
+> /storage/v1/object/sign/feedback-shots/<path> {"expiresIn":604800}
+> with the secret key and put a markdown image of the FULL signed URL
+> plus an "[Open attachment ↗](url)" link under that entry's lines. NO
+> SendUserFile cards for reports (they can only stack above the final
+> message — the confusion this replaced), never just the path, and NEVER
+> Read the image in chat (it renders a stray copy; Read only when
+> diagnosis needs eyes on it, and say so). DEFAULT FILTER: only INCOMPLETE items
 > (`status=neq.Complete`) unless he explicitly asks for all/completed.
 > READ the `feedback_report` VIEW (his date format baked in, US Eastern:
 > "Aug 13, 2026 — 3:28 PM"); the raw table's timestamp column is
@@ -282,6 +285,33 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.89 — multiple attachments + the sent blur-veil
+
+- Derek: "you should be able to add more than one attachment. keep the 3
+  buttons visible even after an attachment or screenshot is already
+  attached" + the sent note was too easy to miss — "momentarily blur the
+  feedback window, and have the text 'Your feedback has been sent. Thank
+  you!' appear in the center… remove the text and blur after a few
+  seconds."
+- FeedbackTool: `shots: Shot[]` (draft included), buttons always visible,
+  every capture/pick APPENDS (`<input multiple>` — Browse picks several
+  at once), chips wrap in `.fb-shotchips`, per-chip remove ×. Submit
+  uploads each blob and clears all; queue entries carry `shotDataUrls[]`
+  (legacy `shotDataUrl` still drained).
+- feedbackBackend: `submitFeedback(payload, shots?: Blob[])` loops
+  uploads; row `attachments` = paths comma-joined (generated names never
+  contain commas) or null. REPORTS split on ',' and sign each path.
+- Sent veil: `.fb-sent-veil` absolute over `.fb-form` (position:relative),
+  backdrop-filter blur(6px) WITH -webkit- prefix (WebKit needs it),
+  centered `.fb-sent-msg`, 3s auto-clear. Old `.fb-sent` note gone.
+  CHECK GOTCHA: every successful send now raises the veil for 3s — any
+  check step that fills/clicks after a send must waitForFunction the
+  veil away first or Playwright times out on the covered element.
+- Tests 1198→1199 (multi-attach: buttons stay, second pick appends, two
+  uploads real formats, comma-joined row). check-v684 17→20 (veil text +
+  computed blur + self-clear; buttons-stay; append; both formats; row).
+- Gates: tsc 0, vitest 1199, build ok, check-all 1076/0. Catalog 481.
+
 ### v6.88 — the Feedback draft survives moving the window
 
 - Feedback row 224d5f61 (Derek, through the form): "i moved the feedback
@@ -385,50 +415,12 @@ Durable bits kept live here:
   code in the repo" from there; the work lives on claude/v0_32.
 - Gates: tsc 0, vitest 1193, build ok, check-all 1068/0.
 
-### v6.84 — NATIVE Feedback + email-code sign-in (Airtable retired)
-
-- Derek picked the Supabase route and set up the project himself (email
-  provider on, `feedback` table + RLS insert policy, private
-  `feedback-shots` bucket — he confirmed "3, 4 and 5 are done").
-  Project: https://agfdfkpoxnmmisifbrdj.supabase.co, key
-  `sb_publishable_…` (the NEW key style — successor to `anon`, safe to
-  ship; the secret key never appears anywhere).
-- **services/feedbackBackend.ts** — plain fetch, NO supabase-js dep (three
-  endpoints don't earn a dependency; About list unchanged): OTP request
-  (`/auth/v1/otp` create_user), verify (`/auth/v1/verify` type email) →
-  session {access/refresh/expiresAt/userId/email/name} in localStorage
-  `opendraft:feedbackSession`; refresh at <120s margin
-  (`sessionNeedsRefresh` is pure+tested); display name via PUT
-  `/auth/v1/user` user_metadata; submit = optional PNG to
-  `/storage/v1/object/feedback-shots/<uid>/<ts>.png` then INSERT
-  `/rest/v1/feedback` (user_id/name/email/category/message/app_version/
-  platform/screenshot_path — user_id MUST match auth.uid() for RLS).
-  fetch resolved at CALL time so checks stub window.fetch.
-- **Failure queue**: `opendraft:feedbackQueue`, cap 10 oldest-drop
-  (`capQueue` pure), screenshots ride as data URLs; drain stops on
-  SignedOutError. The form shows "N waiting + Retry now" — never silent.
-- **FeedbackTool.tsx REWRITTEN** as the native form (email→code→name→form
-  steps; sign out; capture buttons reuse captureToCanvas). RETIRED: the
-  Airtable iframe, FeedbackFrameHost (App.tsx), HELP_FORMS
-  (data/helpForms.ts DELETED), MenuBar's helpForm modal, TOOL_CHROME
-  feedback entry + FeedbackShotControls/chip, and their CSS
-  (22-tools-extra: help-form/feedback-frame-host/feedback-shot-* → fb-*
-  form styles). Both doors (Help ▸ Feedback…, the tool) = openTool.
-- SANDBOX LIMIT, stated to Derek: the agent proxy 403s *.supabase.co, so
-  the REAL round-trip (email delivery included) is proven by his first
-  sign-in on the Mac. FeedbackTool.test.tsx (3, house createRoot+act
-  idiom — no testing-library here) pins the request contract;
-  check-v684 (12) drives the whole flow in-app against a stubbed
-  window.fetch (menu door, no iframe, sign-in steps, row contents,
-  queue+retry, sign out).
-- Gates: tsc 0, vitest 1193 (the v4.70 chip tests retired with the chip),
-  build ok, check-all 1067/0. Catalog 481.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.84** — NATIVE Feedback replaced the Airtable iframe: Supabase via plain fetch, email-code sign-in + sessions (retired v6.86 — code at 0c9b43e), screenshot upload, visible offline queue
 - **v6.83** — ribbon editing ×4: dropdown horizontal resize in customize mode; dividers hide/show by plain click (no ×); Settings ▸ Customize toolbar hands over to the LIVE editor; right-of-split items right-align in edit mode
 - **v6.82** — Show/hide Annotations ribbon icon → FaPenNib (distinct); "drag to move this section" tooltip removed; two-row ribbon sections show the Editor View dropdown bare
 - **v6.81** — compare seating from FULLSCREEN entry (clear the takeover, then openTool); Take Snapshot + Compare share the accent style

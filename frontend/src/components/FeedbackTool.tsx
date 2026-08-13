@@ -7,10 +7,11 @@
  * editable any time) and every submission carries them — no codes, no
  * sign-in service, no SMTP. Submissions go to Derek's own Supabase table
  * through services/feedbackBackend; images attach via the labeled
- * Attachment area — capture the window or an area, or Browse… any image
- * file (v6.87, the first request submitted through the form itself). (The
- * v6.84 verified email-code sign-in lives in git history for the day the
- * app goes public.)
+ * Attachment area — capture the window or an area, or Browse… image
+ * files, AS MANY AS NEEDED (v6.87 the area itself, v6.89 multiple
+ * attachments + the blur-veil sent confirmation). (The v6.84 verified
+ * email-code sign-in lives in git history for the day the app goes
+ * public.)
  *
  * Failure is never silent: a submit that can't reach the server lands in a
  * visible local queue with a Retry button.
@@ -54,8 +55,8 @@ async function fileToShot(file: File): Promise<Shot> {
    level and every mount rehydrates from it, so a move (or an accidental
    close) keeps the text, category and attachment. In-memory on purpose:
    an app restart starts clean. */
-interface FeedbackDraft { category: (typeof CATEGORIES)[number]; message: string; shot: Shot | null }
-const EMPTY_DRAFT: FeedbackDraft = { category: 'Bug', message: '', shot: null };
+interface FeedbackDraft { category: (typeof CATEGORIES)[number]; message: string; shots: Shot[] }
+const EMPTY_DRAFT: FeedbackDraft = { category: 'Bug', message: '', shots: [] };
 let draft: FeedbackDraft = EMPTY_DRAFT;
 
 /** Test-only: the module draft would otherwise leak between tests. */
@@ -71,15 +72,15 @@ export default function FeedbackTool() {
 
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(draft.category);
   const [message, setMessage] = useState(draft.message);
-  const [shot, setShot] = useState<Shot | null>(draft.shot);
+  const [shots, setShots] = useState<Shot[]>(draft.shots);
   const [queued, setQueued] = useState(() => loadFeedbackQueue().length);
   const [sentNote, setSentNote] = useState<string | null>(null);
 
   // Mirror the live fields into the module draft. (The old unmount-revoke
-  // effect is gone ON PURPOSE — the shot's object URL must outlive the
-  // mount so the chip still renders after a move; the replace/remove/send
-  // paths revoke it instead.)
-  useEffect(() => { draft = { category, message, shot }; }, [category, message, shot]);
+  // effect is gone ON PURPOSE — the shots' object URLs must outlive the
+  // mount so the chips still render after a move; the remove/send paths
+  // revoke them instead.)
+  useEffect(() => { draft = { category, message, shots }; }, [category, message, shots]);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setNote(null);
@@ -95,41 +96,54 @@ export default function FeedbackTool() {
     setNote(null);
   };
 
+  // v6.89, Derek: MORE than one attachment — every capture/pick APPENDS.
   const capture = (mode: 'full' | 'area') => run(async () => {
     const canvas = await captureToCanvas(mode, 'fs-shot-veil-feedback');
     if (!canvas) return;                      // cancelled the area drag
-    if (shot) URL.revokeObjectURL(shot.url);
-    setShot(await canvasToShot(canvas));
+    const next = await canvasToShot(canvas);
+    setShots((list) => [...list, next]);
   });
 
   const fileInput = useRef<HTMLInputElement>(null);
   const pickFile = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';                      // so the same file can be re-picked
-    if (!file) return;
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';                      // so the same files can be re-picked
+    if (!files.length) return;
     run(async () => {
-      const next = await fileToShot(file);
-      if (shot) URL.revokeObjectURL(shot.url);
-      setShot(next);
+      const next = await Promise.all(files.map(fileToShot));
+      setShots((list) => [...list, ...next]);
     });
+  };
+
+  const removeShot = (i: number) => {
+    const gone = shots[i];
+    if (gone) URL.revokeObjectURL(gone.url);
+    setShots((list) => list.filter((_, k) => k !== i));
   };
 
   const submit = () => run(async () => {
     const payload = { category, message: message.trim() };
-    try {
-      await submitFeedback(payload, shot?.blob ?? null);
+    const sending = shots;
+    const finish = () => {
       setMessage('');
-      if (shot) { URL.revokeObjectURL(shot.url); setShot(null); }
-      draft = { ...draft, message: '', shot: null };   // even if unmounted mid-send
-      setSentNote('Sent — thank you!');
-      window.setTimeout(() => setSentNote(null), 4000);
+      sending.forEach((s) => URL.revokeObjectURL(s.url));
+      setShots([]);
+      draft = { ...draft, message: '', shots: [] };    // even if unmounted mid-send
+    };
+    try {
+      await submitFeedback(payload, sending.map((s) => s.blob));
+      finish();
+      setSentNote('Your feedback has been sent. Thank you!');
+      window.setTimeout(() => setSentNote(null), 3000);
     } catch (e) {
       // Not silent, not lost: queue it where the writer can SEE it.
-      const left = enqueueFeedback({ payload, shotDataUrl: shot?.dataUrl, queuedAt: new Date().toISOString() });
+      const left = enqueueFeedback({
+        payload,
+        shotDataUrls: sending.length ? sending.map((s) => s.dataUrl) : undefined,
+        queuedAt: new Date().toISOString(),
+      });
       setQueued(left);
-      setMessage('');
-      if (shot) { URL.revokeObjectURL(shot.url); setShot(null); }
-      draft = { ...draft, message: '', shot: null };   // queued — no longer a live draft
+      finish();
       throw new Error(`Could not reach the feedback server — saved to the local queue instead (${left} waiting). ${e instanceof Error ? e.message : ''}`);
     }
   });
@@ -196,7 +210,11 @@ export default function FeedbackTool() {
       </div>
 
       {note && <div className="fb-note">{note}</div>}
-      {sentNote && <div className="fb-sent">{sentNote}</div>}
+      {sentNote && (
+        <div className="fb-sent-veil" role="status">
+          <div className="fb-sent-msg">{sentNote}</div>
+        </div>
+      )}
       {queued > 0 && (
         <div className="fb-queued">
           {queued} feedback item{queued === 1 ? '' : 's'} waiting to send
@@ -223,33 +241,31 @@ export default function FeedbackTool() {
 
       <div className="fb-attach">
         <div className="fb-attach-head"><FaPaperclip aria-hidden /> Attachment</div>
-        {!shot ? (
-          <>
-            <div className="fb-attach-btns">
-              <button className="dialog-btn" disabled={busy} title="Attach a screenshot of the whole window" onClick={() => capture('full')}>
-                <FaCamera aria-hidden /> Screenshot
-              </button>
-              <button className="dialog-btn" disabled={busy} title="Attach a screenshot of a selected area" onClick={() => capture('area')}>
-                <FaCrop aria-hidden /> Area
-              </button>
-              <button className="dialog-btn" disabled={busy} title="Attach an image file from disk" onClick={() => fileInput.current?.click()}>
-                <FaFolderOpen aria-hidden /> Browse…
-              </button>
-            </div>
-            <div className="fb-attach-hint">A picture helps — grab the whole window, drag out an area, or pick an image file.</div>
-          </>
+        <div className="fb-attach-btns">
+          <button className="dialog-btn" disabled={busy} title="Attach a screenshot of the whole window" onClick={() => capture('full')}>
+            <FaCamera aria-hidden /> Screenshot
+          </button>
+          <button className="dialog-btn" disabled={busy} title="Attach a screenshot of a selected area" onClick={() => capture('area')}>
+            <FaCrop aria-hidden /> Area
+          </button>
+          <button className="dialog-btn" disabled={busy} title="Attach image files from disk" onClick={() => fileInput.current?.click()}>
+            <FaFolderOpen aria-hidden /> Browse…
+          </button>
+        </div>
+        {shots.length === 0 ? (
+          <div className="fb-attach-hint">A picture helps — grab the whole window, drag out an area, or pick image files. Attach as many as you need.</div>
         ) : (
-          <span className="fb-shotchip">
-            <img className="fb-shotthumb" src={shot.url} alt="Attached image" />
-            <span className="fb-shotname">{shot.name}</span>
-            <button
-              className="fb-shot-x"
-              title="Remove the attachment"
-              onClick={() => { URL.revokeObjectURL(shot.url); setShot(null); }}
-            ><FaTimes aria-hidden /></button>
-          </span>
+          <div className="fb-shotchips">
+            {shots.map((s, i) => (
+              <span className="fb-shotchip" key={s.url}>
+                <img className="fb-shotthumb" src={s.url} alt="Attached image" />
+                <span className="fb-shotname">{s.name}</span>
+                <button className="fb-shot-x" title="Remove this attachment" onClick={() => removeShot(i)}><FaTimes aria-hidden /></button>
+              </span>
+            ))}
+          </div>
         )}
-        <input ref={fileInput} className="fb-file" type="file" accept="image/*" onChange={pickFile} />
+        <input ref={fileInput} className="fb-file" type="file" accept="image/*" multiple onChange={pickFile} />
       </div>
 
       <div className="fb-shotrow">

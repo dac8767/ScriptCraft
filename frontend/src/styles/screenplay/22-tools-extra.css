@@ -1692,7 +1692,18 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 8px 10px; border-radius: 5px; line-height: 1.4;
   background: var(--fd-overlay-light); border: 1px solid var(--fd-border);
 }
-.fb-sent { color: #27ae60; font-weight: 600; }
+/* v6.89, Derek: the sent note was easy to miss — the window blurs for a
+   moment and the thank-you sits front and center, then clears itself. */
+.fb-form { position: relative; }
+.fb-sent-veil {
+  position: absolute; inset: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; text-align: center;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 40%, transparent);
+  -webkit-backdrop-filter: blur(6px);   /* WebKit wants the prefix */
+  backdrop-filter: blur(6px);
+}
+.fb-sent-msg { font-size: 14.5px; font-weight: 600; color: #27ae60; }
 .fb-queued {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 10px; border-radius: 5px;
@@ -1745,7 +1756,9 @@ input.fs-switch:checked::after { left: 15px; }
 .fb-attach-btns { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .fb-attach-hint { font-size: 11px; color: var(--fd-text-muted); line-height: 1.4; }
 .fb-file { display: none; }
-.fb-attach .fb-shotchip { align-self: flex-start; max-width: 100%; }
+/* v6.89: several chips wrap in a row */
+.fb-shotchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fb-attach .fb-shotchip { max-width: 100%; }
 .fb-shotname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fb-shotrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .fb-spacer { flex: 1; }
