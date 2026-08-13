@@ -43,7 +43,7 @@ import { ChromeTabs, ControlDropdown, type ToolChromeTab } from './ToolControls'
 import { StickyNotesTool, FragmentsTool, StickyTitleExtra, StickyControls, SnippetsTitleExtra } from './StickyNotes';
 import { DesignPanelDocked } from './DesignPanel';
 import WorkspacesTool from './WorkspacesTool';
-import FeedbackTool, { FeedbackShotControls } from './FeedbackTool';
+import FeedbackTool from './FeedbackTool';
 import TagsPanel, { TagsTitleExtra, TagsWindowActions, useTagsTabs } from './TagsPanel';
 import MarkupsPanel, { MarkupsTitleExtra, MarkupsControls } from './MarkupsPanel';
 import ThesaurusTool from './ThesaurusTool';
@@ -426,9 +426,8 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // into the header (rename/close/+ ride the shared strip's optional slots),
   // and Presets + Add moved into the controls cluster with them.
   beatboard: { useTabs: useOutlineTabs, TabsExtra: OutlineTabsExtra, AfterTabs: OutlineBeatCount, Controls: OutlineHeaderControls },
-  // v4.70, Derek: screenshot buttons in the Feedback header — the capture
-  // lands as a draggable chip above the form (FeedbackTool.tsx).
-  feedback: { Controls: FeedbackShotControls },
+  // (v6.84: Feedback's v4.70 screenshot header buttons retired — the native
+  // form owns its own attach button.)
   // v6.52: the "N changed" chip beside the Helper Text title.
   helpertext: { TitleExtra: HelperTextTitleExtra },
 };

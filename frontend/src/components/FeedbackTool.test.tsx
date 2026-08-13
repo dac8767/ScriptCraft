@@ -1,99 +1,149 @@
 // @vitest-environment jsdom
 /**
- * v4.70, Derek: Feedback screenshot chip. The form is a cross-origin Airtable
- * iframe, so the capture can't be injected into its attachment field — it
- * becomes a chip whose thumbnail is DRAGGED in as a real file. These pin the
- * chip's lifecycle and the drag payload: setData MUST be called (WebKit
- * refuses to start a drag without it — CLAUDE.md §4) and items.add must
- * carry the PNG File.
+ * v6.84 — the NATIVE Feedback form (the Airtable iframe and its v4.70
+ * screenshot chip are gone). These drive the form against a stubbed fetch:
+ * the sign-in steps, what a submission actually POSTs, and the visible
+ * local queue when the server is unreachable. The REAL network path is
+ * proven by Derek's first sign-in on the desktop (the sandbox cannot reach
+ * Supabase) — what these pin is that every request the form makes is the
+ * one the backend contract expects.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import FeedbackTool, { FeedbackShotControls, publishFeedbackShot, type FeedbackShot } from './FeedbackTool';
+import FeedbackTool from './FeedbackTool';
+import { FEEDBACK_BACKEND, loadFeedbackQueue } from '../services/feedbackBackend';
 
-// jsdom lacks rAF (the tool's rect loop) and object-URL revocation.
-window.requestAnimationFrame ??= ((cb: FrameRequestCallback) =>
-  setTimeout(() => cb(0), 0) as unknown as number) as typeof requestAnimationFrame;
-window.cancelAnimationFrame ??= ((id: number) => clearTimeout(id)) as typeof cancelAnimationFrame;
-(URL as { revokeObjectURL?: typeof URL.revokeObjectURL }).revokeObjectURL ??= () => {};
+type Call = { url: string; init?: RequestInit };
+let calls: Call[] = [];
+let replies: Array<(url: string) => Response | null> = [];
 
-let host: HTMLElement;
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+const sessionBody = () => ({
+  access_token: 'at-1', refresh_token: 'rt-1', expires_in: 3600,
+  user: { id: 'user-1', email: 'tester@example.com', user_metadata: {} },
+});
+
+let container: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
-  host = document.createElement('div');
-  document.body.appendChild(host);
-  root = createRoot(host);
+  localStorage.clear();
+  calls = [];
+  replies = [];
+  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+    const u = String(url);
+    if (!u.startsWith(FEEDBACK_BACKEND.url)) throw new Error(`unexpected fetch ${u}`);
+    calls.push({ url: u, init });
+    for (const r of replies) { const res = r(u); if (res) return res; }
+    return json({});
+  }));
+  container = document.createElement('div');
+  document.body.appendChild(container);
+  root = createRoot(container);
 });
-
 afterEach(() => {
   act(() => root.unmount());
-  act(() => publishFeedbackShot(null));   // shared module state — reset between tests
-  host.remove();
+  container.remove();
+  vi.unstubAllGlobals();
 });
 
-function makeShot(name = 'shot.png'): FeedbackShot {
-  return {
-    file: new File([new Uint8Array([1, 2, 3])], name, { type: 'image/png' }),
-    url: 'blob:test-shot',
-    canvas: document.createElement('canvas'),
-  };
-}
+const mount = () => act(() => { root.render(<FeedbackTool />); });
+/** Let pending promises resolve and React re-render. */
+const flush = async (rounds = 4) => {
+  for (let i = 0; i < rounds; i++) {
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+  }
+};
+const byPlaceholder = (p: string) => {
+  const el = [...container.querySelectorAll('input, textarea')]
+    .find((e) => (e as HTMLInputElement).placeholder.includes(p)) as HTMLInputElement | HTMLTextAreaElement | undefined;
+  if (!el) throw new Error(`no field with placeholder "${p}"`);
+  return el;
+};
+const clickText = (t: string) => {
+  const b = [...container.querySelectorAll('button')].find((x) => x.textContent?.trim() === t);
+  if (!b) throw new Error(`no button "${t}"`);
+  act(() => b.click());
+};
+const setValue = (el: HTMLInputElement | HTMLTextAreaElement, value: string) => act(() => {
+  const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, 'value')!.set!.call(el, value);
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+});
 
-describe('FeedbackTool capture chip', () => {
-  it('no chip without a capture; publishing one shows it above the form placeholder', () => {
-    act(() => root.render(<FeedbackTool />));
-    expect(host.querySelector('.feedback-shot-chip')).toBeNull();
+const signedInSession = () => localStorage.setItem('opendraft:feedbackSession', JSON.stringify({
+  accessToken: 'at-1', refreshToken: 'rt-1',
+  expiresAt: Math.floor(Date.now() / 1000) + 3600,
+  userId: 'user-1', email: 'tester@example.com', name: 'Tester T',
+}));
 
-    act(() => publishFeedbackShot(makeShot('bug.png')));
-    const chip = host.querySelector('.feedback-shot-chip');
-    expect(chip).not.toBeNull();
-    expect(chip!.querySelector('.feedback-shot-name')!.textContent).toBe('bug.png');
-    // chip precedes the placeholder, so the iframe host shrinks under it
-    const wrap = host.querySelector('.feedback-tool-wrap')!;
-    expect(wrap.firstElementChild!.className).toContain('feedback-shot-chip');
-    expect(wrap.lastElementChild!.className).toContain('feedback-tool');
+describe('FeedbackTool — sign-in', () => {
+  it('walks email → code → name, hitting the OTP endpoints', async () => {
+    replies.push((u) => (u.includes('/auth/v1/verify') ? json(sessionBody()) : null));
+    mount();
+
+    setValue(byPlaceholder('you@example.com'), 'tester@example.com');
+    clickText('Send code');
+    await flush();
+    const otp = calls.find((c) => c.url.includes('/auth/v1/otp'));
+    expect(otp).toBeTruthy();
+    expect(JSON.parse(String(otp!.init?.body))).toEqual({ email: 'tester@example.com', create_user: true });
+
+    setValue(byPlaceholder('6-digit code'), '123456');
+    clickText('Verify');
+    await flush();
+    expect(JSON.parse(String(calls.find((c) => c.url.includes('/auth/v1/verify'))!.init?.body)))
+      .toEqual({ type: 'email', email: 'tester@example.com', token: '123456' });
+
+    // no name in metadata yet → the name step, saved via PUT /auth/v1/user
+    setValue(byPlaceholder('Your name'), 'Tester T');
+    clickText('Save name');
+    await flush();
+    expect(calls.some((c) => c.url.includes('/auth/v1/user') && c.init?.method === 'PUT')).toBe(true);
+    expect(container.textContent).toContain('Tester T');
+  });
+});
+
+describe('FeedbackTool — submitting', () => {
+  it('POSTs the row RLS expects: user_id + name + message + version', async () => {
+    signedInSession();
+    mount();
+    setValue(byPlaceholder('Describe it'), 'The margins drift.');
+    clickText('Send Feedback');
+    await flush();
+    const post = calls.find((c) => c.url.includes('/rest/v1/feedback'));
+    expect(post).toBeTruthy();
+    const body = JSON.parse(String(post!.init?.body));
+    expect(body.user_id).toBe('user-1');                 // RLS: auth.uid() = user_id
+    expect(body.name).toBe('Tester T');
+    expect(body.email).toBe('tester@example.com');
+    expect(body.message).toBe('The margins drift.');
+    expect(typeof body.app_version).toBe('string');
+    const headers = post!.init?.headers as Record<string, string>;
+    expect(headers.Authorization).toBe('Bearer at-1');
+    expect(headers.apikey).toBe(FEEDBACK_BACKEND.publishableKey);
+    expect(container.textContent).toContain('Sent — thank you!');
   });
 
-  /* v5.00, Derek: dragging is GONE — code, affordance and language. WKWebView
-     never carried a File out of a dragstart, so it could only fail in the
-     desktop app. Two routes remain, both the user's own gesture inside the
-     cross-origin form: Copy → paste, or Download → upload. */
-  it('offers no drag at all — not draggable, no drag language', () => {
-    act(() => root.render(<FeedbackTool />));
-    act(() => publishFeedbackShot(makeShot()));
+  it('a failed send lands in the VISIBLE queue, never the void', async () => {
+    signedInSession();
+    replies.push((u) => (u.includes('/rest/v1/feedback') ? json({ message: 'server down' }, 503) : null));
+    mount();
+    setValue(byPlaceholder('Describe it'), 'Lost words?');
+    clickText('Send Feedback');
+    await flush();
+    expect(container.textContent).toContain('saved to the local queue');
+    expect(loadFeedbackQueue()).toHaveLength(1);
+    expect(loadFeedbackQueue()[0].payload.message).toBe('Lost words?');
+    expect(container.textContent).toContain('1 feedback item waiting to send');
 
-    const chip = host.querySelector('.feedback-shot-chip') as HTMLElement;
-    expect(chip.draggable).toBe(false);
-    expect(chip.title).toBe('');
-    expect(host.innerHTML.toLowerCase()).not.toContain('drag');
-  });
-
-  it('offers Copy and Download as the two routes across the iframe boundary', () => {
-    act(() => root.render(<FeedbackTool />));
-    act(() => publishFeedbackShot(makeShot()));
-    const titles = [...host.querySelectorAll('.feedback-shot-act')].map((b) => (b as HTMLElement).title);
-    expect(titles.some((t) => t.startsWith('Copy the image'))).toBe(true);
-    expect(titles.some((t) => t.startsWith('Download the PNG'))).toBe(true);
-    expect(host.querySelector('.feedback-shot-hint')!.textContent)
-      .toContain('Copy it and paste it');
-  });
-
-  it('discard removes the chip', () => {
-    act(() => root.render(<FeedbackTool />));
-    act(() => publishFeedbackShot(makeShot()));
-    const discard = [...host.querySelectorAll<HTMLButtonElement>('.feedback-shot-act')]
-      .find((b) => b.title.includes('Discard'))!;
-    act(() => { discard.click(); });
-    expect(host.querySelector('.feedback-shot-chip')).toBeNull();
-  });
-
-  it('header controls offer full-window and area capture', () => {
-    act(() => root.render(<FeedbackShotControls />));
-    const btns = [...host.querySelectorAll<HTMLButtonElement>('.feedback-shot-btns .tool-ctl')];
-    expect(btns).toHaveLength(2);
-    expect(btns[0].title).toContain('whole window');
-    expect(btns[1].title).toContain('selected area');
+    // the server comes back — Retry drains it
+    replies.length = 0;
+    clickText('Retry now');
+    await flush();
+    expect(loadFeedbackQueue()).toHaveLength(0);
   });
 });

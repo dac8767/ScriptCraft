@@ -78,7 +78,6 @@ import { importWorkspacesFromFile } from '../utils/workspaceImport';
 import { composeSaveContent } from '../utils/screenplaySaveContent';
 import { openTextFile, openBinaryFile } from '../utils/fileOps';
 import { reportSaveError } from '../stores/saveErrorStore';
-import { HELP_FORMS } from '../data/helpForms';
 import type { MenuSection as PluginMenuSection } from '../plugins/registry';
 import {
   FaExternalLinkAlt,
@@ -407,7 +406,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
   // unless the Developer toggle shows them.
   const showUnreleasedTools = useEditorStore((s) => s.showUnreleasedTools);
   const setShowUnreleasedTools = useEditorStore((s) => s.setShowUnreleasedTools);
-  const [helpForm, setHelpForm] = useState<{ title: string; url: string } | null>(null);
   const [draftDialogOpen, setDraftDialogOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [saveWorkspaceOpen, setSaveWorkspaceOpen] = useState(false);
@@ -1080,7 +1078,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     keyboardShortcuts: () => setShortcutsOpen(true),
     knowledgeBase: () => setKnowledgeBaseOpen(true),
     changelog: () => setChangelogOpen(true),
-    feedback: () => setHelpForm(HELP_FORMS.feedback),
+    feedback: () => useEditorStore.getState().openTool('feedback'),
   };
   const shortcutActionsRef = useRef(shortcutActions);
   // Menu items display the EFFECTIVE binding, so a rebound (or cleared)
@@ -1708,7 +1706,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       {
         icon: <FaExternalLinkAlt />,
         label: 'Feedback…',
-        action: () => setHelpForm(HELP_FORMS.feedback),
+        // v6.84: the native Feedback tool (no more Airtable iframe modal)
+        action: () => useEditorStore.getState().openTool('feedback'),
       },
       { separator: true, label: '' },
       {
@@ -2357,17 +2356,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       }}
     />
     <RenameDialog open={renameOpen} onClose={() => setRenameOpen(false)} />
-    {helpForm && (
-      <div className="dialog-overlay" onClick={() => setHelpForm(null)}>
-        <div className="dialog-box help-form-dialog" onClick={(e) => e.stopPropagation()}>
-          <div className="dialog-header">
-            {helpForm.title}
-            <button className="fs-dialog-x" onClick={() => setHelpForm(null)} title="Close">&times;</button>
-          </div>
-          <iframe className="help-form-frame" src={helpForm.url} title={helpForm.title} />
-        </div>
-      </div>
-    )}
     <HelpReferenceDialog kind="shortcuts" open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     <HelpReferenceDialog kind="knowledge" open={knowledgeBaseOpen} onClose={() => setKnowledgeBaseOpen(false)} />
     {pageSetupOpen && (

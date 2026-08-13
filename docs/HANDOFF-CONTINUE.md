@@ -1,18 +1,22 @@
-# ScriptCraft — continuation brief (current as of v6.83 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.84 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
-> QUEUE — SUGGESTIONS DELIVERED, AWAITING DEREK'S PICK (do NOT build until
-> he chooses): (1) FEEDBACK WITHOUT AIRTABLE and (2) TESTER LOGIN. The
-> delivered recommendation: ONE service covering both — Supabase free tier
-> (Postgres + REST + magic-link auth): a native in-app form (which also
-> retires the v4.70/v5.00 screenshot-chip workaround — attachments become a
-> real upload instead of a paste across the iframe boundary), rows in a
-> feedback table, testers signed in once via email magic link so rows carry
-> who sent them. Lighter alternatives offered: GitHub Issues behind a tiny
-> serverless proxy (token must NOT ship in the app), or a no-auth "tester
-> profile" (name/email typed once, saved locally, attached to feedback).
-> Current implementation notes: Feedback = cross-origin Airtable iframe
-> preloaded by FeedbackFrameHost (App.tsx) reading HELP_FORMS
-> (data/helpForms); the modal (Help ▸ Feedback) and the tool share that.
+> QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
+> 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
+>    ⌘, item sits in File second-to-last and in the app menu above Quit —
+>    this asks for File's copy to go last).
+> 2. The blank-line-before-a-scene-heading rule must NOT apply to the very
+>    first scene heading on page 1 (his screenshot: the opening heading
+>    sits below an inserted blank). Find the rule's one source (enforce
+>    machinery / paginator) before touching it.
+> 3. Ribbon EDITOR item spacing/size ≠ the real ribbon bar's (two
+>    screenshots: edit mode renders larger paddings/gaps around the same
+>    controls). Likely the rib-edit-item wrappers add chrome the live bar
+>    lacks — parity like v6.83's alignment item.
+> Also asked (answered in chat, may become work): connecting Supabase to
+> Claude Code so feedback is readable in sessions — his Mac's Claude Code
+> can add the official Supabase MCP server with a scoped PAT; THIS remote
+> environment currently blocks *.supabase.co (proxy 403) until he allows
+> it in the environment's network policy.
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -254,6 +258,45 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.84 — NATIVE Feedback + email-code sign-in (Airtable retired)
+
+- Derek picked the Supabase route and set up the project himself (email
+  provider on, `feedback` table + RLS insert policy, private
+  `feedback-shots` bucket — he confirmed "3, 4 and 5 are done").
+  Project: https://agfdfkpoxnmmisifbrdj.supabase.co, key
+  `sb_publishable_…` (the NEW key style — successor to `anon`, safe to
+  ship; the secret key never appears anywhere).
+- **services/feedbackBackend.ts** — plain fetch, NO supabase-js dep (three
+  endpoints don't earn a dependency; About list unchanged): OTP request
+  (`/auth/v1/otp` create_user), verify (`/auth/v1/verify` type email) →
+  session {access/refresh/expiresAt/userId/email/name} in localStorage
+  `opendraft:feedbackSession`; refresh at <120s margin
+  (`sessionNeedsRefresh` is pure+tested); display name via PUT
+  `/auth/v1/user` user_metadata; submit = optional PNG to
+  `/storage/v1/object/feedback-shots/<uid>/<ts>.png` then INSERT
+  `/rest/v1/feedback` (user_id/name/email/category/message/app_version/
+  platform/screenshot_path — user_id MUST match auth.uid() for RLS).
+  fetch resolved at CALL time so checks stub window.fetch.
+- **Failure queue**: `opendraft:feedbackQueue`, cap 10 oldest-drop
+  (`capQueue` pure), screenshots ride as data URLs; drain stops on
+  SignedOutError. The form shows "N waiting + Retry now" — never silent.
+- **FeedbackTool.tsx REWRITTEN** as the native form (email→code→name→form
+  steps; sign out; capture buttons reuse captureToCanvas). RETIRED: the
+  Airtable iframe, FeedbackFrameHost (App.tsx), HELP_FORMS
+  (data/helpForms.ts DELETED), MenuBar's helpForm modal, TOOL_CHROME
+  feedback entry + FeedbackShotControls/chip, and their CSS
+  (22-tools-extra: help-form/feedback-frame-host/feedback-shot-* → fb-*
+  form styles). Both doors (Help ▸ Feedback…, the tool) = openTool.
+- SANDBOX LIMIT, stated to Derek: the agent proxy 403s *.supabase.co, so
+  the REAL round-trip (email delivery included) is proven by his first
+  sign-in on the Mac. FeedbackTool.test.tsx (3, house createRoot+act
+  idiom — no testing-library here) pins the request contract;
+  check-v684 (12) drives the whole flow in-app against a stubbed
+  window.fetch (menu door, no iframe, sign-in steps, row contents,
+  queue+retry, sign out).
+- Gates: tsc 0, vitest 1193 (the v4.70 chip tests retired with the chip),
+  build ok, check-all 1067/0. Catalog 481.
 
 ### v6.83 — four ribbon-editing items (dropdown resize, click dividers, Settings handover, right alignment)
 

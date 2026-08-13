@@ -11,7 +11,6 @@ import HoverTooltip from './components/HoverTooltip';
 import SaveErrorDialog from './components/SaveErrorDialog';
 import OneDriveWarningDialog from './components/OneDriveWarningDialog';
 import OAuthCallback from './components/OAuthCallback';
-import { FeedbackFrameHost } from './components/FeedbackTool';
 import { pluginRegistry } from './plugins/registry';
 import { installHelperTextDom } from './utils/helperText';
 import './styles/screenplay.css';
@@ -46,11 +45,8 @@ function App() {
       <StorageFallbackDialog />
       <SaveErrorDialog />
       <OneDriveWarningDialog />
-      {/* v4.35: the ONE preloaded Feedback iframe — lives for the app's whole
-          run so the form is already loaded when the Feedback window (which
-          only publishes a rect for it to fill) opens. Outside the Routes so
-          navigation can't unmount it. */}
-      <FeedbackFrameHost />
+      {/* (v6.84: the preloaded Airtable Feedback iframe is gone — Feedback is
+          a native form now, services/feedbackBackend.) */}
     </>
   );
 }

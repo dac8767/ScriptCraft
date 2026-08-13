@@ -344,6 +344,28 @@
   "label": "Add a Combo"
  },
  {
+  "text": "Attach a screenshot of a selected area",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
+  ],
+  "icon": "FaCrop",
+  "label": "Area"
+ },
+ {
+  "text": "Attach a screenshot of the whole window",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
+  ],
+  "icon": "FaCamera",
+  "label": "Screenshot"
+ },
+ {
   "text": "Attach image",
   "kind": "tooltip",
   "sites": 1,
@@ -627,7 +649,7 @@
  {
   "text": "Close",
   "kind": "tooltip",
-  "sites": 20,
+  "sites": 19,
   "area": "Dialogs",
   "where": [
    "components/ChangelogDialog.tsx",
@@ -726,15 +748,6 @@
   ],
   "icon": "FaLink",
   "label": "Group"
- },
- {
-  "text": "Copy the image — then paste it into the form's attachment field",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ]
  },
  {
   "text": "Copy the selected script text into a new snippet (⌥⌘C)",
@@ -1021,16 +1034,6 @@
   "label": "Delete"
  },
  {
-  "text": "Discard this capture",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ],
-  "icon": "FaTimes"
- },
- {
   "text": "Dissolve the group's name — the locations stay connected",
   "kind": "tooltip",
   "sites": 1,
@@ -1075,16 +1078,6 @@
   "area": "Everything Else",
   "where": [
    "components/AssetManager.tsx"
-  ],
-  "icon": "FaDownload"
- },
- {
-  "text": "Download the PNG (screenshot folder, or Downloads) — then upload it to the form",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
   ],
   "icon": "FaDownload"
  },
@@ -2564,6 +2557,16 @@
   ]
  },
  {
+  "text": "Remove the screenshot",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
+  ],
+  "icon": "FaTimes"
+ },
+ {
   "text": "Remove this field",
   "kind": "tooltip",
   "sites": 1,
@@ -2897,26 +2900,6 @@
   "label": "Discover"
  },
  {
-  "text": "Screenshot a selected area — it appears above the form, ready to copy or download",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ],
-  "icon": "FaCrop"
- },
- {
-  "text": "Screenshot the whole window — it appears above the form, ready to copy or download",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ],
-  "icon": "FaCamera"
- },
- {
   "text": "Search",
   "kind": "tooltip",
   "sites": 1,
@@ -2942,6 +2925,15 @@
   "area": "Ribbon Toolbar",
   "where": [
    "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Send this feedback",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
   ]
  },
  {
@@ -3142,6 +3134,16 @@
    "components/FloatingWindow.tsx",
    "components/ToolDock.tsx"
   ]
+ },
+ {
+  "text": "Sign out — feedback will ask for your email again",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
+  ],
+  "label": "Sign out"
  },
  {
   "text": "Sizing is locked — click to unlock",
@@ -3560,6 +3562,15 @@
   ]
  },
  {
+  "text": "6-digit code",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
+  ]
+ },
+ {
   "text": "A weary detective in his 50s, haunted by a cold case...",
   "kind": "placeholder",
   "sites": 2,
@@ -3666,6 +3677,15 @@
   "area": "Editor & Preview",
   "where": [
    "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "Describe it — steps, what you expected, what you got.",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
   ]
  },
  {
@@ -4357,6 +4377,24 @@
   "area": "Action Rewrite Window",
   "where": [
    "components/RewriteTool.tsx"
+  ]
+ },
+ {
+  "text": "you@example.com",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
+  ]
+ },
+ {
+  "text": "Your name (shown with your feedback)",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
   ]
  },
  {

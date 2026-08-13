@@ -1,5 +1,15 @@
 [
  {
+  "version": "6.84",
+  "date": "2026-08-13",
+  "changes": [
+   "Feedback is ScriptCraft's own now — no more Airtable. The Feedback window is a native form (category, message, screenshot) that sends to your private feedback database, and Help ▸ Feedback… opens the same window.",
+   "Testers sign in once with just their email: the app sends a 6-digit code, they type it, done — no passwords. First sign-in asks their name once, and every submission then automatically carries who sent it, plus the app version and platform.",
+   "Screenshots attach for real: capture the window or an area and it uploads with the feedback — the old copy-the-image-then-paste-it dance is gone with the iframe that forced it.",
+   "A submission that can't reach the server is never lost or silent: it lands in a visible local queue in the window, with a Retry button."
+  ]
+ },
+ {
   "version": "6.83",
   "date": "2026-08-12",
   "changes": [

@@ -1307,22 +1307,6 @@ input.fs-switch:checked::after { left: 15px; }
   transform: scaleX(-1);
 }
 
-/* In-app help forms (Feature Request / Report a Bug) */
-.help-form-dialog {
-  width: min(720px, 94vw);
-  height: min(760px, 90vh);
-  display: flex;
-  flex-direction: column;
-}
-.help-form-dialog .dialog-header { display: flex; justify-content: space-between; align-items: center; }
-.help-form-frame {
-  flex: 1;
-  border: none;
-  width: 100%;
-  background: #fff;
-  border-radius: 0 0 8px 8px;
-}
-
 /* System Settings embedded as a Settings tab */
 .settings-page-embedded {
   min-height: 0 !important;
@@ -1694,64 +1678,74 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .ws-edit-input:focus { outline: none; }
 
-/* ── v4.23, Derek: Feedback dockable tool (FeedbackTool.tsx) ── */
-.feedback-tool-wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.feedback-tool { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.feedback-tool-frame {
-  flex: 1; border: none; width: 100%;
-  background: #fff; border-radius: 0 0 8px 8px;
+/* ── v6.84, Derek: the NATIVE Feedback form (FeedbackTool.tsx) — the
+   Airtable iframe, its preloaded host and the v4.70 screenshot chip are
+   gone. ── */
+.feedback-tool-wrap {
+  display: flex; flex-direction: column; height: 100%; min-height: 0;
+  padding: 14px 16px; gap: 10px; overflow-y: auto;
+  font-size: 12.5px; color: var(--fd-text);
 }
-
-/* v4.70, Derek: header screenshot buttons + the capture chip.
-   The chip sits ABOVE the form placeholder — the iframe host adopts the
-   placeholder's rect, so the form shrinks under the chip on its own. */
-.feedback-shot-btns { display: inline-flex; align-items: center; gap: 2px; }
-.feedback-shot-chip {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-bottom: 1px solid var(--fd-border);
-  background: var(--fd-toolbar-bg);
-  /* v5.00: the chip is a plain panel — dragging is gone (see FeedbackTool).
-     Selection stays off so the thumbnail and name don't highlight on a click. */
-  user-select: none;
-  -webkit-user-select: none;
+.fb-title { margin: 0; font-size: 15px; }
+.fb-hint { margin: 0; color: var(--fd-text-muted); line-height: 1.45; }
+.fb-note {
+  padding: 8px 10px; border-radius: 5px; line-height: 1.4;
+  background: var(--fd-overlay-light); border: 1px solid var(--fd-border);
 }
-.feedback-shot-thumb {
-  flex-shrink: 0;
-  width: 56px; height: 42px;
-  object-fit: cover;
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  cursor: grab;
-  background: #fff;
+.fb-sent { color: #27ae60; font-weight: 600; }
+.fb-queued {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 5px;
+  border: 1px solid #e5a50a; color: var(--fd-text);
+  background: rgba(229, 165, 10, 0.08);
 }
-.feedback-shot-thumb:active { cursor: grabbing; }
-.feedback-shot-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.feedback-shot-name {
-  font-size: 11px; font-weight: 600; color: var(--fd-text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.fb-retry { margin-left: auto; }
+.fb-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.fb-input {
+  flex: 1; min-width: 150px; height: 30px; padding: 0 10px;
+  background: var(--fd-input-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 4px;
 }
-.feedback-shot-hint { font-size: 10.5px; line-height: 1.35; color: var(--fd-text-muted); }
-.feedback-shot-act {
-  flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px;
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  background: none;
-  color: var(--fd-text-muted);
-  font-size: 11px;
-  cursor: pointer;
+.fb-input:focus { outline: none; border-color: var(--fd-accent); }
+.fb-code { letter-spacing: 3px; font-variant-numeric: tabular-nums; }
+.fb-who { color: var(--fd-text-muted); }
+.fb-who strong { color: var(--fd-text); }
+.fb-who-mail { font-size: 11.5px; }
+.fb-signout {
+  margin-left: 8px; background: none; border: none; cursor: pointer;
+  color: var(--fd-accent); font-size: 11.5px; padding: 0;
 }
-.feedback-shot-act:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
+.fb-label { display: flex; flex-direction: column; gap: 4px; color: var(--fd-text-muted); }
+.fb-label-grow { flex: 1; min-height: 0; }
+.fb-select {
+  height: 30px; padding: 0 8px; align-self: flex-start; min-width: 140px;
+  background: var(--fd-input-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 4px;
+}
+.fb-text {
+  flex: 1; min-height: 120px; resize: none; padding: 8px 10px;
+  background: var(--fd-input-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 4px;
+  font-family: inherit; font-size: 12.5px; line-height: 1.5;
+}
+.fb-text:focus { outline: none; border-color: var(--fd-accent); }
+.fb-shotrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fb-spacer { flex: 1; }
+.fb-shotchip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 3px 8px 3px 3px; border: 1px solid var(--fd-border);
+  border-radius: 5px; color: var(--fd-text-muted);
+}
+.fb-shotthumb { width: 44px; height: 30px; object-fit: cover; border-radius: 3px; }
+.fb-shot-x {
+  background: none; border: none; cursor: pointer;
+  color: var(--fd-text-muted); padding: 2px; display: inline-flex;
+}
+.fb-shot-x:hover { color: #c0392b; }
 
 /* While a Feedback capture runs: hide the Feedback window (floating, docked,
-   fullscreen takeover) AND the iframe overlay, so the shot shows the app
-   underneath — not the tool that took it. visibility keeps layout. */
-body.fs-shot-veil-feedback .feedback-frame-host,
+   fullscreen takeover), so the shot shows the app underneath — not the tool
+   that took it. visibility keeps layout. */
 body.fs-shot-veil-feedback .tool-window[data-tool="feedback"],
 body.fs-shot-veil-feedback .tool-inline[data-tool="feedback"],
 body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !important; }
@@ -1818,45 +1812,7 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
 .ws-action-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* v4.35 feedback preload host */
-/* The ONE persistent Airtable embed (FeedbackFrameHost, mounted in App.tsx).
-   The Feedback window body is a placeholder that streams its viewport rect
-   here; this fixed container adopts it (inline top/left/width/height). Hidden
-   = visibility + offscreen transform — NOT display:none and never unmounted,
-   so the form loads once at app start and reopening is instant.
-   z-index 130: just above the floating and temp tool windows (both 120 —
-   20-tool-dock.css .tool-window / .tool-window-temp above) so the frame
-   covers its own window's body, and below everything that must beat a tool
-   window — menu dropdowns, the dialog overlay (3000), popovers, toasts.
-   Known tradeoff: ANOTHER tool window dragged over the Feedback window
-   paints under the iframe. */
-.feedback-frame-host {
-  position: fixed;
-  z-index: 130;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-  border-radius: 0 0 8px 8px;
-  overflow: hidden;
-  /* Bottom-right 16×16 notch = .tool-window-resize's footprint. clip-path
-     drops it from paint AND hit-testing, so the floating window's resize
-     grip stays visible and grabbable under the overlay. */
-  clip-path: polygon(
-    0 0, 100% 0,
-    100% calc(100% - 16px), calc(100% - 16px) calc(100% - 16px),
-    calc(100% - 16px) 100%, 0 100%
-  );
-}
-.feedback-frame-host.hidden {
-  visibility: hidden;
-  pointer-events: none;
-  /* Parked offscreen at the tool's default size (ALL_TOOLS: 460×620) so the
-     form lays out and loads while hidden. */
-  top: 0;
-  left: 0;
-  width: 460px;
-  height: 620px;
-  transform: translate(-200vw, 0);
-}
+/* (v6.84: .feedback-frame-host is gone with the iframe.) */
 
 /* (v5.21, Derek: the v4.95 Airtable dev panel is REMOVED — it was always
    marked temporary. The shipping Feedback tool's Airtable embed is separate
