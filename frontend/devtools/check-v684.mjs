@@ -1,12 +1,13 @@
 /* check-v684 — Derek: "a new feedback system that does not require
-   airtable" + "a log in system so my testers can send feedback and it will
-   already know their name."
+   airtable" + feedback that already knows the tester. v6.86: friends-only
+   — the once-only PROFILE (name + email, no verification) replaced the
+   email-code sign-in.
 
    Drives the REAL app: Help ▸ Feedback… opens the native tool (no Airtable
-   iframe anywhere), the email → code → name sign-in runs against a stubbed
-   window.fetch (the sandbox cannot reach Supabase; the stub answers with
-   the documented shapes), a submission POSTs the row RLS expects, a server
-   failure lands in the VISIBLE queue, and Retry drains it. */
+   iframe anywhere), the profile card saves locally with zero network, a
+   submission POSTs name+email+version anonymously (stubbed window.fetch —
+   the sandbox cannot reach Supabase), a server failure lands in the
+   VISIBLE queue, and Retry drains it. */
 import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
@@ -45,17 +46,11 @@ try {
       if (!u.startsWith(BASE)) return real(url, init);
       window.__fbCalls.push({ url: u, method: init?.method, body: typeof init?.body === 'string' ? init.body : null });
       const json = (b, status = 200) => new Response(JSON.stringify(b), { status, headers: { 'Content-Type': 'application/json' } });
-      if (u.includes('/auth/v1/otp')) return json({});
-      if (u.includes('/auth/v1/verify')) return json({
-        access_token: 'at-1', refresh_token: 'rt-1', expires_in: 3600,
-        user: { id: 'user-1', email: 'derek-tester@example.com', user_metadata: {} },
-      });
-      if (u.includes('/auth/v1/user')) return json({});
       if (u.includes('/rest/v1/feedback')) return window.__fbFail ? json({ message: 'unreachable' }, 503) : json({}, 201);
       if (u.includes('/storage/v1/object/')) return json({ Key: 'ok' });
       return json({});
     };
-    localStorage.removeItem('opendraft:feedbackSession');
+    localStorage.removeItem('opendraft:feedbackProfile');
     localStorage.removeItem('opendraft:feedbackQueue');
   });
 
@@ -70,34 +65,24 @@ try {
   ok(!noAirtable.frame, 'Help ▸ Feedback opens the native form — NO Airtable iframe anywhere');
   ok(noAirtable.chipBtns === 0, 'and the old screenshot-chip header buttons are gone');
 
-  /* ── sign-in: email → code → name ── */
-  await page.fill(field('you@example.com'), 'derek-tester@example.com');
-  await button('Send code');
-  await page.waitForSelector(field('6-digit'), { timeout: 5000 });
-  const otp = await page.evaluate(() => window.__fbCalls.find((c) => c.url.includes('/auth/v1/otp')));
-  ok(!!otp && JSON.parse(otp.body).email === 'derek-tester@example.com',
-    'Send code asks Supabase to email a code to that address');
-  ok(await page.evaluate(() => document.querySelector('.feedback-tool-wrap').textContent.includes('Code sent')),
-    'and says the code is on its way');
-
-  await page.fill(field('6-digit'), '123456');
-  await button('Verify');
-  await page.waitForSelector(field('Your name'), { timeout: 5000 });
-  ok(true, 'a first sign-in asks for the display name, once');
+  /* ── the once-only profile: name + email, no verification, no network ── */
   await page.fill(field('Your name'), 'Derek Tester');
-  await button('Save name');
+  await page.fill(field('you@example.com'), 'derek-tester@example.com');
+  await button('Start');
   await page.waitForSelector('.fb-who', { timeout: 5000 });
   const who = await page.evaluate(() => document.querySelector('.fb-who').textContent);
   ok(/Derek Tester/.test(who) && /derek-tester@example.com/.test(who),
-    `the form knows who is signing (${who.slice(0, 60)})`);
+    `the form knows who is sending (${who.slice(0, 60)})`);
+  ok(await page.evaluate(() => window.__fbCalls.length) === 0,
+    'and identity cost ZERO network — no codes, no sign-in service');
 
   /* ── a submission carries identity + version ── */
   await page.fill('.fb-text', 'The dialogue margin drifts on page 3.');
   await button('Send Feedback');
   await page.waitForFunction(() => window.__fbCalls.some((c) => c.url.includes('/rest/v1/feedback')), { timeout: 5000 });
   const row = await page.evaluate(() => JSON.parse(window.__fbCalls.find((c) => c.url.includes('/rest/v1/feedback')).body));
-  ok(row.user_id === 'user-1' && row.name === 'Derek Tester' && row.email === 'derek-tester@example.com',
-    'the row carries user_id + name + email — feedback already knows the tester');
+  ok(row.name === 'Derek Tester' && row.email === 'derek-tester@example.com',
+    'the row carries name + email — feedback already knows the tester');
   ok(row.message === 'The dialogue margin drifts on page 3.' && typeof row.app_version === 'string' && row.app_version.length > 0,
     `and the message + app version (${row.app_version})`);
   ok(await page.evaluate(() => document.querySelector('.feedback-tool-wrap').textContent.includes('Sent — thank you!')),
@@ -120,11 +105,11 @@ try {
   ok(await page.evaluate(() => JSON.parse(localStorage.getItem('opendraft:feedbackQueue') || '[]').length) === 0,
     'Retry sends it and the queue empties');
 
-  /* ── sign out returns to the email step ── */
+  /* ── Edit reopens the card, prefilled ── */
   await page.click('.fb-signout');
-  await page.waitForSelector(field('you@example.com'), { timeout: 5000 });
-  ok(await page.evaluate(() => !localStorage.getItem('opendraft:feedbackSession')),
-    'Sign out forgets the session');
+  await page.waitForSelector(field('Your name'), { timeout: 5000 });
+  ok(await page.evaluate(() => document.querySelector('.fb-signin input').value) === 'Derek Tester',
+    'Edit reopens the profile card with the saved name in place');
 
 } catch (e) {
   console.log('PROBE ERROR:', e.message);

@@ -1,25 +1,23 @@
 /**
- * FeedbackTool (v4.23 as an Airtable iframe; v6.84 NATIVE) — Derek: a
- * feedback system without Airtable, and sign-in so a submission already
- * knows who sent it.
+ * FeedbackTool (v4.23 as an Airtable iframe; v6.84 native; v6.86 SIMPLE) —
+ * Derek: "I do not need to verify emails. This is being tested with
+ * friends only."
  *
- * The cross-origin iframe is gone, and with it every workaround it forced:
- * the preloaded FeedbackFrameHost, the rect-streaming placeholder, and the
- * v4.70/v5.00 screenshot chip (copy-or-download across the frame boundary —
- * the form owns a real attach button now). Submissions go to Derek's own
- * Supabase table through services/feedbackBackend; sign-in is an email +
- * 6-digit code (no passwords, no deep links — WKWebView-safe).
+ * The form asks name + email ONCE (a local tester profile, honor system,
+ * editable any time) and every submission carries them — no codes, no
+ * sign-in service, no SMTP. Submissions go to Derek's own Supabase table
+ * through services/feedbackBackend; screenshots attach for real via the
+ * app's capture. (The v6.84 verified email-code sign-in lives in git
+ * history for the day the app goes public.)
  *
  * Failure is never silent: a submit that can't reach the server lands in a
- * visible local queue with a Retry button, and sign-in problems say what to
- * do in words.
+ * visible local queue with a Retry button.
  */
 import { useEffect, useState } from 'react';
 import { FaCamera, FaCrop, FaTimes } from 'react-icons/fa';
 import {
-  type FeedbackSession, SignedOutError,
-  loadFeedbackSession, signOutFeedback,
-  requestFeedbackCode, verifyFeedbackCode, setFeedbackDisplayName,
+  type FeedbackProfile,
+  loadFeedbackProfile, saveFeedbackProfile,
   submitFeedback, enqueueFeedback, loadFeedbackQueue, drainFeedbackQueue,
 } from '../services/feedbackBackend';
 import { captureToCanvas } from '../utils/screenshot';
@@ -36,12 +34,10 @@ async function canvasToShot(canvas: HTMLCanvasElement): Promise<Shot> {
 }
 
 export default function FeedbackTool() {
-  const [session, setSession] = useState<FeedbackSession | null>(() => loadFeedbackSession());
-  /** signed-out steps: enter email → enter the emailed code → (name once) */
-  const [step, setStep] = useState<'email' | 'code' | 'name'>('email');
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [nameDraft, setNameDraft] = useState('');
+  const [profile, setProfile] = useState<FeedbackProfile | null>(() => loadFeedbackProfile());
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [nameDraft, setNameDraft] = useState(profile?.name ?? '');
+  const [emailDraft, setEmailDraft] = useState(profile?.email ?? '');
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -60,24 +56,12 @@ export default function FeedbackTool() {
     } finally { setBusy(false); }
   };
 
-  const sendCode = () => run(async () => {
-    await requestFeedbackCode(email.trim());
-    setStep('code');
-    setNote(`Code sent to ${email.trim()} — it arrives within a minute. Enter the 6-digit code from the email.`);
-  });
-
-  const verify = () => run(async () => {
-    const s = await verifyFeedbackCode(email.trim(), code);
-    setCode('');
-    if (!s.name) { setStep('name'); setSession(s); return; }
-    setSession(s);
-  });
-
-  const saveName = () => run(async () => {
-    const s = await setFeedbackDisplayName(nameDraft.trim());
-    setSession(s);
-    setStep('email');
-  });
+  const saveProfile = () => {
+    const p = saveFeedbackProfile({ name: nameDraft, email: emailDraft });
+    setProfile(p);
+    setEditingProfile(false);
+    setNote(null);
+  };
 
   const capture = (mode: 'full' | 'area') => run(async () => {
     const canvas = await captureToCanvas(mode, 'fs-shot-veil-feedback');
@@ -95,7 +79,6 @@ export default function FeedbackTool() {
       setSentNote('Sent — thank you!');
       window.setTimeout(() => setSentNote(null), 4000);
     } catch (e) {
-      if (e instanceof SignedOutError) { setSession(null); setStep('email'); throw e; }
       // Not silent, not lost: queue it where the writer can SEE it.
       const left = enqueueFeedback({ payload, shotDataUrl: shot?.dataUrl, queuedAt: new Date().toISOString() });
       setQueued(left);
@@ -112,80 +95,58 @@ export default function FeedbackTool() {
     if (left > 0) throw new Error(`${left} still could not be sent — they stay in the queue.`);
   });
 
-  /* ── signed-out: the three-step sign-in card ── */
-  if (!session || step === 'name') {
+  /* ── first open (or Edit): the once-only profile card ── */
+  if (!profile || editingProfile) {
+    const canSave = nameDraft.trim().length > 0 && emailDraft.trim().length > 0;
     return (
       <div className="feedback-tool-wrap fb-signin">
         <h3 className="fb-title">Send Feedback</h3>
-        {step !== 'name' && (
-          <p className="fb-hint">
-            Sign in once with your email — no password. Your feedback then
-            carries your name automatically.
-          </p>
-        )}
+        <p className="fb-hint">
+          Tell the form who you are — once. Your name and email ride along
+          with every piece of feedback so Derek knows who sent it.
+        </p>
         {note && <div className="fb-note">{note}</div>}
-        {step === 'email' && (
-          <div className="fb-row">
-            <input
-              className="fb-input"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && email.trim()) sendCode(); }}
-            />
-            <button className="dialog-btn dialog-btn-primary fb-go" disabled={busy || !email.trim()} onClick={sendCode}>
-              {busy ? 'Sending…' : 'Send code'}
+        <div className="fb-row">
+          <input
+            className="fb-input"
+            placeholder="Your name"
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+          />
+        </div>
+        <div className="fb-row">
+          <input
+            className="fb-input"
+            type="email"
+            placeholder="you@example.com"
+            value={emailDraft}
+            onChange={(e) => setEmailDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && canSave) saveProfile(); }}
+          />
+          <button className="dialog-btn dialog-btn-primary fb-go" disabled={!canSave} onClick={saveProfile}>
+            Start
+          </button>
+          {profile && (
+            <button className="dialog-btn fb-back" onClick={() => setEditingProfile(false)}>
+              Cancel
             </button>
-          </div>
-        )}
-        {step === 'code' && (
-          <div className="fb-row">
-            <input
-              className="fb-input fb-code"
-              inputMode="numeric"
-              placeholder="6-digit code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && code.trim().length >= 6) verify(); }}
-            />
-            <button className="dialog-btn dialog-btn-primary fb-go" disabled={busy || code.trim().length < 6} onClick={verify}>
-              {busy ? 'Checking…' : 'Verify'}
-            </button>
-            <button className="dialog-btn fb-back" disabled={busy} onClick={() => { setStep('email'); setNote(null); }}>
-              Different email
-            </button>
-          </div>
-        )}
-        {step === 'name' && (
-          <div className="fb-row">
-            <input
-              className="fb-input"
-              placeholder="Your name (shown with your feedback)"
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && nameDraft.trim()) saveName(); }}
-            />
-            <button className="dialog-btn dialog-btn-primary fb-go" disabled={busy || !nameDraft.trim()} onClick={saveName}>
-              {busy ? 'Saving…' : 'Save name'}
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
 
-  /* ── signed-in: the form ── */
+  /* ── the form ── */
   return (
     <div className="feedback-tool-wrap fb-form">
       <div className="fb-who">
-        Signing as <strong>{session.name ?? session.email}</strong>
-        {session.name ? <span className="fb-who-mail"> ({session.email})</span> : null}
+        Sending as <strong>{profile.name}</strong>
+        <span className="fb-who-mail"> ({profile.email})</span>
         <button
           className="fb-signout"
-          title="Sign out — feedback will ask for your email again"
-          onClick={() => { signOutFeedback(); setSession(null); setStep('email'); setNote(null); }}
-        >Sign out</button>
+          title="Change the name or email on your feedback"
+          onClick={() => { setNameDraft(profile.name); setEmailDraft(profile.email); setEditingProfile(true); }}
+        >Edit</button>
       </div>
 
       {note && <div className="fb-note">{note}</div>}

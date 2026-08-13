@@ -490,6 +490,16 @@
   "icon": "FaPaperclip"
  },
  {
+  "text": "Change the name or email on your feedback",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
+  ],
+  "label": "Edit"
+ },
+ {
   "text": "Choose a color",
   "kind": "tooltip",
   "sites": 1,
@@ -3136,16 +3146,6 @@
   ]
  },
  {
-  "text": "Sign out — feedback will ask for your email again",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ],
-  "label": "Sign out"
- },
- {
   "text": "Sizing is locked — click to unlock",
   "kind": "tooltip",
   "sites": 2,
@@ -3559,15 +3559,6 @@
   "area": "Characters Window",
   "where": [
    "components/CharacterProfiles.tsx"
-  ]
- },
- {
-  "text": "6-digit code",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
   ]
  },
  {
@@ -4389,7 +4380,7 @@
   ]
  },
  {
-  "text": "Your name (shown with your feedback)",
+  "text": "Your name",
   "kind": "placeholder",
   "sites": 1,
   "area": "Feedback Window",

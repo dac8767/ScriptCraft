@@ -1,12 +1,11 @@
 // @vitest-environment jsdom
 /**
- * v6.84 — the NATIVE Feedback form (the Airtable iframe and its v4.70
- * screenshot chip are gone). These drive the form against a stubbed fetch:
- * the sign-in steps, what a submission actually POSTs, and the visible
- * local queue when the server is unreachable. The REAL network path is
- * proven by Derek's first sign-in on the desktop (the sandbox cannot reach
- * Supabase) — what these pin is that every request the form makes is the
- * one the backend contract expects.
+ * v6.86 — the SIMPLE Feedback form (Derek: friends-only testing, no email
+ * verification). These drive the form against a stubbed fetch: the
+ * once-only profile card, what a submission actually POSTs (name + email
+ * riding along, NO auth header — anonymous inserts under the table's
+ * insert-only rule), and the visible local queue when the server is
+ * unreachable.
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
@@ -21,11 +20,6 @@ let replies: Array<(url: string) => Response | null> = [];
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-const sessionBody = () => ({
-  access_token: 'at-1', refresh_token: 'rt-1', expires_in: 3600,
-  user: { id: 'user-1', email: 'tester@example.com', user_metadata: {} },
-});
-
 let container: HTMLDivElement;
 let root: Root;
 
@@ -38,7 +32,7 @@ beforeEach(() => {
     if (!u.startsWith(FEEDBACK_BACKEND.url)) throw new Error(`unexpected fetch ${u}`);
     calls.push({ url: u, init });
     for (const r of replies) { const res = r(u); if (res) return res; }
-    return json({});
+    return json({}, 201);
   }));
   container = document.createElement('div');
   document.body.appendChild(container);
@@ -51,7 +45,6 @@ afterEach(() => {
 });
 
 const mount = () => act(() => { root.render(<FeedbackTool />); });
-/** Let pending promises resolve and React re-render. */
 const flush = async (rounds = 4) => {
   for (let i = 0; i < rounds; i++) {
     await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
@@ -74,42 +67,40 @@ const setValue = (el: HTMLInputElement | HTMLTextAreaElement, value: string) => 
   el.dispatchEvent(new Event('input', { bubbles: true }));
 });
 
-const signedInSession = () => localStorage.setItem('opendraft:feedbackSession', JSON.stringify({
-  accessToken: 'at-1', refreshToken: 'rt-1',
-  expiresAt: Math.floor(Date.now() / 1000) + 3600,
-  userId: 'user-1', email: 'tester@example.com', name: 'Tester T',
-}));
+const savedProfile = () => localStorage.setItem('opendraft:feedbackProfile',
+  JSON.stringify({ name: 'Tester T', email: 'tester@example.com' }));
 
-describe('FeedbackTool — sign-in', () => {
-  it('walks email → code → name, hitting the OTP endpoints', async () => {
-    replies.push((u) => (u.includes('/auth/v1/verify') ? json(sessionBody()) : null));
+describe('FeedbackTool — the once-only profile', () => {
+  it('asks name + email once, then shows the form sending as them', async () => {
     mount();
-
-    setValue(byPlaceholder('you@example.com'), 'tester@example.com');
-    clickText('Send code');
-    await flush();
-    const otp = calls.find((c) => c.url.includes('/auth/v1/otp'));
-    expect(otp).toBeTruthy();
-    expect(JSON.parse(String(otp!.init?.body))).toEqual({ email: 'tester@example.com', create_user: true });
-
-    setValue(byPlaceholder('6-digit code'), '123456');
-    clickText('Verify');
-    await flush();
-    expect(JSON.parse(String(calls.find((c) => c.url.includes('/auth/v1/verify'))!.init?.body)))
-      .toEqual({ type: 'email', email: 'tester@example.com', token: '123456' });
-
-    // no name in metadata yet → the name step, saved via PUT /auth/v1/user
+    expect(container.textContent).toContain('Tell the form who you are');
     setValue(byPlaceholder('Your name'), 'Tester T');
-    clickText('Save name');
+    setValue(byPlaceholder('you@example.com'), 'tester@example.com');
+    clickText('Start');
     await flush();
-    expect(calls.some((c) => c.url.includes('/auth/v1/user') && c.init?.method === 'PUT')).toBe(true);
+    expect(container.textContent).toContain('Sending as');
     expect(container.textContent).toContain('Tester T');
+    // saved — a remount skips straight to the form
+    expect(JSON.parse(localStorage.getItem('opendraft:feedbackProfile')!))
+      .toEqual({ name: 'Tester T', email: 'tester@example.com' });
+    expect(calls).toHaveLength(0);                     // no network for identity
+  });
+
+  it('Edit reopens the card prefilled and updates the profile', async () => {
+    savedProfile();
+    mount();
+    clickText('Edit');
+    expect((byPlaceholder('Your name') as HTMLInputElement).value).toBe('Tester T');
+    setValue(byPlaceholder('Your name'), 'Renamed');
+    clickText('Start');
+    await flush();
+    expect(container.textContent).toContain('Renamed');
   });
 });
 
 describe('FeedbackTool — submitting', () => {
-  it('POSTs the row RLS expects: user_id + name + message + version', async () => {
-    signedInSession();
+  it('POSTs name + email + message + version, anonymously (apikey only)', async () => {
+    savedProfile();
     mount();
     setValue(byPlaceholder('Describe it'), 'The margins drift.');
     clickText('Send Feedback');
@@ -117,19 +108,18 @@ describe('FeedbackTool — submitting', () => {
     const post = calls.find((c) => c.url.includes('/rest/v1/feedback'));
     expect(post).toBeTruthy();
     const body = JSON.parse(String(post!.init?.body));
-    expect(body.user_id).toBe('user-1');                 // RLS: auth.uid() = user_id
     expect(body.name).toBe('Tester T');
     expect(body.email).toBe('tester@example.com');
     expect(body.message).toBe('The margins drift.');
     expect(typeof body.app_version).toBe('string');
     const headers = post!.init?.headers as Record<string, string>;
-    expect(headers.Authorization).toBe('Bearer at-1');
     expect(headers.apikey).toBe(FEEDBACK_BACKEND.publishableKey);
+    expect(headers.Authorization).toBeUndefined();     // no auth — insert-only rule
     expect(container.textContent).toContain('Sent — thank you!');
   });
 
   it('a failed send lands in the VISIBLE queue, never the void', async () => {
-    signedInSession();
+    savedProfile();
     replies.push((u) => (u.includes('/rest/v1/feedback') ? json({ message: 'server down' }, 503) : null));
     mount();
     setValue(byPlaceholder('Describe it'), 'Lost words?');

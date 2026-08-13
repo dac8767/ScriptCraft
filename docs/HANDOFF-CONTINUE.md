@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.85 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.86 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -258,6 +258,29 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.86 — feedback SIMPLIFIED: once-only profile, no verification
+
+- Derek: "I do not need to verify emails. This is being tested with
+  friends only. We can change the setup if it gets released publicly
+  later." The v6.84 email-code sign-in (which had hit Supabase's
+  no-template-editing-without-SMTP wall) is REPLACED by a local tester
+  profile: name + email typed once (`opendraft:feedbackProfile`),
+  Edit button to change, attached to every submission. No auth headers,
+  no session, no refresh, no SMTP/Resend — identity costs zero network.
+- feedbackBackend.ts rewritten: profile load/save; submit = anon insert
+  (apikey only) + anon screenshot upload (path `<ts>-<rand>.png`); queue
+  unchanged minus the SignedOutError early-stop. The v6.84 auth code is
+  in git history (0c9b43e) for a public release later.
+- **DEREK MUST RUN SQL** (given in the delivery message) before real
+  submissions work: drop the authenticated-only insert policy, allow
+  anon+authenticated INSERT (user_id nullable), and add an anon storage
+  INSERT policy on feedback-shots. Until then the app queues with the
+  server's denial message shown.
+- FeedbackTool.test.tsx (4) + check-v684 (10) rewritten for the profile
+  flow (zero-network identity asserted; anonymous POST asserted:
+  apikey, NO Authorization header).
+- Gates: tsc 0, vitest 1194, build ok, check-all 1066/0. Catalog 480.
 
 ### v6.85 — Settings ▸ Defaults joins the warn+undo wrapper (v6.77 drift)
 
