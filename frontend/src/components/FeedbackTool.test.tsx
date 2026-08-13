@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
 import FeedbackTool from './FeedbackTool';
-import { FEEDBACK_BACKEND, loadFeedbackQueue } from '../services/feedbackBackend';
+import { FEEDBACK_BACKEND, extFromType, loadFeedbackQueue } from '../services/feedbackBackend';
 
 type Call = { url: string; init?: RequestInit };
 let calls: Call[] = [];
@@ -34,6 +34,8 @@ beforeEach(() => {
     for (const r of replies) { const res = r(u); if (res) return res; }
     return json({}, 201);
   }));
+  // jsdom lacks object URLs; the chip's <img> just needs A string
+  Object.assign(URL, { createObjectURL: () => 'blob:fb-test', revokeObjectURL: () => {} });
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -112,6 +114,8 @@ describe('FeedbackTool — submitting', () => {
     expect(body.email).toBe('tester@example.com');
     expect(body.message).toBe('The margins drift.');
     expect(typeof body.app_version).toBe('string');
+    expect(body.attachments).toBeNull();               // v6.87 column — screenshot_path is gone
+    expect('screenshot_path' in body).toBe(false);
     const headers = post!.init?.headers as Record<string, string>;
     expect(headers.apikey).toBe(FEEDBACK_BACKEND.publishableKey);
     expect(headers.Authorization).toBeUndefined();     // no auth — insert-only rule
@@ -135,5 +139,49 @@ describe('FeedbackTool — submitting', () => {
     clickText('Retry now');
     await flush();
     expect(loadFeedbackQueue()).toHaveLength(0);
+  });
+});
+
+describe('FeedbackTool — the attachment area (v6.87)', () => {
+  it('offers Screenshot, Area and Browse… under a labeled Attachment area', async () => {
+    savedProfile();
+    mount();
+    expect(container.querySelector('.fb-attach-head')?.textContent).toContain('Attachment');
+    const labels = [...container.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent?.trim());
+    expect(labels).toEqual(['Screenshot', 'Area', 'Browse…']);
+    expect(container.querySelector('.fb-attach input[type="file"]')).toBeTruthy();
+  });
+
+  it('a browsed image becomes the attachment and uploads in its REAL format', async () => {
+    savedProfile();
+    mount();
+    const input = container.querySelector('.fb-attach input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'margin-bug.jpeg', { type: 'image/jpeg' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    act(() => { input.dispatchEvent(new Event('change', { bubbles: true })); });
+    await flush(6);                                    // FileReader is async
+    expect(container.querySelector('.fb-shotchip')?.textContent).toContain('margin-bug.jpeg');
+
+    setValue(byPlaceholder('Describe it'), 'See the attached image.');
+    clickText('Send Feedback');
+    await flush(6);
+    const up = calls.find((c) => c.url.includes('/storage/v1/object/feedback-shots/'));
+    expect(up).toBeTruthy();
+    expect(up!.url).toMatch(/\.jpg$/);
+    expect((up!.init?.headers as Record<string, string>)['Content-Type']).toBe('image/jpeg');
+    const post = calls.find((c) => c.url.includes('/rest/v1/feedback'));
+    const body = JSON.parse(String(post!.init?.body));
+    expect(typeof body.attachments).toBe('string');
+    expect(up!.url.endsWith(body.attachments)).toBe(true);
+    expect(container.querySelector('.fb-shotchip')).toBeNull();   // cleared after send
+  });
+
+  it('extFromType keeps the real format and falls back to png', () => {
+    expect(extFromType('image/png')).toBe('png');
+    expect(extFromType('image/jpeg')).toBe('jpg');
+    expect(extFromType('image/webp')).toBe('webp');
+    expect(extFromType('image/svg+xml')).toBe('svg');
+    expect(extFromType('')).toBe('png');
+    expect(extFromType('application/pdf')).toBe('png');
   });
 });

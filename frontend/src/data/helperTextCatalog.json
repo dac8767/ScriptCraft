@@ -366,6 +366,17 @@
   "label": "Screenshot"
  },
  {
+  "text": "Attach an image file from disk",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Feedback Window",
+  "where": [
+   "components/FeedbackTool.tsx"
+  ],
+  "icon": "FaFolderOpen",
+  "label": "Browse…"
+ },
+ {
   "text": "Attach image",
   "kind": "tooltip",
   "sites": 1,
@@ -2558,16 +2569,7 @@
   ]
  },
  {
-  "text": "Remove the row split",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Ribbon Toolbar",
-  "where": [
-   "components/Toolbar.tsx"
-  ]
- },
- {
-  "text": "Remove the screenshot",
+  "text": "Remove the attachment",
   "kind": "tooltip",
   "sites": 1,
   "area": "Feedback Window",
@@ -2575,6 +2577,15 @@
    "components/FeedbackTool.tsx"
   ],
   "icon": "FaTimes"
+ },
+ {
+  "text": "Remove the row split",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
  },
  {
   "text": "Remove this field",

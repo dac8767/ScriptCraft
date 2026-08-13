@@ -7,7 +7,10 @@
    iframe anywhere), the profile card saves locally with zero network, a
    submission POSTs name+email+version anonymously (stubbed window.fetch —
    the sandbox cannot reach Supabase), a server failure lands in the
-   VISIBLE queue, and Retry drains it. */
+   VISIBLE queue, and Retry drains it. v6.87 (the first request submitted
+   through the form itself): the labeled Attachment area — Screenshot /
+   Area / Browse… — where a browsed JPEG keeps its real format and lands
+   in the table's `attachments` column. */
 import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
@@ -44,7 +47,7 @@ try {
     window.fetch = async (url, init) => {
       const u = String(url);
       if (!u.startsWith(BASE)) return real(url, init);
-      window.__fbCalls.push({ url: u, method: init?.method, body: typeof init?.body === 'string' ? init.body : null });
+      window.__fbCalls.push({ url: u, method: init?.method, body: typeof init?.body === 'string' ? init.body : null, type: init?.headers?.['Content-Type'] ?? null });
       const json = (b, status = 200) => new Response(JSON.stringify(b), { status, headers: { 'Content-Type': 'application/json' } });
       if (u.includes('/rest/v1/feedback')) return window.__fbFail ? json({ message: 'unreachable' }, 503) : json({}, 201);
       if (u.includes('/storage/v1/object/')) return json({ Key: 'ok' });
@@ -104,6 +107,39 @@ try {
   await page.waitForFunction(() => !document.querySelector('.fb-queued'), { timeout: 5000 });
   ok(await page.evaluate(() => JSON.parse(localStorage.getItem('opendraft:feedbackQueue') || '[]').length) === 0,
     'Retry sends it and the queue empties');
+
+  /* ── v6.87: the labeled Attachment area, and Browse… keeps the format ── */
+  const attach = await page.evaluate(() => {
+    const area = document.querySelector('.fb-attach');
+    return {
+      label: area?.querySelector('.fb-attach-head')?.textContent.trim() ?? '',
+      btns: [...(area?.querySelectorAll('.fb-attach-btns button') ?? [])].map((b) => b.textContent.trim()),
+      file: !!area?.querySelector('input[type="file"]'),
+    };
+  });
+  ok(/Attachment/.test(attach.label), `the form has a labeled attachment area ("${attach.label}")`);
+  ok(attach.btns.join(',') === 'Screenshot,Area,Browse…' && attach.file,
+    `with Screenshot / Area / Browse… and a real file input behind it (${attach.btns.join(' / ')})`);
+  await page.setInputFiles('.fb-attach input[type="file"]', {
+    name: 'margin-bug.jpeg', mimeType: 'image/jpeg',
+    buffer: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]),
+  });
+  await page.waitForSelector('.fb-shotchip', { timeout: 5000 });
+  ok(await page.evaluate(() => document.querySelector('.fb-shotchip').textContent.includes('margin-bug.jpeg')),
+    'picking a file shows the chip with ITS name — not a silent no-op');
+  await page.fill('.fb-text', 'See the attached image.');
+  await button('Send Feedback');
+  await page.waitForFunction(() => window.__fbCalls.some((c) => c.url.includes('/storage/v1/object/feedback-shots/')), { timeout: 5000 });
+  const uploaded = await page.evaluate(() => {
+    const up = window.__fbCalls.find((c) => c.url.includes('/storage/v1/object/feedback-shots/'));
+    const row = [...window.__fbCalls].reverse().find((c) => c.url.includes('/rest/v1/feedback'));
+    return { url: up?.url ?? '', type: up?.type ?? '', row: row?.body ? JSON.parse(row.body) : {} };
+  });
+  ok(/\.jpg$/.test(uploaded.url) && uploaded.type === 'image/jpeg',
+    `the upload keeps the file's real format (…${uploaded.url.split('/').pop()}, ${uploaded.type})`);
+  ok(typeof uploaded.row.attachments === 'string' && uploaded.url.endsWith(uploaded.row.attachments)
+      && !('screenshot_path' in uploaded.row),
+    'and the row records it in the attachments column (screenshot_path is gone)');
 
   /* ── Edit reopens the card, prefilled ── */
   await page.click('.fb-signout');

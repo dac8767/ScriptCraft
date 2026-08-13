@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.86 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.87 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -12,11 +12,13 @@
 >    screenshots: edit mode renders larger paddings/gaps around the same
 >    controls). Likely the rib-edit-item wrappers add chrome the live bar
 >    lacks — parity like v6.83's alignment item.
-> Also asked (answered in chat, may become work): connecting Supabase to
-> Claude Code so feedback is readable in sessions — his Mac's Claude Code
-> can add the official Supabase MCP server with a scoped PAT; THIS remote
-> environment currently blocks *.supabase.co (proxy 403) until he allows
-> it in the environment's network policy.
+> Also: Supabase ↔ Claude connectivity is LIVE in this remote environment
+> (Derek opened the network policy and added SUPABASE_SECRET_KEY as an env
+> var — v6.86/87 sessions read and can update real feedback rows via REST;
+> never print the key, use $SUPABASE_SECRET_KEY). Sessions hold DATA rights
+> only: schema changes (DDL) go through his dashboard's SQL editor — hand
+> him a paste. His Mac's Claude Code could additionally add the official
+> Supabase MCP server with a scoped PAT if he wants Claude doing schema.
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -259,6 +261,40 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.87 — the Feedback ATTACHMENT AREA (the first request from the table)
+
+- Derek: "implement the request in the feedback tablew" — the request being
+  the FIRST real feedback row, submitted through the form and read live in
+  a session via $SUPABASE_SECRET_KEY: "this feedback form should have a
+  clear attachment area, not just the screenshot buttons."
+- FeedbackTool.tsx: the two bare Screenshot/Area buttons beside Send became
+  a labeled `.fb-attach` box (FaPaperclip + "Attachment"): Screenshot, Area,
+  and NEW Browse… (hidden `<input type=file accept=image/*>` → fileToShot
+  via FileReader; non-image picks refused in words). Attached state = chip
+  with thumbnail + NAME (captures say "Screenshot", files their filename) +
+  remove ×. NO drag-drop ON PURPOSE: Tauri's fileDrop interception swallows
+  web drops — unverifiable here, and a dead drop zone is the silent-no-op
+  cardinal sin.
+- feedbackBackend.ts: the upload keeps the file's REAL format — path
+  extension + Content-Type from `shot.type` (extFromType, pure + tested;
+  jpeg→jpg, svg+xml→svg, fallback png). The row writes the table's new
+  `attachments` column; screenshot_path is GONE (rename everywhere, at
+  once).
+- TABLE MIGRATION (Derek asked mid-turn "can you add fields?"): sessions
+  hold data rights, not DDL — he got ONE SQL paste in the delivery message:
+  `attachments` text backfilled from screenshot_path then DROP; `status`
+  enum Pending/In Progress/Complete default Pending (his dashboard triage —
+  the Table Editor renders enums as a dropdown; the app NEVER writes it).
+  Until he runs it, submissions queue visibly and Retry recovers — nothing
+  lost in either order. Standing offer: once run, flip the first row to
+  Complete via REST.
+- Tests 1194→1197 (labeled area + Browse; browsed JPEG end-to-end with
+  real-format asserts; extFromType unit). check-v684 10→15 — Playwright
+  setInputFiles works on the hidden input: chip shows the filename, upload
+  asserted .jpg + image/jpeg, row asserted attachments-not-screenshot_path.
+  Catalog 481 (+1, the Browse tooltip).
+- Gates: tsc 0, vitest 1197, build ok, check-all 1071/0.
+
 ### v6.86 — feedback SIMPLIFIED: once-only profile, no verification
 
 - Derek: "I do not need to verify emails. This is being tested with
@@ -373,389 +409,22 @@ Durable bits kept live here:
   edge. Catalog 477 (net swap of divider strings + the grip tooltip).
 - Gates: tsc 0, vitest 1196, build ok, check-all 1055/0.
 
-### v6.82 — three ribbon tidies (Derek, one screenshot each)
-
-- The v6.68 View Annotations toggle wears **FaPenNib** — Derek: "a
-  highlighter or pen, but different than any other current icon"
-  (FaMarker = Annotations tool row, FaHighlighter = highlight color,
-  FaPencilAlt = edit affordances). BOTH registry keys (viewAnnotations /
-  viewAnnotationsOff) map to the one glyph now — the lit `active` state
-  carries on/off, matching the side-panel toggles Derek modeled the button
-  on (his v6.68 words). check-v668 asserts state/lit/margin-icons, not the
-  glyph, so it pinned the behavior through the swap. FaRegEyeSlash left
-  uiIcons' imports with it.
-- The ribbon edit mode's `title="Drag to move this section"` is GONE
-  (Toolbar ~1911) — it collided with the edit mode's other helper bubbles;
-  the dashed section chrome is the affordance. Catalog 477 → 476.
-- `.rib-section:not(.rib-single) .view-style-label { display:none }` —
-  in a TWO-ROW section the Editor View caption drops, just the dropdown
-  (rib-single marks single-row sections in every live branch AND edit
-  mode, so the selector covers them all).
-- Gates: tsc 0, vitest 1196, build ok, check-all 1044/0.
-
-### v6.81 — the FULLSCREEN entry point; one accent for both action buttons
-
-- Derek's second screenshot: he entered the compare from the tool's
-  FULLSCREEN takeover — v6.80's seating only converted 'floating', so
-  `fullscreenTool` stayed 'history' (caret down, no inline body, panel
-  empty AGAIN). The seating now covers every shape: set mode 'docked',
-  `setFullscreenTool(null)` if the tool owns the takeover, and if NO
-  surface holds the tool afterwards, `openTool('history')` (mode already
-  docked, so it seats in its panel slot; a row-less profile lands temp,
-  which also shows the summary).
-- "+ Take Snapshot" wears the shared `.version-compare-btn` accent
-  (Derek: "both in the blue formatting") — its bespoke background rule in
-  11-spell-grammar-history.css is GONE; only flex sizing remains own.
-  Lesson from a false start: that rule was invisible to a grep run against
-  a ROLLED-BACK tree — after any sandbox reset, re-verify "no rule exists"
-  claims.
-- check-v673 → 44: the fullscreen round is a driven regression (fullscreen
-  → compare → takeover left + summary docked at 277×112), style parity
-  asserted via computed background — and the Compare selectors are
-  `:not(.version-history-take)` now that BOTH buttons carry the class
-  (page.click's first-match would have hit Take Snapshot).
-- Gates: tsc 0, vitest 1196, build ok, check-all 1044/0.
-
-### v6.80 — the empty-panel mystery SOLVED; Compare… moves; draft auto-snapshot
-
-- Derek's screenshot cracked the "summary not appearing" case v6.79 could
-  only harden against: his Script History had a DOCK ROW with the tool open
-  in **floating mode** — `isToolOpen` true (caret down) but `isOpenInline`
-  false, so the row sat expanded with NO body and the summary lived in a
-  ToolWindowFrame that never surfaced on his Mac (Chromium shows that
-  window fine — engine/remembered-rect territory). THE FIX IS STRUCTURAL:
-  `runScriptCompare` seats the tool into the docked panel
-  (`setToolMode('history','docked')`) before `setScriptCompare` — the
-  summary's home is the accordion's definite-height inline body, which
-  cannot fail to surface. v4.84 note: this is an explicit product rule
-  writing the mode, not an open-path read.
-- Compare… button moved beside + Take Snapshot in
-  `.version-history-actions` (disabled until a script + 2 snapshots); the
-  `version-compare-bar` renders ONLY in compareMode, with Derek's sentence
-  "Compare two snapshots side by side — pick two from the list / pick one
-  more" + Cancel.
-- **Draft change auto-snapshot** (Derek: "label it as the previous draft
-  name"): `applyDraftNumber` (SetDraftDialog.tsx — the ONE choke point;
-  the dialog, the Settings mirror and Save-As's onDraftCommitted all run
-  it) composes the save payload SYNCHRONOUSLY (composeSaveContent) before
-  the label/title-page mutate — the snapshot's own title page still reads
-  the old draft — then async saveScript → checkin(prevLabel) →
-  bumpVersionsTick, toast "Snapshot “1st Draft” saved". Skipped when: no
-  prev label, label unchanged, no project/script (hosted no-op), editor
-  gone. Failure toasts but never blocks the draft change.
-- check-v673 → 41: Derek's floating-mode screenshot state is now a driven
-  regression (dock row + floating → compare → mode 'docked' + summary in
-  `.tool-inline[data-tool=history]` at 277×112px), Compare…-beside-Take,
-  sentence-only-in-mode, and the draft arc through the real Project ▸ Set
-  Draft Number… dialog (old-name checkin, row appears live, same-name =
-  no snapshot). Catalog 475 → 477 (Compare…'s two tooltip strings).
-- Gates: tsc 0, vitest 1196, build ok, check-all 1041/0.
-
-### v6.79 — slim one-row snapshot list; rows ARE the compare pickers
-
-- Derek, three items: the compare summary "is not appearing in the script
-  history window" (regression report), slim the snapshot rows to one line
-  with the buttons inline, and compare-picking by clicking the ROW, no
-  checkboxes.
-- **Summary "not appearing" — what was actually found.** It renders in the
-  Chromium harness in BOTH hostings (temp floating window AND docked in
-  the right panel — the docked path was probed this round; the checks had
-  only ever driven the temp slot, the v4.84 entry-point lesson again). Two
-  real fixes shipped anyway: `.version-summary-host`'s `max-height: 45%`
-  became **340px** — a percentage there resolves against the flex body's
-  height, which WebKit may treat as indefinite (the §4 percentage-sizing
-  family; the Mac app is WebKit and the sandbox has no WebKit to prove
-  it) — and check-v673 now asserts the summary's REAL getBoundingClientRect
-  size, not mere DOM presence, so an invisible-but-mounted summary can
-  never pass again. If Derek still sees nothing, the next question is
-  WHAT the window shows during a compare (list? empty? closed?) — and
-  note the Tools ▸ "Compare with Snapshot…" door is TRACK CHANGES, a
-  different feature, in case he means that one.
-- Rows: `.version-item` is one flex line — name (flex:1, ellipsis) · age ·
-  actions; 4px padding, ~27px tall. `.version-item-top` and the dead
-  `.version-hash` rule are gone.
-- Compare picking: in compareMode the row's onClick toggles selection
-  (`toggleCompareSelect`), the action buttons UNMOUNT while picking (a
-  mis-click can't restore/delete), row carries role=option +
-  aria-selected + a pick tooltip (catalog rebuilt — same 475). Checkboxes
-  and their CSS deleted. Second pick still auto-fires the compare.
-- check-v673 → 32: one-row geometry (mid-y spread < 8px, height ≤ 34px),
-  row-click pick/unpick, buttons absent in mode, summary VISIBLE at
-  418×111px.
-- Gates: tsc 0, vitest 1196, build ok, check-all 1032/0.
-
-### v6.78 — plain EDITS in windows are undoable (Derek's retest)
-
-- Derek, testing v6.77: "i changed helper text in the window, and then
-  tried to use Undo, but it did not revert back." v6.77 had scoped the
-  undo lane to the WARNED buttons; his sentence was "changes made in
-  windows" — the first thing he tried was an ordinary edit. The lane now
-  takes value edits too:
-  • Helper Text: every commit (edit / blank / typing-the-default) and the
-    per-row reset push {prev, next} closures — prev keeps v6.38's
-    three-state (override / '' deliberate blank / undefined = default).
-  • Keyboard Shortcuts: a recorded rebind (ONE entry restores both sides
-    when it steals a key from another command), per-row Clear, per-row
-    Reset. bindingSnapshot/restoreBinding keep the has-override-vs-default
-    distinction.
-  • Design: TokenRow.commit pushes with `coalesceKey: dz:<id>` — pushes
-    sharing a key within 2.5s MERGE (original undo, newest redo, `at`
-    refreshed so an ongoing drag keeps merging). A range drag = one ⌘Z
-    back to the pre-drag value. Per-row reset pushes too; its redo closure
-    applies WITHOUT pushing (a redo that pushes would grow the stack).
-- NOT pushed on purpose: the hide/unhide eye toggles and similar one-click
-  reversibles — they'd flood the 20-entry stack and bury a reset five
-  clicks deep. If Derek wants them, raise the cap alongside.
-- check-v677 grew to 35 (edit→⌘Z→⇧⌘Z at the top — his exact retest — a
-  real 3-event slider drag undone in ONE step, single-rebind undo/redo);
-  smartUndo.test.ts 8 (coalesce merge + no-merge).
-- TWO suite-hygiene fixes found by the gates themselves: (a) the catalog
-  guard caught that hoisting the Clear/Reset onClick bodies out of the
-  BUTTONS restores the builder's label context (it reads a button's label
-  from the lines right after its title= — keep guarded buttons one-liners
-  and hoist handlers); (b) check-v669 flaked twice under 4-way load once
-  the keyboard-heavy check-v677 joined — it asserted !loading after ONE
-  settle, but the product's promise is "the spinner ends inside the 12s
-  budget"; it now waitForFunction's on that promise. Solo AND in-suite
-  green since.
-- Gates: tsc 0, vitest 1196, build ok, check-all 1027/0 (in-suite, after
-  the v669 hardening).
-
-### v6.77 — warnings on major-change buttons + window-action UNDO
-
-- Derek, after losing his helper-text edits to one click: (1) "for this any
-  any button that makes major changes, always include a warning window";
-  (2) "when 'Hidden' is clicked, show toggle button for Hide/Show all";
-  (3) "using Undo button or ctrl+Z / cmd+Z should undo changes made in
-  windows as well."
-- **The architecture is a third undo LANE**, beside the script's
-  (ProseMirror) and the beat board's (v2.36): `stores/windowUndoStore.ts`
-  holds {label, at, undo(), redo()} stacks; `smartUndo`/`smartRedo` route
-  to whichever lane holds the NEWEST change (top-entry `at` vs
-  `lastDocEditAt` vs `lastBeatEditAt`). A window undo/redo toasts
-  "Undid: <label>" — the restored state may not be on screen, and a silent
-  restore would read as a dead key.
-- **`utils/majorChange.ts` is THE wrapper** (warn → capture → run → push):
-  every guarded button goes through `runMajorChange`, whose confirm text
-  ends by naming the undo key (formatCombo('Mod+Z') — ⌘Z/Ctrl+Z). Guarded:
-  Reset helper text; Hide all/Show all (new); Design's Reset all;
-  Annotation presets' Reset to Default; Reset All Shortcuts; ALL ten
-  customizeResets registry entries (each gained `what` for the warning and
-  optional `capture` — default capture is captureCustomizations/
-  restoreCustomizations, bespoke ones for pageLayout/transitions/elements);
-  Customize's Reset All keeps its type-to-confirm and now pushes undo too.
-  NOT undoable (stated in their existing warnings): snapshot deletes
-  (SQLite) and Settings ▸ Reset All Settings (multi-domain; warns already).
-- Bulk restore setters added for exact-replace (the preset appliers are
-  ADDITIVE and can't serve as undo): `setHelperTextOverrides`,
-  `setHelperTextHidden`, shortcutStore `restoreOverrides`,
-  formattingTemplateStore `restoreTransitions`, designSlice `setDesignVars`.
-- **⌘Z reaches windows**: undo/redo are owner:'system' in shortcuts.ts, so
-  the app's global keydown DELIBERATELY ignored them — outside the editor
-  nothing handled the key (Derek's "undo does not work"). MenuBar's capture
-  handler now routes undo/redo to smartUndo/smartRedo UNLESS the event
-  target is an input/textarea/contenteditable (native + TipTap keep those).
-  The DESKTOP app already routed ⌘Z through smartUndo via the native menu
-  accelerator (nativeMenuSync — "Undo/Redo stay OURS"), so it inherits the
-  window lane with no further wiring. Toolbar's undo/redo buttons subscribe
-  to the new store so a landed reset lights them.
-- Hidden view toggle: `.ht-bulk-hidden` renders only while showHidden —
-  "Show all (N)" when anything is hidden, "Hide all" when nothing is.
-- CHECK-WRITING LESSONS (both bit in the first run): (a) two `.click()`s on
-  `querySelectorAll(...)[0]` in ONE evaluate toggle the SAME row — React 18
-  batches, the list doesn't reflow between them; click [0] and [1]. (b) an
-  in-page BARE `import('/src/stores/shortcutStore.ts')` after a session of
-  HMR edits can be a SECOND module instance (the check-v642 trap) — my
-  setBinding went to the phantom store while the app reset the real one.
-  Fixed by driving the real recording UI (press Ctrl+Shift+F9 — F-keys
-  don't shift-transform like digits) and reading the ROW's text.
-- check-v677 (27): the full arc on helper text (warn → cancel → confirm →
-  Ctrl+Z → Ctrl+Shift+Z), Hidden bulk both directions, Design, a Customize
-  tab reset, Reset All Shortcuts — plus "the warning names the way back".
-- Helper catalog: 473 → 475 (the toggle's two tooltips).
-- Gates: tsc 0, vitest 1194, build ok, check-v677 27/27. First full-suite
-  run 1017/2 — both fails were check-v669's bounded load-wait expiring
-  under 4-way contention (solo: 9/9; the SPEED-AUDIT §3 "re-run before
-  believing a weird parallel failure" case, made likelier by the suite
-  gaining the keyboard-heavy check-v677 as a neighbor). Rerun: 1019/0.
-
-### v6.76 — Take Snapshot into the body; the panel survives the compare
-
-- Derek: "move the 'Take Snapshot' button out of the window title section
-  and down into the script history window" + "when in the compare window,
-  hide the snapshot list from the side panel window (only show the
-  comparison summary)."
-- Take Snapshot renders in a `.version-history-actions` row at the top of
-  the tool BODY; `SnapshotsTitleExtra` and the `TOOL_CHROME.history` entry
-  are gone. While `scriptCompare` is set the body shows ONLY the summary
-  host — the list, listbar, compare bar and take button are all inside one
-  `{!compareSummary && <>…</>}` gate and return when the compare closes.
-- **THE BUG THAT LOOKED LIKE CHECK TIMING BUT WASN'T**: after closing the
-  compare the panel showed 0 rows — because the whole tool had DISMISSED.
-  `openTool('history')` seats the Snapshots tool in the temp slot, and the
-  temp slot closes on any pointerdown inside `.editor-center`
-  (ToolDock's click-outside rule). The compare takeover LIVES in
-  `.editor-center`, so clicking its own × (or Side-by-side/Unified) killed
-  the panel that owned the compare. Fix: `keepOpenOnEditorClick: true` on
-  the history tool — the Scrapbook's exemption for exactly this shape (a
-  panel whose surface renders in the editor area). Diagnosis pattern worth
-  keeping: subscribe to the store INSIDE the page and log changed keys +
-  `new Error().stack` — zustand notifies synchronously, so the stack names
-  the caller (here `setTempTool` ← ToolDock's document pointerdown).
-- check-v673 grew to 27 (only-summary during compare: 0 rows/no bar/no take;
-  list AND take button back after close). check-v672 asserts the button
-  lives in the body row, not the chrome.
-- Gates: tsc 0, vitest 1190, build ok, check-all 992/0.
-
-### v6.75 — the compare flow, humanized (four Derek items)
-
-- (1) The compare SUMMARY (counts + scenes changed + dialogue delta) renders
-  in the Snapshots side panel while the compare owns the editor area —
-  `DiffSummaryBlock` extracted from ScriptDiffView and exported, rendered by
-  the tool from the SAME `scriptCompare` pair (computeScriptDiff in a
-  useMemo), so panel and diff can't disagree. The diff view's own summary
-  sidebar and its Show/Hide Summary button are gone.
-- (2) Compare is a MODE: one `Compare…` button at rest (no checkboxes on
-  rows), clicking it arms picking, and the SECOND pick fires the compare
-  (a useEffect on compareSelection.length === 2) — no separate confirm
-  click. Cancel exits.
-- (3) The row click's raw-JSON dump (`api.getVersionDiff` → DiffViewer, the
-  "strange red code") is REPLACED by the same human summary vs the previous
-  snapshot — getScriptAtVersion both sides, computeScriptDiff, plain-words
-  notes for initial-snapshot / script-missing cases. DiffViewer is out of
-  VersionHistory (component still exists; check importers before deleting).
-- (4) `version-hash` chips are gone from rows; compare labels, confirm and
-  toasts all speak the snapshot's NAME (message + relative time), never the
-  internal short hash. Derek asked what "86d5e36" was — the commit id's
-  first 7 chars; internal only now.
-- check-v673 grew to 25: no checkboxes at rest, Compare… arms them, second
-  pick opens the takeover, summary IN the panel and NOT duplicated in the
-  diff, zero hash chips, no raw-JSON mount anywhere.
-- Gates: tsc 0, vitest 1190, build ok, check-all 990/0.
-
-### v6.71–v6.74 — the snapshot/auto-save UNTANGLING (one arc, four versions)
-
-- Derek's discovery, over several messages: auto saves and snapshots are
-  different things (spare crash copies vs deliberate keep-forever versions),
-  and the app treated them as ONE. The auto-save timer called
-  api.checkin('Auto save') — the SAME call File ▸ Take Snapshot makes — so
-  every auto save landed in the Snapshots window, and pruneVersions then
-  trimmed that shared history BY POSITION, which could delete deliberate
-  snapshots to make room for automatic ones.
-- **v6.71**: Annotations window's "Display" button → "Filter" (one idea, one
-  name with the ribbon's Annotation Filter).
-- **v6.72**: the split. The timer now writes timestamped FILES to the Auto
-  Save Locations (mirrorSnapshot) and never touches the version history; the
-  "Local version history (always on)" row is gone; "Maximum Project
-  Versions" retired from Settings AND setupFields (it counted check-ins that
-  no longer happen — a control governing nothing). autoSnapshotKeep is kept
-  in the store with a note: capping the FILES needs fs read-dir permission
-  the Tauri capabilities don't grant (AppData-scoped, no read-dir). The
-  Snapshots window gained "+ Take Snapshot" (store flag takeSnapshotRequest
-  → MenuBar owns the one dialog). Settings hint states plainly that auto
-  saving needs a location ticked.
-- **v6.73**: Delete per row + Delete All… (both confirm; delete-all names
-  the legacy 'Auto save' entries as what it clears). SQLite deleteVersion /
-  deleteAllVersions in local-storage.ts; hosted api stubs REJECT with "needs
-  the desktop app" instead of appearing to work. versionsTick in
-  projectStore: taking a snapshot bumps it, the open window reloads — no
-  close-and-reopen.
-- **v6.74**: Snapshots became a REAL TOOL. The bespoke fixed sidebar
-  (.version-history-panel, its own title bar, its X, the Android inset
-  override) is GONE — VersionHistory is a pure tool body hosted by ToolDock
-  ('history'), Take Snapshot rides TOOL_CHROME.history.TitleExtra, every
-  menu door runs openTool('history'). And compare renders in the EDITOR
-  AREA: scriptCompare pair in projectStore, ScreenplayEditor renders
-  .fs-compare-takeover FIRST in the editor-center swap chain (above
-  notebook/fullscreenTool), so the diff's controls can never collide with
-  the ribbon (Derek's screenshot). .script-diff-overlay (fixed, viewport) is
-  retired.
-- DEREK'S DATA: his opendraft.db still holds pre-v6.72 'Auto save' rows;
-  Delete All clears them. (An earlier answer pointed him at a projects/.git
-  folder — wrong backend; the desktop app is SQLite via local-storage.ts,
-  and services/api.ts + backend/ are the HOSTED path only.)
-- check-v673 (19) drives the tool against a patched api module (the browser
-  harness has no SQLite): deletes, warnings, instant refresh, zero
-  un-asked-for checkins, and the compare takeover's GEOMETRY (inside
-  editor-center, below the ribbon, editor returns on close). check-v669 and
-  check-v672 updated to the tool world.
-- Gates: tsc 0, vitest 1190, build ok, check-all 984/0.
-
-### v6.70 — four more preset parts (the audit Derek asked for)
-
-- Derek: "add annotation presets to the Settings > Presets tab options.
-  check the app for any additional presets missing from that list."
-- THE AUDIT. What the app lets a writer author, keep, and would want on
-  another machine — and which of it any preset part already carried:
-  | Thing | Where it lives | Verdict |
-  |---|---|---|
-  | Annotation presets | `viewState.markupPresets` | **ADDED** (his ask) |
-  | Keyboard shortcuts | `opendraft:shortcutOverrides` | **ADDED** |
-  | Design token values | `viewState.designVars` | **ADDED** |
-  | Helper text | `helperTextOverrides` + `helperTextHidden` | **ADDED** |
-  | Script Formats templates | `api.listFormattingTemplates()` | NOT added — they load through the HTTP backend the desktop app doesn't run (v6.69) |
-  | Snippets / shelf cards, tags, characters | per SCRIPT | NOT presets — they travel in the .odraft |
-  | Toolbar/menu/panel layout | captureCustomizations | already in Customizations |
-- FINDING worth acting on separately: `CUSTOMIZATION_FIELDS` does NOT list
-  `markupPresets`, though Customize ▸ Markups is where they're edited — so
-  Customize's **Cancel does not revert an annotation-preset change**, and the
-  customization export never carried them. Same family as the v4.79 "fields
-  that had DRIFTED out of this list" fix. NOT changed here (it alters Cancel
-  behaviour Derek hasn't asked about) — reported to him instead.
-- The registry did its job: adding the ids to `PresetPartId` broke the build
-  until `PART_DESC` gained all four, because it is typed
-  `Record<PresetPartId, …>`. A row cannot exist without a description, and a
-  description cannot exist without a row.
-- Care taken in the apply paths: a deliberate `null` shortcut (unbound on
-  purpose) survives the round trip; a corrupt annotation payload never wipes
-  the writer's presets; non-numeric design values are refused; and
-  helperTextHidden is RECONCILED rather than re-toggled, so applying the
-  same file twice doesn't flip things back on (a test pins that).
-- Gates: tsc 0, vitest 1190, build ok, check-all 951/0 (check-v663 now 19).
-
-### v6.69 — Snapshots stopped hanging (a missing guard, not a slow server)
-
-- Derek: "clicking on 'Snapshots' shows a window that is forever stuck on
-  'Loading snapshots...'".
-- ROOT CAUSE, and it is a single-source violation: `services/api.ts`'s
-  `request()` had NO empty-base guard, while `services/cloudApi.ts` — the
-  OTHER client against the same server — has had one all along
-  (`if (!base) throw NOT_CONFIGURED`). config.ts is explicit that "on Tauri
-  the HTTP backend is NOT used" and `getApiBase()` returns '' on desktop
-  unless a cloud URL is configured, so every Snapshots load fired at a
-  RELATIVE url through the Tauri invoke bridge and waited on a request that
-  could never arrive. api.ts now carries the same guard, worded identically.
-- Script History is a SERVER feature. There is no sidecar, no uvicorn, no
-  Rust snapshot command — the desktop app is frontend + Rust only. So on
-  Derek's Mac the window could never have worked; it just failed silently
-  instead of saying so. (Local snapshots would be a real feature build —
-  NOT started, and worth asking about before anyone does.)
-- Belt and braces: `utils/withTimeout.ts` bounds the WAIT (12s) in both
-  snapshot loaders — the Snapshots window and the Compare picker — so no
-  transport behaviour can put the spinner back. It bounds the wait rather
-  than aborting the request, because the loader doesn't own the request. A
-  "Try again" button replaces the dead end.
-- HONESTY NOTE for whoever reads this next: the exact mechanism of the
-  hang on Derek's machine was NOT reproduced here — the harness has no
-  Tauri IPC, and in the browser the request always settles. The guard is
-  provably right (api.ts was missing what cloudApi.ts has); the timeout is
-  what makes "forever" impossible regardless of mechanism. If he ever
-  reports it again, the message on screen now names what it could not
-  reach.
-- v6.69 also exposes `window.__scProjectStore` in DEV beside `__scStore` /
-  `__scEditor`: Snapshots reads the PROJECT store, and a check could not
-  reproduce "a script is open" without it.
-- check-v669 (8) drives the real menu path in both states and asserts the
-  window never sits on "Loading…", says something actionable, offers a
-  retry, settles inside the budget, and does not re-arm.
-- Gates: tsc 0, vitest 1182, build ok, check-all 949/0.
-
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.82** — Show/hide Annotations ribbon icon → FaPenNib (distinct); "drag to move this section" tooltip removed; two-row ribbon sections show the Editor View dropdown bare
+- **v6.81** — compare seating from FULLSCREEN entry (clear the takeover, then openTool); Take Snapshot + Compare share the accent style
+- **v6.80** — the empty-summary mystery SOLVED (seat history DOCKED on compare); Compare… beside Take Snapshot, banner only in compare mode; changing the draft number auto-snapshots the PREVIOUS draft label
+- **v6.79** — one-row snapshot list; the rows THEMSELVES are the compare pickers (no checkboxes)
+- **v6.78** — plain EDITS in windows are undoable (the window-undo lane covers fields, 2.5s coalescing)
+- **v6.77** — warning dialogs on major-change buttons (runMajorChange) + the window-action UNDO lane (smartUndo 3-lane routing) + Hidden view's Show/Hide all
+- **v6.76** — Take Snapshot into the panel body; the panel survives entering compare (keepOpenOnEditorClick)
+- **v6.75** — the compare flow humanized (four Derek items)
+- **v6.71–74** — the snapshot/auto-save UNTANGLING (one arc, four versions)
+- **v6.70** — four more preset parts (annotation presets, shortcuts, design, helper text → nine total)
+- **v6.69** — Snapshots stopped hanging: api.ts gained cloudApi's empty-base guard + a 12s bounded wait with Try again
 - **v6.68** — "Annotation Filter" rename + the plain View Annotations on/off toggle (new `viewAnnotations` key, migrated in beside the filter; NOT v6.41's retired toggleMarkups)
 - **v6.67** — annotation icons follow zoom/resize (zoomLevel in the measure deps; chip size × measured page scale; ResizeObserver) — negative control proved the check
 - **v6.64–66** — Send to Script writes LIVE annotations at real page tops (outlineScriptSync: one text builder, store-only mirror, freeAnchorPos with live-id set, paginator posForPage; v6.64's `# …` lines cleared by stamp)

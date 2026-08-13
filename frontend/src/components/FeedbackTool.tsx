@@ -6,15 +6,17 @@
  * The form asks name + email ONCE (a local tester profile, honor system,
  * editable any time) and every submission carries them — no codes, no
  * sign-in service, no SMTP. Submissions go to Derek's own Supabase table
- * through services/feedbackBackend; screenshots attach for real via the
- * app's capture. (The v6.84 verified email-code sign-in lives in git
- * history for the day the app goes public.)
+ * through services/feedbackBackend; images attach via the labeled
+ * Attachment area — capture the window or an area, or Browse… any image
+ * file (v6.87, the first request submitted through the form itself). (The
+ * v6.84 verified email-code sign-in lives in git history for the day the
+ * app goes public.)
  *
  * Failure is never silent: a submit that can't reach the server lands in a
  * visible local queue with a Retry button.
  */
-import { useEffect, useState } from 'react';
-import { FaCamera, FaCrop, FaTimes } from 'react-icons/fa';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { FaCamera, FaCrop, FaFolderOpen, FaPaperclip, FaTimes } from 'react-icons/fa';
 import {
   type FeedbackProfile,
   loadFeedbackProfile, saveFeedbackProfile,
@@ -25,12 +27,24 @@ import { showToast } from './Toast';
 
 const CATEGORIES = ['Bug', 'Idea', 'Praise', 'Other'] as const;
 
-interface Shot { blob: Blob; url: string; dataUrl: string }
+interface Shot { blob: Blob; url: string; dataUrl: string; name: string }
 
 async function canvasToShot(canvas: HTMLCanvasElement): Promise<Shot> {
   const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, 'image/png'));
   if (!blob) throw new Error('Could not encode the image.');
-  return { blob, url: URL.createObjectURL(blob), dataUrl: canvas.toDataURL('image/png') };
+  return { blob, url: URL.createObjectURL(blob), dataUrl: canvas.toDataURL('image/png'), name: 'Screenshot' };
+}
+
+/** Browse…: any image file from disk becomes the attachment, format kept. */
+async function fileToShot(file: File): Promise<Shot> {
+  if (!file.type.startsWith('image/')) throw new Error('Only image files can be attached here.');
+  const dataUrl = await new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = () => rej(new Error('Could not read that file.'));
+    r.readAsDataURL(file);
+  });
+  return { blob: file, url: URL.createObjectURL(file), dataUrl, name: file.name };
 }
 
 export default function FeedbackTool() {
@@ -69,6 +83,18 @@ export default function FeedbackTool() {
     if (shot) URL.revokeObjectURL(shot.url);
     setShot(await canvasToShot(canvas));
   });
+
+  const fileInput = useRef<HTMLInputElement>(null);
+  const pickFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';                      // so the same file can be re-picked
+    if (!file) return;
+    run(async () => {
+      const next = await fileToShot(file);
+      if (shot) URL.revokeObjectURL(shot.url);
+      setShot(next);
+    });
+  };
 
   const submit = () => run(async () => {
     const payload = { category, message: message.trim() };
@@ -175,27 +201,38 @@ export default function FeedbackTool() {
         />
       </label>
 
-      <div className="fb-shotrow">
+      <div className="fb-attach">
+        <div className="fb-attach-head"><FaPaperclip aria-hidden /> Attachment</div>
         {!shot ? (
           <>
-            <button className="dialog-btn" disabled={busy} title="Attach a screenshot of the whole window" onClick={() => capture('full')}>
-              <FaCamera aria-hidden /> Screenshot
-            </button>
-            <button className="dialog-btn" disabled={busy} title="Attach a screenshot of a selected area" onClick={() => capture('area')}>
-              <FaCrop aria-hidden /> Area
-            </button>
+            <div className="fb-attach-btns">
+              <button className="dialog-btn" disabled={busy} title="Attach a screenshot of the whole window" onClick={() => capture('full')}>
+                <FaCamera aria-hidden /> Screenshot
+              </button>
+              <button className="dialog-btn" disabled={busy} title="Attach a screenshot of a selected area" onClick={() => capture('area')}>
+                <FaCrop aria-hidden /> Area
+              </button>
+              <button className="dialog-btn" disabled={busy} title="Attach an image file from disk" onClick={() => fileInput.current?.click()}>
+                <FaFolderOpen aria-hidden /> Browse…
+              </button>
+            </div>
+            <div className="fb-attach-hint">A picture helps — grab the whole window, drag out an area, or pick an image file.</div>
           </>
         ) : (
           <span className="fb-shotchip">
-            <img className="fb-shotthumb" src={shot.url} alt="Attached screenshot" />
-            <span>Screenshot attached</span>
+            <img className="fb-shotthumb" src={shot.url} alt="Attached image" />
+            <span className="fb-shotname">{shot.name}</span>
             <button
               className="fb-shot-x"
-              title="Remove the screenshot"
+              title="Remove the attachment"
               onClick={() => { URL.revokeObjectURL(shot.url); setShot(null); }}
             ><FaTimes aria-hidden /></button>
           </span>
         )}
+        <input ref={fileInput} className="fb-file" type="file" accept="image/*" onChange={pickFile} />
+      </div>
+
+      <div className="fb-shotrow">
         <span className="fb-spacer" />
         <button
           className="dialog-btn dialog-btn-primary fb-send"

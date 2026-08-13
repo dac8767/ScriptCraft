@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.87",
+  "date": "2026-08-13",
+  "changes": [
+   "The Feedback form has a clear Attachment area — implementing the first request submitted through the form itself. Screenshot and Area capture now live inside a labeled box alongside a new Browse… button for attaching any image file from disk; whatever is attached shows as a chip with its name, a thumbnail, and a remove button.",
+   "Attached files upload in their real format (a JPEG stays a JPEG) and land in the feedback table's new attachments column. The table also gained a status column — Pending / In Progress / Complete — for triaging feedback in the Supabase dashboard."
+  ]
+ },
+ {
   "version": "6.86",
   "date": "2026-08-13",
   "changes": [
