@@ -388,6 +388,18 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     setCustomizeTab(tab ?? null);
     setCustomizeOpen(true);
   };
+  /* v6.83, Derek: Settings ▸ Customize ▸ Toolbar hands over to THIS window
+     (the live on-ribbon editing needs the bar visible; the Settings modal
+     covers it). The event carries the tab to land on. */
+  useEffect(() => {
+    const onOpenCustomize = (e: Event) => {
+      const tab = (e as CustomEvent).detail as NonNullable<typeof customizeTab> | undefined;
+      setCustomizeTab(tab ?? null);
+      setCustomizeOpen(true);
+    };
+    window.addEventListener('scriptcraft:open-customize', onOpenCustomize);
+    return () => window.removeEventListener('scriptcraft:open-customize', onOpenCustomize);
+  }, []);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const preferencesRequest = useEditorStore((s) => s.preferencesRequest);
   const closePreferences = useEditorStore((s) => s.closePreferences);

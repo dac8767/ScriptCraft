@@ -1,4 +1,18 @@
-# ScriptCraft — continuation brief (current as of v6.82 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.83 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+
+> QUEUE — SUGGESTIONS DELIVERED, AWAITING DEREK'S PICK (do NOT build until
+> he chooses): (1) FEEDBACK WITHOUT AIRTABLE and (2) TESTER LOGIN. The
+> delivered recommendation: ONE service covering both — Supabase free tier
+> (Postgres + REST + magic-link auth): a native in-app form (which also
+> retires the v4.70/v5.00 screenshot-chip workaround — attachments become a
+> real upload instead of a paste across the iframe boundary), rows in a
+> feedback table, testers signed in once via email magic link so rows carry
+> who sent them. Lighter alternatives offered: GitHub Issues behind a tiny
+> serverless proxy (token must NOT ship in the app), or a no-auth "tester
+> profile" (name/email typed once, saved locally, attached to feedback).
+> Current implementation notes: Feedback = cross-origin Airtable iframe
+> preloaded by FeedbackFrameHost (App.tsx) reading HELP_FORMS
+> (data/helpForms); the modal (Help ▸ Feedback) and the tool share that.
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -240,6 +254,35 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.83 — four ribbon-editing items (dropdown resize, click dividers, Settings handover, right alignment)
+
+- (1) Dropdowns resize in customize mode: `startDdResize` in Toolbar
+  mirrors v3.67's spacer gesture — a `.rib-edit-ddgrip` on the right edge
+  of the four --ddw-* dropdowns (fontFamily/fontSize/element/view),
+  resizing the SELECT live and committing to `toolbarDdWidths`
+  (saveViewState + setState — the SAME field the live bar's --ddw-* vars
+  read, so editor and bar can't disagree). Clamp 48–480px.
+- (2) Dividers: no ×. The visible line is itself the button
+  (`.rib-edit-sep`, content-box padding widens the hit area while the line
+  stays 1px; hover paints it accent); the ghost already toggled back.
+  `.rib-edit-sepwrap`/`.rib-edit-sep-x` are gone (JSX + CSS, 24-notebook).
+- (3) Settings ▸ Customize ▸ Toolbar HANDS OVER to the real Customize
+  window: the live on-ribbon editing needs the bar visible and the
+  Settings modal covers it. PreferencesDialog's cz-toolbar tab closes the
+  modal and fires `scriptcraft:open-customize` (detail = tab); MenuBar
+  listens and runs openCustomize. Other cz-* tabs stay embedded.
+- (4) Edit mode aligns like the live bar: the
+  `.toolbar-editing .rib-align-gap { flex:0 0 auto }` override became
+  flex:1 — sections after the Align Split hug the right edge while
+  editing, the marker floating mid-gap.
+- check-v683 (11): the Settings handover (assert on `.prefs-window`, NOT
+  `.prefs-tabs` — the Customize window REUSES that styling class for its
+  own sidebar, a false-fail trap), a real mouse-drag of the element
+  dropdown's grip (140→200 committed and worn), divider hide/restore with
+  zero sep-x, gap flex-grow 1 + last section ≤60px from the bar's right
+  edge. Catalog 477 (net swap of divider strings + the grip tooltip).
+- Gates: tsc 0, vitest 1196, build ok, check-all 1055/0.
 
 ### v6.82 — three ribbon tidies (Derek, one screenshot each)
 

@@ -808,7 +808,20 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
               <button
                 key={t.id}
                 className={`prefs-tab${tab === `cz-${t.id}` ? ' active' : ''}`}
-                onClick={() => setTab(`cz-${t.id}`)}
+                onClick={() => {
+                  /* v6.83, Derek: "make this window work exactly like how it
+                     works when opening from the customize button." The live
+                     on-ribbon editing needs the bar VISIBLE — this modal
+                     covers it — so the Toolbar entry hands over to the real
+                     Customize window (which parks itself under the bar and
+                     spotlights it) instead of embedding a dead copy. */
+                  if (t.id === 'toolbar') {
+                    onClose();
+                    window.dispatchEvent(new CustomEvent('scriptcraft:open-customize', { detail: 'toolbar' }));
+                    return;
+                  }
+                  setTab(`cz-${t.id}`);
+                }}
               >
                 <span className="prefs-tab-icon">{t.icon}</span>
                 <span>{t.label}</span>

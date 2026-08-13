@@ -1,5 +1,15 @@
 [
  {
+  "version": "6.83",
+  "date": "2026-08-12",
+  "changes": [
+   "Ribbon customize mode: dropdown menus (Element, Font, Size, Editor View) can be resized by dragging their right edge — make them longer or shorter for formatting, and the live bar uses the same width.",
+   "Dividers in the ribbon toggle with a plain click now: click a dividing line to hide it, click the dashed ghost to bring it back. The × button on dividers is gone.",
+   "Settings ▸ Customize ▸ Toolbar now hands over to the real Customize window — the same live on-the-bar editing you get from the Customize button, instead of a copy inside Settings that could not edit the bar.",
+   "In customize mode the sections after the Align Split now hug the right edge of the toolbar, exactly as they will look outside of editing."
+  ]
+ },
+ {
   "version": "6.82",
   "date": "2026-08-12",
   "changes": [

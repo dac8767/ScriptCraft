@@ -603,12 +603,17 @@
 .rib-edit-section:hover > .rib-edit-secclose,
 .rib-edit-break:hover > .rib-edit-x,
 .rib-edit-alignsplit:hover > .rib-edit-x { opacity: 1; }
-/* v4.75, Derek: removable boundary dividers. In edit mode each visible
-   section divider wears an × (hover, like items); a removed one leaves a
-   dashed ghost strip that clicks the line back on. */
-.rib-edit-sepwrap { position: relative; display: flex; align-items: stretch; }
-.rib-edit-sepwrap .rib-edit-sep-x { top: -7px; left: 50%; right: auto; transform: translateX(-50%); z-index: 6; }
-.rib-edit-sepwrap:hover .rib-edit-sep-x { opacity: 1; }
+/* v4.75: removable boundary dividers. v6.83, Derek: NO × — clicking the
+   line hides it, clicking the ghost brings it back; one gesture both ways.
+   The line stays 1px visually (background-clip) while the horizontal
+   padding gives the click a real target. */
+.rib-edit-sep {
+  cursor: pointer;
+  padding: 0 4px;
+  box-sizing: content-box;
+  background-clip: content-box;
+}
+.rib-edit-sep:hover { background-color: var(--fd-accent); }
 .rib-edit-sep-ghost {
   width: 8px;
   align-self: stretch;

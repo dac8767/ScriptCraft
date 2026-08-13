@@ -39,6 +39,7 @@ import { tokenLabel } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { saveViewState } from '../stores/viewState';
 import { TableGridPicker, applyScrapbookTextFormat } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
@@ -1781,6 +1782,39 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
   };
+  /* v6.83, Derek: "allow resizing of drop down menus horizontally when in
+     customize mode." The spacer's edge gesture (v3.67), on the four
+     dropdowns that read a --ddw-* width var. Resizes the SELECT live and
+     commits to toolbarDdWidths — the SAME store field the live bar reads,
+     so the editor and the bar can never disagree. */
+  const DD_RESIZABLE: Record<string, string> = {
+    fontFamily: '.font-selector', fontSize: '.font-size-selector',
+    element: '.element-selector', view: '.view-style-selector',
+  };
+  const startDdResize = (e: React.PointerEvent, key: string) => {
+    e.preventDefault();
+    e.stopPropagation();   // don't start the item drag
+    const item = (e.currentTarget as HTMLElement).closest('.rib-edit-item');
+    const sel = item?.querySelector(DD_RESIZABLE[key]) as HTMLElement | null;
+    if (!sel) return;
+    const startX = e.clientX;
+    const startW = sel.getBoundingClientRect().width;
+    let w = startW;
+    const onMove = (ev: PointerEvent) => {
+      w = Math.max(48, Math.min(480, startW + (ev.clientX - startX)));
+      sel.style.width = `${w}px`;
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      sel.style.width = '';                        // the --ddw-* var takes over
+      const next = { ...useEditorStore.getState().toolbarDdWidths, [key]: Math.round(w) };
+      saveViewState({ toolbarDdWidths: next });
+      useEditorStore.setState({ toolbarDdWidths: next });
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
   const editItem = (tok: string, sec: number, row: 'top' | 'bottom', idx: number, big: boolean) => (
     <span
       key={`ei-${tok}`}
@@ -1799,6 +1833,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           className="toolbar-spacer-resize"
           title="Drag to resize this spacer"
           onPointerDown={(e) => startSpacerResize(e, tok)}
+        />
+      )}
+      {tok.startsWith('b:') && DD_RESIZABLE[tok.slice(2)] && (
+        <span
+          className="toolbar-spacer-resize rib-edit-ddgrip"
+          title="Drag to resize this dropdown"
+          onPointerDown={(e) => startDdResize(e, tok.slice(2))}
         />
       )}
       <button
@@ -1885,9 +1926,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 </span>
               </div>
             )
-            /* v4.75, Derek: the boundary divider is REMOVABLE — × hides the
-               line (the sections stay separate); a hidden one shows as a
-               dashed ghost that clicks back on. */
+            /* v4.75: the boundary divider is removable; a hidden one shows
+               as a dashed ghost. v6.83, Derek: no × — clicking the DIVIDER
+               hides it, clicking the ghost brings it back. Same gesture
+               both ways. */
             : s.noSepBefore ? (
               <button
                 type="button"
@@ -1897,15 +1939,12 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
                 onClick={() => ribToggleSectionSep(i)}
               />
             ) : (
-              <span className="rib-edit-sepwrap">
-                <div className="toolbar-separator rib-section-sep" />
-                <button
-                  className="rib-edit-x rib-edit-sep-x"
-                  title="Remove this divider — the sections sit flush"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => ribToggleSectionSep(i)}
-                >×</button>
-              </span>
+              <div
+                className="toolbar-separator rib-section-sep rib-edit-sep"
+                title="Hide this divider — click again to bring it back"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => ribToggleSectionSep(i)}
+              />
             ))}
           <div
             className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}`}

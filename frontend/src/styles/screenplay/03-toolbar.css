@@ -538,7 +538,10 @@
 }
 /* the align-split gap collapses when the bar overflows — right-run sections just
    follow the left run and scroll into view. */
-.toolbar.toolbar-ribbon.toolbar-editing .rib-align-gap { flex: 0 0 auto; }
+/* v6.83, Derek: edit mode aligns like the LIVE bar — the gap grows so the
+   sections after the Align Split hug the right edge, with the split marker
+   floating mid-gap. (Was flex:0 to keep the marker compact.) */
+.toolbar.toolbar-ribbon.toolbar-editing .rib-align-gap { flex: 1; }
 /* v4.12, Derek: the vertical spacing between a two-row section's two rows is a
    Design knob. The row BOXES already touch (gap 0); the visible space is each
    row's height around a smaller button, so the knob is a margin on the second

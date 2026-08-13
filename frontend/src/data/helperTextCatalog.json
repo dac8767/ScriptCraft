@@ -1232,6 +1232,15 @@
   ]
  },
  {
+  "text": "Drag to resize this dropdown",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
   "text": "Drag to resize this spacer",
   "kind": "tooltip",
   "sites": 1,
@@ -1731,6 +1740,15 @@
  },
  {
   "text": "Hide the Outline Bar",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Hide this divider — click again to bring it back",
   "kind": "tooltip",
   "sites": 1,
   "area": "Ribbon Toolbar",
@@ -2538,15 +2556,6 @@
  },
  {
   "text": "Remove the row split",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Ribbon Toolbar",
-  "where": [
-   "components/Toolbar.tsx"
-  ]
- },
- {
-  "text": "Remove this divider — the sections sit flush",
   "kind": "tooltip",
   "sites": 1,
   "area": "Ribbon Toolbar",
