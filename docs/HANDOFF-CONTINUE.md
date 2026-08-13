@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.87 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.88 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -26,8 +26,14 @@
 > feedback-shots with the secret key, then SendUserFile) so he can open
 > it in the chat — never just the path. DEFAULT FILTER: only INCOMPLETE
 > items (`status=neq.Complete`) unless he explicitly asks for all or
-> completed ones. Column gotcha: the timestamp column is `created`, NOT
-> created_at.
+> completed ones. READ the `feedback_report` VIEW (it bakes in his date
+> format, US Eastern: "Aug 13, 2026 — 3:28 PM"); the raw table's
+> timestamp column is `created` (NOT created_at) — write status updates
+> to the TABLE, the view is read-only. PLACEMENT: emit each entry's
+> text FIRST, then SendUserFile its attachment so the card lands in the
+> Attachment slot below the list — and NEVER Read the image in chat (a
+> Read renders a second copy; Derek flagged the duplicate). Read only
+> when diagnosis truly needs eyes on it, and say so.
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -270,6 +276,29 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.88 — the Feedback draft survives moving the window
+
+- Feedback row 224d5f61 (Derek, through the form): "i moved the feedback
+  window from full screen (and it had text in it) to the side panel.
+  doing so removed all my text." ROOT CAUSE: every hosting surface
+  (docked panel / floating window / fullscreen takeover) mounts its OWN
+  FeedbackTool, so a move remounts it and useState starts over.
+- Fix: a module-level draft {category, message, shot} in FeedbackTool.tsx;
+  mounts initialize from it, a mirror effect writes it, and both submit
+  paths ALSO clear it imperatively (covers unmount-mid-send). The old
+  unmount revoke-object-URL effect is GONE on purpose — the shot's URL
+  must outlive the mount so the chip renders after a move; the replace/
+  remove/send paths still revoke. In-memory by design (restart = clean).
+  `resetFeedbackDraft()` exported for test isolation.
+- REPORTING conventions grew (standing note near the top of this file):
+  read the feedback_report VIEW Derek created (his to_char date format,
+  US Eastern), entry text first THEN the attachment card, never Read the
+  image into the chat (it renders a duplicate — he flagged it).
+- Tests 1197→1198 (remount rehydrates message + chip); check-v684
+  15→17 (fullscreen round-trip via __scStore.setFullscreenTool keeps
+  the typed draft both directions).
+- Gates: tsc 0, vitest 1198, build ok, check-all 1073/0.
+
 ### v6.87 — the Feedback ATTACHMENT AREA (the first request from the table)
 
 - Derek: "implement the request in the feedback tablew" — the request being
@@ -389,40 +418,12 @@ Durable bits kept live here:
 - Gates: tsc 0, vitest 1193 (the v4.70 chip tests retired with the chip),
   build ok, check-all 1067/0. Catalog 481.
 
-### v6.83 — four ribbon-editing items (dropdown resize, click dividers, Settings handover, right alignment)
-
-- (1) Dropdowns resize in customize mode: `startDdResize` in Toolbar
-  mirrors v3.67's spacer gesture — a `.rib-edit-ddgrip` on the right edge
-  of the four --ddw-* dropdowns (fontFamily/fontSize/element/view),
-  resizing the SELECT live and committing to `toolbarDdWidths`
-  (saveViewState + setState — the SAME field the live bar's --ddw-* vars
-  read, so editor and bar can't disagree). Clamp 48–480px.
-- (2) Dividers: no ×. The visible line is itself the button
-  (`.rib-edit-sep`, content-box padding widens the hit area while the line
-  stays 1px; hover paints it accent); the ghost already toggled back.
-  `.rib-edit-sepwrap`/`.rib-edit-sep-x` are gone (JSX + CSS, 24-notebook).
-- (3) Settings ▸ Customize ▸ Toolbar HANDS OVER to the real Customize
-  window: the live on-ribbon editing needs the bar visible and the
-  Settings modal covers it. PreferencesDialog's cz-toolbar tab closes the
-  modal and fires `scriptcraft:open-customize` (detail = tab); MenuBar
-  listens and runs openCustomize. Other cz-* tabs stay embedded.
-- (4) Edit mode aligns like the live bar: the
-  `.toolbar-editing .rib-align-gap { flex:0 0 auto }` override became
-  flex:1 — sections after the Align Split hug the right edge while
-  editing, the marker floating mid-gap.
-- check-v683 (11): the Settings handover (assert on `.prefs-window`, NOT
-  `.prefs-tabs` — the Customize window REUSES that styling class for its
-  own sidebar, a false-fail trap), a real mouse-drag of the element
-  dropdown's grip (140→200 committed and worn), divider hide/restore with
-  zero sep-x, gap flex-grow 1 + last section ≤60px from the bar's right
-  edge. Catalog 477 (net swap of divider strings + the grip tooltip).
-- Gates: tsc 0, vitest 1196, build ok, check-all 1055/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.83** — ribbon editing ×4: dropdown horizontal resize in customize mode; dividers hide/show by plain click (no ×); Settings ▸ Customize toolbar hands over to the LIVE editor; right-of-split items right-align in edit mode
 - **v6.82** — Show/hide Annotations ribbon icon → FaPenNib (distinct); "drag to move this section" tooltip removed; two-row ribbon sections show the Editor View dropdown bare
 - **v6.81** — compare seating from FULLSCREEN entry (clear the takeover, then openTool); Take Snapshot + Compare share the accent style
 - **v6.80** — the empty-summary mystery SOLVED (seat history DOCKED on compare); Compare… beside Take Snapshot, banner only in compare mode; changing the draft number auto-snapshots the PREVIOUS draft label

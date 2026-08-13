@@ -141,6 +141,18 @@ try {
       && !('screenshot_path' in uploaded.row),
     'and the row records it in the attachments column (screenshot_path is gone)');
 
+  /* ── v6.88: the draft SURVIVES the window moving between hosts ── */
+  await page.fill('.fb-text', 'Half-written report — do not lose me.');
+  await page.evaluate(() => window.__scStore.getState().setFullscreenTool('feedback'));
+  await settle(page);
+  ok(await page.evaluate(() => document.querySelector('.fb-text')?.value) === 'Half-written report — do not lose me.',
+    'moving to the fullscreen takeover keeps the typed draft');
+  await page.evaluate(() => window.__scStore.getState().setFullscreenTool(null));
+  await settle(page);
+  ok(await page.evaluate(() => document.querySelector('.fb-text')?.value) === 'Half-written report — do not lose me.',
+    'and moving back keeps it too — the draft outlives every host');
+  await page.fill('.fb-text', '');
+
   /* ── Edit reopens the card, prefilled ── */
   await page.click('.fb-signout');
   await page.waitForSelector(field('Your name'), { timeout: 5000 });

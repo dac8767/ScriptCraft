@@ -151,7 +151,36 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.82 and older (newest first)
+## Version history — v6.83 and older (newest first)
+
+### v6.83 — four ribbon-editing items (dropdown resize, click dividers, Settings handover, right alignment)
+
+- (1) Dropdowns resize in customize mode: `startDdResize` in Toolbar
+  mirrors v3.67's spacer gesture — a `.rib-edit-ddgrip` on the right edge
+  of the four --ddw-* dropdowns (fontFamily/fontSize/element/view),
+  resizing the SELECT live and committing to `toolbarDdWidths`
+  (saveViewState + setState — the SAME field the live bar's --ddw-* vars
+  read, so editor and bar can't disagree). Clamp 48–480px.
+- (2) Dividers: no ×. The visible line is itself the button
+  (`.rib-edit-sep`, content-box padding widens the hit area while the line
+  stays 1px; hover paints it accent); the ghost already toggled back.
+  `.rib-edit-sepwrap`/`.rib-edit-sep-x` are gone (JSX + CSS, 24-notebook).
+- (3) Settings ▸ Customize ▸ Toolbar HANDS OVER to the real Customize
+  window: the live on-ribbon editing needs the bar visible and the
+  Settings modal covers it. PreferencesDialog's cz-toolbar tab closes the
+  modal and fires `scriptcraft:open-customize` (detail = tab); MenuBar
+  listens and runs openCustomize. Other cz-* tabs stay embedded.
+- (4) Edit mode aligns like the live bar: the
+  `.toolbar-editing .rib-align-gap { flex:0 0 auto }` override became
+  flex:1 — sections after the Align Split hug the right edge while
+  editing, the marker floating mid-gap.
+- check-v683 (11): the Settings handover (assert on `.prefs-window`, NOT
+  `.prefs-tabs` — the Customize window REUSES that styling class for its
+  own sidebar, a false-fail trap), a real mouse-drag of the element
+  dropdown's grip (140→200 committed and worn), divider hide/restore with
+  zero sep-x, gap flex-grow 1 + last section ≤60px from the bar's right
+  edge. Catalog 477 (net swap of divider strings + the grip tooltip).
+- Gates: tsc 0, vitest 1196, build ok, check-all 1055/0.
 
 ### v6.82 — three ribbon tidies (Derek, one screenshot each)
 

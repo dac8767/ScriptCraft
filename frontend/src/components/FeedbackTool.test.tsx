@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import FeedbackTool from './FeedbackTool';
+import FeedbackTool, { resetFeedbackDraft } from './FeedbackTool';
 import { FEEDBACK_BACKEND, extFromType, loadFeedbackQueue } from '../services/feedbackBackend';
 
 type Call = { url: string; init?: RequestInit };
@@ -25,6 +25,7 @@ let root: Root;
 
 beforeEach(() => {
   localStorage.clear();
+  resetFeedbackDraft();
   calls = [];
   replies = [];
   vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
@@ -183,5 +184,26 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
     expect(extFromType('image/svg+xml')).toBe('svg');
     expect(extFromType('')).toBe('png');
     expect(extFromType('application/pdf')).toBe('png');
+  });
+});
+
+describe('FeedbackTool — the draft survives moving the window (v6.88)', () => {
+  it('remounting rehydrates message and attachment instead of wiping them', async () => {
+    savedProfile();
+    mount();
+    setValue(byPlaceholder('Describe it'), 'Half-written thought.');
+    const input = container.querySelector('.fb-attach input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([1, 2, 3])], 'still-here.png', { type: 'image/png' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    act(() => { input.dispatchEvent(new Event('change', { bubbles: true })); });
+    await flush(6);
+    expect(container.querySelector('.fb-shotchip')?.textContent).toContain('still-here.png');
+
+    // the window moves hosts: unmount, fresh root, remount
+    act(() => root.unmount());
+    root = createRoot(container);
+    mount();
+    expect((byPlaceholder('Describe it') as HTMLTextAreaElement).value).toBe('Half-written thought.');
+    expect(container.querySelector('.fb-shotchip')?.textContent).toContain('still-here.png');
   });
 });

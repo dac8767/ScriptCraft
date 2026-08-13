@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.88",
+  "date": "2026-08-13",
+  "changes": [
+   "Moving the Feedback window between the side panel, a floating window, and full screen no longer wipes what you've typed — the draft message, category, and attachment ride along with every move, and survive accidentally closing the window too. (Fixes the request sent through the feedback form itself.)"
+  ]
+ },
+ {
   "version": "6.87",
   "date": "2026-08-13",
   "changes": [

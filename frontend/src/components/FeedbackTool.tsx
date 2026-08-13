@@ -47,6 +47,20 @@ async function fileToShot(file: File): Promise<Shot> {
   return { blob: file, url: URL.createObjectURL(file), dataUrl, name: file.name };
 }
 
+/* ── v6.88 (feedback row 224d5f61): the draft OUTLIVES the component.
+   Every hosting surface — docked panel, floating window, fullscreen
+   takeover — mounts its OWN copy of this form, so moving the window
+   remounts it and useState starts over. The draft lives here at module
+   level and every mount rehydrates from it, so a move (or an accidental
+   close) keeps the text, category and attachment. In-memory on purpose:
+   an app restart starts clean. */
+interface FeedbackDraft { category: (typeof CATEGORIES)[number]; message: string; shot: Shot | null }
+const EMPTY_DRAFT: FeedbackDraft = { category: 'Bug', message: '', shot: null };
+let draft: FeedbackDraft = EMPTY_DRAFT;
+
+/** Test-only: the module draft would otherwise leak between tests. */
+export function resetFeedbackDraft() { draft = EMPTY_DRAFT; }
+
 export default function FeedbackTool() {
   const [profile, setProfile] = useState<FeedbackProfile | null>(() => loadFeedbackProfile());
   const [editingProfile, setEditingProfile] = useState(false);
@@ -55,13 +69,17 @@ export default function FeedbackTool() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
-  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('Bug');
-  const [message, setMessage] = useState('');
-  const [shot, setShot] = useState<Shot | null>(null);
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(draft.category);
+  const [message, setMessage] = useState(draft.message);
+  const [shot, setShot] = useState<Shot | null>(draft.shot);
   const [queued, setQueued] = useState(() => loadFeedbackQueue().length);
   const [sentNote, setSentNote] = useState<string | null>(null);
 
-  useEffect(() => () => { if (shot) URL.revokeObjectURL(shot.url); }, [shot]);
+  // Mirror the live fields into the module draft. (The old unmount-revoke
+  // effect is gone ON PURPOSE — the shot's object URL must outlive the
+  // mount so the chip still renders after a move; the replace/remove/send
+  // paths revoke it instead.)
+  useEffect(() => { draft = { category, message, shot }; }, [category, message, shot]);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setNote(null);
@@ -102,6 +120,7 @@ export default function FeedbackTool() {
       await submitFeedback(payload, shot?.blob ?? null);
       setMessage('');
       if (shot) { URL.revokeObjectURL(shot.url); setShot(null); }
+      draft = { ...draft, message: '', shot: null };   // even if unmounted mid-send
       setSentNote('Sent — thank you!');
       window.setTimeout(() => setSentNote(null), 4000);
     } catch (e) {
@@ -110,6 +129,7 @@ export default function FeedbackTool() {
       setQueued(left);
       setMessage('');
       if (shot) { URL.revokeObjectURL(shot.url); setShot(null); }
+      draft = { ...draft, message: '', shot: null };   // queued — no longer a live draft
       throw new Error(`Could not reach the feedback server — saved to the local queue instead (${left} waiting). ${e instanceof Error ? e.message : ''}`);
     }
   });
