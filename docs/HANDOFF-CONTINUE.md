@@ -19,22 +19,27 @@
 > only: schema changes (DDL) go through his dashboard's SQL editor — hand
 > him a paste. His Mac's Claude Code could additionally add the official
 > Supabase MCP server with a scoped PAT if he wants Claude doing schema.
-> REPORT FORMAT (Derek, 2026-08-13, standing): when showing feedback
-> submissions in chat, each entry is a two-column TABLE (bold labels, NO
-> row numbers) in this order: Status, From (name ONLY — no email),
-> Created, Category, Message, App Version, Attachment (LAST, value "⬇")
-> — omit platform, and ACTUALLY PULL each attachment (download from
-> feedback-shots with the secret key, then SendUserFile) so he can open
-> it in the chat — never just the path. DEFAULT FILTER: only INCOMPLETE
-> items (`status=neq.Complete`) unless he explicitly asks for all or
-> completed ones. READ the `feedback_report` VIEW (it bakes in his date
-> format, US Eastern: "Aug 13, 2026 — 3:28 PM"); the raw table's
-> timestamp column is `created` (NOT created_at) — write status updates
-> to the TABLE, the view is read-only. PLACEMENT: emit each entry's
-> table FIRST, then SendUserFile its attachment so the card lands right
-> under the Attachment row — and NEVER Read the image in chat (a
-> Read renders a second copy; Derek flagged the duplicate). Read only
-> when diagnosis truly needs eyes on it, and say so.
+> REPORT FORMAT (Derek, 2026-08-13, standing): EVERY report request gets
+> the FULL list for EVERY incomplete item — in the turn's FINAL message,
+> never as mid-turn text. (HARD LESSON: Derek's app does NOT display
+> prose written between tool calls — tables emitted mid-turn to sit
+> "above the card" were INVISIBLE to him; he saw only the screenshot and
+> the list looked dropped. The final message is the only guaranteed
+> render.) Each entry = label lines in this order, no numbering:
+>   Status / From (name ONLY, no email) / Created / Category / Message /
+>   App Version / Attachment
+> Omit platform. ACTUALLY PULL each attachment (download from
+> feedback-shots with the secret key, then SendUserFile BEFORE the final
+> message, caption naming its entry) — cards can only render above the
+> final text, so the Attachment line reads "sent above ⬆ (filename)";
+> never just the path, and NEVER Read the image in chat (a Read renders
+> a second copy; Derek flagged the duplicate — Read only when diagnosis
+> needs eyes on it, and say so). DEFAULT FILTER: only INCOMPLETE items
+> (`status=neq.Complete`) unless he explicitly asks for all/completed.
+> READ the `feedback_report` VIEW (his date format baked in, US Eastern:
+> "Aug 13, 2026 — 3:28 PM"); the raw table's timestamp column is
+> `created` (NOT created_at) — write status updates to the TABLE, the
+> view is read-only.
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
