@@ -148,7 +148,7 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
   it('offers Screenshot, Area and Browse… under a labeled Attachment area', async () => {
     savedProfile();
     mount();
-    expect(container.querySelector('.fb-attach-head')?.textContent).toContain('Attachment');
+    expect(container.querySelector('.fb-attach-head')?.textContent).toContain('Attach an Image');
     const labels = [...container.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent?.trim());
     expect(labels).toEqual(['Screenshot', 'Area', 'Browse…']);
     expect(container.querySelector('.fb-attach input[type="file"]')).toBeTruthy();

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.89 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.90 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -285,6 +285,15 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.90 — the attachment area says what it takes
+
+- Derek: change "Attachment" to "Attach an Image" since images are all
+  the field accepts. One string in FeedbackTool's `.fb-attach-head`
+  (plain JSX text — NOT in the helper catalog, which harvests only
+  title/placeholder/aria-label/ht()); test + check asserts updated to
+  the new label.
+- Gates: tsc 0, vitest 1199, build ok, check-all 1076/0.
+
 ### v6.89 — multiple attachments + the sent blur-veil
 
 - Derek: "you should be able to add more than one attachment. keep the 3
@@ -392,34 +401,12 @@ Durable bits kept live here:
   apikey, NO Authorization header).
 - Gates: tsc 0, vitest 1194, build ok, check-all 1066/0. Catalog 480.
 
-### v6.85 — Settings ▸ Defaults joins the warn+undo wrapper (v6.77 drift)
-
-- The Defaults tab COMPILES the same CUSTOMIZE_RESETS registry but was
-  still calling a.run() bare — no warning, no undo — while the per-tab
-  Reset sections wrapped. Extracted `runCustomizeReset(a)` in
-  customizeResets.tsx; BOTH surfaces call it now (the one-registry design
-  actually enforced). check-v677 → 36 (Defaults reset warns; cancel).
-- FEEDBACK STATUS (mid-decision, Derek asked "is this really the
-  easiest?"): the v6.84 email-code sign-in needs custom SMTP to edit the
-  Supabase mail templates (stock template sends a LINK, not the code —
-  his desktop can't use links). Offered: (a) SIMPLIFY — drop verified
-  sign-in for a typed-once name/email profile, anon-insert RLS (3-line
-  SQL for him), no SMTP/Resend at all — RECOMMENDED; or (b) finish
-  Resend + his domain curiousarcana.com (DNS records) for verified
-  login. AWAITING HIS PICK — build NEITHER until he answers. Also: new
-  sessions carry SUPABASE_SECRET_KEY + open network to supabase.co
-  (verified live: auth 200, feedback table exists w/ RLS filtering,
-  bucket denies anon — and a fresh session read the table: zero rows).
-  Warn future sessions: fresh clones land on MAIN (stale v0.6, still
-  says OpenDraft) — another session already mis-diagnosed "no feedback
-  code in the repo" from there; the work lives on claude/v0_32.
-- Gates: tsc 0, vitest 1193, build ok, check-all 1068/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.85** — Settings ▸ Defaults joined the warn+undo wrapper (runCustomizeReset — one registry, both surfaces); Supabase env key + open network verified live in-session
 - **v6.84** — NATIVE Feedback replaced the Airtable iframe: Supabase via plain fetch, email-code sign-in + sessions (retired v6.86 — code at 0c9b43e), screenshot upload, visible offline queue
 - **v6.83** — ribbon editing ×4: dropdown horizontal resize in customize mode; dividers hide/show by plain click (no ×); Settings ▸ Customize toolbar hands over to the LIVE editor; right-of-split items right-align in edit mode
 - **v6.82** — Show/hide Annotations ribbon icon → FaPenNib (distinct); "drag to move this section" tooltip removed; two-row ribbon sections show the Editor View dropdown bare

@@ -240,7 +240,7 @@ export default function FeedbackTool() {
       </label>
 
       <div className="fb-attach">
-        <div className="fb-attach-head"><FaPaperclip aria-hidden /> Attachment</div>
+        <div className="fb-attach-head"><FaPaperclip aria-hidden /> Attach an Image</div>
         <div className="fb-attach-btns">
           <button className="dialog-btn" disabled={busy} title="Attach a screenshot of the whole window" onClick={() => capture('full')}>
             <FaCamera aria-hidden /> Screenshot

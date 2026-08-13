@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.90",
+  "date": "2026-08-13",
+  "changes": [
+   "The Feedback form's attachment area is now labeled “Attach an Image” — naming exactly what the field accepts."
+  ]
+ },
+ {
   "version": "6.89",
   "date": "2026-08-13",
   "changes": [

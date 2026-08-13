@@ -125,7 +125,7 @@ try {
       file: !!area?.querySelector('input[type="file"]'),
     };
   });
-  ok(/Attachment/.test(attach.label), `the form has a labeled attachment area ("${attach.label}")`);
+  ok(/Attach an Image/.test(attach.label), `the form has a labeled attachment area ("${attach.label}")`);
   ok(attach.btns.join(',') === 'Screenshot,Area,Browse…' && attach.file,
     `with Screenshot / Area / Browse… and a real file input behind it (${attach.btns.join(' / ')})`);
   await page.setInputFiles('.fb-attach input[type="file"]', {

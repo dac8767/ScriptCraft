@@ -151,7 +151,30 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.84 and older (newest first)
+## Version history — v6.85 and older (newest first)
+
+### v6.85 — Settings ▸ Defaults joins the warn+undo wrapper (v6.77 drift)
+
+- The Defaults tab COMPILES the same CUSTOMIZE_RESETS registry but was
+  still calling a.run() bare — no warning, no undo — while the per-tab
+  Reset sections wrapped. Extracted `runCustomizeReset(a)` in
+  customizeResets.tsx; BOTH surfaces call it now (the one-registry design
+  actually enforced). check-v677 → 36 (Defaults reset warns; cancel).
+- FEEDBACK STATUS (mid-decision, Derek asked "is this really the
+  easiest?"): the v6.84 email-code sign-in needs custom SMTP to edit the
+  Supabase mail templates (stock template sends a LINK, not the code —
+  his desktop can't use links). Offered: (a) SIMPLIFY — drop verified
+  sign-in for a typed-once name/email profile, anon-insert RLS (3-line
+  SQL for him), no SMTP/Resend at all — RECOMMENDED; or (b) finish
+  Resend + his domain curiousarcana.com (DNS records) for verified
+  login. AWAITING HIS PICK — build NEITHER until he answers. Also: new
+  sessions carry SUPABASE_SECRET_KEY + open network to supabase.co
+  (verified live: auth 200, feedback table exists w/ RLS filtering,
+  bucket denies anon — and a fresh session read the table: zero rows).
+  Warn future sessions: fresh clones land on MAIN (stale v0.6, still
+  says OpenDraft) — another session already mis-diagnosed "no feedback
+  code in the repo" from there; the work lives on claude/v0_32.
+- Gates: tsc 0, vitest 1193, build ok, check-all 1068/0.
 
 ### v6.84 — NATIVE Feedback + email-code sign-in (Airtable retired)
 
