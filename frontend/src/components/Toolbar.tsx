@@ -1910,7 +1910,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <div
             className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}`}
             data-sec={i}
-            title="Drag to move this section"
+            /* v6.82, Derek: no "Drag to move this section" tooltip — it
+               collided with the edit mode's other helper bubbles. The
+               dashed section chrome is the drag affordance. */
             onPointerDown={(e) => {
               const t = e.target as HTMLElement;
               if (t.closest('.rib-edit-item, .rib-edit-x, .rib-edit-cover, .rib-edit-break, .rib-row-line, input, select, button')) return;

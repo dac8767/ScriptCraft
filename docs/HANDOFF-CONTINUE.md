@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.81 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.82 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -240,6 +240,26 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v6.82 — three ribbon tidies (Derek, one screenshot each)
+
+- The v6.68 View Annotations toggle wears **FaPenNib** — Derek: "a
+  highlighter or pen, but different than any other current icon"
+  (FaMarker = Annotations tool row, FaHighlighter = highlight color,
+  FaPencilAlt = edit affordances). BOTH registry keys (viewAnnotations /
+  viewAnnotationsOff) map to the one glyph now — the lit `active` state
+  carries on/off, matching the side-panel toggles Derek modeled the button
+  on (his v6.68 words). check-v668 asserts state/lit/margin-icons, not the
+  glyph, so it pinned the behavior through the swap. FaRegEyeSlash left
+  uiIcons' imports with it.
+- The ribbon edit mode's `title="Drag to move this section"` is GONE
+  (Toolbar ~1911) — it collided with the edit mode's other helper bubbles;
+  the dashed section chrome is the affordance. Catalog 477 → 476.
+- `.rib-section:not(.rib-single) .view-style-label { display:none }` —
+  in a TWO-ROW section the Editor View caption drops, just the dropdown
+  (rib-single marks single-row sections in every live branch AND edit
+  mode, so the selector covers them all).
+- Gates: tsc 0, vitest 1196, build ok, check-all 1044/0.
 
 ### v6.81 — the FULLSCREEN entry point; one accent for both action buttons
 

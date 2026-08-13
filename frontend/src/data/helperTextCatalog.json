@@ -1182,15 +1182,6 @@
   ]
  },
  {
-  "text": "Drag to move this section",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Ribbon Toolbar",
-  "where": [
-   "components/Toolbar.tsx"
-  ]
- },
- {
   "text": "Drag to reorder",
   "kind": "tooltip",
   "sites": 3,

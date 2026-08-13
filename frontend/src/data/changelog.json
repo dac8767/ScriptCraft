@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.82",
+  "date": "2026-08-12",
+  "changes": [
+   "The ribbon's Show/Hide Annotations toggle wears a new pen-nib icon — distinct from the Annotations tool's marker, the highlight color's highlighter, and every other icon. The lit state still shows whether annotations are visible.",
+   "The “Drag to move this section” hover text in ribbon editing is gone — it collided with the other helper bubbles. The dashed section outline remains the drag handle.",
+   "When the Editor View dropdown sits in a two-row ribbon section, the “Editor View” caption is dropped — just the dropdown. Single-row sections keep the label."
+  ]
+ },
+ {
   "version": "6.81",
   "date": "2026-08-12",
   "changes": [

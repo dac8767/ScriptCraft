@@ -11,8 +11,8 @@
  */
 import React from 'react';
 import {
-  FaFile, FaPencilAlt, FaPalette, FaClipboardList, FaRegEye, FaRegEyeSlash, FaFilter, FaMarker, FaWrench, FaRegFileAlt,
-  FaColumns, FaRegQuestionCircle, FaStream,
+  FaFile, FaPencilAlt, FaPalette, FaClipboardList, FaRegEye, FaFilter, FaMarker, FaWrench, FaRegFileAlt,
+  FaColumns, FaRegQuestionCircle, FaStream, FaPenNib,
   FaUndo, FaRedo, FaListOl, FaRegStickyNote, FaCheckSquare, FaFileAlt,
   FaBold, FaItalic, FaUnderline, FaStrikethrough, FaSubscript, FaSuperscript,
   FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
@@ -241,12 +241,15 @@ export const TOOLBAR_ICONS: Record<string, React.ReactNode> = {
   scriptNotes: <FaStickyNote />,
   tags: <FaTags />,
   // v5.25: Markups — create at cursor/selection, plus the filter menu.
-  // v6.68: the plain on/off toggle is back as its own button; the Toolbar
-  // swaps to viewAnnotationsOff when annotations are hidden, the way the
-  // sizing lock swaps its padlock.
+  // v6.68: the plain on/off toggle is back as its own button.
+  // v6.82, Derek: "make it a highlighter or pen, but different than any
+  // other current icon" — FaPenNib (the Annotations tool row wears
+  // FaMarker, highlight color FaHighlighter, edit affordances FaPencilAlt).
+  // ONE icon for both states now: the lit `active` style carries on/off,
+  // like the side-panel toggles Derek modeled this button on.
   markupScript: <FaMarker />,
-  viewAnnotations: <FaRegEye />,
-  viewAnnotationsOff: <FaRegEyeSlash />,
+  viewAnnotations: <FaPenNib />,
+  viewAnnotationsOff: <FaPenNib />,
   annotationsMenu: <FaFilter />,
   // v5.40: custom pages (non-script, unnumbered)
   insertCustomPage: <FaRegFileAlt />,

@@ -1251,6 +1251,10 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   margin-left: 14px; margin-right: 5px;
   white-space: nowrap; user-select: none;
 }
+/* v6.82, Derek: in a TWO-ROW section the "Editor View" caption is dropped —
+   just the dropdown. Single-row sections keep the label. (Two-row sections
+   are the ones WITHOUT rib-single, in every live branch and edit mode.) */
+.toolbar.toolbar-ribbon .rib-section:not(.rib-single) .view-style-label { display: none; }
 
 /* ── Editable zoom input (desktop toolbar) ── */
 .zoom-input {
