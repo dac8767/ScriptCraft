@@ -20,9 +20,10 @@
 > him a paste. His Mac's Claude Code could additionally add the official
 > Supabase MCP server with a scoped PAT if he wants Claude doing schema.
 > REPORT FORMAT (Derek, 2026-08-13, standing): when showing feedback
-> submissions in chat, field order is Status, From (name ONLY — no
-> email), creation date, Category, Message, Attachment, App Version —
-> omit platform, and ACTUALLY PULL each attachment (download from
+> submissions in chat, each entry is a two-column TABLE (bold labels, NO
+> row numbers) in this order: Status, From (name ONLY — no email),
+> Created, Category, Message, App Version, Attachment (LAST, value "⬇")
+> — omit platform, and ACTUALLY PULL each attachment (download from
 > feedback-shots with the secret key, then SendUserFile) so he can open
 > it in the chat — never just the path. DEFAULT FILTER: only INCOMPLETE
 > items (`status=neq.Complete`) unless he explicitly asks for all or
@@ -30,8 +31,8 @@
 > format, US Eastern: "Aug 13, 2026 — 3:28 PM"); the raw table's
 > timestamp column is `created` (NOT created_at) — write status updates
 > to the TABLE, the view is read-only. PLACEMENT: emit each entry's
-> text FIRST, then SendUserFile its attachment so the card lands in the
-> Attachment slot below the list — and NEVER Read the image in chat (a
+> table FIRST, then SendUserFile its attachment so the card lands right
+> under the Attachment row — and NEVER Read the image in chat (a
 > Read renders a second copy; Derek flagged the duplicate). Read only
 > when diagnosis truly needs eyes on it, and say so.
 
