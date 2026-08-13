@@ -19,6 +19,13 @@
 > only: schema changes (DDL) go through his dashboard's SQL editor — hand
 > him a paste. His Mac's Claude Code could additionally add the official
 > Supabase MCP server with a scoped PAT if he wants Claude doing schema.
+> REPORT FORMAT (Derek, 2026-08-13, standing): when showing feedback
+> submissions in chat, field order is Status, From (name + email),
+> creation date, Category, Message, Attachment, App Version — omit
+> platform, and ACTUALLY PULL each attachment (download from
+> feedback-shots with the secret key, then SendUserFile) so he can open
+> it in the chat — never just the path. Column gotcha: the timestamp
+> column is `created`, NOT created_at.
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
