@@ -15,6 +15,26 @@
 >    every toolbar and side panel. (`DEV_TOOLS` in editorStore is the existing
 >    dev-only mechanism — the Design window should join it.)
 >
+> OPEN — Derek's 4:17 PM feedback row, items 3 and 5. Both need a decision
+> from him before they can be built right; everything else in that row shipped
+> in v7.06/v7.07.
+> - **item 3, "install external files":** should an imported extension file
+>   NAME a feature that already ships (safe — the file is a manifest, the
+>   import flow is what gets tested), or CARRY CODE the app runs (a real
+>   extension system, and a desktop app with filesystem access executing a
+>   file off disk is a deliberate security decision, not a detail)? Recommended
+>   the first. Not yet answered.
+> - **item 5, "a full page of fields per template":** the View button on a
+>   Page Setup row opens `TemplatePageInfo`, a READ-ONLY 7-row box. The full
+>   field page already exists — `PageSetupDialog`, which has an `embedded`
+>   mode — so the job is to give it an optional value/onChange instead of
+>   always writing the document's layout, and host it per template. THE TRAP:
+>   the three system templates are immutable constants, NOT rows in
+>   `templates[]`, so `updateTemplate()` on one is a SILENT NO-OP (the
+>   v0.63–v0.70 bug). Editable built-in page sizes need an override map in the
+>   store, the way `elementHidden`/`elementOrder` do it. Ask Derek whether
+>   built-ins should be editable at all before building the override.
+>
 > QUEUE — Derek, 2026-08-14 ("queue:"), NOT yet built — THE BRAND SWEEP:
 > "at some point recently you gave me terminal code that still had 'freedraft'
 > in it. look through all code and make sure any instance of 'Freedraft' or
@@ -351,6 +371,66 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.09 — the title page PDF exported the title and lost the rest
+
+Derek: "i exported a title page as a pdf and it did not export all of the
+information." Title, subtitle and credit line were there; draft, contact,
+copyright, WGA registration and notes were not.
+
+**The cause is a grid and a renderer that disagreed about padding.** The title
+page is laid out as LINES — `titlePageBlockSpecs` positions everything by
+emitting blank blocks (~14 above the title, then a computed gap that lands the
+bottom block on line ~50 of ~54). The PDF exporter added 4pt after every block,
+blanks included. ~45 blocks × 4pt ≈ 180pt — two and a half inches — so the
+bottom block fell past the page bottom and `y + lineH <= bottom` skipped it
+silently. **Any per-block padding on a line grid is a bug, and the drift is
+invisible until it crosses the page edge.**
+
+**The stacking is one function now** — `stackTitlePageBlocks` in
+`utils/titlePageLayout.ts`, beside the builder whose grid it walks, so a test
+can drive it. The exporter only draws. Overflow trims BLANK lines (widest gap
+first), never text: an export loses whitespace, not words.
+
+**How it is verified: read the PDF back.** `devtools/check-v709.mjs` runs the
+real exporter, takes the saved file, inflates the content streams and decodes
+the hex glyph strings through the embedded font's own `/ToUnicode` CMap — the
+same thing a PDF reader does. Asserting on `pdf.text()` calls was tried first
+and does not work: jspdf v4 puts nothing on `jsPDF.prototype`/`API`, so the
+hook recorded silence and every assertion "passed" against an empty list.
+**A check that reads back the artifact beats one that watches the code make it.**
+
+### v7.08 — four bugs from one feedback row
+
+1. **FADE IN: right-aligned in the Pages tool.** The editor's left alignment is
+   a live ProseMirror DECORATION; a thumbnail never runs decorations, and
+   `SceneNavigator`'s own `FD_INDENTS` pinned every transition right. It calls
+   `isLeftTransition` now — the predicate the decoration and the PDF exporter
+   already shared. **Third copy of a rule found this month; look for the others
+   before adding a fourth.** The editor rule also got `.page
+   .screenplay-element` in its selector: a custom template injects that exact
+   0-3-0 selector (`utils/templateCss`), which outranked the 0-2-0
+   `.transition.transition-left` and would have flipped FADE IN: back on every
+   template but Industry Standard.
+2. **A ghost cast name.** The autocomplete filtered a CACHED array refreshed
+   only when the cursor crossed a name line's edge, so a cue typed, left and
+   then deleted stayed on offer. `collectCast()` reads the document, and skips
+   the cue being typed. **A cache with narrow invalidation triggers is a stale
+   list waiting to happen; read the doc.**
+3. **Adding a line above a scene heading un-typed the heading.** Enter at
+   offset 0 left the caret IN the heading, so the next keystroke — or the
+   element picked from the dropdown — landed there. The caret goes on the new
+   blank line now, and the type fix-up rides the SAME transaction as the split
+   (it used to be a second `view.dispatch`, which made one Enter two undo
+   steps). **Two dispatches for one gesture is always wrong.**
+4. **Transition on an empty page.** `allowedElementsAfter` treated "nothing
+   above" as "an unlisted element above" and hid it. The top of a script is
+   where the opening transition lives.
+
+**Flaky-check lesson:** check-v708's undo assertion seeded a fixture and
+pressed Enter inside prosemirror-history's 500ms grouping window, so one undo
+took the fixture away too and the check read the PREVIOUS document. Wait past
+the group delay before testing undo.
 
 ### v7.05 — the add-on module; Action Rewrite becomes the first add-on
 
