@@ -15,6 +15,50 @@
 >    every toolbar and side panel. (`DEV_TOOLS` in editorStore is the existing
 >    dev-only mechanism — the Design window should join it.)
 >
+> QUEUE — Derek, 2026-08-14 ("queue:"), NOT yet built — THE BRAND SWEEP:
+> "at some point recently you gave me terminal code that still had 'freedraft'
+> in it. look through all code and make sure any instance of 'Freedraft' or
+> 'OpenDraft' are removed (excluding the about page which actually talks about
+> OpenDraft) and replaced with ScriptCraft"
+>
+> **185 files match. A blanket find-replace WOULD BREAK THE APP — read this
+> before touching one of them.** Three groups, and only the third is safe:
+>
+> 1. **DATA-BEARING — DO NOT RENAME** (CLAUDE.md's opening note says this
+>    explicitly, and it is the difference between a rename and data loss):
+>    - **99 distinct `opendraft:*` localStorage keys.** Renaming them orphans
+>      EVERY setting, workspace, theme, shortcut and layout Derek has — the app
+>      would boot factory-fresh and his customisations would still be sitting
+>      in storage under the old names.
+>    - **the `.odraft` file format** (21 files reference it). Renaming it
+>      orphans every saved script on disk.
+>    - **`com.freedraft.app`** — the Tauri bundle identifier
+>      (src-tauri/tauri.conf.json:5). It is the app's IDENTITY to macOS:
+>      changing it makes the OS treat the build as a different application
+>      (new preferences domain, new keychain entries, permissions re-prompted).
+>    If these are ever to change it is a MIGRATION (read old key → write new →
+>    keep reading old for N versions), not a rename, and it is its own project.
+>
+> 2. **DELIBERATE HISTORY — LEAVE** (he carved this out himself): the About
+>    window credits OpenDraft as the upstream project, and
+>    `docs/UPSTREAM-OPENDRAFT-NOTES.md` is the archived upstream doc. Code
+>    comments citing "OpenDraft's inherited geometry" are provenance for a
+>    decision — rewording them to ScriptCraft would make them false.
+>
+> 3. **SAFE TO RENAME — this is the actual job:** user-visible strings and
+>    anything he could paste into a terminal. Start with what he actually hit:
+>    **`setup.sh`, `deploy/deploy.sh`, `images/make_readme_gif.sh`** (terminal
+>    code — this is the reported bug), then `SECURITY.md`, the 25
+>    `user-manual/*.html` pages + `user-manual/style.css`, and the remaining
+>    prose/labels in `frontend/src`. One real functional item hides in here:
+>    `languageCatalog.ts:91` still fetches dictionaries from the Proteus
+>    OpenDraft CDN — that is already a known release blocker (rehost), not a
+>    string swap.
+>
+> Approach: NOT a global sed. Sweep group 3 by file, leave 1 and 2 alone, and
+> add a check that fails if "freedraft"/"opendraft" appears anywhere outside an
+> allow-list naming each permitted survivor — otherwise this recurs.
+
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
 > and DELIVERED v6.95: Settings sits in Help below About ScriptCraft.)
