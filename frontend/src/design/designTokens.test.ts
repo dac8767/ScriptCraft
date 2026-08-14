@@ -157,14 +157,16 @@ describe('groups', () => {
   });
 });
 
-// v6.93: the Feedback group — Derek's nine spacing knobs for the form. The
-// generic suites above pin consumption + fallback==default; this pins the set.
+// v6.93/v6.94: the Feedback group — Derek's spacing knobs for the form. The
+// generic suites above pin consumption + fallback==default; this pins the set
+// (fbHelpGap left with the ? in v6.94).
 describe('feedback group', () => {
-  it('exists and carries the nine spacing knobs', () => {
+  it('exists and carries the thirteen spacing knobs', () => {
     const g = DESIGN_GROUPS.find((x) => x.id === 'feedback');
     expect(g!.tokens.map((t) => t.id)).toEqual([
-      'fbNameGap', 'fbEditGap', 'fbHeadGap', 'fbBtnGap', 'fbHelpGap',
-      'fbRowGap', 'fbPadSide', 'fbPadTop', 'fbPadBottom',
+      'fbNameGap', 'fbEditGap', 'fbTypeGap', 'fbDescGap', 'fbHeadGap',
+      'fbBtnGap', 'fbHeadRowGap', 'fbAttachGap', 'fbRowGap', 'fbSubmitGap',
+      'fbPadSide', 'fbPadTop', 'fbPadBottom',
     ]);
   });
 });

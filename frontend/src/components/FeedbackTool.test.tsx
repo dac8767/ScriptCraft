@@ -154,19 +154,10 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
     const labels = [...container.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent?.trim());
     expect(labels).toEqual(['Full Screen', 'Area', 'Browse…']);
     expect(container.querySelector('.fb-attach input[type="file"]')).toBeTruthy();
-    // v6.93: the buttons sit ON the header row, with the ? after them
+    // v6.93: the buttons sit ON the header row; v6.94: the ? is gone
     expect(container.querySelector('.fb-attach-head .fb-attach-btns')).toBeTruthy();
-    expect(container.querySelector('.fb-attach-head')!.lastElementChild?.className).toBe('fb-attach-help');
-  });
-
-  it('the ? beside Attach a Screenshot reveals the how-to on click (v6.92)', async () => {
-    savedProfile();
-    mount();
-    expect(container.textContent).not.toContain('A screenshot helps me a ton');
-    act(() => (container.querySelector('.fb-attach-help') as HTMLButtonElement).click());
-    expect(container.querySelector('.fb-attach-hint')?.textContent).toContain('A screenshot helps me a ton');
-    act(() => (container.querySelector('.fb-attach-help') as HTMLButtonElement).click());
-    expect(container.querySelector('.fb-attach-hint')).toBeNull();
+    expect(container.querySelector('.fb-attach-head')!.lastElementChild?.className).toBe('fb-attach-btns');
+    expect(container.querySelector('.fb-attach-help')).toBeNull();
   });
 
   it('a browsed image becomes the attachment and uploads in its REAL format', async () => {

@@ -1729,17 +1729,10 @@ input.fs-switch:checked::after { left: 15px; }
   color: var(--fd-accent); font-size: 11.5px; padding: 0;
 }
 .fb-label { display: flex; flex-direction: column; gap: 4px; color: var(--fd-text-muted); }
-.fb-label-grow { flex: 1; min-height: 0; }
-/* v6.92: "Type:" sits on one row with its dropdown; the ? beside the
-   attach header reveals the how-to on hover or click. */
-.fb-type-row { flex-direction: row; align-items: center; gap: 8px; }
-.fb-attach-help {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; margin-left: var(--dz-fb-help-gap, 6px);
-  background: transparent; border: none; border-radius: 4px;
-  color: var(--fd-text-muted); cursor: pointer; font-size: 12px;
-}
-.fb-attach-help:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
+.fb-label-grow { flex: 1; min-height: 0; gap: var(--dz-fb-desc-gap, 4px); }
+/* v6.92: "Type:" sits on one row with its dropdown (v6.94: the ? and its
+   how-to text are gone — Derek: "that text is not needed"). */
+.fb-type-row { flex-direction: row; align-items: center; gap: var(--dz-fb-type-gap, 8px); }
 .fb-select {
   height: 30px; padding: 0 8px; align-self: flex-start; min-width: 140px;
   background: var(--fd-input-bg); color: var(--fd-text);
@@ -1758,12 +1751,14 @@ input.fs-switch:checked::after { left: 15px; }
 .fb-attach {
   display: flex; flex-direction: column; gap: 7px;
   padding: 9px 10px;
+  margin-top: var(--dz-fb-attach-gap, 0px);   /* v6.94 knob — adds to the row gap */
   border: 1px dashed var(--fd-border); border-radius: 6px;
 }
 .fb-attach-head {
-  /* v6.93: label, the three buttons AND the ? share one row (wrapping when
-     narrow); every gap is its own Design knob, so no flex gap here. */
-  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 0;
+  /* v6.93: label and the three buttons share one row (wrapping when
+     narrow); every gap is its own Design knob, so no column gap here. */
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--dz-fb-headrow-gap, 6px) 0;
   font-size: 11.5px; font-weight: 600; color: var(--fd-text);
 }
 .fb-attach-head svg { color: var(--fd-text-muted); }
@@ -1773,13 +1768,15 @@ input.fs-switch:checked::after { left: 15px; }
   gap: var(--dz-fb-btn-gap, 6px);
   margin-left: var(--dz-fb-head-gap, 10px);
 }
-.fb-attach-hint { font-size: 11px; color: var(--fd-text-muted); line-height: 1.4; }
 .fb-file { display: none; }
 /* v6.89: several chips wrap in a row */
 .fb-shotchips { display: flex; flex-wrap: wrap; gap: 6px; }
 .fb-attach .fb-shotchip { max-width: 100%; }
 .fb-shotname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fb-shotrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fb-shotrow {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-top: var(--dz-fb-submit-gap, 0px);   /* v6.94 knob — adds to the row gap */
+}
 .fb-spacer { flex: 1; }
 .fb-shotchip {
   display: inline-flex; align-items: center; gap: 8px;

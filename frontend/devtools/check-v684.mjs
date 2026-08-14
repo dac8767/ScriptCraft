@@ -130,8 +130,10 @@ try {
     `with Full Screen / Area / Browse… and a real file input behind it (${attach.btns.join(' / ')})`);
   ok(await page.evaluate(() => {
     const head = document.querySelector('.fb-attach-head');
-    return !!head?.querySelector('.fb-attach-btns') && head.lastElementChild?.classList.contains('fb-attach-help');
-  }), 'v6.93: the three buttons sit ON the header row, ? after them');
+    return !!head?.querySelector('.fb-attach-btns') && head.lastElementChild?.classList.contains('fb-attach-btns');
+  }), 'v6.93/94: the three buttons sit ON the header row, no ? after them');
+  ok(await page.evaluate(() => !document.querySelector('.fb-attach-help') && !document.body.textContent.includes('A screenshot helps me a ton')),
+    'v6.94: the ? and its how-to text are gone entirely');
   await page.evaluate(async () => {
     const { applyDesignVars } = await import('/src/design/designTokens.ts');
     applyDesignVars({ fbRowGap: 24 });
@@ -142,16 +144,6 @@ try {
     const { applyDesignVars } = await import('/src/design/designTokens.ts');
     applyDesignVars({});
   });
-  /* v6.92: the how-to hides behind the ? — click pins, click + mouse-away clears */
-  ok(await page.evaluate(() => !document.body.textContent.includes('A screenshot helps me a ton')),
-    'the how-to text is NOT in the window by default');
-  await page.click('.fb-attach-help');
-  ok(await page.evaluate(() => document.querySelector('.fb-attach-hint')?.textContent.includes('A screenshot helps me a ton') ?? false),
-    'clicking the ? reveals the how-to');
-  await page.click('.fb-attach-help');
-  await page.mouse.move(5, 5);
-  await page.waitForFunction(() => !document.querySelector('.fb-attach-hint'), { timeout: 3000 });
-  ok(true, 'clicking again (and moving off) hides it');
   await page.setInputFiles('.fb-attach input[type="file"]', {
     name: 'margin-bug.jpeg', mimeType: 'image/jpeg',
     buffer: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]),

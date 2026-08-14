@@ -151,7 +151,34 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.88 and older (newest first)
+## Version history — v6.89 and older (newest first)
+
+### v6.89 — multiple attachments + the sent blur-veil
+
+- Derek: "you should be able to add more than one attachment. keep the 3
+  buttons visible even after an attachment or screenshot is already
+  attached" + the sent note was too easy to miss — "momentarily blur the
+  feedback window, and have the text 'Your feedback has been sent. Thank
+  you!' appear in the center… remove the text and blur after a few
+  seconds."
+- FeedbackTool: `shots: Shot[]` (draft included), buttons always visible,
+  every capture/pick APPENDS (`<input multiple>` — Browse picks several
+  at once), chips wrap in `.fb-shotchips`, per-chip remove ×. Submit
+  uploads each blob and clears all; queue entries carry `shotDataUrls[]`
+  (legacy `shotDataUrl` still drained).
+- feedbackBackend: `submitFeedback(payload, shots?: Blob[])` loops
+  uploads; row `attachments` = paths comma-joined (generated names never
+  contain commas) or null. REPORTS split on ',' and sign each path.
+- Sent veil: `.fb-sent-veil` absolute over `.fb-form` (position:relative),
+  backdrop-filter blur(6px) WITH -webkit- prefix (WebKit needs it),
+  centered `.fb-sent-msg`, 3s auto-clear. Old `.fb-sent` note gone.
+  CHECK GOTCHA: every successful send now raises the veil for 3s — any
+  check step that fills/clicks after a send must waitForFunction the
+  veil away first or Playwright times out on the covered element.
+- Tests 1198→1199 (multi-attach: buttons stay, second pick appends, two
+  uploads real formats, comma-joined row). check-v684 17→20 (veil text +
+  computed blur + self-clear; buttons-stay; append; both formats; row).
+- Gates: tsc 0, vitest 1199, build ok, check-all 1076/0. Catalog 481.
 
 ### v6.88 — the Feedback draft survives moving the window
 

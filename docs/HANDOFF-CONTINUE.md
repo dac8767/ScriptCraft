@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.93 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.94 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -285,6 +285,24 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.94 — the ? retired; "Description:"; five more knobs (13 total)
+
+- Derek: "remove the ? icon. that text is not needed" — the whole help
+  mechanism is GONE (ATTACH_HELP, helpPinned/helpHover, `.fb-attach-help`
+  and `.fb-attach-hint` CSS). Message label is "Description:". The
+  fbHelpGap token left WITH the ? (a dead knob fails the no-dead-knobs
+  test); its stale persisted value is silently ignored by
+  applyDesignVars — the designed-for orphan case.
+- Five new css-var knobs (group now 13, test pin updated): fbTypeGap 8
+  (`.fb-type-row` gap), fbDescGap 4 (`.fb-label-grow` gap), fbHeadRowGap
+  6 (head wrap ROW gap — only visible when narrow wraps the buttons),
+  fbAttachGap 0 (margin-top on `.fb-attach`, ADDS to fbRowGap) and
+  fbSubmitGap 0 (margin-top on `.fb-shotrow`, same additive pattern —
+  both hinted in the panel).
+- check-v684 23 (?-gone + head-structure asserts replace the v6.92
+  toggle trio); tests 1200 (the ? toggle test removed).
+- Gates: tsc 0, vitest 1200, build ok, check-all 1079/0. Catalog 480.
+
 ### v6.93 — attach buttons onto the header row + nine Design knobs
 
 - Derek items 1-3: the three attach buttons live ON the "Attach a
@@ -339,38 +357,12 @@ Durable bits kept live here:
   the new label.
 - Gates: tsc 0, vitest 1199, build ok, check-all 1076/0.
 
-### v6.89 — multiple attachments + the sent blur-veil
-
-- Derek: "you should be able to add more than one attachment. keep the 3
-  buttons visible even after an attachment or screenshot is already
-  attached" + the sent note was too easy to miss — "momentarily blur the
-  feedback window, and have the text 'Your feedback has been sent. Thank
-  you!' appear in the center… remove the text and blur after a few
-  seconds."
-- FeedbackTool: `shots: Shot[]` (draft included), buttons always visible,
-  every capture/pick APPENDS (`<input multiple>` — Browse picks several
-  at once), chips wrap in `.fb-shotchips`, per-chip remove ×. Submit
-  uploads each blob and clears all; queue entries carry `shotDataUrls[]`
-  (legacy `shotDataUrl` still drained).
-- feedbackBackend: `submitFeedback(payload, shots?: Blob[])` loops
-  uploads; row `attachments` = paths comma-joined (generated names never
-  contain commas) or null. REPORTS split on ',' and sign each path.
-- Sent veil: `.fb-sent-veil` absolute over `.fb-form` (position:relative),
-  backdrop-filter blur(6px) WITH -webkit- prefix (WebKit needs it),
-  centered `.fb-sent-msg`, 3s auto-clear. Old `.fb-sent` note gone.
-  CHECK GOTCHA: every successful send now raises the veil for 3s — any
-  check step that fills/clicks after a send must waitForFunction the
-  veil away first or Playwright times out on the covered element.
-- Tests 1198→1199 (multi-attach: buttons stay, second pick appends, two
-  uploads real formats, comma-joined row). check-v684 17→20 (veil text +
-  computed blur + self-clear; buttons-stay; append; both formats; row).
-- Gates: tsc 0, vitest 1199, build ok, check-all 1076/0. Catalog 481.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.89** — multiple attachments (buttons stay, picks APPEND, comma-joined attachments column) + the sent blur-veil confirmation (3s, -webkit-backdrop-filter; checks must wait the veil away before the next fill)
 - **v6.88** — the Feedback draft survives moving the window (module-level draft, mounts rehydrate; unmount no longer revokes shot URLs; resetFeedbackDraft for tests)
 - **v6.87** — the Feedback ATTACHMENT AREA (the first request submitted through the form itself): labeled box + Browse…, real-format uploads, `attachments` + `status` enum columns (his SQL paste), sessions hold data-not-DDL rights
 - **v6.86** — feedback SIMPLIFIED to the once-only tester profile (no verification, anon inserts; Derek's RLS paste); v6.84 auth in history at 0c9b43e

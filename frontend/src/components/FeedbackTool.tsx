@@ -17,7 +17,7 @@
  * visible local queue with a Retry button.
  */
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { FaCamera, FaCrop, FaFolderOpen, FaPaperclip, FaRegQuestionCircle, FaTimes } from 'react-icons/fa';
+import { FaCamera, FaCrop, FaFolderOpen, FaPaperclip, FaTimes } from 'react-icons/fa';
 import {
   type FeedbackProfile,
   loadFeedbackProfile, saveFeedbackProfile,
@@ -27,9 +27,6 @@ import { captureToCanvas } from '../utils/screenshot';
 import { showToast } from './Toast';
 
 const CATEGORIES = ['Bug Report', 'Suggestion', 'Feature Request', 'Other'] as const;
-
-/** v6.92: the how-to lives behind the ? beside "Attach a Screenshot". */
-const ATTACH_HELP = 'A screenshot helps me a ton. You can add a screenshot with the app by clicking Full Screen or Area, or upload a screenshot from your local device.';
 
 interface Shot { blob: Blob; url: string; dataUrl: string; name: string }
 
@@ -78,9 +75,6 @@ export default function FeedbackTool() {
   const [shots, setShots] = useState<Shot[]>(draft.shots);
   const [queued, setQueued] = useState(() => loadFeedbackQueue().length);
   const [sentNote, setSentNote] = useState<string | null>(null);
-  // v6.92: the ? beside "Attach a Screenshot" — hover shows the how-to, click pins it
-  const [helpPinned, setHelpPinned] = useState(false);
-  const [helpHover, setHelpHover] = useState(false);
 
   // Mirror the live fields into the module draft. (The old unmount-revoke
   // effect is gone ON PURPOSE — the shots' object URLs must outlive the
@@ -235,7 +229,7 @@ export default function FeedbackTool() {
       </label>
 
       <label className="fb-label fb-label-grow">
-        Description
+        Description:
         <textarea
           className="fb-text"
           value={message}
@@ -258,15 +252,7 @@ export default function FeedbackTool() {
               <FaFolderOpen aria-hidden /> Browse…
             </button>
           </div>
-          <button
-            className="fb-attach-help"
-            aria-label="How attachments help"
-            onMouseEnter={() => setHelpHover(true)}
-            onMouseLeave={() => setHelpHover(false)}
-            onClick={() => setHelpPinned((v) => !v)}
-          ><FaRegQuestionCircle aria-hidden /></button>
         </div>
-        {(helpPinned || helpHover) && <div className="fb-attach-hint">{ATTACH_HELP}</div>}
         {shots.length > 0 && (
           <div className="fb-shotchips">
             {shots.map((s, i) => (

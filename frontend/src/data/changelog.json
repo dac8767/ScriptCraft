@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.94",
+  "date": "2026-08-13",
+  "changes": [
+   "The ? and its explainer text are gone from the Feedback window, and the message field is labeled “Description:”.",
+   "Five more Feedback knobs in the Design panel: Type to its dropdown, Description to the text box, extra space above the attach box, the attach header's wrapped-row spacing, and extra space above Submit."
+  ]
+ },
+ {
   "version": "6.93",
   "date": "2026-08-13",
   "changes": [

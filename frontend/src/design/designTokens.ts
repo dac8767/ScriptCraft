@@ -388,14 +388,23 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     id: 'feedback',
     label: 'Feedback',
     tokens: [
-      // v6.93, Derek: every gap he called out in the Feedback window, plus
-      // the window paddings. All plain css-var knobs on the fb-* rules.
+      // v6.93/v6.94, Derek: every gap he called out in the Feedback window,
+      // plus the window paddings. All plain css-var knobs on fb-* rules.
+      // (v6.94 removed fbHelpGap with the ? itself; a stale persisted value
+      // is ignored by applyDesignVars — the designed-for orphan case.)
       { id: 'fbNameGap', label: 'Space after "Name:"', cssVar: '--dz-fb-name-gap', unit: 'px', min: 0, max: 24, step: 1, def: 5 },
       { id: 'fbEditGap', label: 'Name to Edit button', cssVar: '--dz-fb-edit-gap', unit: 'px', min: 0, max: 32, step: 1, def: 8 },
+      { id: 'fbTypeGap', label: '"Type:" to its dropdown', cssVar: '--dz-fb-type-gap', unit: 'px', min: 0, max: 32, step: 1, def: 8 },
+      { id: 'fbDescGap', label: '"Description:" to the text box', cssVar: '--dz-fb-desc-gap', unit: 'px', min: 0, max: 24, step: 1, def: 4 },
       { id: 'fbHeadGap', label: 'Label to attach buttons', cssVar: '--dz-fb-head-gap', unit: 'px', min: 0, max: 40, step: 1, def: 10 },
       { id: 'fbBtnGap', label: 'Between attach buttons', cssVar: '--dz-fb-btn-gap', unit: 'px', min: 0, max: 24, step: 1, def: 6 },
-      { id: 'fbHelpGap', label: 'Last button to ?', cssVar: '--dz-fb-help-gap', unit: 'px', min: 0, max: 24, step: 1, def: 6 },
+      { id: 'fbHeadRowGap', label: 'Header to wrapped button row', cssVar: '--dz-fb-headrow-gap', unit: 'px', min: 0, max: 24, step: 1, def: 6,
+        hint: 'Only visible when a narrow window wraps the buttons onto their own row.' },
+      { id: 'fbAttachGap', label: 'Extra space above the attach box', cssVar: '--dz-fb-attach-gap', unit: 'px', min: 0, max: 32, step: 1, def: 0,
+        hint: 'Adds to the row spacing between the text box and the attach box.' },
       { id: 'fbRowGap', label: 'Between rows', cssVar: '--dz-fb-row-gap', unit: 'px', min: 0, max: 32, step: 1, def: 10 },
+      { id: 'fbSubmitGap', label: 'Extra space above Submit', cssVar: '--dz-fb-submit-gap', unit: 'px', min: 0, max: 40, step: 1, def: 0,
+        hint: 'Adds to the row spacing between the attach box and the Submit row.' },
       { id: 'fbPadSide', label: 'Window side padding', cssVar: '--dz-fb-pad-side', unit: 'px', min: 0, max: 40, step: 1, def: 16 },
       { id: 'fbPadTop', label: 'Window top padding', cssVar: '--dz-fb-pad-top', unit: 'px', min: 0, max: 40, step: 1, def: 14 },
       { id: 'fbPadBottom', label: 'Window bottom padding', cssVar: '--dz-fb-pad-bottom', unit: 'px', min: 0, max: 40, step: 1, def: 14 },
