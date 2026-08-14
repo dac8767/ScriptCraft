@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.92 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.93 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -285,6 +285,25 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.93 — attach buttons onto the header row + nine Design knobs
+
+- Derek items 1-3: the three attach buttons live ON the "Attach a
+  Screenshot" row (`.fb-attach-head` wraps: paperclip, `.fb-attach-title`
+  span, `.fb-attach-btns`, then the ?), and Send Feedback → "Submit".
+- Item 4: Design panel group `feedback` (before `behavior`) — NINE css-var
+  tokens, each the ONLY source of its gap (head gap is `6px 0` so wrap
+  rows breathe but columns are all margins): fbNameGap 5 (`.fb-who
+  strong` margin; the JSX space after "Name:" was removed so the knob is
+  the source), fbEditGap 8, fbHeadGap 10 (btns margin-left), fbBtnGap 6,
+  fbHelpGap 6, fbRowGap 10 (wrap gap), fbPadSide 16 / fbPadTop 14 /
+  fbPadBottom 14 (wrap padding split three ways). designTokens.test.ts
+  generic suites enforce consumption + fallback==def; a new pin fixes
+  the nine ids. check-v684 25 (head structure; applyDesignVars
+  fbRowGap→24 proves computed rowGap moves — in-page import of
+  designTokens is SAFE here because applyDesignVars writes the real
+  documentElement, unlike store-instance imports).
+- Gates: tsc 0, vitest 1201, build ok, check-all 1081/0. Catalog 480.
+
 ### v6.92 — feedback window wording pass (11 Derek items)
 
 - "Name:" replaces "Sending as" (email NO LONGER shown beside it — still
@@ -347,34 +366,12 @@ Durable bits kept live here:
   computed blur + self-clear; buttons-stay; append; both formats; row).
 - Gates: tsc 0, vitest 1199, build ok, check-all 1076/0. Catalog 481.
 
-### v6.88 — the Feedback draft survives moving the window
-
-- Feedback row 224d5f61 (Derek, through the form): "i moved the feedback
-  window from full screen (and it had text in it) to the side panel.
-  doing so removed all my text." ROOT CAUSE: every hosting surface
-  (docked panel / floating window / fullscreen takeover) mounts its OWN
-  FeedbackTool, so a move remounts it and useState starts over.
-- Fix: a module-level draft {category, message, shot} in FeedbackTool.tsx;
-  mounts initialize from it, a mirror effect writes it, and both submit
-  paths ALSO clear it imperatively (covers unmount-mid-send). The old
-  unmount revoke-object-URL effect is GONE on purpose — the shot's URL
-  must outlive the mount so the chip renders after a move; the replace/
-  remove/send paths still revoke. In-memory by design (restart = clean).
-  `resetFeedbackDraft()` exported for test isolation.
-- REPORTING conventions grew (standing note near the top of this file):
-  read the feedback_report VIEW Derek created (his to_char date format,
-  US Eastern), entry text first THEN the attachment card, never Read the
-  image into the chat (it renders a duplicate — he flagged it).
-- Tests 1197→1198 (remount rehydrates message + chip); check-v684
-  15→17 (fullscreen round-trip via __scStore.setFullscreenTool keeps
-  the typed draft both directions).
-- Gates: tsc 0, vitest 1198, build ok, check-all 1073/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.88** — the Feedback draft survives moving the window (module-level draft, mounts rehydrate; unmount no longer revokes shot URLs; resetFeedbackDraft for tests)
 - **v6.87** — the Feedback ATTACHMENT AREA (the first request submitted through the form itself): labeled box + Browse…, real-format uploads, `attachments` + `status` enum columns (his SQL paste), sessions hold data-not-DDL rights
 - **v6.86** — feedback SIMPLIFIED to the once-only tester profile (no verification, anon inserts; Derek's RLS paste); v6.84 auth in history at 0c9b43e
 - **v6.85** — Settings ▸ Defaults joined the warn+undo wrapper (runCustomizeReset — one registry, both surfaces); Supabase env key + open network verified live in-session

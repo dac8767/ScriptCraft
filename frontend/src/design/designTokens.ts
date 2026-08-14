@@ -385,6 +385,23 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     ],
   },
   {
+    id: 'feedback',
+    label: 'Feedback',
+    tokens: [
+      // v6.93, Derek: every gap he called out in the Feedback window, plus
+      // the window paddings. All plain css-var knobs on the fb-* rules.
+      { id: 'fbNameGap', label: 'Space after "Name:"', cssVar: '--dz-fb-name-gap', unit: 'px', min: 0, max: 24, step: 1, def: 5 },
+      { id: 'fbEditGap', label: 'Name to Edit button', cssVar: '--dz-fb-edit-gap', unit: 'px', min: 0, max: 32, step: 1, def: 8 },
+      { id: 'fbHeadGap', label: 'Label to attach buttons', cssVar: '--dz-fb-head-gap', unit: 'px', min: 0, max: 40, step: 1, def: 10 },
+      { id: 'fbBtnGap', label: 'Between attach buttons', cssVar: '--dz-fb-btn-gap', unit: 'px', min: 0, max: 24, step: 1, def: 6 },
+      { id: 'fbHelpGap', label: 'Last button to ?', cssVar: '--dz-fb-help-gap', unit: 'px', min: 0, max: 24, step: 1, def: 6 },
+      { id: 'fbRowGap', label: 'Between rows', cssVar: '--dz-fb-row-gap', unit: 'px', min: 0, max: 32, step: 1, def: 10 },
+      { id: 'fbPadSide', label: 'Window side padding', cssVar: '--dz-fb-pad-side', unit: 'px', min: 0, max: 40, step: 1, def: 16 },
+      { id: 'fbPadTop', label: 'Window top padding', cssVar: '--dz-fb-pad-top', unit: 'px', min: 0, max: 40, step: 1, def: 14 },
+      { id: 'fbPadBottom', label: 'Window bottom padding', cssVar: '--dz-fb-pad-bottom', unit: 'px', min: 0, max: 40, step: 1, def: 14 },
+    ],
+  },
+  {
     id: 'behavior',
     label: 'Behavior',
     tokens: [

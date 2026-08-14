@@ -206,7 +206,7 @@ export default function FeedbackTool() {
   return (
     <div className="feedback-tool-wrap fb-form">
       <div className="fb-who">
-        Name: <strong>{profile.name}</strong>
+        Name:<strong>{profile.name}</strong>
         <button
           className="fb-signout"
           title="Change the name or email on your feedback"
@@ -245,7 +245,19 @@ export default function FeedbackTool() {
 
       <div className="fb-attach">
         <div className="fb-attach-head">
-          <FaPaperclip aria-hidden /> Attach a Screenshot
+          <FaPaperclip aria-hidden />
+          <span className="fb-attach-title">Attach a Screenshot</span>
+          <div className="fb-attach-btns">
+            <button className="dialog-btn" disabled={busy} title="Attach a screenshot of the whole window" onClick={() => capture('full')}>
+              <FaCamera aria-hidden /> Full Screen
+            </button>
+            <button className="dialog-btn" disabled={busy} title="Attach a screenshot of a selected area" onClick={() => capture('area')}>
+              <FaCrop aria-hidden /> Area
+            </button>
+            <button className="dialog-btn" disabled={busy} title="Attach image files from disk" onClick={() => fileInput.current?.click()}>
+              <FaFolderOpen aria-hidden /> Browse…
+            </button>
+          </div>
           <button
             className="fb-attach-help"
             aria-label="How attachments help"
@@ -255,17 +267,6 @@ export default function FeedbackTool() {
           ><FaRegQuestionCircle aria-hidden /></button>
         </div>
         {(helpPinned || helpHover) && <div className="fb-attach-hint">{ATTACH_HELP}</div>}
-        <div className="fb-attach-btns">
-          <button className="dialog-btn" disabled={busy} title="Attach a screenshot of the whole window" onClick={() => capture('full')}>
-            <FaCamera aria-hidden /> Full Screen
-          </button>
-          <button className="dialog-btn" disabled={busy} title="Attach a screenshot of a selected area" onClick={() => capture('area')}>
-            <FaCrop aria-hidden /> Area
-          </button>
-          <button className="dialog-btn" disabled={busy} title="Attach image files from disk" onClick={() => fileInput.current?.click()}>
-            <FaFolderOpen aria-hidden /> Browse…
-          </button>
-        </div>
         {shots.length > 0 && (
           <div className="fb-shotchips">
             {shots.map((s, i) => (
@@ -287,7 +288,7 @@ export default function FeedbackTool() {
           disabled={busy || !message.trim()}
           title="Send this feedback"
           onClick={submit}
-        >{busy ? 'Sending…' : 'Send Feedback'}</button>
+        >{busy ? 'Sending…' : 'Submit'}</button>
       </div>
     </div>
   );

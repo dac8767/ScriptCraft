@@ -1683,7 +1683,10 @@ input.fs-switch:checked::after { left: 15px; }
    gone. ── */
 .feedback-tool-wrap {
   display: flex; flex-direction: column; height: 100%; min-height: 0;
-  padding: 14px 16px; gap: 10px; overflow-y: auto;
+  /* v6.93: paddings + row gap are Design-panel knobs */
+  padding: var(--dz-fb-pad-top, 14px) var(--dz-fb-pad-side, 16px) var(--dz-fb-pad-bottom, 14px);
+  gap: var(--dz-fb-row-gap, 10px);
+  overflow-y: auto;
   font-size: 12.5px; color: var(--fd-text);
 }
 .fb-title { margin: 0; font-size: 15px; }
@@ -1720,9 +1723,9 @@ input.fs-switch:checked::after { left: 15px; }
 .fb-input:focus { outline: none; border-color: var(--fd-accent); }
 .fb-code { letter-spacing: 3px; font-variant-numeric: tabular-nums; }
 .fb-who { color: var(--fd-text-muted); }
-.fb-who strong { color: var(--fd-text); }
+.fb-who strong { color: var(--fd-text); margin-left: var(--dz-fb-name-gap, 5px); }
 .fb-signout {
-  margin-left: 8px; background: none; border: none; cursor: pointer;
+  margin-left: var(--dz-fb-edit-gap, 8px); background: none; border: none; cursor: pointer;
   color: var(--fd-accent); font-size: 11.5px; padding: 0;
 }
 .fb-label { display: flex; flex-direction: column; gap: 4px; color: var(--fd-text-muted); }
@@ -1732,7 +1735,7 @@ input.fs-switch:checked::after { left: 15px; }
 .fb-type-row { flex-direction: row; align-items: center; gap: 8px; }
 .fb-attach-help {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; margin-left: 2px;
+  width: 20px; height: 20px; margin-left: var(--dz-fb-help-gap, 6px);
   background: transparent; border: none; border-radius: 4px;
   color: var(--fd-text-muted); cursor: pointer; font-size: 12px;
 }
@@ -1758,11 +1761,18 @@ input.fs-switch:checked::after { left: 15px; }
   border: 1px dashed var(--fd-border); border-radius: 6px;
 }
 .fb-attach-head {
-  display: flex; align-items: center; gap: 6px;
+  /* v6.93: label, the three buttons AND the ? share one row (wrapping when
+     narrow); every gap is its own Design knob, so no flex gap here. */
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 0;
   font-size: 11.5px; font-weight: 600; color: var(--fd-text);
 }
 .fb-attach-head svg { color: var(--fd-text-muted); }
-.fb-attach-btns { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fb-attach-title { margin-left: 6px; }
+.fb-attach-btns {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--dz-fb-btn-gap, 6px);
+  margin-left: var(--dz-fb-head-gap, 10px);
+}
 .fb-attach-hint { font-size: 11px; color: var(--fd-text-muted); line-height: 1.4; }
 .fb-file { display: none; }
 /* v6.89: several chips wrap in a row */

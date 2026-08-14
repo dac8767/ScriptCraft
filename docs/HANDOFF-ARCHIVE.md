@@ -151,7 +151,30 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.87 and older (newest first)
+## Version history — v6.88 and older (newest first)
+
+### v6.88 — the Feedback draft survives moving the window
+
+- Feedback row 224d5f61 (Derek, through the form): "i moved the feedback
+  window from full screen (and it had text in it) to the side panel.
+  doing so removed all my text." ROOT CAUSE: every hosting surface
+  (docked panel / floating window / fullscreen takeover) mounts its OWN
+  FeedbackTool, so a move remounts it and useState starts over.
+- Fix: a module-level draft {category, message, shot} in FeedbackTool.tsx;
+  mounts initialize from it, a mirror effect writes it, and both submit
+  paths ALSO clear it imperatively (covers unmount-mid-send). The old
+  unmount revoke-object-URL effect is GONE on purpose — the shot's URL
+  must outlive the mount so the chip renders after a move; the replace/
+  remove/send paths still revoke. In-memory by design (restart = clean).
+  `resetFeedbackDraft()` exported for test isolation.
+- REPORTING conventions grew (standing note near the top of this file):
+  read the feedback_report VIEW Derek created (his to_char date format,
+  US Eastern), entry text first THEN the attachment card, never Read the
+  image into the chat (it renders a duplicate — he flagged it).
+- Tests 1197→1198 (remount rehydrates message + chip); check-v684
+  15→17 (fullscreen round-trip via __scStore.setFullscreenTool keeps
+  the typed draft both directions).
+- Gates: tsc 0, vitest 1198, build ok, check-all 1073/0.
 
 ### v6.87 — the Feedback ATTACHMENT AREA (the first request from the table)
 

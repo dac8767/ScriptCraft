@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.93",
+  "date": "2026-08-13",
+  "changes": [
+   "The Feedback window's attach buttons moved up beside “Attach a Screenshot”, with the ? at the end of the row, and the send button is simply “Submit”.",
+   "The Design panel gained a Feedback group with nine spacing knobs: the gap after “Name:”, name-to-Edit, label-to-buttons, between buttons, button-to-?, between rows, and the window's side, top, and bottom padding."
+  ]
+ },
+ {
   "version": "6.92",
   "date": "2026-08-13",
   "changes": [

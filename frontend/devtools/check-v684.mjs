@@ -81,7 +81,7 @@ try {
 
   /* ── a submission carries identity + version ── */
   await page.fill('.fb-text', 'The dialogue margin drifts on page 3.');
-  await button('Send Feedback');
+  await button('Submit');
   await page.waitForFunction(() => window.__fbCalls.some((c) => c.url.includes('/rest/v1/feedback')), { timeout: 5000 });
   const row = await page.evaluate(() => JSON.parse(window.__fbCalls.find((c) => c.url.includes('/rest/v1/feedback')).body));
   ok(row.name === 'Derek Tester' && row.email === 'derek-tester@example.com',
@@ -102,7 +102,7 @@ try {
   /* ── failure is queued VISIBLY, and Retry drains it ── */
   await page.evaluate(() => { window.__fbFail = true; });
   await page.fill('.fb-text', 'This one hits a dead server.');
-  await button('Send Feedback');
+  await button('Submit');
   await page.waitForSelector('.fb-queued', { timeout: 5000 });
   const queued = await page.evaluate(() => ({
     chip: document.querySelector('.fb-queued')?.textContent ?? '',
@@ -128,6 +128,20 @@ try {
   ok(/Attach a Screenshot/.test(attach.label), `the form has a labeled attachment area ("${attach.label}")`);
   ok(attach.btns.join(',') === 'Full Screen,Area,Browse…' && attach.file,
     `with Full Screen / Area / Browse… and a real file input behind it (${attach.btns.join(' / ')})`);
+  ok(await page.evaluate(() => {
+    const head = document.querySelector('.fb-attach-head');
+    return !!head?.querySelector('.fb-attach-btns') && head.lastElementChild?.classList.contains('fb-attach-help');
+  }), 'v6.93: the three buttons sit ON the header row, ? after them');
+  await page.evaluate(async () => {
+    const { applyDesignVars } = await import('/src/design/designTokens.ts');
+    applyDesignVars({ fbRowGap: 24 });
+  });
+  ok(await page.evaluate(() => getComputedStyle(document.querySelector('.feedback-tool-wrap')).rowGap) === '24px',
+    'the new Design knobs really move the window (row gap 10 → 24)');
+  await page.evaluate(async () => {
+    const { applyDesignVars } = await import('/src/design/designTokens.ts');
+    applyDesignVars({});
+  });
   /* v6.92: the how-to hides behind the ? — click pins, click + mouse-away clears */
   ok(await page.evaluate(() => !document.body.textContent.includes('A screenshot helps me a ton')),
     'the how-to text is NOT in the window by default');
@@ -154,7 +168,7 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('.fb-shotchip').length === 2, { timeout: 5000 });
   ok(true, 'a second pick APPENDS — two chips now');
   await page.fill('.fb-text', 'See the attached images.');
-  await button('Send Feedback');
+  await button('Submit');
   await page.waitForFunction(() => window.__fbCalls.filter((c) => c.url.includes('/storage/v1/object/feedback-shots/')).length === 2, { timeout: 5000 });
   const uploaded = await page.evaluate(() => {
     const ups = window.__fbCalls.filter((c) => c.url.includes('/storage/v1/object/feedback-shots/'));

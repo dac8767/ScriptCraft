@@ -108,7 +108,7 @@ describe('FeedbackTool — submitting', () => {
     savedProfile();
     mount();
     setValue(messageBox(), 'The margins drift.');
-    clickText('Send Feedback');
+    clickText('Submit');
     await flush();
     const post = calls.find((c) => c.url.includes('/rest/v1/feedback'));
     expect(post).toBeTruthy();
@@ -131,7 +131,7 @@ describe('FeedbackTool — submitting', () => {
     replies.push((u) => (u.includes('/rest/v1/feedback') ? json({ message: 'server down' }, 503) : null));
     mount();
     setValue(messageBox(), 'Lost words?');
-    clickText('Send Feedback');
+    clickText('Submit');
     await flush();
     expect(container.textContent).toContain('saved to the local queue');
     expect(loadFeedbackQueue()).toHaveLength(1);
@@ -154,6 +154,9 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
     const labels = [...container.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent?.trim());
     expect(labels).toEqual(['Full Screen', 'Area', 'Browse…']);
     expect(container.querySelector('.fb-attach input[type="file"]')).toBeTruthy();
+    // v6.93: the buttons sit ON the header row, with the ? after them
+    expect(container.querySelector('.fb-attach-head .fb-attach-btns')).toBeTruthy();
+    expect(container.querySelector('.fb-attach-head')!.lastElementChild?.className).toBe('fb-attach-help');
   });
 
   it('the ? beside Attach a Screenshot reveals the how-to on click (v6.92)', async () => {
@@ -177,7 +180,7 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
     expect(container.querySelector('.fb-shotchip')?.textContent).toContain('margin-bug.jpeg');
 
     setValue(messageBox(), 'See the attached image.');
-    clickText('Send Feedback');
+    clickText('Submit');
     await flush(6);
     const up = calls.find((c) => c.url.includes('/storage/v1/object/feedback-shots/'));
     expect(up).toBeTruthy();
@@ -209,7 +212,7 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
     expect(container.querySelectorAll('.fb-shotchip')).toHaveLength(2);
 
     setValue(messageBox(), 'Two shots attached.');
-    clickText('Send Feedback');
+    clickText('Submit');
     await flush(6);
     const ups = calls.filter((c) => c.url.includes('/storage/v1/object/feedback-shots/'));
     expect(ups).toHaveLength(2);

@@ -157,6 +157,18 @@ describe('groups', () => {
   });
 });
 
+// v6.93: the Feedback group — Derek's nine spacing knobs for the form. The
+// generic suites above pin consumption + fallback==default; this pins the set.
+describe('feedback group', () => {
+  it('exists and carries the nine spacing knobs', () => {
+    const g = DESIGN_GROUPS.find((x) => x.id === 'feedback');
+    expect(g!.tokens.map((t) => t.id)).toEqual([
+      'fbNameGap', 'fbEditGap', 'fbHeadGap', 'fbBtnGap', 'fbHelpGap',
+      'fbRowGap', 'fbPadSide', 'fbPadTop', 'fbPadBottom',
+    ]);
+  });
+});
+
 // v4.26: the Characters group — the character tool's formatting knobs.
 // (The generic suites above already cover these tokens' uniqueness, live
 // consumption, and fallback==default; here we pin the character-specific
