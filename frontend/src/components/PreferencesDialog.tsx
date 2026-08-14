@@ -52,7 +52,8 @@ const SYSTEM_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> 
      Screenshots section — directly under Save Options. */
   { id: 'downloads', label: 'Downloads', icon: <FaDownload /> },
   /* v7.00: broken out of General into its own tab. */
-  { id: 'languages', label: 'Languages', icon: <FaLanguage /> },
+  /* v7.06: renamed Region — language, units and date/time live here. */
+  { id: 'languages', label: 'Region', icon: <FaLanguage /> },
   /* v4.30 batch-v7 #3, Derek: hotkeys are behavior, not workspace layout —
      moved here from Customize. */
   { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
@@ -63,6 +64,11 @@ const SYSTEM_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> 
 const PAGE_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   /* v6.99, Derek: Templates and Page Setup are ONE tab. */
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
+  /* v7.06, Derek: the Editor tab lives under PAGE in Settings. It keeps its
+     'cz-elements' id, so the body still renders CustomizePanelsDialog pinned
+     to that category and the Defaults tab still finds its resets — only the
+     sidebar grouping changed, and only here. */
+  { id: 'cz-elements', label: 'Editor', icon: <FaEdit /> },
   /* v4.79, Derek: every preset-type export AND import — the same panel the
      File ▸ Import/Export ▸ Presets… window shows. */
   { id: 'presets', label: 'Presets', icon: <FaBoxOpen /> },
@@ -74,8 +80,12 @@ const PAGE_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = 
    the old "Customize" tab wrapped its own inner tab rail, a submenu level
    deeper than it needed to be. Each entry renders CustomizePanelsDialog
    pinned to one tab (soloCategory). */
+/* v7.06, Derek: "move the editor tab from customize to the page section. do
+   this only in settings. do not change the other customize window." So Editor
+   is listed under PAGE in this sidebar (see PAGE_TABS) while still rendering
+   the very same CustomizePanelsDialog pinned to soloCategory="elements" — the
+   standalone Customize window is untouched. */
 const CUSTOMIZE_TABS: Array<{ id: CustomizeCat; label: string; icon: React.ReactNode }> = [
-  { id: 'elements', label: 'Editor', icon: <FaEdit /> },
   { id: 'toolbar', label: 'Toolbar', icon: <FaGripHorizontal /> },
   { id: 'panels', label: 'Side Panels', icon: <FaColumns /> },
   { id: 'qat', label: 'Quick Access', icon: <FaBolt /> },
@@ -515,17 +525,88 @@ function SaveLocationsTab() {
 
 /* v7.06: no `editor` param — the only thing on this tab that needed it was
    the Draft Number section, now removed. */
+/* v7.06, Derek: "rename the languages tab 'Region'. move the measurements and
+   'dates & time' sections into that tab." One tab for everything that depends
+   on where you are — spelling language, inches vs centimetres, date and time
+   format — instead of language here and units over on General. */
+function RegionTab() {
+  const {
+    dateFormat, setDateFormat,
+    units, setUnits,
+    timeFormat, setTimeFormat,
+  } = useSettingsStore();
+  return (
+    <div className="prefs-general">
+      <LanguageSection />
+      <section>
+        <h3>Measurements</h3>
+        <label className="prefs-check-row">
+          <span>Units</span>
+          <select
+            className="prefs-select"
+            value={units}
+            onChange={(e) => setUnits(e.target.value as 'in' | 'cm')}
+          >
+            <option value="in">Inches (in)</option>
+            <option value="cm">Centimeters (cm)</option>
+          </select>
+        </label>
+        <p className="prefs-hint">
+          How Page Setup shows page size and margins. Stored values never
+          change — only the display converts.
+        </p>
+      </section>
+
+      {/* v1.65: "Default draft label" moved into Settings > Save Options —
+          the Draft label field there syncs the current script AND can set
+          the default for new scripts. One field, one home. */}
+
+      <section>
+        <h3>Dates &amp; Times</h3>
+        <label className="prefs-check-row">
+          <span>Date format</span>
+          <select
+            className="prefs-select"
+            value={dateFormat}
+            onChange={(e) => setDateFormat(e.target.value as DateFormatId)}
+          >
+            {DATE_FORMATS.map((f) => (
+              <option key={f.id} value={f.id}>{f.name} ({f.format(new Date())})</option>
+            ))}
+          </select>
+        </label>
+        <p className="prefs-hint">
+          Used wherever ScriptCraft shows a date — the Version autofill, the
+          changelog, and friends.
+        </p>
+        <label className="prefs-check-row">
+          <span>Time format</span>
+          <select
+            className="prefs-select"
+            value={timeFormat}
+            onChange={(e) => setTimeFormat(e.target.value as '12h' | '24h')}
+          >
+            <option value="12h">12-hour (11:30 PM)</option>
+            <option value="24h">24-hour (23:30)</option>
+          </select>
+        </label>
+        <p className="prefs-hint">
+          How times are typed and shown — for example Vomit Draft's
+          &ldquo;Write until&rdquo; field and its unlock time.
+        </p>
+      </section>
+    </div>
+  );
+}
+
 function GeneralTab() {
   const restoreCursor = useEditorStore((s) => s.typewriterRestoreCursor);
   const setRestoreCursor = useEditorStore((s) => s.setTypewriterRestoreCursor);
   const {
     autoLoadLastScript, setAutoLoadLastScript,
-    dateFormat, setDateFormat,
     spellCheckByDefault, setSpellCheckByDefault,
     windowStartup, setWindowStartup,
     smartTypography, setSmartTypography,
-    units, setUnits,
-    timeFormat, setTimeFormat,
     openToLastTab, setOpenToLastTab,
   } = useSettingsStore();
 
@@ -650,64 +731,7 @@ function GeneralTab() {
         </p>
       </section>
 
-      <section>
-        <h3>Measurements</h3>
-        <label className="prefs-check-row">
-          <span>Units</span>
-          <select
-            className="prefs-select"
-            value={units}
-            onChange={(e) => setUnits(e.target.value as 'in' | 'cm')}
-          >
-            <option value="in">Inches (in)</option>
-            <option value="cm">Centimeters (cm)</option>
-          </select>
-        </label>
-        <p className="prefs-hint">
-          How Page Setup shows page size and margins. Stored values never
-          change — only the display converts.
-        </p>
-      </section>
-
-      {/* v1.65: "Default draft label" moved into Settings > Save Options —
-          the Draft label field there syncs the current script AND can set
-          the default for new scripts. One field, one home. */}
-
-      <section>
-        <h3>Dates &amp; Times</h3>
-        <label className="prefs-check-row">
-          <span>Date format</span>
-          <select
-            className="prefs-select"
-            value={dateFormat}
-            onChange={(e) => setDateFormat(e.target.value as DateFormatId)}
-          >
-            {DATE_FORMATS.map((f) => (
-              <option key={f.id} value={f.id}>{f.name} ({f.format(new Date())})</option>
-            ))}
-          </select>
-        </label>
-        <p className="prefs-hint">
-          Used wherever ScriptCraft shows a date — the Version autofill, the
-          changelog, and friends.
-        </p>
-        <label className="prefs-check-row">
-          <span>Time format</span>
-          <select
-            className="prefs-select"
-            value={timeFormat}
-            onChange={(e) => setTimeFormat(e.target.value as '12h' | '24h')}
-          >
-            <option value="12h">12-hour (11:30 PM)</option>
-            <option value="24h">24-hour (23:30)</option>
-          </select>
-        </label>
-        <p className="prefs-hint">
-          How times are typed and shown — for example Vomit Draft's
-          &ldquo;Write until&rdquo; field and its unlock time.
-        </p>
-      </section>
-
+      {/* v7.06, Derek: Measurements and Dates & Times moved to REGION. */}
       <section>
         <h3>Backup &amp; Restore</h3>
         <p className="prefs-hint">
@@ -861,8 +885,7 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             {tab === 'saveloc' && <SaveLocationsTab />}
             {tab === 'downloads' && <DownloadsTab />}
             {tab === 'languages' && (
-              /* v7.00: its own tab — LanguageSection renders the section box */
-              <div className="prefs-general"><LanguageSection /></div>
+<RegionTab />
             )}
             {tab === 'presets' && (
               <div className="prefs-section">
