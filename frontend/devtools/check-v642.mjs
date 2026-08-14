@@ -33,7 +33,22 @@ try {
     };
   });
   ok(win.header && win.fsBtn && win.closeBtns, 'Settings wears the standard window header (title, fullscreen, close)');
-  ok(win.resizeZones, 'any-edge resize zones are mounted');
+
+  /* v7.06, Derek: Settings now OPENS full screen, and a fullscreen window has
+     no resize zones and does not drag — by design. Assert the new default
+     first, then shrink to the floating window the next asserts are about. */
+  const openedFs = await page.evaluate(() => {
+    const r = document.querySelector('.prefs-window').getBoundingClientRect();
+    const bar = document.querySelector('.toolbar')?.getBoundingClientRect();
+    return { top: Math.round(r.top), barBottom: Math.round(bar?.bottom ?? 0), w: Math.round(r.width) };
+  });
+  ok(openedFs.w >= 1400 && Math.abs(openedFs.top - openedFs.barBottom) <= 2,
+    `Settings opens full screen, seated under the ribbon (top ${openedFs.top} vs ribbon ${openedFs.barBottom})`);
+  await page.click('.prefs-window .htw-fsbtn');    // shrink to floating
+  await settle(page);
+  const zonesNow = await page.evaluate(() =>
+    [...document.querySelectorAll('.prefs-window .fs-edge')].length >= 4);
+  ok(zonesNow, 'shrunk to a floating window, any-edge resize zones are mounted');
   // drag by the header
   const before = await page.evaluate(() => document.querySelector('.prefs-window').getBoundingClientRect().x);
   const hb = await page.$eval('.prefs-window .tool-window-header', (el) => {
@@ -48,11 +63,22 @@ try {
   ok(Math.abs(after - before - 120) < 8, `dragging the header moves the window (${Math.round(before)} → ${Math.round(after)})`);
   await page.click('.prefs-window .htw-fsbtn');
   await settle(page);
+  /* v7.06, Derek: "it covers everything below the ribbon toolbar: both side
+     panels and the editing area" — the app BODY, not the whole viewport, so
+     the menu bar and ribbon stay visible and reachable. */
   const fs = await page.evaluate(() => {
     const r = document.querySelector('.prefs-window').getBoundingClientRect();
-    return r.width >= window.innerWidth - 1 && r.height >= window.innerHeight - 1 && r.x === 0;
+    const bar = document.querySelector('.toolbar')?.getBoundingClientRect();
+    const status = document.querySelector('.status-bar')?.getBoundingClientRect();
+    return {
+      fullWidth: r.width >= window.innerWidth - 1 && r.x === 0,
+      underRibbon: !!bar && Math.abs(r.top - bar.bottom) <= 2,
+      aboveStatus: !status || r.bottom <= status.top + 2,
+      coversMenu: r.top <= 1,
+    };
   });
-  ok(fs, 'fullscreen fills the viewport');
+  ok(fs.fullWidth && fs.underRibbon && fs.aboveStatus && !fs.coversMenu,
+    'fullscreen fills the app body — under the ribbon, above the status bar, never over the menu bar');
   await page.click('.prefs-window .htw-fsbtn');
   await settle(page);
 
@@ -122,8 +148,10 @@ try {
     [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'General')?.click();
   });
   await settle(page);
-  ok(await page.evaluate(() => [...document.querySelectorAll('.prefs-general section > h3')].some((h) => h.textContent === 'Draft Number')),
-    'Draft Number lives on the General tab now');
+  /* v7.06, Derek: "remove the draft number section from settings > general".
+     The v6.99 assert that it LIVES there is inverted rather than deleted. */
+  ok(await page.evaluate(() => ![...document.querySelectorAll('.prefs-general section > h3')].some((h) => h.textContent === 'Draft Number')),
+    'the Draft Number section is GONE from General');
   ok(await page.evaluate(() => ![...document.querySelectorAll('.prefs-tab')].some((t) => t.textContent.trim() === 'Templates')),
     'the Templates tab is GONE — merged into Page Setup');
   await page.evaluate(() => {

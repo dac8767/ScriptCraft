@@ -90,20 +90,13 @@ try {
   ok(natives.controls.length === 0,
     `no unclassed input/button left in the Settings window${natives.controls.length ? ' — ' + natives.controls.join(', ') : ''}`);
 
-  /* ── D71-D73: the Draft Number row specifically ────────────────────────── */
-  const draft = await page.evaluate(() => {
-    const inp = document.querySelector('#prefs-draft-label');
-    if (!inp) return null;
-    const row = inp.closest('.prefs-field-row');
-    const btns = [...row.querySelectorAll('button')].map((b) => ({
-      text: b.textContent.trim(), h: Math.round(b.getBoundingClientRect().height), cls: b.className,
-    }));
-    return { inputH: Math.round(inp.getBoundingClientRect().height), inputCls: inp.className, btns };
-  });
-  ok(draft && draft.inputH >= 30 && draft.inputCls.includes('dialog-input'),
-    `Draft Number field is the house input, not a native white box (${draft?.inputH}px)`);
-  ok(draft && draft.btns.every((b) => b.cls.includes('dialog-btn')),
-    `and both its buttons are house buttons (${draft?.btns.map((b) => b.text + ' ' + b.h + 'px').join(', ')})`);
+  /* ── D71-D73 RETIRED (v7.06) ──────────────────────────────────────────
+     These measured the Draft Number row's input and its two buttons — the
+     v7.01 fix for three unstyled controls. Derek removed that whole section
+     from Settings ▸ General in v7.06, so there is nothing left to measure.
+     The rule those asserts protected is still covered: the "no unclassed
+     input/button left in the Settings window" assert above is what actually
+     catches a native control creeping back in. */
 
   /* ── F133: dialog-btn-sm is actually SMALL ─────────────────────────────── */
   await page.evaluate(() => window.__scStore.getState().openPreferences('defaults'));

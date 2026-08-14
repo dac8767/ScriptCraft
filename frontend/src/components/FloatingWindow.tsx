@@ -8,18 +8,37 @@
  * and the dz-panel visual shell. The caller owns open/close state and the
  * body; `title` renders inside the standard tool-header-title span.
  */
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FullscreenIcon, RestoreIcon, CloseIcon } from './uiIcons';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 
-export default function FloatingWindow({ title, onClose, className, initial, min, children }: {
+/** The app's BODY area: below the menu bar + ribbon, above the status bar.
+ *  Falls back to the whole viewport if that chrome isn't mounted. */
+function measureAppBody(): { top: number; height: number } {
+  let top = 0;
+  for (const sel of ['.menu-bar', '.toolbar']) {
+    for (const el of document.querySelectorAll(sel)) {
+      const r = (el as HTMLElement).getBoundingClientRect();
+      if (r.height > 0) top = Math.max(top, r.bottom);
+    }
+  }
+  const status = document.querySelector('.status-bar') as HTMLElement | null;
+  const sr = status?.getBoundingClientRect();
+  const bottom = sr && sr.height > 0 ? sr.top : window.innerHeight;
+  return { top, height: Math.max(200, bottom - top) };
+}
+
+export default function FloatingWindow({ title, onClose, className, initial, startFullscreen, min, children }: {
   title: React.ReactNode;
   onClose: () => void;
   /** Extra classes on the panel (for per-window sizing/body CSS). */
   className?: string;
   /** Opening size; the window centers itself in the viewport. */
   initial: { w: number; h: number };
+  /** v7.06, Derek: open FULL SCREEN. The header's shrink button still gives a
+   *  floating window — this only decides how it opens. */
+  startFullscreen?: boolean;
   min?: { w: number; h: number };
   children: React.ReactNode;
 }) {
@@ -28,7 +47,7 @@ export default function FloatingWindow({ title, onClose, className, initial, min
     y: Math.max(8, Math.round((window.innerHeight - initial.h) / 2) - 16),
   }));
   const [size, setSize] = useState<{ w: number; h: number }>({ w: initial.w, h: initial.h });
-  const [fullscreen, setFullscreen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(Boolean(startFullscreen));
   const drag = useRef<{ dx: number; dy: number } | null>(null);
 
   const startDrag = (e: React.PointerEvent) => {
@@ -56,8 +75,28 @@ export default function FloatingWindow({ title, onClose, className, initial, min
     apply: (g) => { setPos({ x: g.left, y: g.top }); setSize({ w: g.w, h: g.h }); },
   });
 
+  /* v7.06, Derek: "when in full screen, it covers everything below the ribbon
+     toolbar: both side panels and the editing area."
+
+     This was left:0 / top:0 / 100vw / 100vh — the WHOLE viewport — which buried
+     the menu bar and ribbon and stacked this window's header controls on top of
+     the OS traffic lights (his screenshot). It spans the app BODY now, measured
+     from the live chrome because the menu bar and ribbon are user-resizable. */
+  const [bodyBox, setBodyBox] = useState(measureAppBody);
+  useEffect(() => {
+    if (!fullscreen) return;
+    const remeasure = () => setBodyBox(measureAppBody());
+    remeasure();
+    window.addEventListener('resize', remeasure);
+    /* the ribbon changes height without a window resize (mode switch, its own
+       drag-bar), so watch the chrome itself too. */
+    const ro = new ResizeObserver(remeasure);
+    document.querySelectorAll('.menu-bar, .toolbar, .status-bar').forEach((el) => ro.observe(el));
+    return () => { window.removeEventListener('resize', remeasure); ro.disconnect(); };
+  }, [fullscreen]);
+
   const frame = fullscreen
-    ? { left: 0, top: 0, width: '100vw', height: '100vh' }
+    ? { left: 0, top: bodyBox.top, width: '100vw', height: bodyBox.height }
     : { left: pos.x, top: pos.y, width: size.w, height: size.h };
 
   return createPortal(

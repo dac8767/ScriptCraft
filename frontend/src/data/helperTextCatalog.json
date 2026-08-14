@@ -3846,10 +3846,9 @@
  {
   "text": "e.g. Second Draft",
   "kind": "placeholder",
-  "sites": 2,
-  "area": "Settings & Setup",
+  "sites": 1,
+  "area": "Editor & Preview",
   "where": [
-   "components/PreferencesDialog.tsx",
    "components/TitlePageEditor.tsx"
   ]
  },

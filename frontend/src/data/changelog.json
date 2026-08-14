@@ -1,5 +1,15 @@
 [
  {
+  "version": "7.06",
+  "date": "2026-08-14",
+  "changes": [
+   "Settings opens full screen. It covers the side panels and the editing area and stops below the ribbon, so the menu bar and toolbar stay visible — previously it covered the entire app, including the window controls at the very top. The header's shrink button still gives you a floating window, and full screen re-measures itself if you resize the ribbon.",
+   "Removed the Draft Number section from Settings ▸ General. The draft label is still set from File ▸ Set Draft…",
+   "Add-ons are called Extensions.",
+   "Revision Mode and Production Tags stay in the Production menu but are grayed out; hovering either one says \"This feature is in development.\""
+  ]
+ },
+ {
   "version": "7.05",
   "date": "2026-08-14",
   "changes": [

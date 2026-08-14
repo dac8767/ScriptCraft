@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { FaWrench, FaColumns, FaRulerCombined, FaCloudUploadAlt, FaDownload, FaLanguage, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaMarker, FaPuzzlePiece } from 'react-icons/fa';
 import PresetsPanel from './PresetsPanel';
 import { CUSTOMIZE_RESETS, ResetAllButton, runCustomizeReset, type CustomizeTabId } from './customizeResets';
-import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { DATE_FORMATS, type DateFormatId } from '../utils/dateFormat';
@@ -59,7 +58,7 @@ const SYSTEM_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> 
   { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
   /* v7.05, Derek: add-ons install here. An add-on contributes nothing to the
      app until installed, so this tab is where it first becomes visible. */
-  { id: 'addons', label: 'Add-ons', icon: <FaPuzzlePiece /> },
+  { id: 'addons', label: 'Extensions', icon: <FaPuzzlePiece /> },
 ];
 const PAGE_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   /* v6.99, Derek: Templates and Page Setup are ONE tab. */
@@ -257,46 +256,8 @@ function LanguageSection() {
 
 
 
-function DraftNumberRow({ editor }: { editor: Editor | null }) {
-  const draftLabel = useEditorStore((s) => s.draftLabel);
-  // v1.65: this one field also owns the default for NEW scripts (the
-  // "Default draft label" that briefly lived in Settings > General).
-  const defaultDraftLabel = useSettingsStore((s) => s.defaultDraftLabel);
-  const setDefaultDraftLabel = useSettingsStore((s) => s.setDefaultDraftLabel);
-  const [value, setValue] = React.useState(draftLabel);
-  React.useEffect(() => { setValue(draftLabel); }, [draftLabel]);
-  const trimmed = value.trim();
-  return (
-    <>
-    <div className="prefs-field-row">
-      <label htmlFor="prefs-draft-label">Draft label</label>
-      {/* v7.01 (style audit D71-D73): all three of these were unstyled —
-          a native white text field and a native gray button, with an accent
-          paint over a 19px native button between them. */}
-      <input
-        id="prefs-draft-label"
-        className="dialog-input"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder="e.g. Second Draft"
-        style={{ minWidth: 180 }}
-      />
-      <button
-        className="dialog-btn dialog-btn-primary"
-        disabled={!trimmed || trimmed === draftLabel}
-        onClick={() => applyDraftNumber(editor, trimmed)}
-      >Apply</button>
-      <button
-        className="dialog-btn"
-        disabled={!trimmed || trimmed === defaultDraftLabel}
-        onClick={() => setDefaultDraftLabel(trimmed)}
-      >Set as Default</button>
-    </div>
-    {/* v6.95 (Derek, via the feedback form): the explainer paragraph is gone
-        with the rest of this tab's helper text. */}
-    </>
-  );
-}
+/* v7.06: DraftNumberRow deleted with its section — File ▸ Set Draft… owns
+   the draft label now, and applyDraftNumber still lives in SetDraftDialog. */
 
 /** v2.83: native folder picker — desktop only (a folder path only means
  *  something where the OS dialog picked it). */
@@ -552,7 +513,9 @@ function SaveLocationsTab() {
    lives on the Scrapbook window, the Typewriter master switch lives in the
    Typewriter window, and restore-cursor went back to General > Startup. */
 
-function GeneralTab({ editor }: { editor: Editor | null }) {
+/* v7.06: no `editor` param — the only thing on this tab that needed it was
+   the Draft Number section, now removed. */
+function GeneralTab() {
   const restoreCursor = useEditorStore((s) => s.typewriterRestoreCursor);
   const setRestoreCursor = useEditorStore((s) => s.setTypewriterRestoreCursor);
   const {
@@ -591,12 +554,9 @@ function GeneralTab({ editor }: { editor: Editor | null }) {
 
   return (
     <div className="prefs-general">
-      {/* v6.99 (Derek, via the feedback form): Draft Number moved here from
-          Save Options. */}
-      <section>
-        <h3>Draft Number</h3>
-        <DraftNumberRow editor={editor} />
-      </section>
+      {/* v7.06, Derek: the Draft Number section is GONE from General. (The
+          draft label itself still lives on File ▸ Set Draft…; only this
+          duplicate entry point is removed.) */}
       <section>
         <h3>Startup</h3>
         {/* v2.35: back home after the Tools tab was removed. */}
@@ -782,6 +742,8 @@ function GeneralTab({ editor }: { editor: Editor | null }) {
   );
 }
 
+/* v7.06: `editor` is still accepted so every call site keeps working, but no
+   tab needs it now that Draft Number is gone — hence the void below. */
 export default function PreferencesDialog({ open, onClose, editor, openTab }: {
   open: boolean;
   onClose: () => void;
@@ -789,6 +751,7 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
   /** v1.21: open straight ON a tab — Save As sends you to Save Options. */
   openTab?: PrefTab;
 }) {
+  void editor;   // v7.06: accepted for call-site compatibility; no tab uses it
   const [tab, setTab] = useState<PrefTab>('general');
 
   /* v6.99 (Derek, via the feedback form): Save/Cancel footer, Customize-
@@ -835,6 +798,9 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
   return (
     <FloatingWindow
       className="prefs-window"
+      /* v7.06, Derek: Settings OPENS full screen over the side panels and the
+         editing area; the header's shrink button gives a floating window. */
+      startFullscreen
       initial={{ w: 900, h: 660 }}
       min={{ w: 620, h: 420 }}
       onClose={onClose}
@@ -880,7 +846,7 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             ))}
           </div>
           <div className="prefs-content">
-            {tab === 'general' && <GeneralTab editor={editor ?? null} />}
+            {tab === 'general' && <GeneralTab />}
             {tab.startsWith('cz-') && (
               <CustomizePanelsDialog
                 open

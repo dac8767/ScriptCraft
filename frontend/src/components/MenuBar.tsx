@@ -153,6 +153,9 @@ interface MenuItem {
   action?: () => void;
   separator?: boolean;
   disabled?: boolean;
+  /** v7.06: hover text. Its reason for existing is a DISABLED item that should
+   *  say why it is disabled rather than just sitting there gray. */
+  title?: string;
   children?: MenuItem[];
   /** v2.62: custom submenu content (e.g. the Scrapbook's table-size grid).
    *  Rendered inside the submenu flyout instead of a children list; `close`
@@ -191,8 +194,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     markupHiddenIcons, setMarkupHiddenIcons,
     markupScriptDone, setMarkupScriptDone,
     viewStyle, setViewStyle,
-    revisionMode,
-    setRevisionMode,
+    /* v7.06: Revision Mode is disabled in the menu (in development), so the
+       store bindings are not read here any more. */
     documentTitle,
     pageLayout,
     setSearchOpen,
@@ -1660,8 +1663,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       items: [
         // v6.14, Derek's menu reorg: Production stands on its own again
         // (the v3.24 merge into Project is undone), his order.
-        { icon: <FaToggleOn />, label: 'Revision Mode', checked: revisionMode, action: () => setRevisionMode(!revisionMode) },
-        { icon: <FaTags />, label: 'Production Tags', action: () => useEditorStore.getState().openTool('tags') },
+        /* v7.06, Derek: "keep Revision Mode and Production Tags in the
+           Production menu, but gray them out. clicking them does nothing.
+           hovering shows 'This feature is in development.'" Both keep their
+           place and their icon; neither carries an action, so the shared
+           handleItemClick already refuses to fire (it checks `disabled`). */
+        { icon: <FaToggleOn />, label: 'Revision Mode', disabled: true, title: 'This feature is in development.' },
+        { icon: <FaTags />, label: 'Production Tags', disabled: true, title: 'This feature is in development.' },
         {
           icon: <FaLock />,
           label: 'Lock Scene Numbers',
@@ -2229,6 +2237,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             <div
               key={`${i}:${item.label}`}
               className={`menu-dropdown-item ${item.disabled ? 'disabled' : ''}`}
+              /* v7.06, Derek: a disabled item can say WHY (hover text) instead
+                 of just being gray and mute. */
+              title={item.title}
               onPointerEnter={handleItemPointerEnter}
               onClick={(e) => handleItemClick(item, e)}
             >

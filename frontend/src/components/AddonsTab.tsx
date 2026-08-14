@@ -1,5 +1,5 @@
 /**
- * Settings ▸ Add-ons (v7.05, Derek: "create an add-on module where add-ons can
+ * Settings ▸ Extensions (v7.05, Derek: "create an add-on module where add-ons can
  * be installed").
  *
  * Lists every add-on the app knows about and lets you install or remove it.
@@ -39,14 +39,14 @@ export default function AddonsTab() {
   return (
     <div className="prefs-general">
       <section>
-        <h3>Add-ons</h3>
+        <h3>Extensions</h3>
         <p className="prefs-hint" style={{ marginLeft: 0 }}>
           Extra features that stay out of the app until you install them.
           Everything listed here ships with ScriptCraft — nothing is downloaded.
         </p>
 
         {ADDON_CATALOG.length === 0 && (
-          <div className="fs-addon-empty">No add-ons are available yet.</div>
+          <div className="fs-addon-empty">No extensions are available yet.</div>
         )}
 
         {ADDON_CATALOG.map((a) => {
