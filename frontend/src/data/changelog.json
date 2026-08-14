@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.07",
+  "date": "2026-08-14",
+  "changes": [
+   "The Languages tab is now Region, and it holds everything that depends on where you are: spelling language, inches vs centimetres, and the date and time formats. Measurements and Dates & Times moved out of General, which is now just Startup, Editing and Backup & Restore.",
+   "The Editor tab sits under Page in Settings instead of Customize. It's the same panel — only its place in the sidebar changed, and the standalone Customize window is untouched."
+  ]
+ },
+ {
   "version": "7.06",
   "date": "2026-08-14",
   "changes": [

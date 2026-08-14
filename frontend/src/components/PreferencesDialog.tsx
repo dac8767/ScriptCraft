@@ -110,6 +110,11 @@ const ALL_PREF_TAB_IDS: readonly PrefTab[] = [
    compiles EVERY reset — still through the one warn+undo wrapper. */
 function DefaultsTab() {
   const groups: Array<{ id: string; label: string }> = [
+    /* v7.06: Editor is listed under PAGE in the sidebar now, so it is no
+       longer in CUSTOMIZE_TABS — but its resets are still Customize resets and
+       MUST stay compiled here. Moving a tab must never silently drop its
+       resets out of Defaults (check-v642 caught exactly that). */
+    { id: 'elements', label: 'Editor' },
     ...CUSTOMIZE_TABS.map((t) => ({ id: t.id as string, label: t.label })),
     { id: 'design', label: 'Design Window' },
     { id: 'helper', label: 'Helper Text' },

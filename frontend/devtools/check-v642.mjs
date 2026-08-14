@@ -122,8 +122,12 @@ try {
   ok(rail.captions.join(',') === 'System,Page,Customize', `the sidebar is categorized (${rail.captions.join(' / ')})`);
   ok(!rail.labels.includes('System')
       && rail.labels.indexOf('Downloads') === rail.labels.indexOf('Save Options') + 1
-      && rail.labels.includes('Languages'),
-    `System tab gone; Downloads sits under Save Options; Languages has its own tab (${rail.labels.slice(0, 5).join(' | ')})`);
+      /* v7.06, Derek: the Languages tab is RENAMED Region (it owns units and
+         date/time now too), and Editor moved under the Page group. */
+      && rail.labels.includes('Region')
+      && !rail.labels.includes('Languages')
+      && rail.labels.indexOf('Editor') === rail.labels.indexOf('Page Setup') + 1,
+    `System tab gone; Downloads under Save Options; Region replaces Languages; Editor sits under Page Setup (${rail.labels.slice(0, 8).join(' | ')})`);
   await page.evaluate(() => {
     [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Downloads')?.click();
   });
