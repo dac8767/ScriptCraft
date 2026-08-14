@@ -87,23 +87,34 @@ try {
     useSettingsStore.getState().setLocalSaveFolder('');
   });
 
-  // ── 5: the System tab ──
+  // ── 5 → v7.00 (Derek): the System TAB is gone; the sidebar is
+  //    categorized System / Page / Customize; Downloads + Languages exist ──
+  const rail = await page.evaluate(() => ({
+    captions: [...document.querySelectorAll('.prefs-tab-caption')].map((c) => c.textContent.trim()),
+    labels: [...document.querySelectorAll('.prefs-tab')].map((t) => t.textContent.trim()),
+  }));
+  ok(rail.captions.join(',') === 'System,Page,Customize', `the sidebar is categorized (${rail.captions.join(' / ')})`);
+  ok(!rail.labels.includes('System')
+      && rail.labels.indexOf('Downloads') === rail.labels.indexOf('Save Options') + 1
+      && rail.labels.includes('Languages'),
+    `System tab gone; Downloads sits under Save Options; Languages has its own tab (${rail.labels.slice(0, 5).join(' | ')})`);
   await page.evaluate(() => {
-    const tabs = [...document.querySelectorAll('.prefs-tab')];
-    tabs.find((t) => t.textContent.trim() === 'System')?.click();
+    [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Downloads')?.click();
   });
   await settle(page);
-  const system = await page.evaluate(() => {
-    const w = document.querySelector('.prefs-window');
-    const titles = [...w.querySelectorAll('.settings-section-title')].map((h) => h.textContent.trim());
-    const txt = w.textContent || '';
-    return {
-      titles,
-      noLogin: !txt.includes('Sign in') && !txt.includes('Sign In') && !txt.includes('Account') && !txt.includes('Cloud API'),
-    };
+  ok(await page.evaluate(() => {
+    const heads = [...document.querySelectorAll('.prefs-general section > h3')].map((h) => h.textContent);
+    return heads.includes('Downloads') && heads.includes('Screenshots');
+  }), 'Downloads holds the download folder + the MOVED Screenshots section');
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Defaults')?.click();
   });
-  ok(system.titles.length === 1 && system.titles[0] === 'Reset', `System tab holds only Reset (${system.titles.join(', ')})`);
-  ok(system.noLogin, 'no login/account/server-URL text anywhere in the System tab');
+  await settle(page);
+  ok(await page.evaluate(() => {
+    const heads = [...document.querySelectorAll('.prefs-general section > h3')].map((h) => h.textContent);
+    return heads.includes('Design Window') && heads.includes('Helper Text') && heads.includes('Keyboard Shortcuts')
+      && document.querySelectorAll('.fs-defaults-row').length >= 12;
+  }), 'Defaults compiles EVERY reset — the window resets included, rows say what they restore');
 
   // ── v6.99 (Derek, via the feedback form): moved sections, the merged
   //    Page Setup tab, and the Save/Cancel footer ──
@@ -131,6 +142,26 @@ try {
     `Page Setup manages templates as Shown/Hidden lists (${pst.heads.join(' | ')})`);
   ok(pst.cards >= 6 && pst.defaults >= 6 && pst.deletableDefaults === 0 && pst.newBtn,
     `six Default templates, none deletable, plus New Template… (${pst.cards} cards)`);
+  // v7.00 (Derek): the page-geometry block LEFT the tab — every row has
+  // View, which opens that template's page-size window
+  ok(await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('.pst-row')];
+    return rows.length > 0
+      && rows.every((r) => [...r.querySelectorAll('button')].some((b) => b.textContent === 'View'))
+      && ![...document.querySelectorAll('.prefs-content button')].some((b) => b.textContent.trim() === 'Apply');
+  }), 'every template row has View; the geometry block (and its Apply) left the tab');
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.pst-row')[0].querySelectorAll('button')].find((b) => b.textContent === 'View')?.click();
+  });
+  await settle(page);
+  ok(await page.evaluate(() => {
+    const d = [...document.querySelectorAll('.dialog-header')].find((h) => h.textContent.includes('Page Size'));
+    return !!d && document.body.textContent.includes('Page size');
+  }), "View opens that template's page-size window");
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.dialog-actions button')].find((b) => b.textContent.trim() === 'Close')?.click();
+  });
+  await settle(page);
   const beforeShown = await page.evaluate(async () => {
     const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
     return useSettingsStore.getState().enabledScriptFormats.slice();
@@ -228,8 +259,8 @@ try {
     return { heads, hints, border: cs?.borderTopWidth, pos: hb?.position, h3bg: hb?.backgroundColor, anc };
   });
   ok(save.heads.includes('Auto Saves') && !save.heads.includes('Auto Save Locations')
-      && !save.heads.includes('Draft Number') && save.heads[save.heads.length - 1] === 'Screenshots',
-    `ONE merged Auto Saves section, Draft Number gone, Screenshots LAST (${save.heads.join(' | ')})`);
+      && !save.heads.includes('Draft Number') && !save.heads.includes('Screenshots'),
+    `ONE merged Auto Saves section; Draft Number and Screenshots both moved out (${save.heads.join(' | ')})`);
   ok(save.hints === 2, `helper text only under Google Drive + OneDrive (${save.hints} hint blocks)`);
   ok(save.border === '1px' && save.pos === 'static',
     `sections are bordered boxes with the title IN-FLOW inside them (v6.98) (${save.border}/${save.pos})`);

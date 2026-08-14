@@ -1,5 +1,15 @@
 [
  {
+  "version": "7.00",
+  "date": "2026-08-14",
+  "changes": [
+   "Settings reorganized into categories: System (General, Save Options, Downloads, Languages, Keyboard Shortcuts), Page (Page Setup, Presets, Defaults), and Customize. The old System tab is gone, Languages has its own tab, and the new Downloads tab sets the default folder for downloaded/exported scripts — the Screenshots folder option moved there too.",
+   "The Defaults tab was rebuilt: every reset in the app is listed with a plain description of what it restores — now including the Design window, Helper Text, and Keyboard Shortcuts resets.",
+   "Settings ▸ Customize ▸ Toolbar stays inside Settings with the interactive toolbar editor embedded, instead of handing over to the Customize window.",
+   "Page Setup: the page-geometry block left the bottom of the tab — each template row has a View button that opens that template's page-size window. (Current-script geometry still lives in File ▸ Page Setup….)"
+  ]
+ },
+ {
   "version": "6.99",
   "date": "2026-08-14",
   "changes": [

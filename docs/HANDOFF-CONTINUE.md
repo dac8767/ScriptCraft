@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.99 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.00 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
@@ -293,6 +293,40 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v7.00 — Settings IA reorg + Defaults rebuild + per-template View
+
+- FOUR feedback rows in one version (auto-implement rule).
+- Sidebar CATEGORIES: System (general, saveloc, downloads NEW, languages
+  NEW, keys), Page (page, presets, defaults), Customize. The 'system'
+  tab is GONE (SettingsPage import dropped; the FILE stays — App.tsx
+  still uses it). Languages = GeneralTab's LanguageSection in its own
+  tab. Downloads = NEW `downloadFolder` in settingsStore (SL_KEYS
+  idiom) wired into fileOps.saveFileTauri (save dialog defaultPath =
+  folder/filename; browser build can't steer downloads) + the
+  Screenshots section MOVED from Save Options. GOTCHA: v6.99 had
+  silently left a DUPLICATE Screenshots section in the save tab (the
+  move was append-without-delete); v7.00 removed both copies there.
+- Defaults tab REBUILT: `.fs-defaults-row` rows (label + "Restores
+  {what}." + Reset btn) in the standard boxes; the WINDOW resets joined
+  CUSTOMIZE_RESETS ('design'/'helper'/'keys' pseudo-tab ids added to
+  CustomizeTabId — ResetSection ignores them): designVars, helper
+  overrides+hidden, shortcut overrides — all through runCustomizeReset.
+- cz-toolbar: the v6.83 HANDOVER is REVERSED per Derek's row — the entry
+  stays in Settings and embeds CustomizePanelsDialog(soloCategory
+  toolbar); the 'scriptcraft:open-customize' listener remains (checks
+  use it to arm live on-ribbon editing).
+- Page Setup: embedded PageSetupDialog LEFT the tab (its Apply with it —
+  File ▸ Page Setup… still owns current-script geometry); every row has
+  View → TemplatePageInfo window (template.pageLayout over
+  DEFAULT_PAGE_LAYOUT: size + margins).
+- check-v642 35/0 (categorized rail, Downloads content, Defaults
+  coverage, View window, both moved-out heads asserts); check-v683 12/0
+  (embed instead of handover; arming via the event door needs
+  waitForSelector — settle alone is too fast). check-v677 flaked once in
+  the suite, green standalone (the recurring contention pattern).
+- Gates: tsc 0, vitest 1205, build ok, check-all green (1 flake rerun).
+  Catalog 488.
+
 ### v6.99 — Page Setup tab (templates managed like themes) + Save/Cancel
 
 - Two feedback rows, built on the AUTO-IMPLEMENT rule above.
@@ -385,36 +419,12 @@ Durable bits kept live here:
 - Gates: tsc 0, vitest 1202, build ok, check-all 1084/0. Catalog 485
   (+5 button tooltips).
 
-### v6.95 — settings clean pass + Settings moved to Help (4 feedback items)
-
-- All from Derek's two feedback rows ("proceed with all feedback"):
-  (1) Save Options: "Auto Save Locations" + "Auto Saves" are ONE "Auto
-  Saves" section — timer checkbox, interval row, then the three location
-  rows. (3) The tab's helper text is GONE — the Script Save Locations
-  intro, the label suffixes, the Screenshots hint, the auto-save
-  explainer AND DraftNumberRow's paragraph — only the Google Drive /
-  OneDrive setup notes remain (his explicit exception). (4) His
-  reference screenshot (Premiere-style) drove a GLOBAL restyle:
-  `.prefs-general section` = bordered group box, h3 absolutely inset
-  into the top border. GOTCHA: the inset label's background must be the
-  DIALOG chain var(--fd-dialog-bg, --fd-navigator-bg) — the Settings
-  window is a dz-panel shell, NOT a tool-window (--fd-bg); a live probe
-  proved they differ. (5) Settings… LEFT File for Help: About
-  ScriptCraft | divider | Settings… | divider (in-window menus only;
-  native keeps the macOS app-menu convention untouched).
-- check-v642 21/0: the v6.43 File-tail pin became File-has-no-Settings +
-  Help-order + the new door driven end-to-end + hint census (=2) + box
-  style with a bg-parity assert (h3 bg === first opaque ancestor bg).
-  check-v672 12/0 tracks the merged section and the REMOVED explainer.
-  Help clicks in checks need the 3-retry loop (first click after Escape
-  re-arms the bar).
-- Gates: tsc 0, vitest 1200, build ok, check-all 1082/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.95** — settings clean pass (Auto Saves merged, helper text pruned, bordered group boxes) + Settings moved to Help below About ScriptCraft
 - **v6.94** — the ? retired from the feedback form; "Description:"; five more Feedback knobs (13 total; fbHelpGap removed with the ?)
 - **v6.93** — attach buttons joined the header row; Submit; the first nine Feedback design knobs (fb* group)
 - **v6.92** — feedback window wording pass ×11: Name:/Type:/Description:, Full Screen button, Attach a Screenshot header, how-to behind a ? (retired v6.94)

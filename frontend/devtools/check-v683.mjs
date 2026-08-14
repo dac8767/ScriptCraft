@@ -18,20 +18,27 @@ try {
   await seedScript(page, SCENES_4);
   await settle(page);
 
-  /* ── 3: the Settings door ── */
+  /* ── 3 (v6.83 → v7.00, Derek's reversal via the feedback form): the
+        Settings ▸ Customize ▸ Toolbar entry STAYS inside Settings and
+        embeds the interactive editor — no more handover. ── */
   await page.evaluate(() => window.__scStore.getState().openPreferences());
   await page.waitForSelector('.prefs-tabs', { timeout: 8000 });
   await page.evaluate(() => [...document.querySelectorAll('.prefs-tab')]
     .find((b) => b.textContent.trim() === 'Toolbar' && b.closest('.prefs-tabs'))?.click());
   await settle(page);
-  const handover = await page.evaluate(() => ({
-    // .prefs-tabs alone is AMBIGUOUS — the standalone Customize window
-    // reuses that styling class for its own sidebar.
-    prefsGone: !document.querySelector('.prefs-window'),
-    editing: !!document.querySelector('.toolbar.toolbar-ribbon.toolbar-editing'),
+  const embed = await page.evaluate(() => ({
+    prefsOpen: !!document.querySelector('.prefs-window'),
+    content: document.querySelectorAll('.prefs-window .prefs-content *').length,
   }));
-  ok(handover.prefsGone, 'Settings closes when its Toolbar entry is picked');
-  ok(handover.editing, 'and the REAL Customize window arms live on-ribbon editing');
+  ok(embed.prefsOpen, 'v7.00: Settings STAYS open on its Toolbar entry (no handover)');
+  ok(embed.content > 10, `and embeds the interactive toolbar editor (${embed.content} nodes)`);
+  await page.evaluate(() => { document.querySelector('.prefs-footer .dialog-btn-primary')?.click(); });
+  await settle(page);
+  // items 1/2/4 need live on-ribbon editing — armed through the REAL
+  // Customize window door (the v6.83 listener still serves it)
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('scriptcraft:open-customize', { detail: 'toolbar' })));
+  await page.waitForSelector('.toolbar.toolbar-ribbon.toolbar-editing', { timeout: 8000 });
+  ok(true, 'the Customize window door still arms live on-ribbon editing');
 
   /* ── 1: dropdown resize ── */
   await page.waitForSelector('.rib-edit-item', { timeout: 8000 });

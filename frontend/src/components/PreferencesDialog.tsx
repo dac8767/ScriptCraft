@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaWrench, FaColumns, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaMarker } from 'react-icons/fa';
+import { FaWrench, FaColumns, FaRulerCombined, FaCloudUploadAlt, FaDownload, FaLanguage, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaMarker } from 'react-icons/fa';
 import PresetsPanel from './PresetsPanel';
 import { CUSTOMIZE_RESETS, ResetAllButton, runCustomizeReset, type CustomizeTabId } from './customizeResets';
 import { applyDraftNumber } from './SetDraftDialog';
@@ -9,7 +9,6 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { DATE_FORMATS, type DateFormatId } from '../utils/dateFormat';
 import PageSetupTab from './PageSetupTab';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
-import SettingsPage from './SettingsPage';
 import { showToast } from './Toast';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import { downloadBackup, applyBackup, readFileText } from '../utils/settingsBackup';
@@ -41,24 +40,30 @@ import FloatingWindow from './FloatingWindow';
    ───────────────────────────────────────────────────────────────────────── */
 
 type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'markups' | 'themes';
-type PrefTab = 'general' | 'page' | 'keys' | 'saveloc' | 'system' | 'presets' | 'defaults' | `cz-${CustomizeCat}`;
+type PrefTab = 'general' | 'saveloc' | 'downloads' | 'languages' | 'page' | 'keys' | 'presets' | 'defaults' | `cz-${CustomizeCat}`;
 
-const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
-  // App-wide first, then writing setup, then data, then system.
+/* v7.00, Derek (via the feedback form): the sidebar is CATEGORIZED —
+   System (app behavior), Page (script setup), then Customize. The old
+   System tab (Reset only) is GONE — Defaults already compiles it. */
+const SYSTEM_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   { id: 'general', label: 'General', icon: <FaWrench /> },
   { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },
-  /* v6.99, Derek (via the feedback form): Templates and Page Setup are ONE
-     tab — the template manager + the page geometry live together. */
-  { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
+  /* v7.00: default folder for downloaded/exported scripts + the moved
+     Screenshots section — directly under Save Options. */
+  { id: 'downloads', label: 'Downloads', icon: <FaDownload /> },
+  /* v7.00: broken out of General into its own tab. */
+  { id: 'languages', label: 'Languages', icon: <FaLanguage /> },
   /* v4.30 batch-v7 #3, Derek: hotkeys are behavior, not workspace layout —
      moved here from Customize. */
   { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
-  { id: 'system', label: 'System', icon: <FaWrench /> },
+];
+const PAGE_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
+  /* v6.99, Derek: Templates and Page Setup are ONE tab. */
+  { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
   /* v4.79, Derek: every preset-type export AND import — the same panel the
      File ▸ Import/Export ▸ Presets… window shows. */
   { id: 'presets', label: 'Presets', icon: <FaBoxOpen /> },
-  /* v4.65, Derek: every reset in one place — plus Reset All (moved here
-     from the Customize globals). */
+  /* v4.65, Derek: every reset in one place — plus Reset All. */
   { id: 'defaults', label: 'Defaults', icon: <FaUndo /> },
 ];
 
@@ -79,47 +84,111 @@ const CUSTOMIZE_TABS: Array<{ id: CustomizeCat; label: string; icon: React.React
 /* v4.71: every openable tab id, for the last-used-tab memory's validity
    check — derived from the two arrays above so it can't drift. */
 const ALL_PREF_TAB_IDS: readonly PrefTab[] = [
-  ...TABS.map((t) => t.id),
+  ...SYSTEM_TABS.map((t) => t.id),
+  ...PAGE_TABS.map((t) => t.id),
   ...CUSTOMIZE_TABS.map((t) => `cz-${t.id}` as PrefTab),
 ];
 
-/* v4.65, Derek: every reset in one place. The per-tab Reset sections stay;
-   this tab COMPILES them (one registry — customizeResets) and hosts the
-   Reset All button, moved here from the Customize globals. */
+/* v4.65 → v7.00, Derek: "find a better layout for the default tab… and
+   make sure all 'Reset to default' type options from all windows are also
+   here." Rows now NAME what comes back (the registry's `what`), grouped
+   by area in the standard section boxes; the window resets (Design,
+   Helper Text, Keyboard Shortcuts) joined the registry, so this tab truly
+   compiles EVERY reset — still through the one warn+undo wrapper. */
 function DefaultsTab() {
-  const groups = CUSTOMIZE_TABS
-    .map((t) => ({ ...t, actions: CUSTOMIZE_RESETS.filter((a) => a.tab === (t.id as CustomizeTabId)) }))
+  const groups: Array<{ id: string; label: string }> = [
+    ...CUSTOMIZE_TABS.map((t) => ({ id: t.id as string, label: t.label })),
+    { id: 'design', label: 'Design Window' },
+    { id: 'helper', label: 'Helper Text' },
+    { id: 'keys', label: 'Keyboard Shortcuts' },
+  ];
+  const withActions = groups
+    .map((g) => ({ ...g, actions: CUSTOMIZE_RESETS.filter((a) => a.tab === (g.id as CustomizeTabId)) }))
     .filter((g) => g.actions.length > 0);
   return (
-    <div className="fs-defaults-tab">
-      <p className="prefs-hint">
-        Every reset in one place. Each button restores one area to its factory
-        defaults — the same buttons also live at the bottom of their own tabs.
-      </p>
-      {groups.map((g) => (
+    <div className="prefs-general fs-defaults-tab">
+      {withActions.map((g) => (
         <section key={g.id}>
           <h3>{g.label}</h3>
-          <div className="fs-reset-row">
-            {g.actions.map((a) => (
-              <button
-                key={a.id}
-                className="swn-add-btn"
-                /* v6.85: the SAME warn+undo wrapper as the per-tab Reset
-                   sections — this tab was still resetting bare (missed in
-                   v6.77), the exact drift the shared registry forbids. */
-                onClick={() => runCustomizeReset(a)}
-              >{a.label}</button>
-            ))}
-          </div>
+          {g.actions.map((a) => (
+            <div key={a.id} className="fs-defaults-row">
+              <div className="fs-defaults-info">
+                <div className="fs-defaults-name">{a.label}</div>
+                <div className="fs-defaults-what">Restores {a.what}.</div>
+              </div>
+              <button className="dialog-btn dialog-btn-sm" onClick={() => runCustomizeReset(a)}>Reset</button>
+            </div>
+          ))}
         </section>
       ))}
       <section>
         <h3>Everything</h3>
-        <p className="prefs-hint">
-          Resets sizes, spacing and layouts app-wide. Themes, the Editor tab's
-          content and Keyboard Shortcuts keep their own resets above.
-        </p>
-        <ResetAllButton />
+        <div className="fs-defaults-row">
+          <div className="fs-defaults-info">
+            <div className="fs-defaults-name">Reset All</div>
+            <div className="fs-defaults-what">Restores sizes, spacing and layouts app-wide; the areas above keep their own buttons.</div>
+          </div>
+          <ResetAllButton />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DownloadsTab() {
+  const { downloadFolder, setDownloadFolder, screenshotFolder, setScreenshotFolder } = useSettingsStore();
+  return (
+    <div className="prefs-general">
+      <section>
+        <h3>Downloads</h3>
+        <div className="prefs-check-row">
+          <span>
+            Save downloaded scripts to
+            {downloadFolder ? <code className="prefs-path-chip">{downloadFolder}</code> : ' — ask every time'}
+          </span>
+          <button
+            className="prefs-inline-btn"
+            onClick={async (e) => {
+              e.preventDefault();
+              const folder = await pickFolder('Folder for downloaded scripts');
+              if (folder) setDownloadFolder(folder);
+            }}
+          >Choose Folder…</button>
+          {downloadFolder && (
+            <button
+              className="prefs-inline-btn"
+              onClick={(e) => { e.preventDefault(); setDownloadFolder(''); }}
+            >Reset</button>
+          )}
+        </div>
+      </section>
+      {/* v7.00: moved here from Save Options — a screenshot is a download. */}
+      <section>
+        <h3>Screenshots</h3>
+        {/* v3.95, Derek: where the Screenshot tool writes PNGs. Empty = the
+            browser's Downloads folder. A chosen folder needs the desktop app. */}
+        <div className="prefs-check-row">
+          <span>
+            Save screenshots to
+            {screenshotFolder
+              ? <code className="prefs-path-chip">{screenshotFolder}</code>
+              : ' Downloads (default)'}
+          </span>
+          <button
+            className="prefs-inline-btn"
+            onClick={async (e) => {
+              e.preventDefault();
+              const folder = await pickFolder('Folder for screenshots');
+              if (folder) setScreenshotFolder(folder);
+            }}
+          >Choose Folder…</button>
+          {screenshotFolder && (
+            <button
+              className="prefs-inline-btn"
+              onClick={(e) => { e.preventDefault(); setScreenshotFolder(''); }}
+            >Reset to Downloads</button>
+          )}
+        </div>
       </section>
     </div>
   );
@@ -242,7 +311,6 @@ function SaveLocationsTab() {
     snapToOneDrive, setSnapToOneDrive,
     snapToLocalFolder, setSnapToLocalFolder,
     snapLocalFolder, setSnapLocalFolder,
-    screenshotFolder, setScreenshotFolder,
     gdriveClientId, setGdriveClientId,
     onedriveClientId, setOnedriveClientId,
   } = useSettingsStore();
@@ -467,35 +535,6 @@ function SaveLocationsTab() {
         </div>
       </section>
 
-      {/* v6.99 (Derek, via the feedback form): Screenshots is the LAST
-          section of this tab. */}
-      <section>
-        <h3>Screenshots</h3>
-        {/* v3.95, Derek: where the Screenshot tool writes PNGs. Empty = the
-            browser's Downloads folder. A chosen folder needs the desktop app. */}
-        <div className="prefs-check-row">
-          <span>
-            Save screenshots to
-            {screenshotFolder
-              ? <code className="prefs-path-chip">{screenshotFolder}</code>
-              : ' Downloads (default)'}
-          </span>
-          <button
-            className="prefs-inline-btn"
-            onClick={async (e) => {
-              e.preventDefault();
-              const folder = await pickFolder('Folder for screenshots');
-              if (folder) setScreenshotFolder(folder);
-            }}
-          >Choose Folder…</button>
-          {screenshotFolder && (
-            <button
-              className="prefs-inline-btn"
-              onClick={(e) => { e.preventDefault(); setScreenshotFolder(''); }}
-            >Reset to Downloads</button>
-          )}
-        </div>
-      </section>
     </div>
   );
 }
@@ -696,8 +735,6 @@ function GeneralTab({ editor }: { editor: Editor | null }) {
         </p>
       </section>
 
-      <LanguageSection />
-
       <section>
         <h3>Backup &amp; Restore</h3>
         <p className="prefs-hint">
@@ -792,7 +829,20 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
     >
         <div className="prefs-layout">
           <div className="prefs-tabs">
-            {TABS.map((t) => (
+            <div className="prefs-tab-caption">System</div>
+            {SYSTEM_TABS.map((t) => (
+              <button
+                key={t.id}
+                className={`prefs-tab${tab === t.id ? ' active' : ''}`}
+                onClick={() => setTab(t.id)}
+              >
+                <span className="prefs-tab-icon">{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            ))}
+            <div className="prefs-tab-divider" aria-hidden />
+            <div className="prefs-tab-caption">Page</div>
+            {PAGE_TABS.map((t) => (
               <button
                 key={t.id}
                 className={`prefs-tab${tab === t.id ? ' active' : ''}`}
@@ -809,20 +859,7 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
               <button
                 key={t.id}
                 className={`prefs-tab${tab === `cz-${t.id}` ? ' active' : ''}`}
-                onClick={() => {
-                  /* v6.83, Derek: "make this window work exactly like how it
-                     works when opening from the customize button." The live
-                     on-ribbon editing needs the bar VISIBLE — this modal
-                     covers it — so the Toolbar entry hands over to the real
-                     Customize window (which parks itself under the bar and
-                     spotlights it) instead of embedding a dead copy. */
-                  if (t.id === 'toolbar') {
-                    onClose();
-                    window.dispatchEvent(new CustomEvent('scriptcraft:open-customize', { detail: 'toolbar' }));
-                    return;
-                  }
-                  setTab(`cz-${t.id}`);
-                }}
+                onClick={() => setTab(`cz-${t.id}`)}
               >
                 <span className="prefs-tab-icon">{t.icon}</span>
                 <span>{t.label}</span>
@@ -842,7 +879,11 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             {tab === 'page' && <PageSetupTab />}
             {tab === 'keys' && <KeyboardShortcutsTab />}
             {tab === 'saveloc' && <SaveLocationsTab />}
-            {tab === 'system' && <SettingsPage embedded />}
+            {tab === 'downloads' && <DownloadsTab />}
+            {tab === 'languages' && (
+              /* v7.00: its own tab — LanguageSection renders the section box */
+              <div className="prefs-general"><LanguageSection /></div>
+            )}
             {tab === 'presets' && (
               <div className="prefs-section">
                 <h3>Presets</h3>

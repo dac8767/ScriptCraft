@@ -1099,6 +1099,17 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 12.5px; color: var(--fd-text-muted);
 }
 .pst-baseselect { min-width: 200px; }
+/* v7.00: the per-template page-size window + the redone Defaults rows */
+.pst-info-row {
+  display: flex; justify-content: space-between; gap: 16px;
+  padding: 4px 0;
+  font-size: 12.5px; color: var(--fd-text);
+}
+.pst-info-row span { color: var(--fd-text-muted); }
+.fs-defaults-row { display: flex; align-items: center; gap: 12px; padding: 5px 0; }
+.fs-defaults-info { flex: 1; min-width: 0; }
+.fs-defaults-name { font-size: 12.5px; font-weight: 600; color: var(--fd-text); }
+.fs-defaults-what { font-size: 11px; color: var(--fd-text-muted); }
 /* v6.98, Derek: every Choose Folder… (and its row-mates) sits at the box's
    right edge, aligned row to row. */
 .prefs-general .prefs-check-row .prefs-inline-btn { margin-left: auto; }

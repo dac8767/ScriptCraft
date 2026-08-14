@@ -16,9 +16,37 @@ import type { FormattingTemplate } from '../stores/formattingTypes';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { useSettingsStore } from '../stores/settingsStore';
 import TemplateEditorDialog from './TemplateEditorDialog';
-import PageSetupDialog from './PageSetupDialog';
+import { DEFAULT_PAGE_LAYOUT } from '../stores/editorStore';
 import { confirmDialog } from './ConfirmDialog';
 import { showToast } from './Toast';
+
+/* v7.00, Derek (via the feedback form): the page-size info left the bottom
+   of the tab — each template row's View opens it for THAT template
+   instead (template.pageLayout over the app defaults). */
+function TemplatePageInfo({ t, onClose }: { t: FormattingTemplate; onClose: () => void }) {
+  const p = { ...DEFAULT_PAGE_LAYOUT, ...(t.pageLayout ?? {}) };
+  const inches = (v: number) => `${v}"`;
+  const pts = (v: number) => `${v} pt`;
+  return (
+    <div className="dialog-overlay" onClick={onClose}>
+      <div className="fmt-dialog fmt-dialog-narrow" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-header">{t.name} — Page Size</div>
+        <div className="fmt-dialog-body pst-info">
+          <div className="pst-info-row"><span>Page size</span><strong>{inches(p.pageWidth)} × {inches(p.pageHeight)}</strong></div>
+          <div className="pst-info-row"><span>Left margin</span><strong>{inches(p.leftMargin)}</strong></div>
+          <div className="pst-info-row"><span>Right margin</span><strong>{inches(p.rightMargin)}</strong></div>
+          <div className="pst-info-row"><span>Top margin</span><strong>{pts(p.topMargin)}</strong></div>
+          <div className="pst-info-row"><span>Bottom margin</span><strong>{pts(p.bottomMargin)}</strong></div>
+          <div className="pst-info-row"><span>Header margin</span><strong>{pts(p.headerMargin)}</strong></div>
+          <div className="pst-info-row"><span>Footer margin</span><strong>{pts(p.footerMargin)}</strong></div>
+        </div>
+        <div className="dialog-actions">
+          <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PageSetupTab() {
   const templates = useFormattingTemplateStore((s) => s.templates);
@@ -43,6 +71,7 @@ export default function PageSetupTab() {
   };
 
   const [editing, setEditing] = useState<FormattingTemplate | null>(null);
+  const [viewing, setViewing] = useState<FormattingTemplate | null>(null);
   const [creating, setCreating] = useState(false);
   const [baseId, setBaseId] = useState<string>(INDUSTRY_STANDARD_ID);
 
@@ -77,6 +106,7 @@ export default function PageSetupTab() {
           <div className="fmt-card-tagline">{t.scriptTypeTagline || t.description}</div>
         </div>
         <div className="pst-row-actions">
+          <button className="dialog-btn dialog-btn-sm" title="View this template's page size" onClick={() => setViewing(t)}>View</button>
           {!isSystem && (
             <button className="dialog-btn dialog-btn-sm" title="Edit this template" onClick={() => setEditing(t)}>Edit</button>
           )}
@@ -123,7 +153,7 @@ export default function PageSetupTab() {
         </section>
       </div>
 
-      <PageSetupDialog embedded onClose={() => showToast('Page setup applied', 'success')} />
+      {viewing && <TemplatePageInfo t={viewing} onClose={() => setViewing(null)} />}
 
       {editing && (
         <TemplateEditorDialog

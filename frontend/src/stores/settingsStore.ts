@@ -147,6 +147,10 @@ interface SettingsState {
    *  only). Empty = fall back to the browser download (Downloads folder). */
   screenshotFolder: string;
   setScreenshotFolder: (path: string) => void;
+  /** v7.00, Derek: default folder offered when a script is downloaded/
+   *  exported (Tauri save dialog opens there; empty = ask every time). */
+  downloadFolder: string;
+  setDownloadFolder: (path: string) => void;
   snapToGDrive: boolean;
   setSnapToGDrive: (v: boolean) => void;
   snapToOneDrive: boolean;
@@ -221,6 +225,7 @@ const SL_KEYS = {
   snapLocal: 'opendraft:saveloc:snapToLocalFolder',
   snapLocalFolder: 'opendraft:saveloc:snapLocalFolder',
   screenshotFolder: 'opendraft:saveloc:screenshotFolder',
+  downloadFolder: 'opendraft:saveloc:downloadFolder',
   snapGDrive: 'opendraft:saveloc:snapToGDrive',
   snapOneDrive: 'opendraft:saveloc:snapToOneDrive',
   gdriveId: 'opendraft:saveloc:gdriveClientId',
@@ -420,6 +425,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setSnapLocalFolder: (path) => { try { localStorage.setItem(SL_KEYS.snapLocalFolder, path); } catch { /* ignore */ } set({ snapLocalFolder: path }); },
   screenshotFolder: localStorage.getItem(SL_KEYS.screenshotFolder) || '',
   setScreenshotFolder: (path) => { try { localStorage.setItem(SL_KEYS.screenshotFolder, path); } catch { /* ignore */ } set({ screenshotFolder: path }); },
+  downloadFolder: localStorage.getItem(SL_KEYS.downloadFolder) || '',
+  setDownloadFolder: (path) => { try { localStorage.setItem(SL_KEYS.downloadFolder, path); } catch { /* ignore */ } set({ downloadFolder: path }); },
   snapToGDrive: localStorage.getItem(SL_KEYS.snapGDrive) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'gdrive',
   setSnapToGDrive: (v) => { try { localStorage.setItem(SL_KEYS.snapGDrive, v ? '1' : '0'); localStorage.removeItem(SL_KEYS.snaploc); } catch { /* ignore */ } set({ snapToGDrive: v }); },
   snapToOneDrive: localStorage.getItem(SL_KEYS.snapOneDrive) === '1' || localStorage.getItem(SL_KEYS.snaploc) === 'onedrive',

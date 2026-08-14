@@ -151,7 +151,32 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.94 and older (newest first)
+## Version history — v6.95 and older (newest first)
+
+### v6.95 — settings clean pass + Settings moved to Help (4 feedback items)
+
+- All from Derek's two feedback rows ("proceed with all feedback"):
+  (1) Save Options: "Auto Save Locations" + "Auto Saves" are ONE "Auto
+  Saves" section — timer checkbox, interval row, then the three location
+  rows. (3) The tab's helper text is GONE — the Script Save Locations
+  intro, the label suffixes, the Screenshots hint, the auto-save
+  explainer AND DraftNumberRow's paragraph — only the Google Drive /
+  OneDrive setup notes remain (his explicit exception). (4) His
+  reference screenshot (Premiere-style) drove a GLOBAL restyle:
+  `.prefs-general section` = bordered group box, h3 absolutely inset
+  into the top border. GOTCHA: the inset label's background must be the
+  DIALOG chain var(--fd-dialog-bg, --fd-navigator-bg) — the Settings
+  window is a dz-panel shell, NOT a tool-window (--fd-bg); a live probe
+  proved they differ. (5) Settings… LEFT File for Help: About
+  ScriptCraft | divider | Settings… | divider (in-window menus only;
+  native keeps the macOS app-menu convention untouched).
+- check-v642 21/0: the v6.43 File-tail pin became File-has-no-Settings +
+  Help-order + the new door driven end-to-end + hint census (=2) + box
+  style with a bg-parity assert (h3 bg === first opaque ancestor bg).
+  check-v672 12/0 tracks the merged section and the REMOVED explainer.
+  Help clicks in checks need the 3-retry loop (first click after Escape
+  re-arms the bar).
+- Gates: tsc 0, vitest 1200, build ok, check-all 1082/0.
 
 ### v6.94 — the ? retired; "Description:"; five more knobs (13 total)
 

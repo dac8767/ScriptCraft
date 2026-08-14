@@ -70,7 +70,11 @@ async function saveFileTauri(
   const { save } = await import('@tauri-apps/plugin-dialog');
   const { invoke } = await import('@tauri-apps/api/core');
 
-  const path = await save({ defaultPath: defaultFilename, filters });
+  // v7.00, Derek: the save dialog opens in the chosen default download
+  // folder (Settings ▸ Downloads); empty = wherever the OS last was.
+  const { useSettingsStore } = await import('../stores/settingsStore');
+  const folder = useSettingsStore.getState().downloadFolder;
+  const path = await save({ defaultPath: folder ? `${folder}/${defaultFilename}` : defaultFilename, filters });
   if (!path) return false;
 
   if (typeof data === 'string') {

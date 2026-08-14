@@ -8,12 +8,15 @@
 import { useEditorStore, DEFAULT_TOOL_CONFIG, DEFAULT_TOOL_ORDER, DEFAULT_MORES_CONTDS } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { useWindowUndoStore } from '../stores/windowUndoStore';
+import { useShortcutStore } from '../stores/shortcutStore';
 import { runMajorChange } from '../utils/majorChange';
 import { DEFAULT_TOOLBAR_LEFT } from './toolbarBuiltins';
 import { saveViewState } from '../stores/viewState';
 import { confirmDialog } from './ConfirmDialog';
 
-export type CustomizeTabId = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'themes';
+/* v7.00: 'design' / 'helper' / 'keys' are WINDOW groups — they render only
+   in Settings ▸ Defaults (no Customize tab carries them). */
+export type CustomizeTabId = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'themes' | 'design' | 'helper' | 'keys';
 
 export interface ResetAction {
   id: string;
@@ -151,6 +154,46 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
       st.setContextMenuHidden([]);
       st.setContextMenuOrder([]);
     },
+  },
+  /* v7.00, Derek (via the feedback form): the WINDOW resets join the
+     registry so Settings ▸ Defaults truly compiles every reset. Same
+     bulk-restore store functions the windows' own buttons use. */
+  {
+    id: 'designTokens', label: 'Reset Design Tokens', tab: 'design',
+    what: 'every Design-window slider override',
+    capture: () => {
+      const prev = { ...useEditorStore.getState().designVars };
+      return () => useEditorStore.getState().setDesignVars(prev);
+    },
+    run: () => useEditorStore.getState().setDesignVars({}),
+  },
+  {
+    id: 'helperText', label: 'Reset Helper Text', tab: 'helper',
+    what: 'every helper-text edit and hidden entry',
+    capture: () => {
+      const st = useEditorStore.getState();
+      const o = { ...st.helperTextOverrides };
+      const h = [...st.helperTextHidden];
+      return () => {
+        const s = useEditorStore.getState();
+        s.setHelperTextOverrides(o);
+        s.setHelperTextHidden(h);
+      };
+    },
+    run: () => {
+      const s = useEditorStore.getState();
+      s.setHelperTextOverrides({});
+      s.setHelperTextHidden([]);
+    },
+  },
+  {
+    id: 'shortcuts', label: 'Reset Keyboard Shortcuts', tab: 'keys',
+    what: 'every rebound keyboard shortcut',
+    capture: () => {
+      const prev = JSON.parse(JSON.stringify(useShortcutStore.getState().overrides));
+      return () => useShortcutStore.getState().restoreOverrides(prev);
+    },
+    run: () => useShortcutStore.getState().restoreOverrides({}),
   },
 ];
 

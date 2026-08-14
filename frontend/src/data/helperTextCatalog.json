@@ -3537,6 +3537,16 @@
   "label": "View"
  },
  {
+  "text": "View this template's page size",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "View"
+ },
+ {
   "text": "Writing goal — click to open Goals",
   "kind": "tooltip",
   "sites": 1,
