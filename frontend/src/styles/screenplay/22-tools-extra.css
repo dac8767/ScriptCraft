@@ -1721,13 +1721,22 @@ input.fs-switch:checked::after { left: 15px; }
 .fb-code { letter-spacing: 3px; font-variant-numeric: tabular-nums; }
 .fb-who { color: var(--fd-text-muted); }
 .fb-who strong { color: var(--fd-text); }
-.fb-who-mail { font-size: 11.5px; }
 .fb-signout {
   margin-left: 8px; background: none; border: none; cursor: pointer;
   color: var(--fd-accent); font-size: 11.5px; padding: 0;
 }
 .fb-label { display: flex; flex-direction: column; gap: 4px; color: var(--fd-text-muted); }
 .fb-label-grow { flex: 1; min-height: 0; }
+/* v6.92: "Type:" sits on one row with its dropdown; the ? beside the
+   attach header reveals the how-to on hover or click. */
+.fb-type-row { flex-direction: row; align-items: center; gap: 8px; }
+.fb-attach-help {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; margin-left: 2px;
+  background: transparent; border: none; border-radius: 4px;
+  color: var(--fd-text-muted); cursor: pointer; font-size: 12px;
+}
+.fb-attach-help:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
 .fb-select {
   height: 30px; padding: 0 8px; align-self: flex-start; min-width: 140px;
   background: var(--fd-input-bg); color: var(--fd-text);

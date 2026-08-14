@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.91 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.92 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -285,6 +285,24 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.92 — feedback window wording pass (11 Derek items)
+
+- "Name:" replaces "Sending as" (email NO LONGER shown beside it — still
+  saved and submitted); "Type:" label ON ONE ROW with the dropdown
+  (`.fb-type-row`); "Description" replaces the question label and the
+  textarea PLACEHOLDER IS GONE (catalog 481→480 — tests select `.fb-text`
+  directly via messageBox(), not byPlaceholder); "Full Screen" replaces
+  the Screenshot button label; the area head is "Attach a Screenshot".
+- The how-to ("A screenshot helps me a ton…", Derek's wording) lives ONLY
+  behind a ? beside the head (`.fb-attach-help`, FaRegQuestionCircle):
+  hover shows (mouseenter/leave state), click PINS. The old always-on
+  hint div is gone. CHECK GOTCHA: Playwright's click leaves the mouse
+  OVER the ? — hover keeps the hint visible after an unpin click, so
+  `page.mouse.move(5,5)` before asserting it's hidden.
+- check-v684 20→23 (Name-sans-email, how-to hidden/click-shows/hides);
+  tests 1199→1200 (? toggle).
+- Gates: tsc 0, vitest 1200, build ok, check-all 1079/0. Catalog 480.
+
 ### v6.91 — feedback categories renamed
 
 - Derek: "Bug Report / Suggestion / Feature Request / Other. You can
@@ -352,45 +370,12 @@ Durable bits kept live here:
   the typed draft both directions).
 - Gates: tsc 0, vitest 1198, build ok, check-all 1073/0.
 
-### v6.87 — the Feedback ATTACHMENT AREA (the first request from the table)
-
-- Derek: "implement the request in the feedback tablew" — the request being
-  the FIRST real feedback row, submitted through the form and read live in
-  a session via $SUPABASE_SECRET_KEY: "this feedback form should have a
-  clear attachment area, not just the screenshot buttons."
-- FeedbackTool.tsx: the two bare Screenshot/Area buttons beside Send became
-  a labeled `.fb-attach` box (FaPaperclip + "Attachment"): Screenshot, Area,
-  and NEW Browse… (hidden `<input type=file accept=image/*>` → fileToShot
-  via FileReader; non-image picks refused in words). Attached state = chip
-  with thumbnail + NAME (captures say "Screenshot", files their filename) +
-  remove ×. NO drag-drop ON PURPOSE: Tauri's fileDrop interception swallows
-  web drops — unverifiable here, and a dead drop zone is the silent-no-op
-  cardinal sin.
-- feedbackBackend.ts: the upload keeps the file's REAL format — path
-  extension + Content-Type from `shot.type` (extFromType, pure + tested;
-  jpeg→jpg, svg+xml→svg, fallback png). The row writes the table's new
-  `attachments` column; screenshot_path is GONE (rename everywhere, at
-  once).
-- TABLE MIGRATION (Derek asked mid-turn "can you add fields?"): sessions
-  hold data rights, not DDL — he got ONE SQL paste in the delivery message:
-  `attachments` text backfilled from screenshot_path then DROP; `status`
-  enum Pending/In Progress/Complete default Pending (his dashboard triage —
-  the Table Editor renders enums as a dropdown; the app NEVER writes it).
-  Until he runs it, submissions queue visibly and Retry recovers — nothing
-  lost in either order. Standing offer: once run, flip the first row to
-  Complete via REST.
-- Tests 1194→1197 (labeled area + Browse; browsed JPEG end-to-end with
-  real-format asserts; extFromType unit). check-v684 10→15 — Playwright
-  setInputFiles works on the hidden input: chip shows the filename, upload
-  asserted .jpg + image/jpeg, row asserted attachments-not-screenshot_path.
-  Catalog 481 (+1, the Browse tooltip).
-- Gates: tsc 0, vitest 1197, build ok, check-all 1071/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.87** — the Feedback ATTACHMENT AREA (the first request submitted through the form itself): labeled box + Browse…, real-format uploads, `attachments` + `status` enum columns (his SQL paste), sessions hold data-not-DDL rights
 - **v6.86** — feedback SIMPLIFIED to the once-only tester profile (no verification, anon inserts; Derek's RLS paste); v6.84 auth in history at 0c9b43e
 - **v6.85** — Settings ▸ Defaults joined the warn+undo wrapper (runCustomizeReset — one registry, both surfaces); Supabase env key + open network verified live in-session
 - **v6.84** — NATIVE Feedback replaced the Airtable iframe: Supabase via plain fetch, email-code sign-in + sessions (retired v6.86 — code at 0c9b43e), screenshot upload, visible offline queue

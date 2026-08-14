@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.92",
+  "date": "2026-08-13",
+  "changes": [
+   "The Feedback window reads cleaner: “Name:” instead of “Sending as” (no email shown), “Type:” with its dropdown on one row, the message field is simply “Description” with no placeholder, the full-window capture button is “Full Screen”, and the area is titled “Attach a Screenshot”.",
+   "A ? beside “Attach a Screenshot” reveals the how-to on hover or click — the explanatory text no longer takes up room in the window."
+  ]
+ },
+ {
   "version": "6.91",
   "date": "2026-08-13",
   "changes": [

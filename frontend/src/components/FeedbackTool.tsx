@@ -17,7 +17,7 @@
  * visible local queue with a Retry button.
  */
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { FaCamera, FaCrop, FaFolderOpen, FaPaperclip, FaTimes } from 'react-icons/fa';
+import { FaCamera, FaCrop, FaFolderOpen, FaPaperclip, FaRegQuestionCircle, FaTimes } from 'react-icons/fa';
 import {
   type FeedbackProfile,
   loadFeedbackProfile, saveFeedbackProfile,
@@ -27,6 +27,9 @@ import { captureToCanvas } from '../utils/screenshot';
 import { showToast } from './Toast';
 
 const CATEGORIES = ['Bug Report', 'Suggestion', 'Feature Request', 'Other'] as const;
+
+/** v6.92: the how-to lives behind the ? beside "Attach a Screenshot". */
+const ATTACH_HELP = 'A screenshot helps me a ton. You can add a screenshot with the app by clicking Full Screen or Area, or upload a screenshot from your local device.';
 
 interface Shot { blob: Blob; url: string; dataUrl: string; name: string }
 
@@ -75,6 +78,9 @@ export default function FeedbackTool() {
   const [shots, setShots] = useState<Shot[]>(draft.shots);
   const [queued, setQueued] = useState(() => loadFeedbackQueue().length);
   const [sentNote, setSentNote] = useState<string | null>(null);
+  // v6.92: the ? beside "Attach a Screenshot" — hover shows the how-to, click pins it
+  const [helpPinned, setHelpPinned] = useState(false);
+  const [helpHover, setHelpHover] = useState(false);
 
   // Mirror the live fields into the module draft. (The old unmount-revoke
   // effect is gone ON PURPOSE — the shots' object URLs must outlive the
@@ -200,8 +206,7 @@ export default function FeedbackTool() {
   return (
     <div className="feedback-tool-wrap fb-form">
       <div className="fb-who">
-        Sending as <strong>{profile.name}</strong>
-        <span className="fb-who-mail"> ({profile.email})</span>
+        Name: <strong>{profile.name}</strong>
         <button
           className="fb-signout"
           title="Change the name or email on your feedback"
@@ -222,28 +227,37 @@ export default function FeedbackTool() {
         </div>
       )}
 
-      <label className="fb-label">
-        Category
+      <label className="fb-label fb-type-row">
+        Type:
         <select className="fb-select" value={category} onChange={(e) => setCategory(e.target.value as (typeof CATEGORIES)[number])}>
           {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </label>
 
       <label className="fb-label fb-label-grow">
-        What happened, or what should change?
+        Description
         <textarea
           className="fb-text"
-          placeholder="Describe it — steps, what you expected, what you got."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
       </label>
 
       <div className="fb-attach">
-        <div className="fb-attach-head"><FaPaperclip aria-hidden /> Attach an Image</div>
+        <div className="fb-attach-head">
+          <FaPaperclip aria-hidden /> Attach a Screenshot
+          <button
+            className="fb-attach-help"
+            aria-label="How attachments help"
+            onMouseEnter={() => setHelpHover(true)}
+            onMouseLeave={() => setHelpHover(false)}
+            onClick={() => setHelpPinned((v) => !v)}
+          ><FaRegQuestionCircle aria-hidden /></button>
+        </div>
+        {(helpPinned || helpHover) && <div className="fb-attach-hint">{ATTACH_HELP}</div>}
         <div className="fb-attach-btns">
           <button className="dialog-btn" disabled={busy} title="Attach a screenshot of the whole window" onClick={() => capture('full')}>
-            <FaCamera aria-hidden /> Screenshot
+            <FaCamera aria-hidden /> Full Screen
           </button>
           <button className="dialog-btn" disabled={busy} title="Attach a screenshot of a selected area" onClick={() => capture('area')}>
             <FaCrop aria-hidden /> Area
@@ -252,9 +266,7 @@ export default function FeedbackTool() {
             <FaFolderOpen aria-hidden /> Browse…
           </button>
         </div>
-        {shots.length === 0 ? (
-          <div className="fb-attach-hint">A picture helps — grab the whole window, drag out an area, or pick image files. Attach as many as you need.</div>
-        ) : (
+        {shots.length > 0 && (
           <div className="fb-shotchips">
             {shots.map((s, i) => (
               <span className="fb-shotchip" key={s.url}>

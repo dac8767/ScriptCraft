@@ -151,7 +151,41 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.86 and older (newest first)
+## Version history — v6.87 and older (newest first)
+
+### v6.87 — the Feedback ATTACHMENT AREA (the first request from the table)
+
+- Derek: "implement the request in the feedback tablew" — the request being
+  the FIRST real feedback row, submitted through the form and read live in
+  a session via $SUPABASE_SECRET_KEY: "this feedback form should have a
+  clear attachment area, not just the screenshot buttons."
+- FeedbackTool.tsx: the two bare Screenshot/Area buttons beside Send became
+  a labeled `.fb-attach` box (FaPaperclip + "Attachment"): Screenshot, Area,
+  and NEW Browse… (hidden `<input type=file accept=image/*>` → fileToShot
+  via FileReader; non-image picks refused in words). Attached state = chip
+  with thumbnail + NAME (captures say "Screenshot", files their filename) +
+  remove ×. NO drag-drop ON PURPOSE: Tauri's fileDrop interception swallows
+  web drops — unverifiable here, and a dead drop zone is the silent-no-op
+  cardinal sin.
+- feedbackBackend.ts: the upload keeps the file's REAL format — path
+  extension + Content-Type from `shot.type` (extFromType, pure + tested;
+  jpeg→jpg, svg+xml→svg, fallback png). The row writes the table's new
+  `attachments` column; screenshot_path is GONE (rename everywhere, at
+  once).
+- TABLE MIGRATION (Derek asked mid-turn "can you add fields?"): sessions
+  hold data rights, not DDL — he got ONE SQL paste in the delivery message:
+  `attachments` text backfilled from screenshot_path then DROP; `status`
+  enum Pending/In Progress/Complete default Pending (his dashboard triage —
+  the Table Editor renders enums as a dropdown; the app NEVER writes it).
+  Until he runs it, submissions queue visibly and Retry recovers — nothing
+  lost in either order. Standing offer: once run, flip the first row to
+  Complete via REST.
+- Tests 1194→1197 (labeled area + Browse; browsed JPEG end-to-end with
+  real-format asserts; extFromType unit). check-v684 10→15 — Playwright
+  setInputFiles works on the hidden input: chip shows the filename, upload
+  asserted .jpg + image/jpeg, row asserted attachments-not-screenshot_path.
+  Catalog 481 (+1, the Browse tooltip).
+- Gates: tsc 0, vitest 1197, build ok, check-all 1071/0.
 
 ### v6.86 — feedback SIMPLIFIED: once-only profile, no verification
 

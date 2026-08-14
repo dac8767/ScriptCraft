@@ -363,7 +363,7 @@
    "components/FeedbackTool.tsx"
   ],
   "icon": "FaCamera",
-  "label": "Screenshot"
+  "label": "Full Screen"
  },
  {
   "text": "Attach image",
@@ -3679,15 +3679,6 @@
   "area": "Editor & Preview",
   "where": [
    "components/TitlePageEditor.tsx"
-  ]
- },
- {
-  "text": "Describe it — steps, what you expected, what you got.",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
   ]
  },
  {

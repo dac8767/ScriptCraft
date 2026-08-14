@@ -74,8 +74,8 @@ try {
   await button('Start');
   await page.waitForSelector('.fb-who', { timeout: 5000 });
   const who = await page.evaluate(() => document.querySelector('.fb-who').textContent);
-  ok(/Derek Tester/.test(who) && /derek-tester@example.com/.test(who),
-    `the form knows who is sending (${who.slice(0, 60)})`);
+  ok(/Name:/.test(who) && /Derek Tester/.test(who) && !/@/.test(who),
+    `the form shows Name: without the email (${who.slice(0, 60)})`);
   ok(await page.evaluate(() => window.__fbCalls.length) === 0,
     'and identity cost ZERO network — no codes, no sign-in service');
 
@@ -125,9 +125,19 @@ try {
       file: !!area?.querySelector('input[type="file"]'),
     };
   });
-  ok(/Attach an Image/.test(attach.label), `the form has a labeled attachment area ("${attach.label}")`);
-  ok(attach.btns.join(',') === 'Screenshot,Area,Browse…' && attach.file,
-    `with Screenshot / Area / Browse… and a real file input behind it (${attach.btns.join(' / ')})`);
+  ok(/Attach a Screenshot/.test(attach.label), `the form has a labeled attachment area ("${attach.label}")`);
+  ok(attach.btns.join(',') === 'Full Screen,Area,Browse…' && attach.file,
+    `with Full Screen / Area / Browse… and a real file input behind it (${attach.btns.join(' / ')})`);
+  /* v6.92: the how-to hides behind the ? — click pins, click + mouse-away clears */
+  ok(await page.evaluate(() => !document.body.textContent.includes('A screenshot helps me a ton')),
+    'the how-to text is NOT in the window by default');
+  await page.click('.fb-attach-help');
+  ok(await page.evaluate(() => document.querySelector('.fb-attach-hint')?.textContent.includes('A screenshot helps me a ton') ?? false),
+    'clicking the ? reveals the how-to');
+  await page.click('.fb-attach-help');
+  await page.mouse.move(5, 5);
+  await page.waitForFunction(() => !document.querySelector('.fb-attach-hint'), { timeout: 3000 });
+  ok(true, 'clicking again (and moving off) hides it');
   await page.setInputFiles('.fb-attach input[type="file"]', {
     name: 'margin-bug.jpeg', mimeType: 'image/jpeg',
     buffer: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]),
@@ -135,7 +145,7 @@ try {
   await page.waitForSelector('.fb-shotchip', { timeout: 5000 });
   ok(await page.evaluate(() => document.querySelector('.fb-shotchip').textContent.includes('margin-bug.jpeg')),
     'picking a file shows a chip with ITS name — not a silent no-op');
-  ok(await page.evaluate(() => [...document.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent.trim()).join(',')) === 'Screenshot,Area,Browse…',
+  ok(await page.evaluate(() => [...document.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent.trim()).join(',')) === 'Full Screen,Area,Browse…',
     'v6.89: the three buttons STAY after attaching');
   await page.setInputFiles('.fb-attach input[type="file"]', {
     name: 'second-shot.png', mimeType: 'image/png',

@@ -72,6 +72,7 @@ const setValue = (el: HTMLInputElement | HTMLTextAreaElement, value: string) => 
 
 const savedProfile = () => localStorage.setItem('opendraft:feedbackProfile',
   JSON.stringify({ name: 'Tester T', email: 'tester@example.com' }));
+const messageBox = () => container.querySelector('.fb-text') as HTMLTextAreaElement;
 
 describe('FeedbackTool — the once-only profile', () => {
   it('asks name + email once, then shows the form sending as them', async () => {
@@ -81,8 +82,9 @@ describe('FeedbackTool — the once-only profile', () => {
     setValue(byPlaceholder('you@example.com'), 'tester@example.com');
     clickText('Start');
     await flush();
-    expect(container.textContent).toContain('Sending as');
+    expect(container.textContent).toContain('Name:');
     expect(container.textContent).toContain('Tester T');
+    expect(container.querySelector('.fb-who')?.textContent).not.toContain('@');   // v6.92: no email shown
     // saved — a remount skips straight to the form
     expect(JSON.parse(localStorage.getItem('opendraft:feedbackProfile')!))
       .toEqual({ name: 'Tester T', email: 'tester@example.com' });
@@ -105,7 +107,7 @@ describe('FeedbackTool — submitting', () => {
   it('POSTs name + email + message + version, anonymously (apikey only)', async () => {
     savedProfile();
     mount();
-    setValue(byPlaceholder('Describe it'), 'The margins drift.');
+    setValue(messageBox(), 'The margins drift.');
     clickText('Send Feedback');
     await flush();
     const post = calls.find((c) => c.url.includes('/rest/v1/feedback'));
@@ -128,7 +130,7 @@ describe('FeedbackTool — submitting', () => {
     savedProfile();
     replies.push((u) => (u.includes('/rest/v1/feedback') ? json({ message: 'server down' }, 503) : null));
     mount();
-    setValue(byPlaceholder('Describe it'), 'Lost words?');
+    setValue(messageBox(), 'Lost words?');
     clickText('Send Feedback');
     await flush();
     expect(container.textContent).toContain('saved to the local queue');
@@ -148,10 +150,20 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
   it('offers Screenshot, Area and Browse… under a labeled Attachment area', async () => {
     savedProfile();
     mount();
-    expect(container.querySelector('.fb-attach-head')?.textContent).toContain('Attach an Image');
+    expect(container.querySelector('.fb-attach-head')?.textContent).toContain('Attach a Screenshot');
     const labels = [...container.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent?.trim());
-    expect(labels).toEqual(['Screenshot', 'Area', 'Browse…']);
+    expect(labels).toEqual(['Full Screen', 'Area', 'Browse…']);
     expect(container.querySelector('.fb-attach input[type="file"]')).toBeTruthy();
+  });
+
+  it('the ? beside Attach a Screenshot reveals the how-to on click (v6.92)', async () => {
+    savedProfile();
+    mount();
+    expect(container.textContent).not.toContain('A screenshot helps me a ton');
+    act(() => (container.querySelector('.fb-attach-help') as HTMLButtonElement).click());
+    expect(container.querySelector('.fb-attach-hint')?.textContent).toContain('A screenshot helps me a ton');
+    act(() => (container.querySelector('.fb-attach-help') as HTMLButtonElement).click());
+    expect(container.querySelector('.fb-attach-hint')).toBeNull();
   });
 
   it('a browsed image becomes the attachment and uploads in its REAL format', async () => {
@@ -164,7 +176,7 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
     await flush(6);                                    // FileReader is async
     expect(container.querySelector('.fb-shotchip')?.textContent).toContain('margin-bug.jpeg');
 
-    setValue(byPlaceholder('Describe it'), 'See the attached image.');
+    setValue(messageBox(), 'See the attached image.');
     clickText('Send Feedback');
     await flush(6);
     const up = calls.find((c) => c.url.includes('/storage/v1/object/feedback-shots/'));
@@ -189,14 +201,14 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
     await flush(6);
     // the three buttons are still there, and a second pick APPENDS
     const labels = [...container.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent?.trim());
-    expect(labels).toEqual(['Screenshot', 'Area', 'Browse…']);
+    expect(labels).toEqual(['Full Screen', 'Area', 'Browse…']);
     const two = new File([new Uint8Array([2])], 'two.png', { type: 'image/png' });
     Object.defineProperty(input, 'files', { value: [two], configurable: true });
     act(() => { input.dispatchEvent(new Event('change', { bubbles: true })); });
     await flush(6);
     expect(container.querySelectorAll('.fb-shotchip')).toHaveLength(2);
 
-    setValue(byPlaceholder('Describe it'), 'Two shots attached.');
+    setValue(messageBox(), 'Two shots attached.');
     clickText('Send Feedback');
     await flush(6);
     const ups = calls.filter((c) => c.url.includes('/storage/v1/object/feedback-shots/'));
@@ -223,7 +235,7 @@ describe('FeedbackTool — the draft survives moving the window (v6.88)', () => 
   it('remounting rehydrates message and attachment instead of wiping them', async () => {
     savedProfile();
     mount();
-    setValue(byPlaceholder('Describe it'), 'Half-written thought.');
+    setValue(messageBox(), 'Half-written thought.');
     const input = container.querySelector('.fb-attach input[type="file"]') as HTMLInputElement;
     const file = new File([new Uint8Array([1, 2, 3])], 'still-here.png', { type: 'image/png' });
     Object.defineProperty(input, 'files', { value: [file], configurable: true });
@@ -235,7 +247,7 @@ describe('FeedbackTool — the draft survives moving the window (v6.88)', () => 
     act(() => root.unmount());
     root = createRoot(container);
     mount();
-    expect((byPlaceholder('Describe it') as HTMLTextAreaElement).value).toBe('Half-written thought.');
+    expect((messageBox() as HTMLTextAreaElement).value).toBe('Half-written thought.');
     expect(container.querySelector('.fb-shotchip')?.textContent).toContain('still-here.png');
   });
 });
