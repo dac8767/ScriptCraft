@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.03",
+  "date": "2026-08-14",
+  "changes": [
+   "Every control in the app now takes the app's own text size. Previously anything that didn't set a size fell back to the browser's default, which is slightly larger — this was measured before and after across the editor, all six Settings tabs and ten tool windows: only the window close button was still affected, and nothing changed size or moved as a result.",
+   "Removed a Light-theme override that was forcing a background onto every text field and dropdown in the app. It existed to rescue the controls that hardcoded a dark color, which is exactly why those looked correct in Light while showing up as black boxes in Sepia, Paper and Solarized Light. Those controls were fixed properly in the last update, so the override had nothing left to do — and while it stood it was overriding legitimate colors too."
+  ]
+ },
+ {
   "version": "7.02",
   "date": "2026-08-14",
   "changes": [

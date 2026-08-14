@@ -125,6 +125,24 @@ it actually produced — not by staring at the source and reasoning.
   too, so ternary tooltips are covered, not just literal attributes.
 - **Icons are always monotone** (react-icons line style, currentColor). Never emoji
   in UI chrome — v2.08 swept the Scrapbook's 📄🗂🗑 for exactly this.
+- **The size scales** (v7.02, from the style audit — conform, don't invent):
+
+  | Thing | Size | Token |
+  |---|---|---|
+  | Action button (dialog footers, wizards) | 34px / 14px text | `--dz-dialog-btn-h` |
+  | Compact button (small floating panels, popups) | 26px / 12px | `--dz-dialog-btn-h-sm` |
+  | Dropdown | 28px / 12.5px | `--dz-select-h`, `--dz-select-font` |
+  | Dropdown in the toolbar row | 22px | `--dz-select-h-compact` |
+  | Text field in a dialog | 36px | `--dz-dialog-input-h` |
+  | Window title | 16px | `--dz-dialog-header-font` |
+  | Panel / tool-window title | 13px | `--dz-toolwin-title-font` |
+  | Section heading inside a window | 11.5px, `--fd-text-muted` | — |
+  | Corner radius | 5px | `--dz-dialog-btn-radius` |
+
+  A knob's `def` in `designTokens.ts` MUST equal the fallback literal in the CSS
+  (`var(--dz-x, 5px)`) — a test enforces it, and changing one without the other
+  fails the suite. Deliberate exceptions exist (the toolbar's compact dropdown,
+  the Characters tool's 26px profile fields); they carry a comment saying why.
 - **Colors come from tokens, never from a hex literal** (v7.01, after the style
   audit). Chrome reads `--fd-danger` / `--fd-success` / `--fd-warning` /
   `--fd-accent` and the surface tokens; a raw `#c0392b` in a component or a

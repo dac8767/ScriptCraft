@@ -1,9 +1,9 @@
 # What's Left From the Style Audit — in plain language
 
-> **STATUS (v7.02):** Derek said "proceed with all of your recommendations", so
-> items **1-10, 14, 15, 16 and 18** are DONE. What remains is at the bottom under
-> "Still open after v7.02" — items 11, 13, 17, 19 plus a documented judgement
-> call inside item 2.
+> **STATUS (v7.03):** items **1-11, 14-19** are DONE. Only item **13** (the six
+> windows with smaller amounts of hand-written styling) is still open, plus the
+> 309-class dead-styling backlog, which is guarded but not yet cleared. See the
+> bottom of this file.
 
 Everything here was outstanding as of v7.01. Each item says **what's wrong**,
 **where you'll see it in the app**, and **how it gets fixed**. No jargon.
@@ -407,10 +407,12 @@ a new value. I already added the color and button rules there in v7.01.
 
 # Still open after v7.02
 
-**Item 11 — controls don't inherit the app's text size.** Deliberately left for
-its own version: forcing it resizes every control in the app at once, including
-the many that depend on the browser default today. It needs a window-by-window
-look afterward, which is not something to bundle with sixteen other changes.
+**Item 11 — DONE in v7.03.** I was wrong about the scale of this. I had deferred
+it expecting it to resize every control in the app; measuring first showed that
+v7.02's work had already given nearly everything an explicit size, so exactly
+TWO classes were still falling back to the browser default. Applying the reset
+changed one class by a third of a pixel and moved nothing. Measure before you
+schedule the risk.
 
 **Item 13 — the six windows with smaller amounts of hand-written styling**
 (Notebook, Title Page editor, menu bar, About, Grammar Rules, Relationship Map,
@@ -418,12 +420,16 @@ Beat Board). The two worst offenders — the dictionary windows — are done. Th
 are mostly positioning, which is a legitimate reason to write styling inline, so
 the payoff is smaller.
 
-**Item 17 — the 80 "force this" override flags.** Needs case-by-case judgement
-about which are still load-bearing after the v7.01 token work; a blind sweep
-would break things silently.
+**Item 17 — the highest-value one is DONE in v7.03**, the rest deferred
+deliberately. The Light-theme blanket override (forcing a background onto every
+text field and dropdown) is gone: it was the rescue that made the hardcoded dark
+controls look right in Light while they showed as black boxes in the warm
+themes, and v7.02 fixed those at the source. The remaining flags need
+case-by-case judgement about what is still load-bearing; a blind sweep breaks
+things silently, so they stay.
 
-**Item 19 — write the agreed scales into the project notes.** Waiting until the
-numbers settle after you've seen v7.02 in the app.
+**Item 19 — DONE in v7.03.** The scales are written into `CLAUDE.md` §3 as a
+table, with the note that a knob's default must equal its CSS fallback.
 
 **Inside item 2, one judgement call I made:** the Characters tool's profile
 fields sit at 26px while the house dropdown is 28px. They're a coherent set that

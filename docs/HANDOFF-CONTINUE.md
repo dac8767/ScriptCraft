@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.02 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.03 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-14 ("add to queue"), NOT yet built — the ADD-ON
 > track. These four are one piece of work; do them together:
@@ -307,6 +307,38 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.03 — the two style-audit items that needed measuring first
+
+**The lesson worth keeping.** I had deferred item 11 (make every control inherit
+the app's text size) to its own version, on the grounds that it would resize
+every control at once. That was true at v7.00. It was NOT true by v7.02 — the
+work of classing controls had already given nearly everything an explicit size.
+Measuring before scheduling the risk (a probe capturing all 112 visible controls
+across the editor, six Settings tabs and ten tool windows, run before and after)
+showed exactly TWO classes still on the browser default, and applying the reset
+moved nothing. `button, input, select, textarea { font: inherit }` is in.
+
+Watch out for a probe that reports "clean" because the surface never opened: the
+first version used `window.__scStore.getState().setAboutOpen?.(true)` and similar
+for four dialogs, and those setters do not exist — the optional call silently did
+nothing and the surface reported clean. Verify the setter exists, or open the
+window through its real door.
+
+**Item 17, the highest-value flag.** The `[data-theme="light"] input/select/
+textarea { … !important }` block is gone. It was the rescue that repainted the
+hardcoded `#222` controls in the Light theme — which is precisely why that bug
+lived so long: Light looked right while Sepia/Paper/Solarized Light showed black
+boxes. v7.02 tokenized those controls, so the rescue had nothing left to do, and
+while it stood its `!important` overrode legitimate per-control colours too.
+Verified after removal: all ten of those controls still render white in Light.
+The rest of the `!important` flags need case-by-case judgement and stay.
+
+**Item 19:** the size scales are now a table in `CLAUDE.md` §3.
+
+Still open from the audit: item 13 (six windows with modest amounts of inline
+styling) and the 309-class dead-styling backlog, which `check-dead-css.mjs`
+guards but has not cleared.
 
 ### v7.02 — the rest of the style audit ("proceed with all of your recommendations")
 

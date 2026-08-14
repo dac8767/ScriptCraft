@@ -284,15 +284,16 @@
 [data-theme="light"] .menu-separator {
   background: var(--fd-border);
 }
-/* Light theme: all inputs, textareas, selects */
-[data-theme="light"] input[type="text"],
-[data-theme="light"] input[type="number"],
-[data-theme="light"] textarea,
-[data-theme="light"] select {
-  background: var(--fd-input-bg) !important;
-  color: var(--fd-text) !important;
-  border-color: var(--fd-border) !important;
-}
+/* v7.02 (style audit remaining #17): this blanket override is GONE.
+   It existed to rescue the controls that hardcoded a dark background
+   (#222 search fields, sort dropdowns, tag inputs) — it repainted them in the
+   Light theme so they looked right there. That is exactly why the bug survived
+   so long: Light looked fine while Sepia, Paper and Solarized Light showed
+   black boxes, because they had no equivalent rescue. v7.02 tokenized those
+   controls at the source, so the rescue has nothing left to do — and while it
+   stood, its `!important` overrode every legitimate per-control colour in the
+   Light theme too. The focus rule below is kept: it is real styling, not a
+   patch. */
 [data-theme="light"] input[type="text"]:focus,
 [data-theme="light"] input[type="number"]:focus,
 [data-theme="light"] textarea:focus,
@@ -452,14 +453,20 @@ body {
    app ships light themes too; the active theme's own background decides. */
 :root { color-scheme: dark light; }
 
-/* v7.01 (D65): form controls do NOT inherit the page font by default — they
-   fall back to the browser's own (13.33px Arial on WebKit). That is why a
-   dropdown could sit beside a text field at a visibly different size and face.
-   Only the FAMILY is forced here: forcing `font: inherit` outright would
-   resize every control in the app at once, including the many that rely on
-   their own font-size today. Controls lacking an explicit size are given one
-   individually — see the audit change list, items 65-66 and 287-288. */
-button, input, select, textarea, optgroup { font-family: inherit; }
+/* v7.01 (D65) → v7.02 (remaining #11): form controls do NOT inherit the page
+   font by default — they fall back to the browser's own (13.33px Arial on
+   WebKit). v7.01 forced only the FAMILY, because forcing the SIZE then would
+   have resized every control that was relying on the browser default.
+
+   v7.02 finished the job of giving controls explicit sizes, so the size is
+   forced too now. It was measured before flipping it: across the editor, all
+   six Settings tabs and ten tool windows, exactly TWO classes were still
+   falling back to the browser default (.tool-window-close and .dz-close).
+   Everything else already declares its own size and is unaffected by this.
+
+   A control that wants a different size sets font-size itself — this only
+   decides what happens when nothing does. */
+button, input, select, textarea, optgroup { font: inherit; }
 
 /* ---- App Container ---- */
 .app-container {
