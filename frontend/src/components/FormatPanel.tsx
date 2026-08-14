@@ -242,7 +242,7 @@ const FormatPanel: React.FC<FormatPanelProps> = ({ editor, onClose }) => {
               <label className="format-label">Align</label>
               <div style={{ display: 'flex', gap: 4 }}>
                 {(['left', 'center', 'right'] as const).map((al) => (
-                  <button
+                  <button className="dialog-btn"
                     key={al}
                     onClick={() => setImgAttr({ align: al })}
                     style={{ textTransform: 'capitalize', fontWeight: (a.align || 'center') === al ? 700 : 400 }}

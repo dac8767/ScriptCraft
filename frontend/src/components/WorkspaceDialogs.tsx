@@ -152,11 +152,14 @@ export function EditWorkspacesDialog({ open, onClose }: { open: boolean; onClose
                 const isConfirming = confirmDelete === n;
                 return (
                   <div key={n} className={`ws-row${isActive ? ' active' : ''}`}>
-                    <span className="ws-order">
-                      <button title="Move up" onClick={() => move(idx, -1)} disabled={idx === 0}>
+                    {/* v7.02 (style audit remaining #8): the shared spinner —
+                        one bordered frame around both arrows — instead of this
+                        window's own pair of 7px bordered buttons. */}
+                    <span className="fs-updown">
+                      <button className="fs-updown-btn" title="Move up" onClick={() => move(idx, -1)} disabled={idx === 0}>
                         <FaChevronUp />
                       </button>
-                      <button title="Move down" onClick={() => move(idx, 1)} disabled={idx === names.length - 1}>
+                      <button className="fs-updown-btn" title="Move down" onClick={() => move(idx, 1)} disabled={idx === names.length - 1}>
                         <FaChevronDown />
                       </button>
                     </span>

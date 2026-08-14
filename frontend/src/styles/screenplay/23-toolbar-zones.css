@@ -33,7 +33,7 @@
 }
 
 .fs-tbzone { border: 1px solid var(--fd-border); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; }
-.fs-tbzone-title { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fd-text-muted); margin-bottom: 6px; }
+.fs-tbzone-title { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fd-text-muted); margin-bottom: 6px; }
 .fs-tbzone-adders { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
 /* v4.22, Derek: the "Add Transition" dialog (opened from the button beside
    Reset to Default). Above the Customize window (which is a .dialog-overlay at
@@ -64,12 +64,12 @@
 .fs-transition-input:focus { outline: none; border-color: var(--fd-accent); }
 .fs-transition-input::placeholder { text-transform: none; color: var(--fd-text-muted); }
 .fs-tbzone-adders select {
-  height: 26px;
+  height: var(--dz-select-h, 28px);
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--dz-select-font, 12.5px);
 }
 .fs-divider-label-input {
   height: 24px;
@@ -491,14 +491,16 @@
   padding: 0 24px 20px;
 }
 .fs-newscript-actions button {
-  height: 32px;
   padding: 0 18px;
   background: var(--fd-toolbar-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
-  font-size: 13px;
   cursor: pointer;
+  /* v7.02 (style audit remaining #1): the HOUSE action-button size. These were
+     28-34px tall with 12-14px text depending on which window you opened. */
+  height: var(--dz-dialog-btn-h, 34px);
+  font-size: 14px;
 }
 .fs-newscript-actions button:hover { background: var(--fd-menu-hover); }
 /* v1.54: Open/Import sit left; the gap pushes Cancel/Create right. */
@@ -546,7 +548,7 @@
   font-size: 15px;
 }
 .fs-launcher-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.fs-launcher-title { font-size: 13px; font-weight: 600; }
+.fs-launcher-title { font-size: 16px; font-weight: 600; }
 .fs-launcher-desc { font-size: 11.5px; line-height: 1.45; color: var(--fd-text-muted); }
 .fs-launcher-foot {
   display: flex;
@@ -564,14 +566,16 @@
   color: var(--fd-text-muted);
 }
 .fs-launcher-foot button {
-  height: 30px;
   padding: 0 16px;
   background: var(--fd-toolbar-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
-  font-size: 13px;
   cursor: pointer;
+  /* v7.02 (style audit remaining #1): the HOUSE action-button size. These were
+     28-34px tall with 12-14px text depending on which window you opened. */
+  height: var(--dz-dialog-btn-h, 34px);
+  font-size: 14px;
 }
 
 /* ── v4.80: the Guided Setup wizard ───────────────────────────────────── */
@@ -591,7 +595,7 @@
 .fs-guided-pip.active { background: var(--fd-accent); }
 .fs-guided-count { margin-left: auto; font-size: 11px; color: var(--fd-text-muted); }
 .fs-guided-body { flex: 1; min-height: 0; overflow: auto; padding: 12px 18px 18px; }
-.fs-guided-title { margin: 4px 0 4px; font-size: 15px; font-weight: 600; color: var(--fd-text); }
+.fs-guided-title { margin: 4px 0 4px; font-size: 16px; font-weight: 600; color: var(--fd-text); }
 .fs-guided-blurb {
   margin: 0 0 14px;
   font-size: 12.5px;
@@ -670,14 +674,16 @@
 .fs-guided-note { flex: 1; font-size: 11.5px; color: var(--fd-text-muted); }
 .fs-guided-actions { display: flex; gap: 8px; }
 .fs-guided-actions button {
-  height: 32px;
   padding: 0 16px;
   background: var(--fd-toolbar-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
-  font-size: 13px;
   cursor: pointer;
+  /* v7.02 (style audit remaining #1): the HOUSE action-button size. These were
+     28-34px tall with 12-14px text depending on which window you opened. */
+  height: var(--dz-dialog-btn-h, 34px);
+  font-size: 14px;
 }
 .fs-guided-actions button:hover { background: var(--fd-menu-hover); }
 

@@ -13,43 +13,6 @@ function useSpellCheckerVersion(): number {
   return v;
 }
 
-const cardStyle: React.CSSProperties = {
-  padding: '10px 12px',
-  border: '1px solid var(--fd-border)',
-  borderRadius: 6,
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: '6px 10px',
-  border: '1px solid var(--fd-border)',
-  borderRadius: 4,
-  background: 'var(--fd-bg)',
-  color: 'var(--fd-text)',
-  fontSize: 12,
-  cursor: 'pointer',
-};
-
-const inputStyle: React.CSSProperties = {
-  flex: 1,
-  padding: '6px 8px',
-  border: '1px solid var(--fd-border)',
-  borderRadius: 4,
-  background: 'var(--fd-bg)',
-  color: 'var(--fd-text)',
-  fontSize: 13,
-};
-
-const sectionTitleStyle: React.CSSProperties = {
-  fontWeight: 600,
-  fontSize: 13,
-  marginBottom: 6,
-};
-
-const helpTextStyle: React.CSSProperties = {
-  fontSize: 12,
-  color: 'var(--fd-text-muted)',
-};
-
 /** Compact pill button showing whether a dictionary is a write target. */
 const AddTargetToggle: React.FC<{ active: boolean; onToggle: () => void; disabled?: boolean }> = ({
   active,
@@ -102,21 +65,21 @@ const LanguagesSection: React.FC<{ onOpenInstaller: () => void }> = ({ onOpenIns
   };
 
   return (
-    <div style={cardStyle}>
+    <div className="fs-dict-card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ flex: 1 }}>
-          <div style={sectionTitleStyle}>Languages</div>
-          <div style={helpTextStyle}>
+          <div className="fs-dict-section-title">Languages</div>
+          <div className="prefs-hint fs-dict-hint">
             Hunspell engines that check words. Enable any combination for this script.
           </div>
         </div>
-        <button type="button" onClick={onOpenInstaller} style={buttonStyle}>
+        <button type="button" onClick={onOpenInstaller} className="dialog-btn dialog-btn-sm">
           Add language…
         </button>
       </div>
       <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
         {loaded.length === 0 && (
-          <div style={helpTextStyle}>Loading built-in language…</div>
+          <div className="prefs-hint fs-dict-hint">Loading built-in language…</div>
         )}
         {loaded.map(({ code, label }) => {
           const isBuiltin = code === BUILTIN.code;
@@ -236,7 +199,7 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
     <Modal onClose={onClose} boxClassName="">
         <div className="dialog-header">Add Language</div>
         <div className="dialog-body" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 16 }}>
-          <div style={helpTextStyle}>
+          <div className="prefs-hint fs-dict-hint">
             Languages are downloaded from jsdelivr (wooorm/dictionaries) or
             the LibreOffice dictionaries repo on GitHub, and cached locally.
             A network connection is required for the first install.
@@ -246,7 +209,7 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
             placeholder="Search languages…"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            style={{ ...inputStyle, flex: '0 0 auto' }}
+            className="dialog-input fs-dict-input" style={{ flex: '0 0 auto' }}
           />
           {error && (
             <div
@@ -272,7 +235,7 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
             }}
           >
             {filtered.length === 0 && (
-              <div style={{ padding: 12, ...helpTextStyle }}>No matches.</div>
+              <div className="prefs-hint fs-dict-hint" style={{ padding: 12 }}>No matches.</div>
             )}
             {filtered.map((lang) => {
               const isInstalled = loadedCodes.has(lang.code) || installedLanguages.includes(lang.code);
@@ -312,12 +275,8 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
                     type="button"
                     onClick={() => handleInstall(lang.code)}
                     disabled={isInstalled || isBusy}
-                    style={{
-                      ...buttonStyle,
-                      minWidth: 90,
-                      opacity: isInstalled ? 0.5 : 1,
-                      cursor: isInstalled || isBusy ? 'default' : 'pointer',
-                    }}
+                    className="dialog-btn dialog-btn-sm"
+                    style={{ minWidth: 90 }}
                   >
                     {isInstalled ? 'Installed' : isBusy ? 'Installing…' : 'Install'}
                   </button>
@@ -329,19 +288,14 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
             <button
               type="button"
               onClick={() => setCustomOpen((v) => !v)}
-              style={{
-                ...buttonStyle,
-                width: '100%',
-                textAlign: 'left',
-                padding: '8px 10px',
-                fontSize: 13,
-              }}
+              className="dialog-btn dialog-btn-sm fs-dict-wide-btn"
+              style={{ width: '100%' }}
             >
               {customOpen ? <FaChevronDown /> : <FaChevronRight />} Install from custom URL (e.g. Hindi, Tamil, etc.)
             </button>
             {customOpen && (
               <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={helpTextStyle}>
+                <div className="prefs-hint fs-dict-hint">
                   Paste links to a Hunspell `.aff` and `.dic` file. The pair will be downloaded and cached locally.
                 </div>
                 <input
@@ -349,34 +303,34 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
                   placeholder="Language code (e.g. hi_IN)"
                   value={customCode}
                   onChange={(e) => setCustomCode(e.target.value)}
-                  style={{ ...inputStyle, flex: '0 0 auto' }}
+                  className="dialog-input fs-dict-input" style={{ flex: '0 0 auto' }}
                 />
                 <input
                   type="text"
                   placeholder="Display name (e.g. Hindi)"
                   value={customLabel}
                   onChange={(e) => setCustomLabel(e.target.value)}
-                  style={{ ...inputStyle, flex: '0 0 auto' }}
+                  className="dialog-input fs-dict-input" style={{ flex: '0 0 auto' }}
                 />
                 <input
                   type="text"
                   placeholder=".aff URL"
                   value={customAff}
                   onChange={(e) => setCustomAff(e.target.value)}
-                  style={{ ...inputStyle, flex: '0 0 auto' }}
+                  className="dialog-input fs-dict-input" style={{ flex: '0 0 auto' }}
                 />
                 <input
                   type="text"
                   placeholder=".dic URL"
                   value={customDic}
                   onChange={(e) => setCustomDic(e.target.value)}
-                  style={{ ...inputStyle, flex: '0 0 auto' }}
+                  className="dialog-input fs-dict-input" style={{ flex: '0 0 auto' }}
                 />
                 <button
                   type="button"
                   onClick={handleInstallCustom}
                   disabled={busy === '__custom__'}
-                  style={{ ...buttonStyle, alignSelf: 'flex-end' }}
+                  className="dialog-btn dialog-btn-sm" style={{ alignSelf: 'flex-end' }}
                 >
                   {busy === '__custom__' ? 'Installing…' : 'Install'}
                 </button>
@@ -424,7 +378,7 @@ const ProjectDictionarySection: React.FC = () => {
   const isAddTarget = addTargets.includes(PROJECT_DICT_TARGET);
 
   return (
-    <div style={cardStyle}>
+    <div className="fs-dict-card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, cursor: 'pointer' }}>
           <input
@@ -433,8 +387,8 @@ const ProjectDictionarySection: React.FC = () => {
             onChange={(e) => toggleEnabled(e.target.checked)}
           />
           <div style={{ flex: 1 }}>
-            <div style={sectionTitleStyle}>Script dictionary</div>
-            <div style={helpTextStyle}>
+            <div className="fs-dict-section-title">Script dictionary</div>
+            <div className="prefs-hint fs-dict-hint">
               {projectEnabled
                 ? projectWords.length === 0
                   ? 'No words yet — anything you "Add to Dictionary" goes here by default.'
@@ -448,7 +402,7 @@ const ProjectDictionarySection: React.FC = () => {
           disabled={!projectEnabled}
           onToggle={toggleAddTarget}
         />
-        <button type="button" onClick={() => setExpanded((x) => !x)} style={buttonStyle}>
+        <button type="button" onClick={() => setExpanded((x) => !x)} className="dialog-btn dialog-btn-sm">
           {expanded ? 'Hide' : 'Edit words…'}
         </button>
       </div>
@@ -461,10 +415,10 @@ const ProjectDictionarySection: React.FC = () => {
               value={newWord}
               onChange={(e) => setNewWord(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
-              style={inputStyle}
+              className="dialog-input fs-dict-input"
               disabled={!projectEnabled}
             />
-            <button type="button" onClick={handleAdd} style={buttonStyle} disabled={!projectEnabled}>
+            <button type="button" onClick={handleAdd} className="dialog-btn dialog-btn-sm" disabled={!projectEnabled}>
               Add
             </button>
           </div>
@@ -532,19 +486,19 @@ const GlobalDictionariesSection: React.FC<{ onOpenLibrary: () => void }> = ({ on
   };
 
   return (
-    <div style={cardStyle}>
+    <div className="fs-dict-card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ flex: 1 }}>
-          <div style={sectionTitleStyle}>Global dictionaries</div>
-          <div style={helpTextStyle}>
+          <div className="fs-dict-section-title">Global dictionaries</div>
+          <div className="prefs-hint fs-dict-hint">
             Reusable word lists shared across projects. Enable any combination for this script.
           </div>
         </div>
-        <button type="button" onClick={onOpenLibrary} style={buttonStyle}>Manage library…</button>
+        <button type="button" onClick={onOpenLibrary} className="dialog-btn dialog-btn-sm">Manage library…</button>
       </div>
       <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
         {names.length === 0 && (
-          <div style={helpTextStyle}>
+          <div className="prefs-hint fs-dict-hint">
             No global dictionaries yet. Click "Manage library…" to create one.
           </div>
         )}
@@ -585,7 +539,7 @@ const SpellingSettings: React.FC = () => {
   const setSpellingSetting = useEditorStore((s) => s.setSpellingSetting);
 
   return (
-    <div style={cardStyle}>
+    <div className="fs-dict-card">
       <label
         style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}
       >
@@ -596,8 +550,8 @@ const SpellingSettings: React.FC = () => {
           style={{ marginTop: 3 }}
         />
         <div style={{ flex: 1 }}>
-          <div style={sectionTitleStyle}>Flag proper nouns</div>
-          <div style={helpTextStyle}>
+          <div className="fs-dict-section-title">Flag proper nouns</div>
+          <div className="prefs-hint fs-dict-hint">
             When off, capitalized unknown words (names, places, brands) are not flagged.
             Turn on for stricter checking — real proper nouns will then need to be added to a dictionary.
           </div>

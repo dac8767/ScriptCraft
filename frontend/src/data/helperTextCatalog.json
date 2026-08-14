@@ -1530,7 +1530,7 @@
   "where": [
    "components/TitlePageEditor.tsx"
   ],
-  "icon": "FaSearchPlus",
+  "icon": "LuZoomIn",
   "label": "Fit"
  },
  {
@@ -1598,16 +1598,6 @@
    "components/FloatingWindow.tsx",
    "components/ToolDock.tsx"
   ]
- },
- {
-  "text": "Go back",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Settings & Setup",
-  "where": [
-   "components/SettingsPage.tsx"
-  ],
-  "label": "System Settings"
  },
  {
   "text": "Go to Page (⌘G)",
@@ -3583,7 +3573,7 @@
    "components/TitlePageEditor.tsx",
    "components/Toolbar.tsx"
   ],
-  "icon": "FaSearchPlus"
+  "icon": "LuZoomIn"
  },
  {
   "text": "Zoom options",
@@ -3604,7 +3594,7 @@
    "components/TitlePageEditor.tsx",
    "components/Toolbar.tsx"
   ],
-  "icon": "FaSearchMinus",
+  "icon": "LuZoomOut",
   "label": "Fit"
  },
  {

@@ -88,7 +88,7 @@ const DemoBanner: React.FC = () => {
             }}>{line}</p>
           ))}
         </div>
-        <button
+        <button className="dialog-btn"
           onClick={dismiss}
           style={{
             background: '#e67e22',

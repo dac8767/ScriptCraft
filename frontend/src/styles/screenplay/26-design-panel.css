@@ -23,7 +23,9 @@
   border-bottom: 1px solid var(--fd-border);
 }
 .dz-header:active { cursor: grabbing; }
-.dz-title { font-size: 13px; font-weight: 600; }
+.dz-title { font-size: 11.5px; font-weight: 600;
+  color: var(--fd-text-muted);
+}
 .dz-count {
   font-size: 10.5px; color: var(--fd-accent);
   background: var(--fd-overlay-light); border-radius: 10px; padding: 1px 8px;

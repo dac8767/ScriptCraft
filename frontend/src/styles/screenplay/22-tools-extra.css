@@ -235,7 +235,7 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   overflow-y: auto; min-height: 0;
   padding: 10px 18px 12px;
 }
-.fs-customize-body h3 { font-size: 13px; margin: 14px 0 4px; color: var(--fd-text); }
+.fs-customize-body h3 { font-size: 11.5px; margin: 14px 0 4px; color: var(--fd-text-muted); }
 .fs-customize-hint { font-size: 11.5px; color: var(--fd-text-muted); margin: 0 0 8px; }
 .fs-customize-row {
   display: flex;
@@ -548,7 +548,7 @@ label.fs-presets-row { cursor: pointer; }
   justify-content: center;
   background: none;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 5px;
   color: var(--fd-text-muted);
   font-size: 16px;
   cursor: pointer;
@@ -787,20 +787,10 @@ input.fs-switch:checked::after { left: 15px; }
   color: var(--fd-text);
 }
 
-/* v0.10: reorder controls in Customize Layout */
-.fs-customize-order { display: inline-flex; flex-direction: column; gap: 1px; margin-right: 4px; }
-.fs-customize-order button {
-  background: none;
-  border: 1px solid var(--fd-border);
-  border-radius: 3px;
-  color: var(--fd-text-muted);
-  font-size: 7px;
-  line-height: 1;
-  padding: 1px 4px;
-  cursor: pointer;
-}
-.fs-customize-order button:disabled { opacity: 0.3; cursor: default; }
-.fs-customize-order button:not(:disabled):hover { color: var(--fd-text); }
+
+
+
+
 
 /* ═══ v0.11 ═══ */
 
@@ -977,22 +967,6 @@ input.fs-switch:checked::after { left: 15px; }
 }
 
 /* Edit Workspaces: reorder controls */
-.ws-order { display: inline-flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
-.ws-order button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1px solid var(--fd-border);
-  border-radius: 3px;
-  color: var(--fd-text-muted);
-  font-size: 7px;
-  line-height: 1;
-  padding: 1px 5px;
-  cursor: pointer;
-}
-.ws-order button:disabled { opacity: 0.3; cursor: default; }
-.ws-order button:not(:disabled):hover { color: var(--fd-text); }
 
 /* ═══ v0.13: Preferences ═══ */
 .prefs-dialog {
@@ -1040,7 +1014,7 @@ input.fs-switch:checked::after { left: 15px; }
   gap: 9px;
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   color: var(--fd-text);
   font-size: 13px;
   text-align: left;
@@ -1089,7 +1063,7 @@ input.fs-switch:checked::after { left: 15px; }
   flex-shrink: 0;
 }
 .pst-listhead {
-  font-size: 11px; font-weight: 700;
+  font-size: 11.5px; font-weight: 700;
   text-transform: uppercase; letter-spacing: .04em;
   color: var(--fd-text-muted);
   margin: 10px 0 6px;
@@ -1155,13 +1129,13 @@ input.fs-switch:checked::after { left: 15px; }
    share this declaration instead of getting a second copy of it. */
 .prefs-field-row select,
 .prefs-select {
-  height: 32px;
+  height: var(--dz-select-h, 28px);   /* v7.02 (remaining #2): was 32px */
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
   padding: 0 8px;
-  font-size: 13.5px;
+  font-size: var(--dz-select-font, 12.5px);
 }
 .prefs-field-row select:focus,
 .prefs-select:focus { outline: none; border-color: var(--fd-accent); }
@@ -1484,12 +1458,12 @@ input.fs-switch:checked::after { left: 15px; }
 
 /* 5c) Toolbar editor-view dropdown */
 .view-style-selector {
-  height: 26px;
+  height: var(--dz-select-h, 28px);
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--dz-select-font, 12.5px);
   padding: 0 6px;
 }
 
@@ -1512,7 +1486,7 @@ input.fs-switch:checked::after { left: 15px; }
 }
 .preview-mode .editor-main { padding-right: 288px !important; }
 .pv-section-title {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .08em;
@@ -1558,7 +1532,7 @@ input.fs-switch:checked::after { left: 15px; }
   background: var(--fd-toolbar-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 8px 0;
   font-size: 12.5px;
   cursor: pointer;
@@ -1636,19 +1610,10 @@ input.fs-switch:checked::after { left: 15px; }
 
 /* Customize: pinned tool reorder arrows */
 .fs-customize-pin-row { display: flex; align-items: center; gap: 7px; }
-.fs-pin-order { display: inline-flex; gap: 2px; }
-.fs-pin-order button {
-  background: none;
-  border: 1px solid var(--fd-border);
-  border-radius: 3px;
-  color: var(--fd-text-muted);
-  font-size: 8px;
-  line-height: 1;
-  padding: 2px 5px;
-  cursor: pointer;
-}
-.fs-pin-order button:disabled { opacity: .3; cursor: default; }
-.fs-pin-order button:not(:disabled):hover { color: var(--fd-text); }
+
+
+
+
 
 /* Preview sidebar: exit button at the top */
 .pv-exit-btn {
@@ -1657,7 +1622,7 @@ input.fs-switch:checked::after { left: 15px; }
   background: var(--fd-menu-bg);
   color: var(--fd-accent);
   border: 1px solid var(--fd-accent);
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 8px 0;
   font-size: 13px;
   font-weight: 600;
@@ -1755,7 +1720,7 @@ input.fs-switch:checked::after { left: 15px; }
   overflow-y: auto;
   font-size: 12.5px; color: var(--fd-text);
 }
-.fb-title { margin: 0; font-size: 15px; }
+.fb-title { margin: 0; font-size: 16px; }
 .fb-hint { margin: 0; color: var(--fd-text-muted); line-height: 1.45; }
 .fb-note {
   padding: 8px 10px; border-radius: 5px; line-height: 1.4;
@@ -1800,9 +1765,10 @@ input.fs-switch:checked::after { left: 15px; }
    how-to text are gone — Derek: "that text is not needed"). */
 .fb-type-row { flex-direction: row; align-items: center; gap: var(--dz-fb-type-gap, 8px); }
 .fb-select {
-  height: 30px; padding: 0 8px; align-self: flex-start; min-width: 140px;
+  height: var(--dz-select-h, 28px); padding: 0 8px; align-self: flex-start; min-width: 140px;
   background: var(--fd-input-bg); color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: 4px;
+  font-size: var(--dz-select-font, 12.5px);
 }
 /* (v6.97: the v6.96 .fb-fmt-* formatting buttons are gone — typed "- " and
    "1. " lists continue themselves on Enter instead.) */
@@ -2030,3 +1996,45 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
    user-select: none. */
 .prefs-window .prefs-layout { flex: 1; min-height: 0; }
 .prefs-window input, .prefs-window textarea, .prefs-window select { user-select: text; }
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Dictionary windows (v7.02 — style audit remaining #9, #10, #12)
+
+   Settings ▸ General ▸ Grammar & Spelling, and the Dictionary Library inside
+   it. Both windows used to build their own look in JavaScript: a hand-written
+   `buttonStyle` object, a hand-written `inputStyle`, and 68 inline style blocks
+   between them. Because they weren't wired to the stylesheet, their buttons
+   were NATIVE browser buttons in every dark theme — the one rule that gave them
+   a background, `.dialog-body button`, exists only under [data-theme="light"],
+   which is why this survived so long: it looked fine to anyone testing in Light.
+
+   They use the app's own classes now (dialog-btn, dialog-input). What is left
+   here is only what those classes don't cover.
+   ════════════════════════════════════════════════════════════════════════════ */
+.fs-dict-section-title {
+  font-size: 11.5px;                 /* the section step of the title scale */
+  font-weight: 600;
+  color: var(--fd-text-muted);
+  margin-bottom: 6px;
+}
+.fs-dict-hint { margin: 0; }
+.fs-dict-card {
+  padding: 10px 12px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+}
+/* .dialog-input is width:100% by design; in these rows it shares space instead. */
+.fs-dict-input { width: auto; flex: 1; min-width: 0; }
+/* the full-width disclosure button ("Install from custom URL…") reads as a row,
+   so it keeps left-aligned text and a taller box than the compact default. */
+.fs-dict-wide-btn {
+  height: auto !important;
+  padding: 8px 10px !important;
+  font-size: 13px !important;
+  text-align: left;
+  justify-content: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

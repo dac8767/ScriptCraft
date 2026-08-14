@@ -67,7 +67,7 @@ export interface ChangelogEntry {
   items: ChangelogItem[];
 }
 
-export const APP_VERSION = '7.01';
+export const APP_VERSION = '7.02';
 
 /* v4.73 — THE "What's New" CRASH (Derek's screenshot, ChangelogDialog map).
    changelog.json holds TWO shapes: the curated era uses

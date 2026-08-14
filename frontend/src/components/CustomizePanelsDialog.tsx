@@ -752,11 +752,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         run the shared preset flows (PresetsPanel), so the Customize footer,
         the Presets window and Settings ▸ Presets can never drift. Import
         confirms first — it overrides everything here. */}
-    <button
+    <button className="dialog-btn"
       title="Save every customization choice to a file"
       onClick={() => { void exportCustomizationsFlow(); }}
     >Export…</button>
-    <button
+    <button className="dialog-btn"
       title="Load customization choices from a file — this replaces your current ones"
       onClick={() => { void importCustomizationsFlow(); }}
     >Import…</button>

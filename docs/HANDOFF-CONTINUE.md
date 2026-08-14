@@ -1,5 +1,20 @@
-# ScriptCraft — continuation brief (current as of v7.01 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.02 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
+> QUEUE — Derek, 2026-08-14 ("add to queue"), NOT yet built — the ADD-ON
+> track. These four are one piece of work; do them together:
+> 1. Build an ADD-ON MODULE: a place add-ons can be installed into. (There is
+>    already a `pluginRegistry` with `getRoutes()` wired in App.tsx — start by
+>    reading it; this may be an extension of that rather than a new system.)
+> 2. Convert the Action Rewrite tool INTO an add-on — Derek wants it as the
+>    first real test of the add-on mechanism, and does not want that tool
+>    widely distributed.
+> 3. Then REMOVE Action Rewrite from the main app completely: reachable only
+>    after installing the add-on. (Touches: RewriteTool.tsx, its ToolDock/
+>    ALL_TOOLS registry entry, menu entries, shortcuts, `29-rewrite.css`.)
+> 4. Move the DESIGN window into the Dev tab, and remove it as an option from
+>    every toolbar and side panel. (`DEV_TOOLS` in editorStore is the existing
+>    dev-only mechanism — the Design window should join it.)
+>
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
 > and DELIVERED v6.95: Settings sits in Help below About ScriptCraft.)
@@ -292,6 +307,44 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.02 — the rest of the style audit ("proceed with all of your recommendations")
+
+Derek asked for the remaining items translated into plain language
+(`docs/STYLE-AUDIT-REMAINING.md`, 19 items with menu paths instead of CSS
+selectors), then said to proceed with every recommendation in it. Items 1-10,
+14, 15, 16 and 18 shipped; 11, 13, 17 and 19 are still open and listed at the
+bottom of that doc with the reason.
+
+**The dictionary windows were the real prize.** Settings ▸ General ▸ Grammar &
+Spelling and the Dictionary Library each defined their own `buttonStyle` /
+`inputStyle` objects in JS and 68 inline style blocks between them. Because
+nothing connected them to the stylesheet, their buttons were NATIVE in every
+dark theme — the one rule that gave them a background, `.dialog-body button`,
+exists only under `[data-theme="light"]`. **That is why it survived: it looked
+correct to anyone checking in Light.** Worth remembering as a review reflex —
+check a dark theme before believing a control is styled.
+
+**New tokens:** `--dz-select-h` (28) / `--dz-select-h-compact` (22) /
+`--dz-select-font`, and `--dz-dialog-btn-radius` moved 4 → 5 (the house radius).
+Remember the designTokens contract: a knob's `def` must equal the CSS fallback
+literal — changing one without the other fails the suite, which is exactly what
+caught the radius change here.
+
+**Title scale:** 16 window / 13 panel / 11.5 section, section heads muted.
+`.tool-window-title` is knob-driven, so its KNOB default moved 12 → 13 rather
+than hardcoding past it.
+
+**`devtools/check-dead-css.mjs` is new and found 309 orphaned classes.** It
+BASELINES them (`dead-css-baseline.json`) and fails only on new ones — deleting
+309 blind is how you remove something composed at runtime. Shrinking that
+baseline is a real cleanup task waiting to be done. Three of the title rules
+edited for item 4 turned out to be in the backlog, so those edits did nothing.
+
+**Judgement call to know about:** the Characters tool's profile fields stay at
+26px against the 28px house dropdown — a v4.26 note made that split deliberate
+and they track each other inside the meta rows. The genuine bug there (the sort
+dropdown rendering 22px in one place, 28px in another — same class) is fixed.
 
 ### v7.01 — the style audit's fixes (report → change list → shipped)
 

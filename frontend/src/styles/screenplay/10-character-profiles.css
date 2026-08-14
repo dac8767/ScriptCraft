@@ -61,7 +61,7 @@
 }
 .char-profiles-title {
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--fd-text-muted);
@@ -157,6 +157,7 @@
   flex: 0 0 auto;
   width: 150px;
   height: var(--dz-char-input-h, 28px); /* v4.26: field-height Design knob */
+  font-size: var(--dz-select-font, 12.5px);
 }
 /* (v4.25's 300px fullscreen sort select is gone — fullscreen sorts via the
    cluster's Sort dropdown now; this toolbar only renders in the overlay.) */
@@ -190,7 +191,14 @@
 }
 .char-sort-select {
   flex: 1;
-  height: var(--dz-char-input-h, 22px); /* v4.26: field-height Design knob */
+  /* v7.02 (style audit remaining #2): was 22px. The SAME class renders at 28px
+     in the toolbar row (see .char-profiles-toolbar .char-sort-select above), so
+     one dropdown had two heights depending on where it appeared. 28 matches the
+     toolbar copy, the registered knob default, and the house dropdown size.
+     (The 26px profile-field group below is left alone on purpose: those track
+     each other inside the meta rows, and shifting them changes that tool's
+     density rather than fixing an inconsistency.) */
+  height: var(--dz-char-input-h, 28px);
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);

@@ -114,8 +114,13 @@
 .search-checkbox input { cursor: pointer; }
 .search-actions { display: flex; gap: 6px; }
 .search-actions button {
-  flex: 1; height: 28px; background: var(--fd-toolbar-bg); color: var(--fd-text);
-  border: 1px solid var(--fd-border); border-radius: 3px; cursor: pointer; font-size: 12px;
+  flex: 1; background: var(--fd-toolbar-bg); color: var(--fd-text);
+  border: 1px solid var(--fd-border); border-radius: 3px; cursor: pointer;
+  /* v7.02 (remaining #1): the named COMPACT size — for small floating panels
+     and popups where a full-height button would crowd the box. Two deliberate
+     sizes, not eight accidental ones. */
+  height: var(--dz-dialog-btn-h-sm, 26px);
+  font-size: 12px;
 }
 .search-actions button:hover { background: var(--fd-menu-hover); }
 .search-actions button:disabled { opacity: .4; cursor: default; }
@@ -184,7 +189,7 @@
 }
 .dialog-footer button {
   height: var(--dz-dialog-btn-h, 34px); padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
-  border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 4px); cursor: pointer; font-size: 14px;
+  border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 5px); cursor: pointer; font-size: 14px;
 }
 .dialog-footer button:hover { background: var(--fd-toolbar-hover); }
 .dialog-actions {
@@ -194,7 +199,7 @@
 }
 .dialog-actions button {
   height: var(--dz-dialog-btn-h, 34px); padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
-  border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 4px); cursor: pointer; font-size: 14px;
+  border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 5px); cursor: pointer; font-size: 14px;
 }
 .dialog-actions button:hover { background: var(--fd-menu-hover); }
 /* ── v3.25, Derek (task #135): the header/footer redesign goes APP-WIDE ──
@@ -238,7 +243,7 @@
 .dialog-primary:hover { background: color-mix(in srgb, var(--fd-accent) 86%, black) !important; }
 .dialog-btn {
   height: var(--dz-dialog-btn-h, 34px); padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
-  border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 4px); cursor: pointer; font-size: 14px;
+  border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 5px); cursor: pointer; font-size: 14px;
 }
 /* v7.01 (C60): excludes primaries — see the note on .dialog-btn-primary:hover
    below. Relying on source order alone put the two rules one edit apart from
@@ -262,7 +267,9 @@
 .dialog-btn-primary.dialog-btn-danger-fill:hover { background: color-mix(in srgb, var(--fd-danger) 86%, black); }
 .dialog-label { display: block; font-size: 13px; color: var(--fd-text-muted); margin-bottom: 4px; }
 .dialog-input {
-  height: 34px; background: var(--fd-input-bg); color: var(--fd-text);
+  /* v7.02 (remaining #3): was a hardcoded 34px, so the Design window's "Input
+     height" slider moved .dialog-row inputs but not these. One height now. */
+  height: var(--dz-dialog-input-h, 36px); background: var(--fd-input-bg); color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: 4px; padding: 0 10px;
   font-size: 14px; outline: none; width: 100%; box-sizing: border-box;
 }
@@ -340,9 +347,9 @@
   padding-top: 12px;
 }
 .about-section-title {
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--fd-text);
+  color: var(--fd-text-muted);
   margin-bottom: 8px;
 }
 .about-list {
@@ -428,13 +435,13 @@
 .page-setup-row select,
 .page-setup-row input[type="number"] {
   flex: 1;
-  height: 28px;
+  height: var(--dz-select-h, 28px);   /* v7.02 (remaining #2) */
   padding: 0 8px;
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--dz-select-font, 12.5px);
   outline: none;
 }
 .page-setup-row select:focus,

@@ -8,26 +8,6 @@ interface DictionaryLibraryProps {
   onClose: () => void;
 }
 
-const inputStyle: React.CSSProperties = {
-  flex: 1,
-  padding: '6px 8px',
-  border: '1px solid var(--fd-border)',
-  borderRadius: 4,
-  background: 'var(--fd-bg)',
-  color: 'var(--fd-text)',
-  fontSize: 13,
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: '6px 10px',
-  border: '1px solid var(--fd-border)',
-  borderRadius: 4,
-  background: 'var(--fd-bg)',
-  color: 'var(--fd-text)',
-  fontSize: 12,
-  cursor: 'pointer',
-};
-
 const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
   const customDictionaries = useEditorStore((s) => s.customDictionaries);
   const createGlobalDictionary = useEditorStore((s) => s.createGlobalDictionary);
@@ -105,7 +85,7 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
         <div className="dialog-body" style={{ display: 'flex', gap: 12, padding: 16, overflow: 'hidden', flex: 1, minHeight: 360 }}>
           {/* Left column: list of dictionaries */}
           <div style={{ flex: '0 0 220px', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--fd-border)', paddingRight: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Dictionaries</div>
+            <div className="fs-dict-section-title">Dictionaries</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
               <input
                 type="text"
@@ -113,9 +93,9 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
                 value={newDictName}
                 onChange={(e) => setNewDictName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
-                style={inputStyle}
+                className="dialog-input fs-dict-input"
               />
-              <button type="button" onClick={handleCreate} style={buttonStyle}>Add</button>
+              <button type="button" onClick={handleCreate} className="dialog-btn dialog-btn-sm">Add</button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
               {names.length === 0 && (
@@ -152,11 +132,11 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
             </div>
             {selected && (
               <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                <button type="button" onClick={() => handleRename(selected)} style={buttonStyle}>Rename</button>
+                <button type="button" onClick={() => handleRename(selected)} className="dialog-btn dialog-btn-sm">Rename</button>
                 <button
                   type="button"
                   onClick={() => handleDelete(selected)}
-                  style={{ ...buttonStyle, color: 'var(--fd-danger)', borderColor: 'var(--fd-danger)' }}
+                  className="dialog-btn dialog-btn-sm dialog-btn-danger"
                 >
                   Delete
                 </button>
@@ -172,7 +152,7 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
               </div>
             ) : (
               <>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+                <div className="fs-dict-section-title">
                   Words in “{selected}” ({selectedWords.length})
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
@@ -183,9 +163,9 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
                     value={newWord}
                     onChange={(e) => setNewWord(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleAddWord(); }}
-                    style={inputStyle}
+                    className="dialog-input fs-dict-input"
                   />
-                  <button type="button" onClick={handleAddWord} style={buttonStyle}>Add</button>
+                  <button type="button" onClick={handleAddWord} className="dialog-btn dialog-btn-sm">Add</button>
                 </div>
                 <div
                   style={{

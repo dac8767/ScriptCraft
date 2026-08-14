@@ -38,7 +38,7 @@ export default class AppErrorBoundary extends React.Component<React.PropsWithChi
           where you left off. If this keeps happening, the details below say
           where it broke.
         </p>
-        <button
+        <button className="dialog-btn"
           onClick={() => window.location.reload()}
           style={{
             background: '#4a90d9', color: '#fff', border: 'none', borderRadius: 6,

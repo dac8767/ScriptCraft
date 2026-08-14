@@ -87,13 +87,13 @@
   border: 1px solid rgba(255,255,255,.15);
 }
 .sort-select {
-  height: 32px;
+  height: var(--dz-select-h, 28px);
   padding: 0 10px;
   background: var(--fd-toolbar-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--dz-select-font, 12.5px);
   cursor: pointer;
 }
 
@@ -413,13 +413,13 @@
 }
 .asset-filter-input:focus { border-color: var(--fd-accent); }
 .asset-filter-select {
-  height: 28px;
+  height: var(--dz-select-h, 28px);
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 3px;
   padding: 0 8px;
-  font-size: 12px;
+  font-size: var(--dz-select-font, 12.5px);
   cursor: pointer;
   outline: none;
   min-width: 120px;
@@ -828,7 +828,7 @@
   padding: 12px 14px;
   background: rgba(255,255,255,.05);
   border: 1px solid var(--fd-border);
-  border-radius: 8px;
+  border-radius: 5px;
   cursor: pointer;
   transition: background .15s, border-color .15s;
   text-align: left;

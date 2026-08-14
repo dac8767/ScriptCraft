@@ -333,8 +333,8 @@
 .fs-nav-scnf-select {
   flex: 1;
   min-width: 0;
-  height: 24px;
-  font-size: 11px;
+  height: var(--dz-select-h, 28px);
+  font-size: var(--dz-select-font, 12.5px);
   color: var(--fd-text);
   background: var(--fd-input-bg, var(--fd-bg));
   border: 1px solid var(--fd-border);
@@ -633,7 +633,13 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
   padding-top: 8px;
   border-top: 1px solid var(--fd-border);
 }
-.markup-icon-pop-foot .dialog-btn { height: 26px; padding: 0 14px; font-size: 12px; }
+.markup-icon-pop-foot .dialog-btn { padding: 0 14px;
+  /* v7.02 (remaining #1): the named COMPACT size — for small floating panels
+     and popups where a full-height button would crowd the box. Two deliberate
+     sizes, not eight accidental ones. */
+  height: var(--dz-dialog-btn-h-sm, 26px);
+  font-size: 12px;
+}
 
 /* v5.42/v5.43, Derek: the panel's ONE Filter — one section whose controls
    drive the script AND the window together (the two-section idea is gone) */

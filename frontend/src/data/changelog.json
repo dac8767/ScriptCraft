@@ -1,5 +1,20 @@
 [
  {
+  "version": "7.02",
+  "date": "2026-08-14",
+  "changes": [
+   "The Grammar & Spelling windows (Settings ▸ General ▸ Grammar & Spelling, and the Dictionary Library inside it) look like the rest of the app now. Their buttons were raw browser buttons in every dark theme — those two windows built their own look in code instead of using the app's, so they never followed along. Fifteen buttons, the text fields and the headings now use the shared styles.",
+   "Buttons along the bottom of windows are one size. They ranged from 28 to 34 pixels tall depending on which window you opened — New Script, Guided Setup, the start screen, Spell Check and the confirmation boxes all match the standard now. Find & Replace and the two small popups use a proper compact size instead of being small by accident.",
+   "Dropdowns are one size. Ten different heights were in use, from 22 to 36 pixels; they share one size now, with a deliberate compact version in the toolbar where the row can't fit the standard one. The Characters sort dropdown was rendering at two different heights depending on where it appeared — same control, same list, two sizes.",
+   "Text boxes in dialogs are one height, and the Design window's Input height slider now moves all of them instead of only some.",
+   "Titles follow a scale: 16pt for window titles, 13pt for panel titles, 11.5pt for the section headings inside a window. Section headings are all muted gray now — they were split about half and half with full-white, so some headings shouted louder than the content under them.",
+   "Corner roundness is consistent — the side rail icons, zoom panel, welcome choices, Sticky Notes add button, Settings tabs and Tags create button were at six, seven and eight pixels against the app's four to five.",
+   "The zoom magnifier icons match the rest of the app's icon style, and the little stacked up/down arrows in the Workspaces window use the same control as everywhere else instead of their own smaller copy.",
+   "Removed an old, unreachable Settings screen that was still shipping with its own look, plus styling for controls that no longer exist.",
+   "Under the hood: a check that fails the build if a color is added to the app but forgotten in the Themes editor, and another that catches new styling with nothing using it."
+  ]
+ },
+ {
   "version": "7.01",
   "date": "2026-08-14",
   "changes": [

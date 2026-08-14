@@ -228,13 +228,13 @@
 .format-panel .font-selector:focus { border-color: var(--fd-accent); }
 .format-size-select {
   flex: 1;
-  height: 30px;
+  height: var(--dz-select-h, 28px);
   background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
   padding: 0 8px;
-  font-size: 12px;
+  font-size: var(--dz-select-font, 12.5px);
   outline: none;
 }
 .format-size-select:focus { border-color: var(--fd-accent); }

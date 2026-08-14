@@ -723,11 +723,13 @@
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
-  padding: 8px 8px;
-  font-size: 13px;
+  padding: 0 8px;
+  font-size: var(--dz-select-font, 12.5px);
   outline: none;
   cursor: pointer;
-  min-height: 36px;
+  /* v7.02 (remaining #2): was min-height 36px + 8px vertical padding — the
+     tallest dropdown in the app by a wide margin. */
+  height: var(--dz-select-h, 28px);
   -webkit-appearance: none;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
@@ -742,7 +744,7 @@
   flex: 1; min-width: 0;
   background: var(--fd-input-bg); color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: 4px;
-  padding: 8px 8px; font-size: 13px; outline: none; min-height: 36px;
+  padding: 0 8px; font-size: var(--dz-select-font, 12.5px); outline: none; height: var(--dz-select-h, 28px);   /* v7.02: matches the dropdown beside it */
 }
 .scene-filter-input::placeholder { color: var(--fd-text-muted); opacity: 0.6; }
 .scene-filter-input:focus { border-color: var(--fd-accent); }

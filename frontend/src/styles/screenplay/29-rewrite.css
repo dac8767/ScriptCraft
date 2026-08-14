@@ -34,7 +34,13 @@
 }
 .rw-key-input:focus { outline: none; border-color: var(--fd-accent); }
 .rw-key-actions { display: flex; justify-content: flex-end; gap: 8px; }
-.rw-key-actions .dialog-btn { height: 26px; padding: 0 14px; font-size: 12px; }
+.rw-key-actions .dialog-btn { padding: 0 14px;
+  /* v7.02 (remaining #1): the named COMPACT size — for small floating panels
+     and popups where a full-height button would crowd the box. Two deliberate
+     sizes, not eight accidental ones. */
+  height: var(--dz-dialog-btn-h-sm, 26px);
+  font-size: 12px;
+}
 
 /* v5.58: the free-text writer's note (replaced the preset-steer select) */
 .rw-note-row { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }

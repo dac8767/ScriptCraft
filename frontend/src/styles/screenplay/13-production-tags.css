@@ -104,7 +104,7 @@
 }
 .tags-panel-title {
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: .5px;
   color: var(--fd-text-muted);
@@ -411,7 +411,7 @@
   background: var(--fd-accent);
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 10px 20px;
   min-height: 44px;
   font-size: 14px;

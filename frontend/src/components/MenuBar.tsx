@@ -58,7 +58,7 @@ import { applyScriptFormat } from '../utils/applyScriptFormat';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
 import { pluginRegistry } from '../plugins/registry';
-import { LuSearch } from 'react-icons/lu';
+import { LuSearch, LuZoomIn } from 'react-icons/lu';
 import { MENU_ICONS, CirclePlusIcon, CircleMinusIcon } from './uiIcons';
 import { useScrapbookMenus } from './NotebookTool';
 import { FaTable, FaImage as FaImageIcon, FaChevronRight, FaChevronDown } from 'react-icons/fa';
@@ -117,7 +117,6 @@ import {
   FaInfoCircle,
   FaKeyboard,
   FaStethoscope,
-  FaSearchPlus,
   FaUpload,
   FaHistory,
   FaExchangeAlt,
@@ -1550,7 +1549,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             // v2.57, Derek: as big as the page can get in the current editor
             // width (the sidebars decide how much room there is). The
             // measurement lives in the Toolbar; the command event reaches it.
-            { icon: <FaSearchPlus />, label: 'Scale to Max Width', shortcut: sc('fitWidth'), action: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitWidth' })) },
+            { icon: <LuZoomIn />, label: 'Scale to Max Width', shortcut: sc('fitWidth'), action: () => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'fitWidth' })) },
             { separator: true, label: '' },
             { icon: <CirclePlusIcon />, label: zoomLevel === 50 ? '\u2713 50%' : '50%', action: () => setZoomLevel(50) },
             { icon: <CirclePlusIcon />, label: zoomLevel === 75 ? '\u2713 75%' : '75%', action: () => setZoomLevel(75) },

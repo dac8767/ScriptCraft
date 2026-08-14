@@ -200,7 +200,9 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       // v4.47, Derek: the air between the window's name and its tabs (the
       // header's 8px column-gap sits on top of this margin).
       { id: 'toolWinTitleGap', label: 'Space after window name', cssVar: '--dz-toolwin-title-gap', unit: 'px', min: 0, max: 40, step: 1, def: 10 },
-      { id: 'toolWinTitleFont', label: 'Tool window title font', cssVar: '--dz-toolwin-title-font', unit: 'px', min: 9, max: 20, step: 0.5, def: 12 },
+      /* v7.02 (remaining #4): 13px is the PANEL-title step of the scale
+         (16 window / 13 panel / 11.5 section). */
+      { id: 'toolWinTitleFont', label: 'Tool window title font', cssVar: '--dz-toolwin-title-font', unit: 'px', min: 9, max: 20, step: 0.5, def: 13 },
       // v4.45, Derek: header-bar tuning — the bar's control/tab type size and
       // the air between the header and the window's content, every shape.
       { id: 'toolWinBarFont', label: 'Header bar font size', cssVar: '--dz-toolwin-bar-font', unit: 'px', min: 9, max: 18, step: 0.5, def: 12,
@@ -314,9 +316,17 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       /* v7.01 (style audit F137): the compact button (.dialog-btn-sm) is now a
          real size rather than the full-height button with smaller text. */
       { id: 'dialogBtnHeightSm', label: 'Small button height', cssVar: '--dz-dialog-btn-h-sm', unit: 'px', min: 18, max: 40, step: 1, def: 26 },
-      { id: 'dialogBtnRadius', label: 'Button corner radius', cssVar: '--dz-dialog-btn-radius', unit: 'px', min: 0, max: 16, step: 1, def: 4 },
+      /* v7.02 (style audit remaining #7): 5px is the house corner radius —
+         it was 4 here and 6/7/8 on six other button kinds. */
+      { id: 'dialogBtnRadius', label: 'Button corner radius', cssVar: '--dz-dialog-btn-radius', unit: 'px', min: 0, max: 16, step: 1, def: 5 },
       { id: 'dialogLabelFont', label: 'Field label font', cssVar: '--dz-dialog-label-font', unit: 'px', min: 10, max: 20, step: 0.5, def: 14 },
       { id: 'dialogInputH', label: 'Input height', cssVar: '--dz-dialog-input-h', unit: 'px', min: 24, max: 48, step: 1, def: 36 },
+      /* v7.02 (remaining #2): ONE dropdown size. Ten different heights were in
+         use (22-36px); the toolbar keeps a compact variant because its row
+         genuinely can't fit the standard one. */
+      { id: 'selectH', label: 'Dropdown height', cssVar: '--dz-select-h', unit: 'px', min: 20, max: 44, step: 1, def: 28 },
+      { id: 'selectHCompact', label: 'Dropdown height (toolbar)', cssVar: '--dz-select-h-compact', unit: 'px', min: 16, max: 36, step: 1, def: 22 },
+      { id: 'selectFont', label: 'Dropdown font size', cssVar: '--dz-select-font', unit: 'px', min: 9, max: 18, step: 0.5, def: 12.5 },
     ],
   },
   {

@@ -37,9 +37,9 @@
 .toolbar.toolbar-comfortable .toolbar-separator { height: 20px; margin: 0 6px; }
 
 .element-selector, .font-selector, .font-size-selector {
-  height: 22px; background: var(--fd-input-bg); color: var(--fd-text);
+  height: var(--dz-select-h-compact, 22px); background: var(--fd-input-bg); color: var(--fd-text);
   border: 1px solid var(--fd-overlay-medium); border-radius: 5px; padding: 0 8px;
-  font-size: 11.5px; cursor: pointer; outline: none;
+  font-size: var(--dz-select-font, 12.5px); cursor: pointer; outline: none;
 }
 .toolbar.toolbar-comfortable .element-selector,
 .toolbar.toolbar-comfortable .font-selector,
@@ -1314,7 +1314,7 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: 5px;   /* v7.02 (remaining #7): house radius, was 8px */
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.1);
   color: #fff;

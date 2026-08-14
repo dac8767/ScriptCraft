@@ -19,7 +19,7 @@
   color: var(--fd-text);
 }
 .fs-confirm-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
 }
@@ -38,11 +38,14 @@
 .fs-confirm-actions button {
   padding: 6px 14px;
   border-radius: 6px;
-  font-size: 13px;
   cursor: pointer;
   border: 1px solid var(--fd-border);
   background: transparent;
   color: var(--fd-text);
+  /* v7.02 (style audit remaining #1): the HOUSE action-button size. These were
+     28-34px tall with 12-14px text depending on which window you opened. */
+  height: var(--dz-dialog-btn-h, 34px);
+  font-size: 14px;
 }
 .fs-confirm-ok {
   background: var(--fd-accent);

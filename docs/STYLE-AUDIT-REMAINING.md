@@ -1,6 +1,11 @@
 # What's Left From the Style Audit — in plain language
 
-Everything here is still outstanding as of v7.01. Each item says **what's wrong**,
+> **STATUS (v7.02):** Derek said "proceed with all of your recommendations", so
+> items **1-10, 14, 15, 16 and 18** are DONE. What remains is at the bottom under
+> "Still open after v7.02" — items 11, 13, 17, 19 plus a documented judgement
+> call inside item 2.
+
+Everything here was outstanding as of v7.01. Each item says **what's wrong**,
 **where you'll see it in the app**, and **how it gets fixed**. No jargon.
 
 Two parts:
@@ -396,3 +401,42 @@ a new value. I already added the color and button rules there in v7.01.
 4. **Item 11** on its own — it touches every control in the app, so it deserves
    its own version.
 5. **Items 14, 15, 17, 19** — the guards and the write-up, last.
+
+
+---
+
+# Still open after v7.02
+
+**Item 11 — controls don't inherit the app's text size.** Deliberately left for
+its own version: forcing it resizes every control in the app at once, including
+the many that depend on the browser default today. It needs a window-by-window
+look afterward, which is not something to bundle with sixteen other changes.
+
+**Item 13 — the six windows with smaller amounts of hand-written styling**
+(Notebook, Title Page editor, menu bar, About, Grammar Rules, Relationship Map,
+Beat Board). The two worst offenders — the dictionary windows — are done. These
+are mostly positioning, which is a legitimate reason to write styling inline, so
+the payoff is smaller.
+
+**Item 17 — the 80 "force this" override flags.** Needs case-by-case judgement
+about which are still load-bearing after the v7.01 token work; a blind sweep
+would break things silently.
+
+**Item 19 — write the agreed scales into the project notes.** Waiting until the
+numbers settle after you've seen v7.02 in the app.
+
+**Inside item 2, one judgement call I made:** the Characters tool's profile
+fields sit at 26px while the house dropdown is 28px. They're a coherent set that
+track each other inside the profile meta rows, and a v4.26 note says the split
+was deliberate, so changing them alters that tool's density rather than fixing
+an inconsistency. I fixed the genuine bug there instead — the sort dropdown was
+rendering at 22px in one place and 28px in another, the same control at two
+sizes. Say the word if you want the profile fields moved to 28 as well.
+
+**A finding from building the dead-styling check (item 16):** it reported **309**
+styled classes that no component mentions — a hundred versions of accumulated
+CSS. Deleting them is its own project and doing it blind is how you delete
+something that turns out to be assembled at runtime, so the check records the
+backlog and fails only on NEW dead styling. Three of the title rules I edited
+for item 4 turned out to be in that backlog (`.script-notes-title`,
+`.beat-board-title`, `.fs-tbzone-title`) — harmless, but they had no effect.

@@ -347,7 +347,7 @@
   width: 100%;
   padding: 6px 0;
   border: 1px solid var(--fd-border);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--fd-bg);
   color: var(--fd-text);
   font-size: 12px;

@@ -411,7 +411,7 @@ body.fs-tool-dragging { cursor: grabbing; }
    knob since v4.47. */
 .tool-header-title { display: inline-flex; align-items: center; gap: 6px; min-width: 0; margin-right: var(--dz-toolwin-title-gap, 10px); }
 .tool-window-title {
-  font-size: var(--dz-toolwin-title-font, 12px);
+  font-size: var(--dz-toolwin-title-font, 13px);
   font-weight: 700;
   color: var(--fd-text);
 }

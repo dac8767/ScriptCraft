@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { FaRegTrashAlt, FaRegImage, FaSearchMinus, FaSearchPlus, FaRegHandPaper } from 'react-icons/fa';
+import { FaRegTrashAlt, FaRegImage, FaRegHandPaper } from 'react-icons/fa';
+/* v7.02 (style audit remaining #6): the zoom magnifiers join the line-icon
+   family the rest of the chrome uses — they were the heavier Fa pair sitting
+   next to Lu icons. */
+import { LuZoomIn, LuZoomOut } from 'react-icons/lu';
 import type { Editor } from '@tiptap/react';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { TitlePageAttrs } from '../editor/extensions/TitlePage';
@@ -702,9 +706,9 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
                 title={panMode ? 'Hand tool off' : 'Hand tool — drag to pan the preview'}
                 onClick={() => setPanMode((v) => !v)}
               ><FaRegHandPaper /></button>
-              <button type="button" title="Zoom out" onClick={() => setTpZoom(Math.max(0.12, Math.round((tpScale / 1.25) * 1000) / 1000))}><FaSearchMinus /></button>
+              <button type="button" title="Zoom out" onClick={() => setTpZoom(Math.max(0.12, Math.round((tpScale / 1.25) * 1000) / 1000))}><LuZoomOut /></button>
               <button type="button" className="tp-preview-zoom-fit" title="Fit the preview column" onClick={() => setTpZoom('fit')}>Fit</button>
-              <button type="button" title="Zoom in" onClick={() => setTpZoom(Math.min(1.6, Math.round((tpScale * 1.25) * 1000) / 1000))}><FaSearchPlus /></button>
+              <button type="button" title="Zoom in" onClick={() => setTpZoom(Math.min(1.6, Math.round((tpScale * 1.25) * 1000) / 1000))}><LuZoomIn /></button>
             </div>
             <div className={`tp-preview-scroll${panMode ? ' tp-pan-mode' : ''}`} ref={previewScrollRef} onPointerDown={startPan}>
               {/* v5.74: the preview page is the REAL paper — size and margins

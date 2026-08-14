@@ -111,7 +111,7 @@ const GrammarRulesPanel: React.FC<GrammarRulesPanelProps> = ({ onClose }) => {
             {TABS.map((t) => {
               const active = t.id === activeTab;
               return (
-                <button
+                <button className="dialog-btn"
                   key={t.id}
                   type="button"
                   onClick={() => setActiveTab(t.id)}

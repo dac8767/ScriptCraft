@@ -121,6 +121,48 @@ describe('theme tokens (--fd-*) resolve', () => {
   });
 });
 
+describe('custom themes can reach every colour', () => {
+  it('every --fd-* colour defined in :root is editable in Themes (or listed as exempt)', () => {
+    // v7.02 (style audit remaining #14). The original gap happened because a
+    // colour was added to the app and forgotten in the Themes editor; nothing
+    // caught it. This is that catch.
+    const root = css.match(/:root\s*\{([\s\S]*?)\n\}/);
+    expect(root, ':root block must be findable').toBeTruthy();
+    const rootTokens = [...root![1].matchAll(/(--fd-[a-z0-9-]+)\s*:/g)].map((m) => m[1]);
+
+    const themesSrc = readFileSync(join(SRC_DIR, 'components', 'themes.ts'), 'utf8');
+    const editable = new Set([...themesSrc.matchAll(/key:\s*'(--[a-z0-9-]+)'/g)].map((m) => m[1]));
+
+    /** Deliberately NOT user-editable, with the reason. */
+    const EXEMPT = new Map<string, string>([
+      ['--fd-hairline-w', 'a width, not a colour — belongs to the Design window'],
+      ['--fd-chrome-shadow', 'a full box-shadow value, not a single colour'],
+      ['--fd-page-bg', 'already editable under its own Page group key'],
+      // aliases: they resolve to a token that IS editable, so editing the
+      // parent is the way to change them.
+      ['--fd-toolbar-hover', 'alias of --fd-menu-hover'],
+      ['--fd-hover-bg', 'alias of --fd-menu-hover'],
+      ['--fd-hover', 'alias of --fd-menu-hover'],
+      ['--fd-background', 'alias of --fd-bg'],
+      ['--fd-text-dim', 'alias of --fd-text-muted'],
+      ['--fd-text-secondary', 'alias of --fd-text-muted'],
+      ['--fd-accent-bg', 'derived from --fd-accent'],
+      ['--fd-bg-dim', 'alias of --fd-overlay-subtle'],
+      ['--fd-bg-hover', 'alias of --fd-overlay-light'],
+      ['--fd-canvas-bg', 'alias of --fd-bg'],
+      ['--fd-panel-bg', 'alias of --fd-navigator-bg'],
+      ['--fd-tooltip-bg', 'alias of --fd-dropdown-bg'],
+      ['--fd-tooltip-text', 'alias of --fd-text'],
+      ['--fd-btn-bg', 'editable'], ['--fd-btn-text', 'editable'], ['--fd-btn-hover', 'editable'],
+    ]);
+    const unreachable = rootTokens.filter((t) => !editable.has(t) && !EXEMPT.has(t)).sort();
+    expect(
+      unreachable,
+      `not editable in Themes and not exempt: ${unreachable.join(', ')} — add to THEME_VARS or to EXEMPT with a reason`,
+    ).toEqual([]);
+  });
+});
+
 describe('one primary-button idiom', () => {
   it('no component uses the retired bare `dialog-primary` class', () => {
     const offenders: string[] = [];
