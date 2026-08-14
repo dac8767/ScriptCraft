@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.98 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.99 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
@@ -45,6 +45,12 @@
 > STATUS RULE (Derek 2026-08-14): when he TELLS a session to do a
 > feedback item, mark that row Complete on shipping — he follows up
 > with a NEW form if needed; don't wait for a retest.
+> AUTO-IMPLEMENT RULE (Derek 2026-08-14, supersedes show-then-ask):
+> feedback rows FROM DEREK (name Derek / derekcarl@pm.me) are BUILT as
+> soon as a session pulls them up — "show feedback" = report THEN
+> implement in the same turn, one version per pull, full gates once,
+> mark Complete on shipping. Only pause to ask when a row is genuinely
+> ambiguous or names a risk worth flagging first.
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -287,6 +293,36 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.99 — Page Setup tab (templates managed like themes) + Save/Cancel
+
+- Two feedback rows, built on the AUTO-IMPLEMENT rule above.
+- 12:54 row: Draft Number → General (top section; GeneralTab now takes
+  `editor`); Screenshots → LAST in Save Options; Settings footer =
+  Cancel + primary Save (`.prefs-footer`). Settings apply LIVE, so Save
+  just closes; Cancel restores the open-time snapshot through
+  utils/settingsSnapshot (generic over every settingsStore field with a
+  set<Field> twin — the setters carry the per-field localStorage writes,
+  a bare setState would revert memory but not disk; unit-tested) plus
+  editorStore's typewriterRestoreCursor.
+- 1:01 row: the 'formats' (Templates) tab is GONE — `PageSetupTab.tsx`
+  merges the template manager + embedded PageSetupDialog under the
+  'page' tab id (openPreferences('page') callers unchanged; the
+  windowTabMemory validity check drops stale 'formats' automatically).
+  Templates manage like Themes: SHOWN/HIDDEN lists over the SAME
+  `enabledScriptFormats` ids the old checkboxes wrote (no migration;
+  empty = all shown; ≥1 rule kept), six system templates badge
+  "Default" (no Edit/Delete), user templates get Edit/Delete
+  (confirmDialog danger), New Template… = pick a base (any template) →
+  duplicateTemplate → TemplateEditorDialog on the copy → shown.
+  NewScriptDialog.formatOptions + ScriptFormatPickerDialog now include
+  user templates (hidden ids stay out). The STANDALONE
+  ScriptFormatPreferencesDialog (first-run + Format menu) still exists
+  over the same store field — same data, second door, no drift.
+- check-v642 31/0 (Draft-on-General, no Templates tab, Shown/Hidden
+  manager, Hide shrinks the picker set, footer Cancel REVERTS the hide
+  and closes, Screenshots-last). vitest 1205 (+settingsSnapshot pair).
+- Gates: tsc 0, vitest 1205, build ok, check-all 1095/0. Catalog 487.
+
 ### v6.98 — titles into the boxes; aligned buttons; steadier lists
 
 - Feedback row 12:19 AM (all four items, marked Complete on shipping —
@@ -374,29 +410,12 @@ Durable bits kept live here:
   re-arms the bar).
 - Gates: tsc 0, vitest 1200, build ok, check-all 1082/0.
 
-### v6.94 — the ? retired; "Description:"; five more knobs (13 total)
-
-- Derek: "remove the ? icon. that text is not needed" — the whole help
-  mechanism is GONE (ATTACH_HELP, helpPinned/helpHover, `.fb-attach-help`
-  and `.fb-attach-hint` CSS). Message label is "Description:". The
-  fbHelpGap token left WITH the ? (a dead knob fails the no-dead-knobs
-  test); its stale persisted value is silently ignored by
-  applyDesignVars — the designed-for orphan case.
-- Five new css-var knobs (group now 13, test pin updated): fbTypeGap 8
-  (`.fb-type-row` gap), fbDescGap 4 (`.fb-label-grow` gap), fbHeadRowGap
-  6 (head wrap ROW gap — only visible when narrow wraps the buttons),
-  fbAttachGap 0 (margin-top on `.fb-attach`, ADDS to fbRowGap) and
-  fbSubmitGap 0 (margin-top on `.fb-shotrow`, same additive pattern —
-  both hinted in the panel).
-- check-v684 23 (?-gone + head-structure asserts replace the v6.92
-  toggle trio); tests 1200 (the ? toggle test removed).
-- Gates: tsc 0, vitest 1200, build ok, check-all 1079/0. Catalog 480.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.94** — the ? retired from the feedback form; "Description:"; five more Feedback knobs (13 total; fbHelpGap removed with the ?)
 - **v6.93** — attach buttons joined the header row; Submit; the first nine Feedback design knobs (fb* group)
 - **v6.92** — feedback window wording pass ×11: Name:/Type:/Description:, Full Screen button, Attach a Screenshot header, how-to behind a ? (retired v6.94)
 - **v6.91** — feedback categories renamed: Bug Report / Suggestion / Feature Request / Other (Praise retired)

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
-import { SYSTEM_TEMPLATE_LIST } from '../stores/formattingTemplateStore';
+import { SYSTEM_TEMPLATE_LIST, useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { formatAppDate } from '../utils/dateFormat';
 import { SaveLocationsField, CustomizeFromFileField } from './setupFields';
 
@@ -31,8 +31,12 @@ export interface NewScriptMeta {
  *  built-in when preferences were never set / were emptied. */
 function formatOptions() {
   const s = useSettingsStore.getState();
+  // v6.99: user templates join the picker; anything hidden in Settings ▸
+  // Page Setup (missing from enabledScriptFormats) stays out.
+  const user = useFormattingTemplateStore.getState().templates.filter((t) => t.category !== 'system');
+  const all = [...SYSTEM_TEMPLATE_LIST, ...user];
   const enabled = s.formatPreferencesInitialized
-    ? SYSTEM_TEMPLATE_LIST.filter((t) => s.enabledScriptFormats.includes(t.id))
+    ? all.filter((t) => s.enabledScriptFormats.includes(t.id))
     : SYSTEM_TEMPLATE_LIST;
   return enabled.length > 0 ? enabled : SYSTEM_TEMPLATE_LIST;
 }

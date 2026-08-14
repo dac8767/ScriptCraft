@@ -104,10 +104,61 @@ try {
   });
   ok(system.titles.length === 1 && system.titles[0] === 'Reset', `System tab holds only Reset (${system.titles.join(', ')})`);
   ok(system.noLogin, 'no login/account/server-URL text anywhere in the System tab');
+
+  // ── v6.99 (Derek, via the feedback form): moved sections, the merged
+  //    Page Setup tab, and the Save/Cancel footer ──
   await page.evaluate(() => {
-    document.querySelector('.prefs-window .tool-window-close')?.click();
+    [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'General')?.click();
   });
   await settle(page);
+  ok(await page.evaluate(() => [...document.querySelectorAll('.prefs-general section > h3')].some((h) => h.textContent === 'Draft Number')),
+    'Draft Number lives on the General tab now');
+  ok(await page.evaluate(() => ![...document.querySelectorAll('.prefs-tab')].some((t) => t.textContent.trim() === 'Templates')),
+    'the Templates tab is GONE — merged into Page Setup');
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Page Setup')?.click();
+  });
+  await settle(page);
+  const pst = await page.evaluate(() => ({
+    heads: [...document.querySelectorAll('.pst-listhead')].map((h) => h.textContent.trim()),
+    cards: document.querySelectorAll('.pst-row').length,
+    defaults: document.querySelectorAll('.pst-default-badge').length,
+    newBtn: [...document.querySelectorAll('.prefs-window button')].some((b) => b.textContent.trim() === 'New Template…'),
+    deletableDefaults: [...document.querySelectorAll('.pst-row')].filter((r) =>
+      r.querySelector('.pst-default-badge') && [...r.querySelectorAll('button')].some((b) => b.textContent === 'Delete')).length,
+  }));
+  ok(pst.heads.some((h) => h.includes('Shown in the New Script picker')) && pst.heads.includes('Hidden'),
+    `Page Setup manages templates as Shown/Hidden lists (${pst.heads.join(' | ')})`);
+  ok(pst.cards >= 6 && pst.defaults >= 6 && pst.deletableDefaults === 0 && pst.newBtn,
+    `six Default templates, none deletable, plus New Template… (${pst.cards} cards)`);
+  const beforeShown = await page.evaluate(async () => {
+    const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+    return useSettingsStore.getState().enabledScriptFormats.slice();
+  });
+  await page.evaluate(() => {
+    const row = [...document.querySelectorAll('.pst-row')][1];
+    [...row.querySelectorAll('button')].find((b) => b.textContent === 'Hide')?.click();
+  });
+  await settle(page);
+  const afterHide = await page.evaluate(async () => {
+    const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+    return useSettingsStore.getState().enabledScriptFormats.slice();
+  });
+  ok(afterHide.length > 0 && (beforeShown.length === 0 || afterHide.length === beforeShown.length - 1),
+    `Hide takes the template out of the New Script set (${beforeShown.length || 'all'} → ${afterHide.length})`);
+  ok(await page.evaluate(() => {
+    const f = document.querySelector('.prefs-footer');
+    const labels = [...(f?.querySelectorAll('button') ?? [])].map((b) => b.textContent.trim());
+    return labels.join(',') === 'Cancel,Save' && f.querySelector('.dialog-btn-primary')?.textContent.trim() === 'Save';
+  }), 'the footer holds Cancel + a primary Save, Customize-style');
+  await page.click('.prefs-footer button:has-text("Cancel")');
+  await settle(page);
+  const reverted = await page.evaluate(async () => {
+    const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+    return { open: !!document.querySelector('.prefs-window'), ids: useSettingsStore.getState().enabledScriptFormats.slice() };
+  });
+  ok(!reverted.open && JSON.stringify(reverted.ids) === JSON.stringify(beforeShown),
+    `Cancel closed Settings and REVERTED the hide (back to ${reverted.ids.length || 'all shown'})`);
 
   // ── 7: the Annotations button says Filter (v6.71) ──
   await openTool(page, 'Annotations');
@@ -176,8 +227,9 @@ try {
     }
     return { heads, hints, border: cs?.borderTopWidth, pos: hb?.position, h3bg: hb?.backgroundColor, anc };
   });
-  ok(save.heads.includes('Auto Saves') && !save.heads.includes('Auto Save Locations'),
-    `ONE merged Auto Saves section (${save.heads.join(' | ')})`);
+  ok(save.heads.includes('Auto Saves') && !save.heads.includes('Auto Save Locations')
+      && !save.heads.includes('Draft Number') && save.heads[save.heads.length - 1] === 'Screenshots',
+    `ONE merged Auto Saves section, Draft Number gone, Screenshots LAST (${save.heads.join(' | ')})`);
   ok(save.hints === 2, `helper text only under Google Drive + OneDrive (${save.hints} hint blocks)`);
   ok(save.border === '1px' && save.pos === 'static',
     `sections are bordered boxes with the title IN-FLOW inside them (v6.98) (${save.border}/${save.pos})`);

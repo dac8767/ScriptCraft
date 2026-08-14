@@ -151,7 +151,25 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.93 and older (newest first)
+## Version history — v6.94 and older (newest first)
+
+### v6.94 — the ? retired; "Description:"; five more knobs (13 total)
+
+- Derek: "remove the ? icon. that text is not needed" — the whole help
+  mechanism is GONE (ATTACH_HELP, helpPinned/helpHover, `.fb-attach-help`
+  and `.fb-attach-hint` CSS). Message label is "Description:". The
+  fbHelpGap token left WITH the ? (a dead knob fails the no-dead-knobs
+  test); its stale persisted value is silently ignored by
+  applyDesignVars — the designed-for orphan case.
+- Five new css-var knobs (group now 13, test pin updated): fbTypeGap 8
+  (`.fb-type-row` gap), fbDescGap 4 (`.fb-label-grow` gap), fbHeadRowGap
+  6 (head wrap ROW gap — only visible when narrow wraps the buttons),
+  fbAttachGap 0 (margin-top on `.fb-attach`, ADDS to fbRowGap) and
+  fbSubmitGap 0 (margin-top on `.fb-shotrow`, same additive pattern —
+  both hinted in the panel).
+- check-v684 23 (?-gone + head-structure asserts replace the v6.92
+  toggle trio); tests 1200 (the ? toggle test removed).
+- Gates: tsc 0, vitest 1200, build ok, check-all 1079/0. Catalog 480.
 
 ### v6.93 — attach buttons onto the header row + nine Design knobs
 

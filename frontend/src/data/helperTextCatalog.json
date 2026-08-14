@@ -683,6 +683,16 @@
   "label": "Transition text"
  },
  {
+  "text": "Close and undo the changes made since opening Settings",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Settings & Setup",
+  "where": [
+   "components/PreferencesDialog.tsx"
+  ],
+  "label": "Cancel"
+ },
+ {
   "text": "Close diff",
   "kind": "tooltip",
   "sites": 1,
@@ -700,6 +710,16 @@
   "where": [
    "components/ToolControls.tsx"
   ]
+ },
+ {
+  "text": "Close Settings — changes are already applied",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Settings & Setup",
+  "where": [
+   "components/PreferencesDialog.tsx"
+  ],
+  "label": "Save"
  },
  {
   "text": "Close the Scrapbook",
@@ -790,6 +810,16 @@
    "components/StickyCard.tsx"
   ],
   "icon": "FaCopy"
+ },
+ {
+  "text": "Create your own template, based on an existing one",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "New Template…"
  },
  {
   "text": "Current theme",
@@ -1045,6 +1075,16 @@
   "label": "Delete"
  },
  {
+  "text": "Delete this template",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "Delete"
+ },
+ {
   "text": "Delete this theme",
   "kind": "tooltip",
   "sites": 1,
@@ -1281,6 +1321,16 @@
    "components/CharacterProfiles.tsx"
   ],
   "label": "Update in Script"
+ },
+ {
+  "text": "Edit this template",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "Edit"
  },
  {
   "text": "Edit this theme",
@@ -1722,6 +1772,16 @@
    "components/CustomizePanelsDialog.tsx"
   ],
   "label": "Hide All"
+ },
+ {
+  "text": "Hide from the New Script picker",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "Page Templates"
  },
  {
   "text": "Hide occurrences",
@@ -3024,6 +3084,16 @@
   "where": [
    "components/CustomizePanelsDialog.tsx"
   ]
+ },
+ {
+  "text": "Show in the New Script picker",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "Page Templates"
  },
  {
   "text": "Show occurrences",

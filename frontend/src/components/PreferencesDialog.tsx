@@ -1,20 +1,20 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaWrench, FaColumns, FaFileAlt, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaMarker } from 'react-icons/fa';
+import { FaWrench, FaColumns, FaRulerCombined, FaCloudUploadAlt, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaMarker } from 'react-icons/fa';
 import PresetsPanel from './PresetsPanel';
 import { CUSTOMIZE_RESETS, ResetAllButton, runCustomizeReset, type CustomizeTabId } from './customizeResets';
 import { applyDraftNumber } from './SetDraftDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { DATE_FORMATS, type DateFormatId } from '../utils/dateFormat';
-import PageSetupDialog from './PageSetupDialog';
-import ScriptFormatPreferencesDialog from './ScriptFormatPreferencesDialog';
+import PageSetupTab from './PageSetupTab';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
 import SettingsPage from './SettingsPage';
 import { showToast } from './Toast';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
 import { downloadBackup, applyBackup, readFileText } from '../utils/settingsBackup';
 import { useWindowTabMemory } from '../utils/windowTabMemory';
+import { snapshotSettings, restoreSettings } from '../utils/settingsSnapshot';
 import { confirmDialog } from './ConfirmDialog';
 import { spellChecker, BUILTIN_LANGUAGE } from '../editor/spellchecker';
 import { BUILTIN, CATALOG, urlsFor } from '../editor/languageCatalog';
@@ -41,13 +41,14 @@ import FloatingWindow from './FloatingWindow';
    ───────────────────────────────────────────────────────────────────────── */
 
 type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'markups' | 'themes';
-type PrefTab = 'general' | 'formats' | 'page' | 'keys' | 'saveloc' | 'system' | 'presets' | 'defaults' | `cz-${CustomizeCat}`;
+type PrefTab = 'general' | 'page' | 'keys' | 'saveloc' | 'system' | 'presets' | 'defaults' | `cz-${CustomizeCat}`;
 
 const TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   // App-wide first, then writing setup, then data, then system.
   { id: 'general', label: 'General', icon: <FaWrench /> },
   { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },
-  { id: 'formats', label: 'Templates', icon: <FaFileAlt /> },
+  /* v6.99, Derek (via the feedback form): Templates and Page Setup are ONE
+     tab — the template manager + the page geometry live together. */
   { id: 'page', label: 'Page Setup', icon: <FaRulerCombined /> },
   /* v4.30 batch-v7 #3, Derek: hotkeys are behavior, not workspace layout —
      moved here from Customize. */
@@ -229,7 +230,7 @@ async function pickFolder(title = 'Folder for auto save copies'): Promise<string
   return typeof picked === 'string' ? picked : null;
 }
 
-function SaveLocationsTab({ editor }: { editor: Editor | null }) {
+function SaveLocationsTab() {
   const {
     autoSnapshotMinutes, setAutoSnapshotMinutes,
     localSaveFolder, setLocalSaveFolder,
@@ -262,11 +263,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
 
   return (
     <div className="prefs-general">
-      <section>
-        <h3>Draft Number</h3>
-        <DraftNumberRow editor={editor} />
-      </section>
-
       <section id="prefs-save-locations">
         <h3>Script Save Locations</h3>
         {/* v6.95 (Derek, via the feedback form): this tab's helper text is
@@ -420,34 +416,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
       </section>
 
       <section>
-        <h3>Screenshots</h3>
-        {/* v3.95, Derek: where the Screenshot tool writes PNGs. Empty = the
-            browser's Downloads folder. A chosen folder needs the desktop app. */}
-        <div className="prefs-check-row">
-          <span>
-            Save screenshots to
-            {screenshotFolder
-              ? <code className="prefs-path-chip">{screenshotFolder}</code>
-              : ' Downloads (default)'}
-          </span>
-          <button
-            className="prefs-inline-btn"
-            onClick={async (e) => {
-              e.preventDefault();
-              const folder = await pickFolder('Folder for screenshots');
-              if (folder) setScreenshotFolder(folder);
-            }}
-          >Choose Folder…</button>
-          {screenshotFolder && (
-            <button
-              className="prefs-inline-btn"
-              onClick={(e) => { e.preventDefault(); setScreenshotFolder(''); }}
-            >Reset to Downloads</button>
-          )}
-        </div>
-      </section>
-
-      <section>
         <h3>Google Drive</h3>
         <p className="prefs-hint" style={{ margin: '0 0 8px' }}>
           One-time setup: create an OAuth client (type "Web application") at
@@ -498,6 +466,36 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           )}
         </div>
       </section>
+
+      {/* v6.99 (Derek, via the feedback form): Screenshots is the LAST
+          section of this tab. */}
+      <section>
+        <h3>Screenshots</h3>
+        {/* v3.95, Derek: where the Screenshot tool writes PNGs. Empty = the
+            browser's Downloads folder. A chosen folder needs the desktop app. */}
+        <div className="prefs-check-row">
+          <span>
+            Save screenshots to
+            {screenshotFolder
+              ? <code className="prefs-path-chip">{screenshotFolder}</code>
+              : ' Downloads (default)'}
+          </span>
+          <button
+            className="prefs-inline-btn"
+            onClick={async (e) => {
+              e.preventDefault();
+              const folder = await pickFolder('Folder for screenshots');
+              if (folder) setScreenshotFolder(folder);
+            }}
+          >Choose Folder…</button>
+          {screenshotFolder && (
+            <button
+              className="prefs-inline-btn"
+              onClick={(e) => { e.preventDefault(); setScreenshotFolder(''); }}
+            >Reset to Downloads</button>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
@@ -506,7 +504,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
    lives on the Scrapbook window, the Typewriter master switch lives in the
    Typewriter window, and restore-cursor went back to General > Startup. */
 
-function GeneralTab() {
+function GeneralTab({ editor }: { editor: Editor | null }) {
   const restoreCursor = useEditorStore((s) => s.typewriterRestoreCursor);
   const setRestoreCursor = useEditorStore((s) => s.setTypewriterRestoreCursor);
   const {
@@ -545,6 +543,12 @@ function GeneralTab() {
 
   return (
     <div className="prefs-general">
+      {/* v6.99 (Derek, via the feedback form): Draft Number moved here from
+          Save Options. */}
+      <section>
+        <h3>Draft Number</h3>
+        <DraftNumberRow editor={editor} />
+      </section>
       <section>
         <h3>Startup</h3>
         {/* v2.35: back home after the Tools tab was removed. */}
@@ -737,6 +741,34 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
 }) {
   const [tab, setTab] = useState<PrefTab>('general');
 
+  /* v6.99 (Derek, via the feedback form): Save/Cancel footer, Customize-
+     style. Settings apply LIVE — Save just closes; Cancel restores the
+     open-time snapshot (see utils/settingsSnapshot for why restoration
+     goes through the setters). typewriterRestoreCursor is the one
+     General-tab field living in editorStore, so it rides alongside. */
+  const openSnap = React.useRef<{ settings: Record<string, unknown>; restoreCursor: boolean } | null>(null);
+  React.useEffect(() => {
+    if (open) {
+      openSnap.current = {
+        settings: snapshotSettings(),
+        restoreCursor: useEditorStore.getState().typewriterRestoreCursor,
+      };
+    }
+  }, [open]);
+  const saveAndClose = () => { showToast('Settings saved', 'success'); onClose(); };
+  const cancelAndClose = () => {
+    const snap = openSnap.current;
+    if (snap) {
+      let n = restoreSettings(snap.settings);
+      if (useEditorStore.getState().typewriterRestoreCursor !== snap.restoreCursor) {
+        useEditorStore.getState().setTypewriterRestoreCursor(snap.restoreCursor);
+        n++;
+      }
+      if (n > 0) showToast('Settings changes reverted');
+    }
+    onClose();
+  };
+
   // v4.71, Derek: reopen on the last-used tab (Settings ▸ General toggle).
   // Runs on the open edge, BEFORE the openTab effect below — a targeted open
   // still lands where it was sent.
@@ -798,7 +830,7 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             ))}
           </div>
           <div className="prefs-content">
-            {tab === 'general' && <GeneralTab />}
+            {tab === 'general' && <GeneralTab editor={editor ?? null} />}
             {tab.startsWith('cz-') && (
               <CustomizePanelsDialog
                 open
@@ -807,17 +839,9 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
                 onClose={() => {}}
               />
             )}
-            {tab === 'formats' && (
-              <ScriptFormatPreferencesDialog
-                embedded
-                onConfirm={() => showToast('Script format preferences saved', 'success')}
-              />
-            )}
-            {tab === 'page' && (
-              <PageSetupDialog embedded onClose={() => showToast('Page setup applied', 'success')} />
-            )}
+            {tab === 'page' && <PageSetupTab />}
             {tab === 'keys' && <KeyboardShortcutsTab />}
-            {tab === 'saveloc' && <SaveLocationsTab editor={editor ?? null} />}
+            {tab === 'saveloc' && <SaveLocationsTab />}
             {tab === 'system' && <SettingsPage embedded />}
             {tab === 'presets' && (
               <div className="prefs-section">
@@ -831,6 +855,10 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             )}
             {tab === 'defaults' && <DefaultsTab />}
           </div>
+        </div>
+        <div className="prefs-footer">
+          <button className="dialog-btn" title="Close and undo the changes made since opening Settings" onClick={cancelAndClose}>Cancel</button>
+          <button className="dialog-btn dialog-btn-primary" title="Close Settings — changes are already applied" onClick={saveAndClose}>Save</button>
         </div>
     </FloatingWindow>
   );

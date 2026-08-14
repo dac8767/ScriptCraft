@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.99",
+  "date": "2026-08-14",
+  "changes": [
+   "Templates and Page Setup merged into one Settings tab, “Page Setup”. Templates are managed like themes now: Shown and Hidden lists decide exactly what the New Script picker offers, the six built-ins are marked Default (never editable or deletable), and New Template… creates your own — pick which existing template to base it on and the full editor opens on the copy. Custom templates appear in the New Script picker alongside the built-ins.",
+   "Settings gained a Customize-style footer: a blue Save that closes, and a Cancel that closes AND undoes every change made since the window opened.",
+   "Draft Number moved from Save Options to General, and Screenshots is now the last section in Save Options."
+  ]
+ },
+ {
   "version": "6.98",
   "date": "2026-08-14",
   "changes": [

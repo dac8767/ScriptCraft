@@ -1074,6 +1074,31 @@ input.fs-switch:checked::after { left: 15px; }
   color: var(--fd-text-muted);
 }
 .prefs-general .prefs-check-row { padding: 3px 0; }
+/* v6.99, Derek (via the feedback form): the Save/Cancel footer, and the
+   Page Setup tab's template manager (shown/hidden lists + New Template). */
+.prefs-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--fd-border);
+  flex-shrink: 0;
+}
+.pst-listhead {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  margin: 10px 0 6px;
+}
+.pst-empty { font-size: 12px; color: var(--fd-text-muted); margin: 2px 0 6px; }
+.pst-row { display: flex; align-items: center; gap: 10px; }
+.pst-row .fmt-card-info { flex: 1; min-width: 0; }
+.pst-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.pst-default-badge { opacity: .8; }
+.pst-newrow {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px;
+  font-size: 12.5px; color: var(--fd-text-muted);
+}
+.pst-baseselect { min-width: 200px; }
 /* v6.98, Derek: every Choose Folder… (and its row-mates) sits at the box's
    right edge, aligned row to row. */
 .prefs-general .prefs-check-row .prefs-inline-btn { margin-left: auto; }

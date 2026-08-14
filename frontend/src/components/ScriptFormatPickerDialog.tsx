@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { SYSTEM_TEMPLATES } from '../stores/formattingTemplateStore';
+import { SYSTEM_TEMPLATES, useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 
 interface Props {
   enabledIds: string[];
@@ -17,9 +17,12 @@ interface Props {
 }
 
 const ScriptFormatPickerDialog: React.FC<Props> = ({ enabledIds, onPick, onCancel }) => {
-  // Resolve to template objects, filtering out anything stale (e.g. a removed system template).
+  const userTemplates = useFormattingTemplateStore((s) => s.templates);
+  // Resolve to template objects — system first, then user templates
+  // (v6.99: shown custom templates appear here too) — filtering out
+  // anything stale (e.g. a deleted custom template).
   const options = enabledIds
-    .map((id) => SYSTEM_TEMPLATES[id])
+    .map((id) => SYSTEM_TEMPLATES[id] || userTemplates.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t));
 
   return (
