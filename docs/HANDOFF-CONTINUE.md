@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.96 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.97 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
@@ -285,6 +285,29 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.97 — settings-box knobs + fill; typed lists replace the buttons
+
+- Feedback row 11:29 PM: Design group `settingsWin` (before `behavior`) —
+  prefsTitleGap 16 (the inset title sits ON the border, so title→items IS
+  the box's inner top padding), prefsPadBottom 13, prefsPadSide 14,
+  prefsSectionGap 18 (margin between boxes). All on the ONE
+  `.prefs-general section` rule = every tab at once. The box now FILLS
+  var(--fd-overlay-subtle, --fd-overlay-light) — Derek: the faint border
+  wasn't enough. check-v642 22/0 adds fill≠window-bg (the h3-label parity
+  assert still compares against the WINDOW bg — the walk starts at the
+  section's parent, so the fill doesn't break it).
+- Feedback row 11:26 PM: the v6.96 `.fb-fmt-*` BUTTONS are GONE ("some
+  are just adding markdown code") — `applyMarkdownFormat` too. Replacement
+  `continueListOnEnter` (pure, exported): typing "- " or "N. " then Enter
+  continues the list (numbers count up), Enter on an empty item strips the
+  marker. Wired via textarea onKeyDown (Shift+Enter and selections pass
+  through). check-v684 26/0 types a real list; catalog back to 480 (-5
+  button tooltips).
+- CADENCE (Derek: "we're back to updates taking 30 minutes"): batch every
+  message into ONE version, run the FULL check-all ONCE per delivery;
+  targeted checks still run per feature.
+- Gates: tsc 0, vitest 1203, build ok, check-all 1086/0.
+
 ### v6.96 — formatting buttons in the feedback Description box
 
 - Derek (via the form): "add formatting options in the feedback textbox
@@ -365,29 +388,12 @@ Durable bits kept live here:
   documentElement, unlike store-instance imports).
 - Gates: tsc 0, vitest 1201, build ok, check-all 1081/0. Catalog 480.
 
-### v6.92 — feedback window wording pass (11 Derek items)
-
-- "Name:" replaces "Sending as" (email NO LONGER shown beside it — still
-  saved and submitted); "Type:" label ON ONE ROW with the dropdown
-  (`.fb-type-row`); "Description" replaces the question label and the
-  textarea PLACEHOLDER IS GONE (catalog 481→480 — tests select `.fb-text`
-  directly via messageBox(), not byPlaceholder); "Full Screen" replaces
-  the Screenshot button label; the area head is "Attach a Screenshot".
-- The how-to ("A screenshot helps me a ton…", Derek's wording) lives ONLY
-  behind a ? beside the head (`.fb-attach-help`, FaRegQuestionCircle):
-  hover shows (mouseenter/leave state), click PINS. The old always-on
-  hint div is gone. CHECK GOTCHA: Playwright's click leaves the mouse
-  OVER the ? — hover keeps the hint visible after an unpin click, so
-  `page.mouse.move(5,5)` before asserting it's hidden.
-- check-v684 20→23 (Name-sans-email, how-to hidden/click-shows/hides);
-  tests 1199→1200 (? toggle).
-- Gates: tsc 0, vitest 1200, build ok, check-all 1079/0. Catalog 480.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.92** — feedback window wording pass ×11: Name:/Type:/Description:, Full Screen button, Attach a Screenshot header, how-to behind a ? (retired v6.94)
 - **v6.91** — feedback categories renamed: Bug Report / Suggestion / Feature Request / Other (Praise retired)
 - **v6.90** — attachment area header renamed "Attach an Image" (v6.92 later made it "Attach a Screenshot")
 - **v6.89** — multiple attachments (buttons stay, picks APPEND, comma-joined attachments column) + the sent blur-veil confirmation (3s, -webkit-backdrop-filter; checks must wait the veil away before the next fill)

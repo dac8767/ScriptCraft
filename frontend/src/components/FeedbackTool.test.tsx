@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import FeedbackTool, { applyMarkdownFormat, resetFeedbackDraft } from './FeedbackTool';
+import FeedbackTool, { continueListOnEnter, resetFeedbackDraft } from './FeedbackTool';
 import { FEEDBACK_BACKEND, extFromType, loadFeedbackQueue } from '../services/feedbackBackend';
 
 type Call = { url: string; init?: RequestInit };
@@ -225,26 +225,23 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
   });
 });
 
-describe('FeedbackTool — Description formatting (v6.96)', () => {
-  it('applyMarkdownFormat wraps selections and prefixes lines', () => {
-    expect(applyMarkdownFormat('fix the margin', 4, 7, 'bold').value).toBe('fix **the** margin');
-    expect(applyMarkdownFormat('fix the margin', 4, 7, 'italic').value).toBe('fix *the* margin');
-    expect(applyMarkdownFormat('fix the margin', 4, 7, 'underline').value).toBe('fix <u>the</u> margin');
-    expect(applyMarkdownFormat('one\ntwo', 0, 7, 'bullet').value).toBe('- one\n- two');
-    expect(applyMarkdownFormat('one\ntwo', 0, 7, 'numbered').value).toBe('1. one\n2. two');
-    // an empty selection drops in a placeholder, selected for typing over
-    const e = applyMarkdownFormat('', 0, 0, 'bold');
-    expect(e.value).toBe('**text**');
-    expect(e.value.slice(e.start, e.end)).toBe('text');
+describe('FeedbackTool — typed lists continue themselves (v6.97)', () => {
+  it('continueListOnEnter continues, numbers up, and ends lists', () => {
+    expect(continueListOnEnter('- alpha', 7)).toEqual({ value: '- alpha\n- ', caret: 10 });
+    expect(continueListOnEnter('1. one', 6)).toEqual({ value: '1. one\n2. ', caret: 10 });
+    expect(continueListOnEnter('- ', 2)).toEqual({ value: '', caret: 0 });   // empty item ends the list
+    expect(continueListOnEnter('plain line', 10)).toBeNull();                // not a list
   });
 
-  it('the toolbar buttons format the live selection in the box', async () => {
+  it('Enter in the box continues a typed list (no buttons anywhere)', async () => {
     savedProfile();
     mount();
-    setValue(messageBox(), 'make this bold');
-    messageBox().setSelectionRange(10, 14);
-    act(() => ([...container.querySelectorAll('.fb-fmt-btn')][0] as HTMLButtonElement).click());
-    expect(messageBox().value).toBe('make this **bold**');
+    expect(container.querySelector('.fb-fmt-row')).toBeNull();               // v6.96 buttons are gone
+    setValue(messageBox(), '- alpha');
+    const ta = messageBox();
+    ta.setSelectionRange(7, 7);
+    act(() => { ta.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); });
+    expect(messageBox().value).toBe('- alpha\n- ');
   });
 });
 

@@ -151,7 +151,25 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.91 and older (newest first)
+## Version history — v6.92 and older (newest first)
+
+### v6.92 — feedback window wording pass (11 Derek items)
+
+- "Name:" replaces "Sending as" (email NO LONGER shown beside it — still
+  saved and submitted); "Type:" label ON ONE ROW with the dropdown
+  (`.fb-type-row`); "Description" replaces the question label and the
+  textarea PLACEHOLDER IS GONE (catalog 481→480 — tests select `.fb-text`
+  directly via messageBox(), not byPlaceholder); "Full Screen" replaces
+  the Screenshot button label; the area head is "Attach a Screenshot".
+- The how-to ("A screenshot helps me a ton…", Derek's wording) lives ONLY
+  behind a ? beside the head (`.fb-attach-help`, FaRegQuestionCircle):
+  hover shows (mouseenter/leave state), click PINS. The old always-on
+  hint div is gone. CHECK GOTCHA: Playwright's click leaves the mouse
+  OVER the ? — hover keeps the hint visible after an unpin click, so
+  `page.mouse.move(5,5)` before asserting it's hidden.
+- check-v684 20→23 (Name-sans-email, how-to hidden/click-shows/hides);
+  tests 1199→1200 (? toggle).
+- Gates: tsc 0, vitest 1200, build ok, check-all 1079/0. Catalog 480.
 
 ### v6.91 — feedback categories renamed
 

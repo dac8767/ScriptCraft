@@ -181,6 +181,18 @@ try {
   ok(save.hints === 2, `helper text only under Google Drive + OneDrive (${save.hints} hint blocks)`);
   ok(save.border === '1px' && save.pos === 'absolute' && save.h3bg === save.anc,
     `sections are bordered boxes, titles set INTO the border on the window's own color (${save.border}/${save.pos})`);
+  // v6.97, Derek: the box FILLS a shade apart from the window background
+  ok(await page.evaluate(() => {
+    const sec = document.querySelector('.prefs-general section');
+    let el = sec.parentElement, anc = '';
+    while (el) {
+      const b = getComputedStyle(el).backgroundColor;
+      if (b && b !== 'rgba(0, 0, 0, 0)' && b !== 'transparent') { anc = b; break; }
+      el = el.parentElement;
+    }
+    const own = getComputedStyle(sec).backgroundColor;
+    return own !== 'rgba(0, 0, 0, 0)' && own !== 'transparent' && own !== anc;
+  }), 'and the box FILL differs from the window background (v6.97)');
   await page.evaluate(() => document.querySelector('.prefs-window .tool-window-close')?.click());
   await settle(page);
 

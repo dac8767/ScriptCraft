@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.97",
+  "date": "2026-08-14",
+  "changes": [
+   "The settings section boxes now fill with a shade distinct from the window background, and the Design panel gained a Settings Window group: title-to-items distance, section bottom padding, section side padding, and space between sections — one set of knobs covering every tab.",
+   "The feedback formatting buttons are gone. Instead, typing “- ” or “1. ” starts a list that continues itself: Enter adds the next item (numbers count up), and Enter on an empty item ends the list."
+  ]
+ },
+ {
   "version": "6.96",
   "date": "2026-08-14",
   "changes": [

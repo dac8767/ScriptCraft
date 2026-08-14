@@ -135,22 +135,23 @@ try {
   ok(await page.evaluate(() => !document.querySelector('.fb-attach-help') && !document.body.textContent.includes('A screenshot helps me a ton')),
     'v6.94: the ? and its how-to text are gone entirely');
 
-  /* ── v6.96: the Description formatting buttons work the live selection ── */
-  await page.fill('.fb-text', 'alpha\nbeta');
+  /* ── v6.97: typed lists continue on Enter (the v6.96 buttons are GONE) ── */
+  ok(await page.evaluate(() => !document.querySelector('.fb-fmt-row')),
+    'v6.97: the v6.96 formatting buttons are gone');
+  await page.fill('.fb-text', '- alpha');
+  await page.focus('.fb-text');
   await page.evaluate(() => {
     const ta = document.querySelector('.fb-text');
-    ta.focus(); ta.setSelectionRange(0, ta.value.length);
+    ta.setSelectionRange(ta.value.length, ta.value.length);
   });
-  await page.click('.fb-fmt-btn[title*="bulleted"]');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('beta');
   ok(await page.evaluate(() => document.querySelector('.fb-text').value) === '- alpha\n- beta',
-    'the list button prefixes every selected line');
-  await page.evaluate(() => {
-    const ta = document.querySelector('.fb-text');
-    ta.focus(); ta.setSelectionRange(2, 7);
-  });
-  await page.click('.fb-fmt-btn[title*="Bold"]');
-  ok(await page.evaluate(() => document.querySelector('.fb-text').value) === '- **alpha**\n- beta',
-    'Bold wraps exactly the selection');
+    'Enter continues a typed "- " list');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  ok(await page.evaluate(() => document.querySelector('.fb-text').value) === '- alpha\n- beta\n',
+    'Enter on an empty item ends the list');
   await page.fill('.fb-text', '');
   await page.evaluate(async () => {
     const { applyDesignVars } = await import('/src/design/designTokens.ts');

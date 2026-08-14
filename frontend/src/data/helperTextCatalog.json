@@ -450,16 +450,6 @@
   ]
  },
  {
-  "text": "Bold the selected text",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ],
-  "icon": "FaBold"
- },
- {
   "text": "Bullet list",
   "kind": "tooltip",
   "sites": 2,
@@ -1993,16 +1983,6 @@
   ]
  },
  {
-  "text": "Italicize the selected text",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ],
-  "icon": "FaItalic"
- },
- {
   "text": "Items you've hidden from the list",
   "kind": "tooltip",
   "sites": 1,
@@ -2127,26 +2107,6 @@
   ],
   "icon": "FaSearch",
   "label": "In script:"
- },
- {
-  "text": "Make the selected lines a bulleted list",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ],
-  "icon": "FaListUl"
- },
- {
-  "text": "Make the selected lines a numbered list",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ],
-  "icon": "FaListOl"
  },
  {
   "text": "Manual lets you drag any order; Date Created shows newest first",
@@ -3454,16 +3414,6 @@
   "where": [
    "components/Toolbar.tsx"
   ]
- },
- {
-  "text": "Underline the selected text",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Feedback Window",
-  "where": [
-   "components/FeedbackTool.tsx"
-  ],
-  "icon": "FaUnderline"
  },
  {
   "text": "Undo (⌘Z)",

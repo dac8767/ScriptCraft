@@ -171,6 +171,16 @@ describe('feedback group', () => {
   });
 });
 
+// v6.97: the Settings Window group — the section-box spacing knobs.
+describe('settings window group', () => {
+  it('exists and carries the four spacing knobs', () => {
+    const g = DESIGN_GROUPS.find((x) => x.id === 'settingsWin');
+    expect(g!.tokens.map((t) => t.id)).toEqual([
+      'prefsTitleGap', 'prefsPadBottom', 'prefsPadSide', 'prefsSectionGap',
+    ]);
+  });
+});
+
 // v4.26: the Characters group — the character tool's formatting knobs.
 // (The generic suites above already cover these tokens' uniqueness, live
 // consumption, and fallback==default; here we pin the character-specific
