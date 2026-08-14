@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.96",
+  "date": "2026-08-14",
+  "changes": [
+   "The feedback Description box has formatting buttons — bold, italic, underline, bulleted and numbered lists. They wrap the selected text in lightweight markers that arrive formatted where the feedback is read."
+  ]
+ },
+ {
   "version": "6.95",
   "date": "2026-08-14",
   "changes": [

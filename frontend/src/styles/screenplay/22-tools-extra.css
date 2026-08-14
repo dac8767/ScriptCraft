@@ -1755,6 +1755,16 @@ input.fs-switch:checked::after { left: 15px; }
   background: var(--fd-input-bg); color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: 4px;
 }
+/* v6.96 (Derek, via the feedback form): formatting buttons for the
+   Description box — markdown-style markers around the live selection. */
+.fb-fmt-row { display: flex; gap: 4px; }
+.fb-fmt-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: transparent; border: 1px solid var(--fd-border); border-radius: 4px;
+  color: var(--fd-text-muted); cursor: pointer; font-size: 12px;
+}
+.fb-fmt-btn:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
 .fb-text {
   flex: 1; min-height: 120px; resize: none; padding: 8px 10px;
   background: var(--fd-input-bg); color: var(--fd-text);

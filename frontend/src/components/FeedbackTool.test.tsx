@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import FeedbackTool, { resetFeedbackDraft } from './FeedbackTool';
+import FeedbackTool, { applyMarkdownFormat, resetFeedbackDraft } from './FeedbackTool';
 import { FEEDBACK_BACKEND, extFromType, loadFeedbackQueue } from '../services/feedbackBackend';
 
 type Call = { url: string; init?: RequestInit };
@@ -222,6 +222,29 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
     expect(extFromType('image/svg+xml')).toBe('svg');
     expect(extFromType('')).toBe('png');
     expect(extFromType('application/pdf')).toBe('png');
+  });
+});
+
+describe('FeedbackTool — Description formatting (v6.96)', () => {
+  it('applyMarkdownFormat wraps selections and prefixes lines', () => {
+    expect(applyMarkdownFormat('fix the margin', 4, 7, 'bold').value).toBe('fix **the** margin');
+    expect(applyMarkdownFormat('fix the margin', 4, 7, 'italic').value).toBe('fix *the* margin');
+    expect(applyMarkdownFormat('fix the margin', 4, 7, 'underline').value).toBe('fix <u>the</u> margin');
+    expect(applyMarkdownFormat('one\ntwo', 0, 7, 'bullet').value).toBe('- one\n- two');
+    expect(applyMarkdownFormat('one\ntwo', 0, 7, 'numbered').value).toBe('1. one\n2. two');
+    // an empty selection drops in a placeholder, selected for typing over
+    const e = applyMarkdownFormat('', 0, 0, 'bold');
+    expect(e.value).toBe('**text**');
+    expect(e.value.slice(e.start, e.end)).toBe('text');
+  });
+
+  it('the toolbar buttons format the live selection in the box', async () => {
+    savedProfile();
+    mount();
+    setValue(messageBox(), 'make this bold');
+    messageBox().setSelectionRange(10, 14);
+    act(() => ([...container.querySelectorAll('.fb-fmt-btn')][0] as HTMLButtonElement).click());
+    expect(messageBox().value).toBe('make this **bold**');
   });
 });
 

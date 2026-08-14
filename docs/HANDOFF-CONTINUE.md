@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.95 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.96 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
@@ -41,7 +41,8 @@
 > READ the `feedback_report` VIEW (his date format baked in, US Eastern:
 > "Aug 13, 2026 — 3:28 PM"); the raw table's timestamp column is
 > `created` (NOT created_at) — write status updates to the TABLE, the
-> view is read-only.
+> view is read-only. Messages may carry v6.96 markdown markers
+> (**bold**, lists, <u>u</u>) — print them AS-IS; chat renders them.
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -284,6 +285,24 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.96 — formatting buttons in the feedback Description box
+
+- Derek (via the form): "add formatting options in the feedback textbox
+  so I can make lists, underline, bold, etc". DECISION: the box stays a
+  plain textarea and `message` stays plain TEXT — five `.fb-fmt-btn`
+  buttons (B/I/U/UL/OL) wrap the live selection in markdown-style
+  markers via `applyMarkdownFormat` (pure, exported): **bold**,
+  *italic*, <u>underline</u>, "- "/"1. " whole-line prefixes; empty
+  selection inserts a selected "text" placeholder. No TipTap instance,
+  no serializer, no schema change — dashboard reads it raw, chat
+  reports render it. Buttons preventDefault on mousedown so the
+  selection survives the click; the handler restores focus + selection
+  via requestAnimationFrame.
+- Tests 1202 (pure-fn matrix + live-selection click); check-v684 25
+  (select-all bullet, exact-selection bold, driven).
+- Gates: tsc 0, vitest 1202, build ok, check-all 1084/0. Catalog 485
+  (+5 button tooltips).
+
 ### v6.95 — settings clean pass + Settings moved to Help (4 feedback items)
 
 - All from Derek's two feedback rows ("proceed with all feedback"):
@@ -364,19 +383,12 @@ Durable bits kept live here:
   tests 1199→1200 (? toggle).
 - Gates: tsc 0, vitest 1200, build ok, check-all 1079/0. Catalog 480.
 
-### v6.91 — feedback categories renamed
-
-- Derek: "Bug Report / Suggestion / Feature Request / Other. You can
-  delete praise." One source — `CATEGORIES` in FeedbackTool.tsx (+ the
-  draft default 'Bug Report'). The DB column is text, so old rows keep
-  their old labels; nothing else references the names (grep confirmed).
-- Gates: tsc 0, vitest 1199, build ok, check-all 1076/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.91** — feedback categories renamed: Bug Report / Suggestion / Feature Request / Other (Praise retired)
 - **v6.90** — attachment area header renamed "Attach an Image" (v6.92 later made it "Attach a Screenshot")
 - **v6.89** — multiple attachments (buttons stay, picks APPEND, comma-joined attachments column) + the sent blur-veil confirmation (3s, -webkit-backdrop-filter; checks must wait the veil away before the next fill)
 - **v6.88** — the Feedback draft survives moving the window (module-level draft, mounts rehydrate; unmount no longer revokes shot URLs; resetFeedbackDraft for tests)

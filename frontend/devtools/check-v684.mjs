@@ -134,6 +134,24 @@ try {
   }), 'v6.93/94: the three buttons sit ON the header row, no ? after them');
   ok(await page.evaluate(() => !document.querySelector('.fb-attach-help') && !document.body.textContent.includes('A screenshot helps me a ton')),
     'v6.94: the ? and its how-to text are gone entirely');
+
+  /* ── v6.96: the Description formatting buttons work the live selection ── */
+  await page.fill('.fb-text', 'alpha\nbeta');
+  await page.evaluate(() => {
+    const ta = document.querySelector('.fb-text');
+    ta.focus(); ta.setSelectionRange(0, ta.value.length);
+  });
+  await page.click('.fb-fmt-btn[title*="bulleted"]');
+  ok(await page.evaluate(() => document.querySelector('.fb-text').value) === '- alpha\n- beta',
+    'the list button prefixes every selected line');
+  await page.evaluate(() => {
+    const ta = document.querySelector('.fb-text');
+    ta.focus(); ta.setSelectionRange(2, 7);
+  });
+  await page.click('.fb-fmt-btn[title*="Bold"]');
+  ok(await page.evaluate(() => document.querySelector('.fb-text').value) === '- **alpha**\n- beta',
+    'Bold wraps exactly the selection');
+  await page.fill('.fb-text', '');
   await page.evaluate(async () => {
     const { applyDesignVars } = await import('/src/design/designTokens.ts');
     applyDesignVars({ fbRowGap: 24 });

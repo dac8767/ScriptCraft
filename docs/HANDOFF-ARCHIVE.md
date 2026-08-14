@@ -151,7 +151,15 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.90 and older (newest first)
+## Version history — v6.91 and older (newest first)
+
+### v6.91 — feedback categories renamed
+
+- Derek: "Bug Report / Suggestion / Feature Request / Other. You can
+  delete praise." One source — `CATEGORIES` in FeedbackTool.tsx (+ the
+  draft default 'Bug Report'). The DB column is text, so old rows keep
+  their old labels; nothing else references the names (grep confirmed).
+- Gates: tsc 0, vitest 1199, build ok, check-all 1076/0.
 
 ### v6.90 — the attachment area says what it takes
 

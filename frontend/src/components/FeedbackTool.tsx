@@ -17,7 +17,7 @@
  * visible local queue with a Retry button.
  */
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { FaCamera, FaCrop, FaFolderOpen, FaPaperclip, FaTimes } from 'react-icons/fa';
+import { FaBold, FaCamera, FaCrop, FaFolderOpen, FaItalic, FaListOl, FaListUl, FaPaperclip, FaTimes, FaUnderline } from 'react-icons/fa';
 import {
   type FeedbackProfile,
   loadFeedbackProfile, saveFeedbackProfile,
@@ -27,6 +27,34 @@ import { captureToCanvas } from '../utils/screenshot';
 import { showToast } from './Toast';
 
 const CATEGORIES = ['Bug Report', 'Suggestion', 'Feature Request', 'Other'] as const;
+
+/* v6.96 (Derek, via the feedback form): formatting for the Description box.
+   The box stays a plain textarea and the message stays plain TEXT — the
+   buttons wrap the selection in markdown-style markers (**bold**, *italic*,
+   <u>underline</u>, "- " / "1. " line prefixes), which read fine raw in the
+   dashboard and render formatted where the feedback is reviewed. Pure —
+   exported for tests. */
+export type FeedbackFormat = 'bold' | 'italic' | 'underline' | 'bullet' | 'numbered';
+
+export function applyMarkdownFormat(
+  value: string, start: number, end: number, kind: FeedbackFormat,
+): { value: string; start: number; end: number } {
+  if (kind === 'bullet' || kind === 'numbered') {
+    // whole lines: expand the selection to line boundaries, prefix each
+    const ls = value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+    let le = value.indexOf('\n', end);
+    if (le === -1) le = value.length;
+    let n = 0;
+    const marked = value.slice(ls, le).split('\n')
+      .map((l) => (l.trim() === '' ? l : (kind === 'bullet' ? `- ${l}` : `${++n}. ${l}`)))
+      .join('\n');
+    return { value: value.slice(0, ls) + marked + value.slice(le), start: ls, end: ls + marked.length };
+  }
+  const [pre, post] = kind === 'bold' ? ['**', '**'] : kind === 'italic' ? ['*', '*'] : ['<u>', '</u>'];
+  const sel = value.slice(start, end) || 'text';
+  const out = value.slice(0, start) + pre + sel + post + value.slice(end);
+  return { value: out, start: start + pre.length, end: start + pre.length + sel.length };
+}
 
 interface Shot { blob: Blob; url: string; dataUrl: string; name: string }
 
@@ -103,6 +131,16 @@ export default function FeedbackTool() {
     const next = await canvasToShot(canvas);
     setShots((list) => [...list, next]);
   });
+
+  // v6.96: the Description formatting buttons work on the live selection
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const format = (kind: FeedbackFormat) => {
+    const ta = textRef.current;
+    if (!ta) return;
+    const r = applyMarkdownFormat(message, ta.selectionStart ?? message.length, ta.selectionEnd ?? message.length, kind);
+    setMessage(r.value);
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(r.start, r.end); });
+  };
 
   const fileInput = useRef<HTMLInputElement>(null);
   const pickFile = (e: ChangeEvent<HTMLInputElement>) => {
@@ -230,7 +268,15 @@ export default function FeedbackTool() {
 
       <label className="fb-label fb-label-grow">
         Description:
+        <div className="fb-fmt-row" aria-label="Formatting">
+          <button className="fb-fmt-btn" type="button" title="Bold the selected text" onMouseDown={(e) => e.preventDefault()} onClick={() => format('bold')}><FaBold aria-hidden /></button>
+          <button className="fb-fmt-btn" type="button" title="Italicize the selected text" onMouseDown={(e) => e.preventDefault()} onClick={() => format('italic')}><FaItalic aria-hidden /></button>
+          <button className="fb-fmt-btn" type="button" title="Underline the selected text" onMouseDown={(e) => e.preventDefault()} onClick={() => format('underline')}><FaUnderline aria-hidden /></button>
+          <button className="fb-fmt-btn" type="button" title="Make the selected lines a bulleted list" onMouseDown={(e) => e.preventDefault()} onClick={() => format('bullet')}><FaListUl aria-hidden /></button>
+          <button className="fb-fmt-btn" type="button" title="Make the selected lines a numbered list" onMouseDown={(e) => e.preventDefault()} onClick={() => format('numbered')}><FaListOl aria-hidden /></button>
+        </div>
         <textarea
+          ref={textRef}
           className="fb-text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
