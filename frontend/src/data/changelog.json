@@ -1,5 +1,12 @@
 [
  {
+  "version": "6.91",
+  "date": "2026-08-13",
+  "changes": [
+   "The Feedback category choices are now Bug Report, Suggestion, Feature Request, and Other. (Praise is retired — put it in a Suggestion if you must.)"
+  ]
+ },
+ {
   "version": "6.90",
   "date": "2026-08-13",
   "changes": [

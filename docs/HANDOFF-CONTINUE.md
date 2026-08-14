@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.90 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.91 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
@@ -285,6 +285,14 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.91 — feedback categories renamed
+
+- Derek: "Bug Report / Suggestion / Feature Request / Other. You can
+  delete praise." One source — `CATEGORIES` in FeedbackTool.tsx (+ the
+  draft default 'Bug Report'). The DB column is text, so old rows keep
+  their old labels; nothing else references the names (grep confirmed).
+- Gates: tsc 0, vitest 1199, build ok, check-all 1076/0.
+
 ### v6.90 — the attachment area says what it takes
 
 - Derek: change "Attachment" to "Attach an Image" since images are all
@@ -378,34 +386,12 @@ Durable bits kept live here:
   Catalog 481 (+1, the Browse tooltip).
 - Gates: tsc 0, vitest 1197, build ok, check-all 1071/0.
 
-### v6.86 — feedback SIMPLIFIED: once-only profile, no verification
-
-- Derek: "I do not need to verify emails. This is being tested with
-  friends only. We can change the setup if it gets released publicly
-  later." The v6.84 email-code sign-in (which had hit Supabase's
-  no-template-editing-without-SMTP wall) is REPLACED by a local tester
-  profile: name + email typed once (`opendraft:feedbackProfile`),
-  Edit button to change, attached to every submission. No auth headers,
-  no session, no refresh, no SMTP/Resend — identity costs zero network.
-- feedbackBackend.ts rewritten: profile load/save; submit = anon insert
-  (apikey only) + anon screenshot upload (path `<ts>-<rand>.png`); queue
-  unchanged minus the SignedOutError early-stop. The v6.84 auth code is
-  in git history (0c9b43e) for a public release later.
-- **DEREK MUST RUN SQL** (given in the delivery message) before real
-  submissions work: drop the authenticated-only insert policy, allow
-  anon+authenticated INSERT (user_id nullable), and add an anon storage
-  INSERT policy on feedback-shots. Until then the app queues with the
-  server's denial message shown.
-- FeedbackTool.test.tsx (4) + check-v684 (10) rewritten for the profile
-  flow (zero-network identity asserted; anonymous POST asserted:
-  apikey, NO Authorization header).
-- Gates: tsc 0, vitest 1194, build ok, check-all 1066/0. Catalog 480.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.86** — feedback SIMPLIFIED to the once-only tester profile (no verification, anon inserts; Derek's RLS paste); v6.84 auth in history at 0c9b43e
 - **v6.85** — Settings ▸ Defaults joined the warn+undo wrapper (runCustomizeReset — one registry, both surfaces); Supabase env key + open network verified live in-session
 - **v6.84** — NATIVE Feedback replaced the Airtable iframe: Supabase via plain fetch, email-code sign-in + sessions (retired v6.86 — code at 0c9b43e), screenshot upload, visible offline queue
 - **v6.83** — ribbon editing ×4: dropdown horizontal resize in customize mode; dividers hide/show by plain click (no ×); Settings ▸ Customize toolbar hands over to the LIVE editor; right-of-split items right-align in edit mode

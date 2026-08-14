@@ -26,7 +26,7 @@ import {
 import { captureToCanvas } from '../utils/screenshot';
 import { showToast } from './Toast';
 
-const CATEGORIES = ['Bug', 'Idea', 'Praise', 'Other'] as const;
+const CATEGORIES = ['Bug Report', 'Suggestion', 'Feature Request', 'Other'] as const;
 
 interface Shot { blob: Blob; url: string; dataUrl: string; name: string }
 
@@ -56,7 +56,7 @@ async function fileToShot(file: File): Promise<Shot> {
    close) keeps the text, category and attachment. In-memory on purpose:
    an app restart starts clean. */
 interface FeedbackDraft { category: (typeof CATEGORIES)[number]; message: string; shots: Shot[] }
-const EMPTY_DRAFT: FeedbackDraft = { category: 'Bug', message: '', shots: [] };
+const EMPTY_DRAFT: FeedbackDraft = { category: 'Bug Report', message: '', shots: [] };
 let draft: FeedbackDraft = EMPTY_DRAFT;
 
 /** Test-only: the module draft would otherwise leak between tests. */
