@@ -169,11 +169,6 @@
 }
 
 /* ── Script actions dropdown ── */
-.more-btn {
-  font-size: 16px;
-  font-weight: bold;
-  line-height: 1;
-}
 .script-actions-dropdown {
   position: absolute;
   right: 10px;
@@ -210,25 +205,6 @@
 }
 
 /* ── View toggle ── */
-.view-toggle-group {
-  display: flex;
-  gap: 2px;
-  margin-left: 4px;
-}
-.view-toggle-btn {
-  background: var(--fd-dropdown-bg, var(--fd-navigator-bg));
-  border: 1px solid var(--fd-border);
-  color: var(--fd-text-muted);
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  transition: all 0.1s;
-}
-.view-toggle-btn:hover {
-  color: var(--fd-text);
-}
 .view-toggle-btn.active {
   color: var(--fd-accent);
   border-color: var(--fd-accent);
@@ -259,24 +235,6 @@
 }
 .script-card.pinned {
   border-color: rgba(244, 211, 94, 0.4);
-}
-.card-drag-handle {
-  cursor: grab;
-  font-size: 14px;
-  color: var(--fd-text-muted);
-  padding: 2px 4px;
-  border-radius: 3px;
-  user-select: none;
-  flex-shrink: 0;
-  opacity: 0.5;
-  transition: opacity 0.15s;
-}
-.card-drag-handle:hover {
-  opacity: 1;
-  background: var(--fd-overlay-light);
-}
-.card-drag-handle:active {
-  cursor: grabbing;
 }
 
 /* ============ PROJECT VIEW ============ */

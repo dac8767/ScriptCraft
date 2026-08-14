@@ -606,3 +606,40 @@ html.android .grammar-issue.grammar-grammar {
 .diff-viewer::-webkit-scrollbar-track { background: transparent; }
 .diff-viewer::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
+
+
+/* ── Grammar & Spelling Settings (v7.04, style audit item 13) ──────────────
+   Every row and tab in this window was styled inline, including two
+   hardcoded severity colours. Tokens and classes now. */
+.fs-gr-blurb { font-size: 12px; color: var(--fd-text-muted); margin: 0 0 12px; }
+.fs-gr-rules { display: flex; flex-direction: column; gap: 6px; }
+.fs-gr-rule {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.fs-gr-rule input[type="checkbox"] { margin-top: 3px; }
+.fs-gr-rule-text { flex: 1; }
+.fs-gr-rule-name { font-weight: 500; font-size: 13px; }
+.fs-gr-rule-desc { font-size: 12px; color: var(--fd-text-muted); }
+.fs-gr-sev { font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+.fs-gr-sev--grammar {
+  background: color-mix(in srgb, var(--fd-success) 15%, transparent);
+  color: var(--fd-success);
+}
+.fs-gr-sev--style {
+  background: color-mix(in srgb, var(--fd-accent) 15%, transparent);
+  color: var(--fd-accent);
+}
+.fs-gr-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--fd-border); padding: 0 16px; }
+.fs-gr-tab {
+  background: transparent; border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 12px; font-size: 13px; font-weight: 400;
+  color: var(--fd-text-muted); cursor: pointer; margin-bottom: -1px;
+}
+.fs-gr-tab:hover { color: var(--fd-text); }
+.fs-gr-tab.active { font-weight: 600; color: var(--fd-text); border-bottom-color: var(--fd-accent); }
+.fs-gr-body { overflow-y: auto; }

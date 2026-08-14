@@ -87,51 +87,35 @@ export function AboutDialog({ onClose, onShowChangelog }: { onClose: () => void;
 
           <div className="about-whats-new">
             <div className="about-section-title">Compatibility</div>
-            <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', marginTop: 8 }}>
+            {/* v7.04 (style audit item 13): this table styled itself inline,
+                including a hardcoded light error block that was unreadable in
+                every dark theme. It reads the stylesheet now, and the status
+                colours are the shared state tokens. */}
+            <table className="about-compat">
               <thead>
-                <tr style={{ textAlign: 'left', color: 'var(--fd-text-secondary)' }}>
-                  <th style={{ padding: '4px 8px', fontWeight: 500 }}>Subsystem</th>
-                  <th style={{ padding: '4px 8px', fontWeight: 500 }}>Status</th>
-                  <th style={{ padding: '4px 8px', fontWeight: 500 }}>Implementation</th>
+                <tr>
+                  <th>Subsystem</th>
+                  <th>Status</th>
+                  <th>Implementation</th>
                 </tr>
               </thead>
               <tbody>
                 {getCompatEntries().map((entry) => (
                   <React.Fragment key={entry.label}>
                     <tr>
-                      <td style={{ padding: '4px 8px', color: 'var(--fd-text)' }}>{entry.label}</td>
-                      <td style={{ padding: '4px 8px' }}>
-                        <span style={{
-                          display: 'inline-block',
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          backgroundColor: entry.mode === 'primary' ? '#4caf50' : '#ff9800',
-                          marginRight: 6,
-                          verticalAlign: 'middle',
-                        }} />
-                        <span style={{ color: entry.mode === 'primary' ? '#4caf50' : '#ff9800', verticalAlign: 'middle' }}>
+                      <td className="about-compat-name">{entry.label}</td>
+                      <td>
+                        <span className={`about-compat-dot about-compat-dot--${entry.mode === 'primary' ? 'primary' : 'fallback'}`} />
+                        <span className={`about-compat-state about-compat-state--${entry.mode === 'primary' ? 'primary' : 'fallback'}`}>
                           {entry.mode === 'primary' ? 'Latest' : 'Fallback'}
                         </span>
                       </td>
-                      <td style={{ padding: '4px 8px', color: 'var(--fd-text-secondary)', fontSize: 11 }}>
-                        {entry.using}
-                      </td>
+                      <td className="about-compat-using">{entry.using}</td>
                     </tr>
                     {entry.errorReason && (
                       <tr>
-                        <td colSpan={3} style={{ padding: '0 8px 8px 8px' }}>
-                          <pre style={{
-                            margin: 0,
-                            padding: '6px 8px',
-                            fontSize: 11,
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word',
-                            background: '#f4f4f4',
-                            border: '1px solid #ddd',
-                            borderRadius: 4,
-                            color: '#1a1a1a',
-                          }}>{entry.errorReason}</pre>
+                        <td colSpan={3} className="about-compat-errcell">
+                          <pre className="about-compat-err">{entry.errorReason}</pre>
                         </td>
                       </tr>
                     )}

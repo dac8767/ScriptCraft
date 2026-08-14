@@ -599,3 +599,33 @@
 .fs-addpage-num { width: 52px; text-align: center; }
 .fs-addpage-of { color: var(--fd-text-muted); }
 .fs-addpage-hint { font-size: 11px; line-height: 1.4; color: var(--fd-text-muted); }
+
+
+/* ── About ▸ Compatibility table (v7.04, style audit item 13) ──────────────
+   Was styled inline, cell by cell. The error block hardcoded a light
+   background with dark text, so it was unreadable in every dark theme —
+   the same class of bug the audit was about, one level down. */
+.about-compat { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 8px; }
+.about-compat thead tr { text-align: left; color: var(--fd-text-secondary); }
+.about-compat th { padding: 4px 8px; font-weight: 500; }
+.about-compat td { padding: 4px 8px; }
+.about-compat-name { color: var(--fd-text); }
+.about-compat-using { color: var(--fd-text-secondary); font-size: 11px; }
+.about-compat-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: middle;
+}
+.about-compat-dot--primary   { background: var(--fd-success); }
+.about-compat-dot--fallback  { background: var(--fd-warning); }
+.about-compat-state          { vertical-align: middle; }
+.about-compat-state--primary  { color: var(--fd-success); }
+.about-compat-state--fallback { color: var(--fd-warning); }
+.about-compat-errcell { padding: 0 8px 8px; }
+.about-compat-err {
+  margin: 0; padding: 6px 8px; font-size: 11px;
+  white-space: pre-wrap; word-break: break-word;
+  background: var(--fd-overlay-light);
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  color: var(--fd-text);
+}

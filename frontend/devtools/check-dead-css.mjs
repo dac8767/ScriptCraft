@@ -35,6 +35,12 @@ const ALLOW = [
   [/^beat-card-/, 'beat card classes composed from card state'],
   [/^theme-/, 'theme id appended at runtime'],
   [/^is-|^has-|^active$|^selected$|^disabled$|^open$|^dragging$/, 'state flags toggled by class-name concatenation'],
+  // v7.04: BEM-style modifiers are the normal way to express a variant that
+  // depends on state, and they are ALWAYS built by concatenation
+  // (`fs-gr-sev--${severity}`), so a text search can never find them. The base
+  // class before the `--` is still checked, which is the part that matters:
+  // if the base is dead, the modifiers go with it.
+  [/--/, 'BEM modifier composed at runtime; its base class is checked separately'],
 ];
 
 function walk(dir, ext, out = []) {

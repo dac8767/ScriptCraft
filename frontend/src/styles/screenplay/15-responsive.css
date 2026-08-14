@@ -318,9 +318,7 @@
 
   /* Auth-indicator dropdown is portaled to <body>, but the items still need
      touch-friendly hit areas. */
-  .auth-indicator__menu--portal { min-width: 220px; }
-  .auth-indicator__menu-item { min-height: 44px; padding: 12px 14px; font-size: 14px; }
-
+    
   /* Project view: compact */
 
   /* Scenes fullscreen takeover: auto-fill with min 250px */

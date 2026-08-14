@@ -99,7 +99,6 @@
 /* v7.01 (style audit L262): the `.prefs-subtabs` rules were deleted — the
    v7.00 Settings rail replaced that inner tab strip and no .tsx has referenced
    the class since. */
-.fs-tb-subitems { margin: 0 0 8px 44px; }
 .fs-customize-seg button:disabled { opacity: .35; cursor: default; }
 
 /* The section you were sent to should announce itself. */
@@ -421,8 +420,6 @@
   font-size: 12px;
 }
 /* v1.57: description left, tags in their own right-hand column. */
-.fs-cl-row { display: flex; align-items: baseline; gap: 12px; }
-.fs-cl-text { flex: 1; min-width: 0; }
 .fs-cl-tagcol { flex: 0 0 auto; display: flex; gap: 4px; justify-content: flex-end; min-width: 90px; }
 .fs-cl-tag {
   padding: 2px 9px;

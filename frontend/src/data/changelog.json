@@ -1,5 +1,15 @@
 [
  {
+  "version": "7.04",
+  "date": "2026-08-14",
+  "changes": [
+   "Removed about 730 lines of styling for controls that no longer exist anywhere in the app — 86 of the 309 orphaned styles found by the last update's check. The rest are held back deliberately: their names can be assembled while the app runs, so a text search can't prove they're unused, and deleting one of those breaks something invisibly.",
+   "The Design window had a slider — Outline title font — that moved nothing at all. The text it was meant to size hasn't been rendered by the app for some time. It's gone.",
+   "The About window's Compatibility table and the whole Grammar & Spelling Settings window styled themselves in code rather than through the app's stylesheet. Both now match everything else — and the error box in the Compatibility table, which was hardcoded light-on-white, is finally readable in the dark themes.",
+   "The tabs in Grammar & Spelling Settings are styled as tabs. They had been given button styling that every rule in the window then overrode."
+  ]
+ },
+ {
   "version": "7.03",
   "date": "2026-08-14",
   "changes": [

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.03 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.04 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-14 ("add to queue"), NOT yet built — the ADD-ON
 > track. These four are one piece of work; do them together:
@@ -307,6 +307,39 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.04 — dead-CSS sweep (309 → 223) + the last inline-styling islands
+
+**Read this before writing another CSS-deleting script.** The first attempt
+regex-matched `SELECTORS { BODY }` and broke the build: a multi-line COMMENT
+containing a `{` was parsed as a selector, so the real selector below it got
+deleted and a brace was orphaned. Reverted, rewritten with a parser that blanks
+comment bodies first (preserving offsets) and tracks brace depth so `@media`
+wrappers are descended into rather than treated as rules. 152 rules removed
+cleanly, braces balanced, build green.
+
+Also: the shell cwd resets to the REPO ROOT between calls. Both the "0 rules
+matched" and the "Cannot find module devtools/…" in that same run were one
+cause — the script ran from `/home/user/ScriptCraft`, not `frontend/`. Print a
+sanity count (`stylesheets found: 28`) at the top of any such script.
+
+**The backlog is 223, and that is a floor for this method.** Those names can be
+assembled at runtime, so absence from the source proves nothing. Clearing them
+needs instrumentation — record which classes the running app actually applies,
+exercise every window, delete what never appears.
+
+**`.fs-ob-title` was dead and carried a Design knob.** Deleting the rule
+orphaned `obTitleFont`, the no-dead-knobs test failed instantly, and the knob is
+now removed — the Design window had been offering a slider that moved nothing.
+That test earns its keep.
+
+**Item 13 closed with judgement, not completeness:** About ▸ Compatibility and
+Grammar & Spelling Settings converted (static styling); Notebook, Title Page,
+menu bar, Relationship Map, Beat Board keep theirs (computed positions —
+legitimately inline). The conversion surfaced an error box hardcoded
+light-on-white (unreadable in dark themes) and tabs wearing `dialog-btn` from
+v7.02 that every inline rule overrode — adding a class is not the same as the
+class taking effect.
 
 ### v7.03 — the two style-audit items that needed measuring first
 

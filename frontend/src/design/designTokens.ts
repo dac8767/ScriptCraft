@@ -358,7 +358,11 @@ export const DESIGN_GROUPS: DesignGroup[] = [
         hint: 'Narrower than this, the scene list compresses to caret rows',
         store: { get: (s) => s.scenesTableMinW, set: (v) => useEditorStore.getState().setScenesTableMinW(v) } },
       { id: 'obPad', label: 'Outline bar padding', cssVar: '--dz-ob-pad', unit: 'px', min: 0, max: 16, step: 1, def: 4 },
-      { id: 'obTitleFont', label: 'Outline title font', cssVar: '--dz-ob-title-font', unit: 'px', min: 8, max: 16, step: 0.5, def: 11 },
+      /* v7.04: 'Outline title font' is GONE. Its only consumer was `.fs-ob-title`,
+         a rule no component has rendered for some time — so the Design window was
+         offering a slider that moved nothing. The dead-CSS sweep removed the rule
+         and the no-dead-knobs test immediately caught the orphaned token, which is
+         exactly what that test is for. */
       { id: 'obIconBtn', label: 'Outline icon button size', cssVar: '--dz-ob-iconbtn', unit: 'px', min: 18, max: 36, step: 1, def: 26 },
     ],
   },

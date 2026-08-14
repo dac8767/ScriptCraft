@@ -3,14 +3,32 @@
   /* Hide ALL chrome — including the tool docks/panels (v0.6+) and the
      portal-based menu dropdown, which is mounted on <body> and was being
      captured in the printout when Print was chosen from the open File menu. */
-  .menu-bar, .toolbar, .scene-navigator, .status-bar,
-  .search-replace-panel, .dialog-overlay, .menu-dropdown, .menu-fab,
-  .tool-dock-wrap, .tool-window, .tool-temp-anchor, .tool-inline,
-  .mobile-accessory-bar, .toast-wrap, .toast, .demo-banner,
-  .index-cards, .beat-board, .script-notes-panel, .char-profiles-panel, .tags-panel,
-  .asset-manager, .asset-viewer-overlay, .history-banner,
-  .format-panel, .zoom-panel, .goto-page-panel,
-  .version-history-panel { display: none !important; }
+  .menu-bar,
+.toolbar,
+.scene-navigator,
+.status-bar,
+.search-replace-panel,
+.dialog-overlay,
+.menu-dropdown,
+.menu-fab,
+.tool-dock-wrap,
+.tool-window,
+.tool-temp-anchor,
+.tool-inline,
+.mobile-accessory-bar,
+.toast,
+.demo-banner,
+.index-cards,
+.beat-board,
+.script-notes-panel,
+.char-profiles-panel,
+.tags-panel,
+.asset-manager,
+.asset-viewer-overlay,
+.history-banner,
+.format-panel,
+.zoom-panel,
+.version-history-panel { display: none !important; }
 
   /* v1.4: WORKING NOTES NEVER PRINT. Sections, markers, script to-do lines and
      note highlights are scaffolding for the writer — they are not part of the

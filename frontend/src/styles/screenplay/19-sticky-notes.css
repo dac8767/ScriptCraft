@@ -2,75 +2,12 @@
 /* Panel shell inherits .script-notes-panel (incl. mobile slide-in). */
 .sticky-notes-panel { }
 
-.swn-search-btn {
-  background: none;
-  border: none;
-  color: var(--fd-text-muted);
-  font-size: 13px;
-  cursor: pointer;
-  padding: 0 2px;
-  margin-left: auto;
-  line-height: 1;
-}
-.swn-search-btn:hover { color: var(--fd-text); }
 /* keep the ✕ close button from also claiming margin-left:auto twice */
 .sticky-notes-panel .script-notes-close { margin-left: 0; }
 
-.swn-search-row { padding: 8px 12px 2px; }
-.swn-search-row input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 5px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--fd-border);
-  background: var(--fd-bg);
-  color: var(--fd-text);
-  font-size: 12px;
-  outline: none;
-}
 
-.swn-tabs {
-  display: flex;
-  flex-wrap: wrap; /* five tabs: wrap gracefully on narrow panes */
-  gap: 2px;
-  padding: 8px 8px 0;
-  border-bottom: 1px solid var(--fd-border);
-  flex-shrink: 0;
-}
-.swn-tab {
-  flex: 1 1 auto;
-  min-width: 0;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--fd-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 6px 2px 7px;
-  cursor: pointer;
-  white-space: nowrap;
-}
 
 /* ── Notes tab: General / Script sub-switcher ── */
-.swn-subtabs {
-  display: flex;
-  gap: 4px;
-  padding: 6px 12px 0;
-  flex-shrink: 0;
-}
-.swn-subtab {
-  flex: 1;
-  background: none;
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  color: var(--fd-text-muted);
-  font-size: 10.5px;
-  font-weight: 600;
-  padding: 4px 2px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.swn-subtab:hover { color: var(--fd-text); }
 .swn-subtab.active {
   color: var(--fd-text);
   border-color: var(--fd-accent, #4a90d9);
@@ -104,14 +41,6 @@
 }
 
 /* ── Cross-tab search: group labels + General/Script hit rows ── */
-.swn-group-label {
-  padding: 10px 14px 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--fd-text-muted);
-}
 .swn-note-hit {
   margin: 4px 12px;
   padding: 7px 10px;
@@ -140,7 +69,6 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.swn-tab:hover { color: var(--fd-text); }
 .swn-tab.active {
   color: var(--fd-text);
   border-bottom-color: var(--fd-accent, #4a90d9);

@@ -9,32 +9,6 @@
 
 /* ============ SCRIPT CONTEXT MENU ============ */
 /* Floating context-menu trigger button (touch devices) */
-.touch-ctx-btn {
-  position: fixed;
-  z-index: 3500;
-  width: 40px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid var(--fd-border);
-  background: var(--fd-dropdown-bg);
-  color: var(--fd-text);
-  font-size: 20px;
-  font-weight: bold;
-  letter-spacing: 2px;
-  box-shadow: 0 2px 10px rgba(0,0,0,.3);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-}
-.touch-ctx-btn:active { background: var(--fd-accent); color: #fff; }
-[data-theme="light"] .touch-ctx-btn {
-  background: #fff;
-  color: #333;
-  border-color: #ccc;
-  box-shadow: 0 2px 10px rgba(0,0,0,.15);
-}
 
 .script-context-menu {
   position: fixed;

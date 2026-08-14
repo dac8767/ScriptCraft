@@ -75,10 +75,6 @@
 .toolbar-overflow-sep {
   width: 100%; height: 1px; background: var(--fd-border); margin: 2px 0;
 }
-.zoom-label {
-  color: var(--fd-text-muted); font-size: 11px; min-width: 36px;
-  text-align: center; font-variant-numeric: tabular-nums;
-}
 
 /* ── Settings > System: Reset All Settings (v0.48) ── */
 .fs-reset-confirm-overlay { z-index: 10060; }
@@ -229,7 +225,6 @@
 }
 
 /* ── Spelling & Grammar as a docked panel (v0.62) ── */
-.fs-spellcheck-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .fs-spellcheck-panel .dialog-overlay {
   position: static; inset: auto; background: transparent; display: block;
   z-index: auto; height: 100%; padding: 0;
@@ -247,19 +242,8 @@
 /* .dialog-box sets max-width: 400px and is declared LATER in this file, so at
    equal specificity it won. Doubling the class raises specificity so the
    window actually gets its intended size. */
-.fs-manager-dialog.fs-manager-dialog {
-  width: min(1180px, 94vw); height: min(820px, 90vh);
-  max-width: 96vw; max-height: 92vh;
-  min-width: 420px; min-height: 300px;
-  display: flex; flex-direction: column;
-  resize: both; overflow: hidden;
-  padding-bottom: 14px;                /* keep the resize grip reachable */
-}
-.fs-manager-dialog-body { flex: 1; min-height: 0; display: flex; overflow: hidden; }
-.fs-manager-dialog-body > * { flex: 1; min-height: 0; }
 
 /* ── Project Manager: embedded OpenDraft project pages (v0.52) ── */
-.fs-pm-embedded { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 0; }
 .dropdown-item.dropdown-item-disabled { opacity: 0.4; cursor: default; }
 /* Compact assets so the grid fits a ~300px side panel with no horizontal
    cutoff (v0.53.1). Expanding the tool window shows more/bigger columns. */
@@ -268,8 +252,6 @@
 /* ── Project Manager: project action chooser (v0.50) ── */
 
 /* ── Customize: 'still reachable via Settings > Layout' warning (v0.47) ── */
-.fs-stuck-warn-overlay { z-index: 10050; }
-.fs-stuck-warn-dialog { max-width: 380px; }
 .fs-stuck-warn-dialog .dialog-body p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 
 /* ── Customize: equal-width adder rows (v0.46) ── */
@@ -318,16 +300,6 @@
 }
 
 /* Customize: the size slider shown when a surface is set to Custom. */
-.fs-chrome-slider-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 0 0 10px;
-  margin-top: 12px;                    /* v0.75: space above the slider */
-}
-.fs-chrome-slider-row input[type="range"] { flex: 1; accent-color: var(--fd-accent); cursor: pointer; }
-.fs-chrome-slider-val {
-  min-width: 52px; text-align: right;
-  font-size: 12px; color: var(--fd-text-muted); font-variant-numeric: tabular-nums;
-}
 
 /* Side-panel width modes (v0.70). Must stay in sync with DOCK_W /
    DOCK_W_COMPACT in ToolDock.tsx — inline tool windows are sized against those
@@ -1096,23 +1068,7 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   border-bottom: 1px solid var(--fd-border);
   margin-bottom: 4px;
 }
-.zoom-step {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--fd-text);
-  cursor: pointer;
-  padding: 0;
-}
-.zoom-step svg { width: 13px; height: 13px; } /* v1.38: same height as the zoom text */
-.zoom-step:first-child { border-right: 1px solid var(--fd-border); }
-.zoom-step:last-child { border-left: 1px solid var(--fd-border); }
-.zoom-step:hover:not(:disabled) { background: var(--fd-hover-bg); }
-.zoom-step:disabled { opacity: .4; cursor: default; }
+/* v1.38: same height as the zoom text */
 .zoom-menu-value {
   display: flex;
   align-items: center;
@@ -1231,20 +1187,7 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .fs-addmenu-item .fs-customize-icon { margin-right: 8px; }
 
 /* ── Project Manager: row actions + delete confirmation (v0.44) ── */
-.fs-delete-project-dialog { max-width: 420px; }
 .fs-delete-project-dialog .dialog-body p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.45; }
-.fs-delete-backup-check {
-  display: flex; align-items: flex-start; gap: 8px; margin: 0 0 12px;
-  font-size: 12px; line-height: 1.45; color: var(--fd-text); cursor: pointer;
-}
-.fs-delete-backup-check input { margin-top: 2px; }
-.fs-delete-confirm-label { margin-bottom: 6px !important; }
-.fs-delete-confirm-input {
-  width: 100%; height: 26px; background: var(--fd-input-bg); color: var(--fd-text);
-  border: 1px solid var(--fd-border); border-radius: 5px; padding: 0 8px;
-  font-size: 12.5px; outline: none; box-sizing: border-box;
-}
-.fs-delete-confirm-input:focus { border-color: var(--fd-accent); }
 .fs-customize-stuck-hint { color: var(--fd-accent); }
 
 /* Editor View: label to the LEFT of its dropdown (v0.63), with extra leading
@@ -1260,21 +1203,6 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar.toolbar-ribbon .rib-section:not(.rib-single) .view-style-label { display: none; }
 
 /* ── Editable zoom input (desktop toolbar) ── */
-.zoom-input {
-  width: 40px;
-  background: var(--fd-input-bg);
-  border: 1px solid var(--fd-accent);
-  border-radius: 3px;
-  color: var(--fd-text);
-  font-size: 11px;
-  text-align: center;
-  outline: none;
-  padding: 1px 2px;
-  -moz-appearance: textfield;
-}
-.zoom-input::-webkit-inner-spin-button,
-.zoom-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.zoom-label { cursor: pointer; }
 
 /* ── Floating zoom panel (mobile) ── */
 .zoom-panel {

@@ -235,32 +235,6 @@
 .diff-el-parenthetical .diff-block-content { margin-left: 1.5in; font-style: italic; }
 
 /* ============ NEW DOCUMENT DROPDOWN ============ */
-.new-document-dropdown {
-  position: relative;
-  display: inline-block;
-}
-.new-document-menu {
-  position: absolute; top: 100%; left: 0;
-  margin-top: 4px; z-index: 1000;
-  background: var(--fd-dropdown-bg);
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  min-width: 280px;
-  overflow: hidden;
-}
-.new-document-menu button {
-  display: flex; flex-direction: column; align-items: flex-start;
-  width: 100%; padding: 10px 14px;
-  background: none; border: none; text-align: left;
-  cursor: pointer; color: var(--fd-text);
-  gap: 2px;
-  transition: background 0.1s;
-}
-.new-document-menu button:hover { background: var(--fd-overlay-subtle); }
-.new-document-menu button + button { border-top: 1px solid var(--fd-overlay-subtle); }
-.new-document-menu strong { font-size: 13px; font-weight: 600; }
-.new-document-menu span { font-size: 11px; color: var(--fd-text-muted); }
 
 /* ============ TREATMENT EDITOR ============ */
 .treatment-editor-root {

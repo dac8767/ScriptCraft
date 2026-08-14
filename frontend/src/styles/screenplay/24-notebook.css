@@ -150,12 +150,6 @@
 .fs-nb-pagerow:hover .fs-nb-rowdel, .fs-nb-sectionrow:hover .fs-nb-rowdel { opacity: .7; }
 .fs-nb-rowdel:hover { opacity: 1; background: var(--fd-menu-hover); }
 .fs-nb-children { border-left: 1px solid var(--fd-border); margin-left: 10px; }
-.fs-nb-emptysec {
-  font-size: 11px;
-  color: var(--fd-text-muted);
-  font-style: italic;
-  padding: 2px 8px 4px;
-}
 
 /* ── the takeover surface (v1.96): fills the editor area ── */
 .fs-nb-takeover {
@@ -190,18 +184,6 @@
   padding: 14px 16px 8px;
   border-bottom: 1px solid var(--fd-border);
   flex: 0 0 auto;
-}
-.fs-nb-return {
-  margin-left: auto;
-  background: var(--fd-accent, #4a90d9);
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 12px;
-  cursor: pointer;
-  white-space: nowrap;
 }
 .fs-nb-empty {
   margin: auto;
@@ -429,54 +411,13 @@
 /* ── v2.96: the VISUAL ribbon editor (RibbonEditor.tsx) ─────────────────
    An editable replica of the ribbon: section boxes, one or two rows each,
    chips dragged into place, a palette of available items below. */
-.ribed-ribbon {
-  display: flex;
-  align-items: stretch;
-  gap: 4px;
-  min-height: 84px;
-  margin: 8px 0 10px;
-  padding: 8px;
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  background: var(--fd-toolbar-bg);
-  overflow-x: auto;
-}
 /* v2.99, Derek: the editor never SHRINKS — sections, chips and tools keep
    their size and the ribbon strip scrolls horizontally instead. Without
    flex-shrink:0 a narrow window compressed the chips into each other. */
-.ribed-section {
-  /* v3.17: grip column | rows column */
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 2px;
-  padding: 3px;
-  border: 1px dashed color-mix(in srgb, var(--fd-border) 70%, transparent);
-  border-radius: 5px;
-  min-width: 44px;
-  flex-shrink: 0;
-}
-.ribed-sec-rows {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;   /* v3.34: the live bar's inter-row gap */
-  flex: 1;
-  min-width: 0;
-}
 /* v3.24, Derek: the section IS the handle — a grabbable bubble.
    v3.29: position:relative anchors the close × on its top-right corner. */
-.ribed-section {
-  position: relative;
-  cursor: grab;
-  touch-action: none;
-  background: color-mix(in srgb, var(--fd-navigator-bg) 55%, transparent);
-}
-.ribed-section:hover { border-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
 /* v3.29, Derek: the close-section × rides the section bubble's top-right
    corner (it lived on the divider line before). Hover the section to see it. */
-.ribed-section > .ribed-sec-close { top: -7px; right: -7px; }
-.ribed-section:hover > .ribed-sec-close { opacity: 1; pointer-events: auto; }
 /* v3.29, Derek: WYSIWYG chips — the editor mirrors the live bar. */
 .ribed-chip.ribed-chip-big {
   flex-direction: column;
@@ -927,7 +868,6 @@
 .ruv-box { width: 16px; height: 24px; border: 1px solid currentColor; border-radius: 3px; }
 .ruv-splitgap { display: flex; flex-direction: column; gap: 2px; color: var(--fd-accent); }
 .ruv-splitgap span { width: 7px; height: 2px; background: currentColor; }
-.ruv-title { font-weight: 700; font-size: 13px; color: var(--fd-text); line-height: 1; }
 .rib-add-utilgrid + .rib-add-sep { margin-top: 8px; }
 /* v3.34: dropdown width grip — the field's right edge. */
 .ribed-dd-grip {
@@ -941,37 +881,6 @@
 }
 .ribed-dd-grip:hover { background: color-mix(in srgb, var(--fd-accent) 35%, transparent); border-radius: 2px; }
 /* v3.34: the ? popover that replaced the Toolbar tab's helper paragraph. */
-.ribed-help-anchor { position: relative; display: inline-flex; }
-.ribed-help-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--fd-text-muted);
-  cursor: pointer;
-  font-size: 14px;
-}
-.ribed-help-btn:hover { color: var(--fd-text); background: var(--fd-hover-bg); }
-.ribed-help-pop {
-  position: absolute;
-  top: 26px;
-  right: 0;
-  width: 320px;
-  padding: 10px 12px;
-  background: var(--fd-dropdown-bg);
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.4);
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--fd-text);
-  z-index: 10002;
-}
 /* v3.32, Derek: each dropdown chip carries its LIVE counterpart's min-width
    (.font-selector 120 / .font-size-selector 60 / .element-selector 140), so
    the editor's fields are the same length as the bar's. Text sits left like
@@ -995,26 +904,6 @@
   background-position: center;
 }
 /* insertion indicator while a section rides the pointer — zero net width */
-.ribed-sec-dropline {
-  width: 3px;
-  margin: 2px -1.5px;
-  align-self: stretch;
-  border-radius: 2px;
-  background: var(--fd-accent);
-  flex-shrink: 0;
-  z-index: 1;
-}
-.ribed-row {
-  display: flex;
-  align-items: center;
-  /* v3.33: the live bar's default row — 28px tall, 2px item gap. */
-  gap: 2px;
-  height: 28px;
-  min-height: 28px;
-  flex: 1;
-}
-.ribed-row > * { flex-shrink: 0; }
-.ribed-secdiv { flex-shrink: 0; }
 /* v3.33, Derek: chips carry the LIVE bar's exact metrics — 26×24 like
    .toolbar-btn, 12px glyphs, transparent at rest (the live buttons are
    flat until hovered). The background only appears on hover, as the
@@ -1056,13 +945,6 @@
   justify-content: flex-end;
   box-sizing: border-box;
 }
-.ribed-spacer-grip {
-  width: 7px;
-  align-self: stretch;
-  border-right: 3px solid var(--fd-accent);
-  border-radius: 0 4px 4px 0;
-  cursor: ew-resize;
-}
 /* v2.97: a one-row divider inside a row — shown as the line it is. */
 .ribed-chip-div {
   min-width: 10px;
@@ -1076,55 +958,11 @@
   border-radius: 1px;
   background: var(--fd-border);
 }
-.ribed-x {
-  position: absolute;
-  top: -7px;
-  right: -7px;
-  width: 15px;
-  height: 15px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: var(--fd-btn-bg);
-  color: var(--fd-btn-text);
-  font-size: 11px;
-  line-height: 1;
-  cursor: pointer;
-  opacity: 0;
-  z-index: 2;
-}
 /* hidden ✕ buttons must not swallow pointer events (they overhang their
    neighbours) — they only become clickable when their owner is hovered */
-.ribed-x { pointer-events: none; }
-.ribed-chip:hover .ribed-x,
-.ribed-alignsplit:hover .ribed-x,
-.ribed-break:hover .ribed-x { opacity: 1; pointer-events: auto; }
-.ribed-secdiv {
-  position: relative;
-  width: 3px;
-  align-self: stretch;
-  margin: 2px 2px;
-  border-radius: 2px;
-  background: var(--fd-border);
-}
+.ribed-chip:hover .ribed-x { opacity: 1; pointer-events: auto; }
 /* (v3.29: the divider's × moved onto the section bubble — .ribed-sec-close.) */
 /* v3.02: the align-split marker between sections */
-.ribed-alignsplit {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  min-width: 34px;
-  align-self: stretch;
-  margin: 2px 2px;
-  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, transparent);
-  border-radius: 4px;
-  color: var(--fd-accent);
-  font-size: 13px;
-  flex-shrink: 0;
-}
-.ribed-alignsplit .ribed-x { top: -6px; right: -6px; }
 /* v3.02: the pointer-drag ghost riding the cursor */
 .ribed-ghost {
   position: fixed;
@@ -1139,54 +977,12 @@
   box-shadow: 0 3px 10px rgba(0,0,0,.35);
 }
 
-.ribed-break {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 4px;   /* v3.34: thinner — a two-row section reads like the bar's */
-}
 /* v2.97, Derek: click the split line to toggle it — HEAVY means the line is
    drawn on the real toolbar, faint means the split is invisible there. */
-.ribed-break-line {
-  flex: 1;
-  height: 2px;   /* v3.34: closer to the bar's 1px rule, still clickable */
-  border-radius: 1px;
-  background: color-mix(in srgb, var(--fd-accent) 25%, transparent);
-  cursor: pointer;
-}
-.ribed-break-line:hover { background: color-mix(in srgb, var(--fd-accent) 45%, transparent); }
 .ribed-break-line.heavy { background: var(--fd-accent); }
-.ribed-break .ribed-x { top: -6px; }
 /* v2.99: the drop indicator takes ZERO layout space (width offset by
    negative margins) — when it consumed 3px it shifted the chips under the
    cursor, the drop target flipped, and the line flickered back and forth. */
-.ribed-dropline {
-  width: 3px;
-  margin: 0 -1.5px;
-  height: 24px;
-  border-radius: 2px;
-  background: var(--fd-accent);
-  flex-shrink: 0;
-  position: relative;
-  z-index: 3;
-}
-.ribed-empty-hint {
-  font-size: 10.5px;
-  color: var(--fd-text-muted);
-  padding: 0 8px;
-  white-space: nowrap;
-}
-.ribed-add-section {
-  padding: 6px 10px;
-  border: 1px dashed var(--fd-border);
-  border-radius: 5px;
-  background: transparent;
-  color: var(--fd-text-muted);
-  font-size: 11.5px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.ribed-add-section:hover { color: var(--fd-text); border-color: var(--fd-accent); }
 /* v2.97: the structural tools live beside + Section, in a compact 2×2. */
 /* v3.20: the utilities share ONE row with the dialog's Show/Hide/Reset —
    controls left, structural tools right. */
@@ -1206,19 +1002,6 @@
 }
 .ribed-tools .ribed-pal-chip { justify-content: center; }
 /* v3.22: the two section BLOCKS — little bubble glyphs, one bar per row. */
-.ribed-blk-glyph {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-right: 2px;
-}
-.ribed-blk-glyph i {
-  display: block;
-  width: 14px;
-  height: 4px;
-  border-radius: 2px;
-  border: 1px solid currentColor;
-}
 /* v3.11: the palette's keyword filter. v3.52, Derek: it rides on the utilrow
    (with Show/Hide), pinned right at a fixed 300px. */
 .ribed-pal-search { margin-bottom: 6px; }

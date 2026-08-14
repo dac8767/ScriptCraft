@@ -48,13 +48,6 @@
   color: var(--fd-text-muted);
   padding: 0;
 }
-.fs-ob-title {
-  font-size: var(--dz-ob-title-font, 11px);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--fd-text-muted);
-}
 .fs-ob-side button, .fs-ob-side select {
   background: rgba(128, 128, 128, 0.15);
   border: none;
@@ -69,11 +62,6 @@
 .fs-ob-side button:disabled { opacity: 0.45; cursor: default; }
 /* v2.16: the side controls are one row of equal squares — the AddMenu
    trigger and the send icon were inheriting stretchy full-width styles. */
-.fs-ob-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
 .fs-ob-actions .fs-addmenu { flex: 0 0 auto; }
 .fs-ob-actions .fs-addmenu-trigger,
 .fs-ob-actions .fs-ob-iconbtn {
@@ -94,19 +82,7 @@
 .fs-ob-actions .fs-addmenu-trigger:hover,
 .fs-ob-actions .fs-ob-iconbtn:hover { background: rgba(128, 128, 128, 0.28); }
 /* v2.11: zoom — Fit + a px-per-page slider (the Premiere pattern). */
-.fs-ob-zoom {
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.fs-ob-zoom button {
-  height: 22px;
-  padding: 0 8px;
-  font-size: 10.5px;
-}
 .fs-ob-zoom button.active { background: color-mix(in srgb, var(--fd-accent, #4a90d9) 30%, transparent); }
-.fs-ob-zoom input[type='range'] { width: 70px; }
 
 /* v2.11: the tracks scroll horizontally; width = pages × zoom. */
 .fs-ob-main {
@@ -260,16 +236,6 @@
 }
 .fs-ob-act .fs-ob-resize-l { border-left-color: color-mix(in srgb, var(--fd-text) 45%, transparent); }
 /* v2.16: double-click rename, in place. */
-.fs-ob-rename {
-  flex: 1;
-  min-width: 40px;
-  background: var(--fd-input-bg);
-  color: var(--fd-text);
-  border: 1px solid var(--fd-accent, #4a90d9);
-  border-radius: 4px;
-  font-size: 11px;
-  padding: 1px 5px;
-}
 
 /* v2.11: the page ruler — increments 1..total, like a measuring tape. */
 .fs-ob-ruler {

@@ -1,8 +1,9 @@
 # What's Left From the Style Audit — in plain language
 
-> **STATUS (v7.03):** items **1-11, 14-19** are DONE. Only item **13** (the six
-> windows with smaller amounts of hand-written styling) is still open, plus the
-> 309-class dead-styling backlog, which is guarded but not yet cleared. See the
+> **STATUS (v7.04):** every item 1-19 is now DONE or deliberately closed. Item
+> 13 is partly done (the two windows whose styling was static are converted; the
+> rest is positioning, which belongs inline). The dead-styling backlog is down
+> from 309 to 223 — the remainder is held back on purpose, see below. See the
 > bottom of this file.
 
 Everything here was outstanding as of v7.01. Each item says **what's wrong**,
@@ -446,3 +447,39 @@ something that turns out to be assembled at runtime, so the check records the
 backlog and fails only on NEW dead styling. Three of the title rules I edited
 for item 4 turned out to be in that backlog (`.script-notes-title`,
 `.beat-board-title`, `.fs-tbzone-title`) — harmless, but they had no effect.
+
+
+---
+
+# After v7.04
+
+**The dead-styling backlog: 309 → 223.** 86 classes deleted (~730 lines). The
+remaining 223 are NOT simply "not done yet" — they are the ones a text search
+cannot clear. Their names can be assembled while the app runs
+(`fs-${kind}-row`), so absence from the source proves nothing, and deleting one
+of those breaks something in a way no test would catch. Clearing them needs a
+different method: instrument the running app to record which classes actually
+get applied, exercise every window, and delete what never appears. Worth doing,
+but it is a different job from a text search.
+
+**Item 13 is done where it should be.** The About window's Compatibility table
+and the whole Grammar & Spelling Settings window are converted — both were
+static styling that belonged in the stylesheet. Notebook, Title Page editor,
+the menu bar, Relationship Map and Beat Board keep theirs: those are computed
+positions and measured sizes, which is the legitimate reason to write style
+inline. Converting them would mean moving runtime values into CSS variables for
+no gain.
+
+**Two bugs the conversion turned up:**
+
+- The About ▸ Compatibility error box hardcoded a light background with dark
+  text, so it was unreadable in every dark theme. The same class of bug the
+  audit was about, one level further down.
+- The tabs in Grammar & Spelling Settings had been given button styling in
+  v7.02 that every inline rule in the window immediately overrode. They are
+  styled as tabs now. A reminder that adding a class is not the same as the
+  class taking effect.
+
+**And one the tests caught:** deleting `.fs-ob-title` orphaned a registered
+Design-window knob ("Outline title font"). The no-dead-knobs test failed
+immediately, which is exactly its job. That slider had been moving nothing.

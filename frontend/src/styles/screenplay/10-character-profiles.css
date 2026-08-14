@@ -210,49 +210,7 @@
 }
 .char-sort-select:focus { border-color: var(--fd-accent); }
 /* "Referred in Script" bottom button */
-.char-referred-btn {
-  margin: 8px 12px 12px;
-  padding: 8px;
-  background: transparent;
-  border: 1px dashed var(--fd-border);
-  border-radius: 4px;
-  color: var(--fd-text-muted);
-  font-size: 12px;
-  cursor: pointer;
-  flex-shrink: 0;
-  text-align: center;
-  transition: all .15s;
-}
-.char-referred-btn:hover { border-color: var(--fd-accent); color: var(--fd-accent); background: rgba(74,158,255,.05); }
 /* Overlay panel for referred names */
-.char-referred-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  background: var(--fd-navigator-bg);
-  display: flex;
-  flex-direction: column;
-}
-.char-referred-panel { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-.char-referred-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--fd-border);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  color: var(--fd-text-muted);
-}
-.char-referred-desc {
-  padding: 8px 12px;
-  font-size: 11px;
-  color: var(--fd-text-muted);
-  border-bottom: 1px solid var(--fd-border);
-  line-height: 1.4;
-}
 /* v4.19: classify dropdown (location / other / connect to character). */
 .char-unmatched-classify {
   flex: 0 0 auto;

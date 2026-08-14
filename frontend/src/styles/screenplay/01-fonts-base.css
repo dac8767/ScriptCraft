@@ -359,11 +359,6 @@
   background: #ffebee;
 }
 /* Light theme: context menu */
-[data-theme="light"] .ctx-menu {
-  background: var(--fd-menu-bg);
-  border-color: var(--fd-border);
-  box-shadow: 0 4px 16px #b0b0b0;
-}
 [data-theme="light"] .ctx-item:hover {
   background: var(--fd-accent);
   color: #fff;
@@ -382,7 +377,6 @@
   box-shadow: 0 4px 16px #b0b0b0;
 }
 /* Light theme: go-to-page, element picker */
-[data-theme="light"] .goto-page-panel,
 [data-theme="light"] .element-picker {
   background: var(--fd-dropdown-bg);
   box-shadow: 0 4px 16px #b0b0b0;

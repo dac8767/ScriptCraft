@@ -42,45 +42,24 @@ const RuleList: React.FC<{ section: RuleSection }> = ({ section }) => {
 
   return (
     <>
-      <p style={{ fontSize: 12, color: 'var(--fd-text-muted)', marginTop: 0, marginBottom: 12 }}>
-        {section.blurb}
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* v7.04 (style audit item 13): this panel styled every row inline. */}
+      <p className="fs-gr-blurb">{section.blurb}</p>
+      <div className="fs-gr-rules">
         {section.ids.map((id) => {
           const meta = section.meta[id];
           if (!meta) return null;
           return (
-            <label
-              key={id}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 10,
-                padding: '8px 10px',
-                border: '1px solid var(--fd-border)',
-                borderRadius: 6,
-                cursor: 'pointer',
-              }}
-            >
+            <label key={id} className="fs-gr-rule">
               <input
                 type="checkbox"
                 checked={isOn(id)}
                 onChange={(e) => setGrammarRuleEnabled(id, e.target.checked)}
-                style={{ marginTop: 3 }}
               />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 500, fontSize: 13 }}>{meta.label}</div>
-                <div style={{ fontSize: 12, color: 'var(--fd-text-muted)' }}>{meta.description}</div>
+              <div className="fs-gr-rule-text">
+                <div className="fs-gr-rule-name">{meta.label}</div>
+                <div className="fs-gr-rule-desc">{meta.description}</div>
               </div>
-              <span
-                style={{
-                  fontSize: 11,
-                  padding: '2px 6px',
-                  borderRadius: 4,
-                  background: meta.severity === 'grammar' ? 'rgba(26,168,136,0.15)' : 'rgba(46,125,215,0.15)',
-                  color: meta.severity === 'grammar' ? '#1aa888' : '#2e7dd7',
-                }}
-              >
+              <span className={`fs-gr-sev fs-gr-sev--${meta.severity === 'grammar' ? 'grammar' : 'style'}`}>
                 {meta.severity}
               </span>
             </label>
@@ -100,39 +79,24 @@ const GrammarRulesPanel: React.FC<GrammarRulesPanelProps> = ({ onClose }) => {
     <>
       <Modal onClose={onClose} boxClassName="">
           <div className="dialog-header">Grammar &amp; Spelling Settings</div>
-          <div
-            style={{
-              display: 'flex',
-              gap: 4,
-              borderBottom: '1px solid var(--fd-border)',
-              padding: '0 16px',
-            }}
-          >
+          <div className="fs-gr-tabs">
             {TABS.map((t) => {
               const active = t.id === activeTab;
               return (
-                <button className="dialog-btn"
+                /* v7.04: these are TABS, not buttons — v7.02 gave them
+                   `dialog-btn`, which every inline rule here then overrode. */
+                <button
                   key={t.id}
                   type="button"
+                  className={`fs-gr-tab${active ? ' active' : ''}`}
                   onClick={() => setActiveTab(t.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '8px 12px',
-                    fontSize: 13,
-                    fontWeight: active ? 600 : 400,
-                    color: active ? 'var(--fd-text)' : 'var(--fd-text-muted)',
-                    borderBottom: active ? '2px solid var(--fd-accent, #4a90d9)' : '2px solid transparent',
-                    cursor: 'pointer',
-                    marginBottom: -1,
-                  }}
                 >
                   {t.label}
                 </button>
               );
             })}
           </div>
-          <div className="dialog-body" style={{ overflowY: 'auto' }}>
+          <div className="dialog-body fs-gr-body">
             {activeTab === 'grammar' && <RuleList section={GRAMMAR_SECTION} />}
             {activeTab === 'style' && <RuleList section={STYLE_SECTION} />}
             {activeTab === 'dictionaries' && (
