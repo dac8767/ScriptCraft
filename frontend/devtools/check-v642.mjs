@@ -124,20 +124,64 @@ try {
   ok(src.includes("/Auto Saves/Auto Save — "), 'mirrorSnapshot writes into the "Auto Saves" folder');
   ok(!src.includes("snapToCloud"), 'mirrorSnapshot has no Cloud destination left');
 
-  // ── v6.43: File menu — Settings… is second-to-last, Script History last ──
+  // ── v6.43→v6.95 (Derek, via the feedback form): Settings LEFT File for
+  //    Help — directly below About ScriptCraft, a divider on each side. ──
   await page.click('.menu-item:has-text("File")').catch(() => null);
   await settle(page);
-  const fileTail = await page.evaluate(() => {
+  const fileItems = await page.evaluate(() => {
     // the ROOT dropdown only — Script History's hover flyout is a second
     // .menu-dropdown holding its children
     const root = document.querySelector('.menu-dropdown');
-    const items = [...(root?.querySelectorAll(':scope > .menu-dropdown-item') ?? [])]
+    return [...(root?.querySelectorAll(':scope > .menu-dropdown-item') ?? [])]
       .map((el) => el.textContent.trim()).filter(Boolean);
-    return items.slice(-2);
   });
-  ok(fileTail[0]?.startsWith('Settings') && fileTail[1]?.startsWith('Script History'),
-    `File menu ends …Settings…, Script History (${JSON.stringify(fileTail)})`);
+  ok(!fileItems.some((t) => t.startsWith('Settings')) && fileItems[fileItems.length - 1]?.startsWith('Script History'),
+    `File no longer holds Settings and ends on Script History (…${JSON.stringify(fileItems.slice(-2))})`);
   await page.keyboard.press('Escape');
+  await settle(page);
+  for (let i = 0; i < 3; i++) {
+    await page.click('.menu-item:has-text("Help")').catch(() => null);
+    await settle(page);
+    if (await page.evaluate(() => !!document.querySelector('.menu-dropdown'))) break;
+  }
+  const helpHead = await page.evaluate(() => {
+    const root = document.querySelector('.menu-dropdown');
+    return [...(root?.children ?? [])].slice(0, 4).map((el) =>
+      el.classList.contains('menu-separator') ? '—' : el.textContent.trim());
+  });
+  ok(helpHead[0]?.startsWith('About ScriptCraft') && helpHead[1] === '—'
+      && helpHead[2]?.startsWith('Settings') && helpHead[3] === '—',
+    `Help opens About | divider | Settings… | divider (${JSON.stringify(helpHead)})`);
+  // the moved door still works, and lands on the REDONE Save Options tab
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.menu-dropdown .menu-dropdown-item')]
+      .find((el) => el.textContent.trim().startsWith('Settings'))?.click();
+  });
+  await settle(page);
+  await page.waitForSelector('.prefs-window', { timeout: 5000 });
+  await page.click('.prefs-tab:has-text("Save Options")');
+  await settle(page);
+  const save = await page.evaluate(() => {
+    const heads = [...document.querySelectorAll('.prefs-general section > h3')].map((h) => h.textContent.trim());
+    const hints = document.querySelectorAll('.prefs-general .prefs-hint').length;
+    const sec = document.querySelector('.prefs-general section');
+    const h3 = sec?.querySelector('h3');
+    const cs = sec ? getComputedStyle(sec) : null;
+    const hb = h3 ? getComputedStyle(h3) : null;
+    let anc = '', el = sec?.parentElement;
+    while (el) {
+      const b = getComputedStyle(el).backgroundColor;
+      if (b && b !== 'rgba(0, 0, 0, 0)' && b !== 'transparent') { anc = b; break; }
+      el = el.parentElement;
+    }
+    return { heads, hints, border: cs?.borderTopWidth, pos: hb?.position, h3bg: hb?.backgroundColor, anc };
+  });
+  ok(save.heads.includes('Auto Saves') && !save.heads.includes('Auto Save Locations'),
+    `ONE merged Auto Saves section (${save.heads.join(' | ')})`);
+  ok(save.hints === 2, `helper text only under Google Drive + OneDrive (${save.hints} hint blocks)`);
+  ok(save.border === '1px' && save.pos === 'absolute' && save.h3bg === save.anc,
+    `sections are bordered boxes, titles set INTO the border on the window's own color (${save.border}/${save.pos})`);
+  await page.evaluate(() => document.querySelector('.prefs-window .tool-window-close')?.click());
   await settle(page);
 
   // ── the status bar carries no account indicator ──

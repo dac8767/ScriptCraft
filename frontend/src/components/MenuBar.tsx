@@ -1350,13 +1350,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
           const t = ALL_TOOLS.find((x) => x.id === 'assets');
           return t ? [{ icon: t.icon, label: t.label, action: () => useEditorStore.getState().openTool('assets') }] : [];
         })(),
-        // v6.44, Derek: Settings… is second-to-last in the macOS SCRIPTCRAFT
-        // menu (nativeMenuSync's app menu — above Quit). In-window menus have
-        // no app menu, so it sits here, second-to-last in File.
-        ...(nativeMenus ? [] : [
-          { separator: true, label: '' },
-          { icon: <FaWrench />, label: 'Settings…', shortcut: sc('settings'), action: () => setPrefsOpen(true) },
-        ]),
         {
           icon: <FaCodeBranch />, label: 'Script History',
           children: [
@@ -1685,12 +1678,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     items: [
       /* v3.15, Derek: About lives in the ScriptCraft app menu, not Help —
          but ONLY native mode has an app menu, so the in-window Help keeps
-         it (removing it there would leave About unreachable). */
-      ...(nativeMenus ? [] : [{
-        icon: <FaInfoCircle />,
-        label: 'About ScriptCraft',
-        action: () => setAboutOpen(true),
-      }]),
+         it (removing it there would leave About unreachable). v6.95 (Derek,
+         via the feedback form): Settings… sits directly BELOW About with a
+         divider on each side — it LEFT File for this spot. Native mode keeps
+         the macOS convention (About + Settings… in the app menu). */
+      ...(nativeMenus ? [] : [
+        { icon: <FaInfoCircle />, label: 'About ScriptCraft', action: () => setAboutOpen(true) },
+        { separator: true, label: '' },
+        { icon: <FaWrench />, label: 'Settings…', shortcut: sc('settings'), action: () => setPrefsOpen(true) },
+        { separator: true, label: '' },
+      ]),
       {
         icon: <FaKeyboard />,
         label: 'Keyboard Shortcuts',

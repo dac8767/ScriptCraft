@@ -213,12 +213,8 @@ function DraftNumberRow({ editor }: { editor: Editor | null }) {
         onClick={() => setDefaultDraftLabel(trimmed)}
       >Set as Default</button>
     </div>
-    <p className="prefs-hint">
-      Apply mirrors Production → Set Draft Number: updates the saved draft
-      label and the Title Page draft line (keeping its date). Set as Default
-      makes it what new scripts start as — currently
-      &ldquo;{defaultDraftLabel}&rdquo;.
-    </p>
+    {/* v6.95 (Derek, via the feedback form): the explainer paragraph is gone
+        with the rest of this tab's helper text. */}
     </>
   );
 }
@@ -273,12 +269,8 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
 
       <section id="prefs-save-locations">
         <h3>Script Save Locations</h3>
-        <p className="prefs-hint" style={{ margin: '0 0 10px' }}>
-          Save and Save As always write to the script's home (local or cloud,
-          wherever it was created). Every location checked below receives a
-          copy at the same time. If a secondary location fails, the save still
-          succeeds — you'll get an error to acknowledge.
-        </p>
+        {/* v6.95 (Derek, via the feedback form): this tab's helper text is
+            gone — only the two cloud sections keep their setup notes. */}
         {/* v6.42, Derek: "i should still be able to change the location of
             'Local System (always on)'" — the row now shows and edits the
             device folder that receives the script as a real file: the SAME
@@ -289,7 +281,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           <input type="checkbox" checked disabled />
           <span>
             Local System (always on)
-            {localSaveFolder ? <code className="prefs-path-chip">{localSaveFolder}</code> : ' — app library only; choose a folder to also save a file you can see'}
+            {localSaveFolder && <code className="prefs-path-chip">{localSaveFolder}</code>}
           </span>
           <button
             className="prefs-inline-btn"
@@ -319,7 +311,7 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
           />
           <span>
             Local System (backup location)
-            {backupSaveFolder ? <code className="prefs-path-chip">{backupSaveFolder}</code> : ' — choose a folder'}
+            {backupSaveFolder && <code className="prefs-path-chip">{backupSaveFolder}</code>}
           </span>
           <button
             className="prefs-inline-btn"
@@ -348,13 +340,44 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
       </section>
 
       <section>
-        <h3>Auto Save Locations</h3>
-        {/* v6.72, Derek: "remove the first option 'Local version history
-            (always on)' — this was adding autosaves to the snapshot window,
-            which we do not want." The row is gone AND so is the behaviour
-            behind it: ScreenplayEditor's auto-save timer no longer takes a
-            version check-in, so an auto save is a FILE in the locations
-            below and nothing else. Snapshots are only ever taken by hand. */}
+        <h3>Auto Saves</h3>
+        {/* v6.95 (Derek, via the feedback form): the timer and the locations
+            it writes to are ONE section now. An auto save is a crash-spare
+            FILE in the checked locations below — never a snapshot (v6.72;
+            ScreenplayEditor's auto-save timer takes no version check-in). */}
+        <label className="prefs-check-row" style={{ marginBottom: 10 }}>
+          <input
+            type="checkbox"
+            checked={autoSnapshotMinutes > 0}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setAutoSnapshotMinutes(lastAutoSaveMinutes.current || 5);
+              } else {
+                if (autoSnapshotMinutes > 0) lastAutoSaveMinutes.current = autoSnapshotMinutes;
+                setAutoSnapshotMinutes(0);
+              }
+            }}
+          />
+          <span>Automatically save projects</span>
+        </label>
+        <div className="prefs-field-row prefs-autosave-row" style={{ marginBottom: 12 }}>
+          <label htmlFor="prefs-autosnap">Automatically Save Every:</label>
+          <input
+            id="prefs-autosnap"
+            type="number"
+            min={1}
+            max={720}
+            className="prefs-num-input"
+            disabled={autoSnapshotMinutes === 0}
+            value={autoSnapshotMinutes === 0 ? (lastAutoSaveMinutes.current || 5) : autoSnapshotMinutes}
+            onChange={(e) => {
+              const v = Math.max(1, parseInt(e.target.value, 10) || 1);
+              lastAutoSaveMinutes.current = v;
+              if (autoSnapshotMinutes > 0) setAutoSnapshotMinutes(v);
+            }}
+          />
+          <span className="prefs-unit-label">minute(s)</span>
+        </div>
         {/* v2.83, Derek: a chosen folder on this device gets a timestamped
             .odraft on every auto save. Checking with no folder yet opens the
             picker; the path shows beside the row. */}
@@ -371,9 +394,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
               setSnapToLocalFolder(true);
             }}
           />
-          {/* v6.72, Derek: "this has two choose folder buttons. change the
-              text to 'Local device folder'." The row said "— choose a folder"
-              beside a Choose Folder… button. One affordance now. */}
           <span>
             Local device folder
             {snapLocalFolder && <code className="prefs-path-chip">{snapLocalFolder}</code>}
@@ -425,60 +445,6 @@ function SaveLocationsTab({ editor }: { editor: Editor | null }) {
             >Reset to Downloads</button>
           )}
         </div>
-        <p className="prefs-hint prefs-subhint">
-          The Screenshot toolbar button saves PNGs here. Leave it on Downloads to
-          use the browser's normal download folder.
-        </p>
-      </section>
-
-      <section>
-        <h3>Auto Saves</h3>
-        <label className="prefs-check-row" style={{ marginBottom: 10 }}>
-          <input
-            type="checkbox"
-            checked={autoSnapshotMinutes > 0}
-            onChange={(e) => {
-              if (e.target.checked) {
-                setAutoSnapshotMinutes(lastAutoSaveMinutes.current || 5);
-              } else {
-                if (autoSnapshotMinutes > 0) lastAutoSaveMinutes.current = autoSnapshotMinutes;
-                setAutoSnapshotMinutes(0);
-              }
-            }}
-          />
-          <span>Automatically save projects</span>
-        </label>
-        <div className="prefs-field-row prefs-autosave-row">
-          <label htmlFor="prefs-autosnap">Automatically Save Every:</label>
-          <input
-            id="prefs-autosnap"
-            type="number"
-            min={1}
-            max={720}
-            className="prefs-num-input"
-            disabled={autoSnapshotMinutes === 0}
-            value={autoSnapshotMinutes === 0 ? (lastAutoSaveMinutes.current || 5) : autoSnapshotMinutes}
-            onChange={(e) => {
-              const v = Math.max(1, parseInt(e.target.value, 10) || 1);
-              lastAutoSaveMinutes.current = v;
-              if (autoSnapshotMinutes > 0) setAutoSnapshotMinutes(v);
-            }}
-          />
-          <span className="prefs-unit-label">minute(s)</span>
-        </div>
-        {/* v6.72, Derek: an auto save is a spare copy for a crash, not a
-            snapshot. It writes a timestamped file to the Auto Save Locations
-            below and nothing else — no entry in the Snapshots window.
-            ("Maximum Project Versions" went with the version check-in it
-            counted; capping the FILES needs a folder-listing permission the
-            desktop shell doesn't grant yet.) */}
-        <p className="prefs-hint">
-          An auto save is a spare copy of the script in case the app closes
-          unexpectedly. Each one writes a timestamped file to every Auto Save
-          Location you choose below. Auto saves are not snapshots — they never
-          appear in the Snapshots window. Tick at least one location, or auto
-          saving has nowhere to write.
-        </p>
       </section>
 
       <section>

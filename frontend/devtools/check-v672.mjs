@@ -38,33 +38,33 @@ try {
   await settle(page);
   const sections = await page.evaluate(() => {
     const hs = [...document.querySelectorAll('.prefs-general section')];
-    const auto = hs.find((s) => s.querySelector('h3')?.textContent === 'Auto Save Locations');
+    // v6.95 (Derek, via the feedback form): the locations MERGED into the
+    // one "Auto Saves" section; the separate section is gone.
+    const auto = hs.find((s) => s.querySelector('h3')?.textContent === 'Auto Saves');
     if (!auto) return null;
     return {
+      gone: !hs.some((s) => s.querySelector('h3')?.textContent === 'Auto Save Locations'),
       rows: [...auto.querySelectorAll('.prefs-check-row span')].map((s) => s.textContent.trim()),
       hints: [...auto.querySelectorAll('.prefs-hint')].map((h) => h.textContent.trim()),
       chooseBtns: auto.querySelectorAll('.prefs-inline-btn').length,
-      body: document.body.innerText,
     };
   });
-  ok(!!sections, 'the Auto Save Locations section is on the Save & Locations tab');
-  ok(!sections.rows.some((r) => /version history/i.test(r)),
-    `"Local version history (always on)" is gone (${sections.rows.length} rows: ${sections.rows.map((r) => r.split('\n')[0]).join(' | ')})`);
-  ok(sections.hints.length === 0, `no helper text left in the section (${sections.hints.length} paragraphs)`);
-  const local = sections.rows.find((r) => /Local device folder/.test(r));
+  ok(!!sections && sections.gone, 'ONE Auto Saves section — the separate Locations section merged into it (v6.95)');
+  ok(!!sections && !sections.rows.some((r) => /version history/i.test(r)),
+    `"Local version history (always on)" is gone (${sections?.rows.length} rows: ${sections?.rows.map((r) => r.split('\n')[0]).join(' | ')})`);
+  ok(!!sections && sections.hints.length === 0, `no helper text left in the section (${sections?.hints.length} paragraphs)`);
+  const local = sections?.rows.find((r) => /Local device folder/.test(r));
   ok(!!local, `the folder row reads "Local device folder" (${local ?? 'not found'})`);
   ok(local && !/choose a folder/i.test(local),
     'and says it once — the row text no longer duplicates the Choose Folder… button');
 
-  /* ── 3: the auto-save hint ── */
+  /* ── 3: the auto-save explainer paragraph is GONE with the rest of the
+        tab's helper text (v6.95) — only the cloud setup notes remain ── */
   const hint = await page.evaluate(() => {
     const ps = [...document.querySelectorAll('.prefs-general .prefs-hint')];
     return ps.map((p) => p.textContent.replace(/\s+/g, ' ').trim()).find((t) => /auto save/i.test(t)) ?? '';
   });
-  ok(/spare copy/i.test(hint) && /not snapshots/i.test(hint),
-    `the auto-save text says what it is, and that it is not a snapshot ("${hint.slice(0, 80)}…")`);
-  ok(!/squash|baseline|checkpoint|Maximum Project Versions/i.test(hint),
-    'and no longer describes version checkpoints or squashing');
+  ok(hint === '', `the auto-save explainer is gone with the tab's helper text${hint ? ` — found "${hint.slice(0, 50)}…"` : ''}`);
   const keepField = await page.locator('#prefs-autosnap-keep').count();
   ok(keepField === 0, `the "Maximum Project Versions" field is gone with the behaviour it counted (${keepField})`);
 

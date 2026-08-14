@@ -1,5 +1,14 @@
 [
  {
+  "version": "6.95",
+  "date": "2026-08-14",
+  "changes": [
+   "Settings moved: it now lives in the Help menu directly below About ScriptCraft, with a divider on each side (it left the File menu). ⌘, still opens it.",
+   "The Settings window got a cleanup pass modeled on the reference screenshot from the feedback: every section is now a bordered group box with its name set into the border line.",
+   "Save Options: the auto-save timer and its locations are one “Auto Saves” section, and the tab's helper text is gone — only the Google Drive and OneDrive setup notes remain."
+  ]
+ },
+ {
   "version": "6.94",
   "date": "2026-08-13",
   "changes": [

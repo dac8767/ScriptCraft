@@ -151,7 +151,16 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.89 and older (newest first)
+## Version history — v6.90 and older (newest first)
+
+### v6.90 — the attachment area says what it takes
+
+- Derek: change "Attachment" to "Attach an Image" since images are all
+  the field accepts. One string in FeedbackTool's `.fb-attach-head`
+  (plain JSX text — NOT in the helper catalog, which harvests only
+  title/placeholder/aria-label/ht()); test + check asserts updated to
+  the new label.
+- Gates: tsc 0, vitest 1199, build ok, check-all 1076/0.
 
 ### v6.89 — multiple attachments + the sent blur-veil
 

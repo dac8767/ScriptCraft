@@ -1,14 +1,13 @@
-# ScriptCraft — continuation brief (current as of v6.94 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.95 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
-> 1. Move Settings to the BOTTOM of the File menu (v6.43/v6.44 history: the
->    ⌘, item sits in File second-to-last and in the app menu above Quit —
->    this asks for File's copy to go last).
-> 2. The blank-line-before-a-scene-heading rule must NOT apply to the very
+> (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
+> and DELIVERED v6.95: Settings sits in Help below About ScriptCraft.)
+> 1. The blank-line-before-a-scene-heading rule must NOT apply to the very
 >    first scene heading on page 1 (his screenshot: the opening heading
 >    sits below an inserted blank). Find the rule's one source (enforce
 >    machinery / paginator) before touching it.
-> 3. Ribbon EDITOR item spacing/size ≠ the real ribbon bar's (two
+> 2. Ribbon EDITOR item spacing/size ≠ the real ribbon bar's (two
 >    screenshots: edit mode renders larger paddings/gaps around the same
 >    controls). Likely the rib-edit-item wrappers add chrome the live bar
 >    lacks — parity like v6.83's alignment item.
@@ -285,6 +284,31 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.95 — settings clean pass + Settings moved to Help (4 feedback items)
+
+- All from Derek's two feedback rows ("proceed with all feedback"):
+  (1) Save Options: "Auto Save Locations" + "Auto Saves" are ONE "Auto
+  Saves" section — timer checkbox, interval row, then the three location
+  rows. (3) The tab's helper text is GONE — the Script Save Locations
+  intro, the label suffixes, the Screenshots hint, the auto-save
+  explainer AND DraftNumberRow's paragraph — only the Google Drive /
+  OneDrive setup notes remain (his explicit exception). (4) His
+  reference screenshot (Premiere-style) drove a GLOBAL restyle:
+  `.prefs-general section` = bordered group box, h3 absolutely inset
+  into the top border. GOTCHA: the inset label's background must be the
+  DIALOG chain var(--fd-dialog-bg, --fd-navigator-bg) — the Settings
+  window is a dz-panel shell, NOT a tool-window (--fd-bg); a live probe
+  proved they differ. (5) Settings… LEFT File for Help: About
+  ScriptCraft | divider | Settings… | divider (in-window menus only;
+  native keeps the macOS app-menu convention untouched).
+- check-v642 21/0: the v6.43 File-tail pin became File-has-no-Settings +
+  Help-order + the new door driven end-to-end + hint census (=2) + box
+  style with a bg-parity assert (h3 bg === first opaque ancestor bg).
+  check-v672 12/0 tracks the merged section and the REMOVED explainer.
+  Help clicks in checks need the 3-retry loop (first click after Escape
+  re-arms the bar).
+- Gates: tsc 0, vitest 1200, build ok, check-all 1082/0.
+
 ### v6.94 — the ? retired; "Description:"; five more knobs (13 total)
 
 - Derek: "remove the ? icon. that text is not needed" — the whole help
@@ -348,20 +372,12 @@ Durable bits kept live here:
   their old labels; nothing else references the names (grep confirmed).
 - Gates: tsc 0, vitest 1199, build ok, check-all 1076/0.
 
-### v6.90 — the attachment area says what it takes
-
-- Derek: change "Attachment" to "Attach an Image" since images are all
-  the field accepts. One string in FeedbackTool's `.fb-attach-head`
-  (plain JSX text — NOT in the helper catalog, which harvests only
-  title/placeholder/aria-label/ht()); test + check asserts updated to
-  the new label.
-- Gates: tsc 0, vitest 1199, build ok, check-all 1076/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.90** — attachment area header renamed "Attach an Image" (v6.92 later made it "Attach a Screenshot")
 - **v6.89** — multiple attachments (buttons stay, picks APPEND, comma-joined attachments column) + the sent blur-veil confirmation (3s, -webkit-backdrop-filter; checks must wait the veil away before the next fill)
 - **v6.88** — the Feedback draft survives moving the window (module-level draft, mounts rehydrate; unmount no longer revokes shot URLs; resetFeedbackDraft for tests)
 - **v6.87** — the Feedback ATTACHMENT AREA (the first request submitted through the form itself): labeled box + Browse…, real-format uploads, `attachments` + `status` enum columns (his SQL paste), sessions hold data-not-DDL rights
