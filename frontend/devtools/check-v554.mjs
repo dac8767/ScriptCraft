@@ -15,6 +15,15 @@ const { browser, page } = await launch();
 await boot(page);
 await seedScript(page, SCENES_4);
 
+/* v7.05: Action Rewrite is an ADD-ON now. This driver tests the TOOL, so it
+   installs the add-on first — without it there is no dock row, no menu entry
+   and no ribbon option, which is the point. check-v705 covers the gating. */
+await page.evaluate(async () => {
+  const m = await import('/src/addons/addonRegistry.ts');
+  m.installAddon('action-rewrite');
+});
+await page.waitForTimeout(300);
+
 await openTool(page, 'Action Rewrite');
 await page.waitForSelector('.rw-tool', { timeout: 8000 });
 const shell = await page.evaluate(() => ({
@@ -76,9 +85,18 @@ await page.evaluate(() => {
   [...document.querySelectorAll('.menu-dropdown-item')].find((b) => b.textContent.includes('Developer'))?.click();
 });
 await page.waitForTimeout(250);
+/* v7.05: with the add-on INSTALLED (top of this file) the v6.14 entry is back
+   where it was. The uninstalled case — absent from every surface — is
+   check-v705's job. */
 ok(await page.evaluate(() =>
   [...document.querySelectorAll('.menu-dropdown-item')].some((b) => b.textContent.includes('Action Rewrite'))),
-  'Help ▸ Developer lists Action Rewrite');
+  'with the add-on installed, Help ▸ Developer lists Action Rewrite again');
+
+// leave the profile clean for the next driver
+await page.evaluate(async () => {
+  const m = await import('/src/addons/addonRegistry.ts');
+  m.__resetAddonsForTest([]);
+});
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await browser.close();

@@ -3,7 +3,7 @@
 // survive both, and the target must stay VISIBLY painted (the decoration)
 // through panel focus and floating-window opens. Plus the new declutter eye:
 // same button as the Scrapbook's, hides every other sidebar tool.
-import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, installAddon } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -13,6 +13,7 @@ const ok = (cond, label) => {
 const { browser, page } = await launch();
 await boot(page);
 await seedScript(page, SCENES_4);
+await installAddon(page, 'action-rewrite');   // v7.05: Rewrite ships as an add-on
 
 // select a range inside the first action paragraph
 const sel = await page.evaluate(() => {

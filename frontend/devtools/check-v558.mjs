@@ -1,7 +1,7 @@
 // devtools/check-v558.mjs — the writer's note replaces the steer enum: a
 // single-line field with teaching placeholder and a live counter capped at
 // 300; targeting still resolves (regression).
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, installAddon } from './driver.mjs';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -10,6 +10,7 @@ const ok = (cond, label) => {
 const { browser, page } = await launch();
 await boot(page);
 await seedScript(page, SCENES_4);
+await installAddon(page, 'action-rewrite');   // v7.05: Rewrite ships as an add-on
 await openTool(page, 'Action Rewrite');
 await page.waitForSelector('.rw-tool', { timeout: 8000 });
 const field = await page.evaluate(() => {

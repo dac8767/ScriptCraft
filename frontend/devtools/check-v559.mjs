@@ -4,7 +4,7 @@
 // pre-request surfaces survive the rework (note field, targeting).
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, installAddon } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -60,6 +60,7 @@ ok(stats.includes('reimagined: 1') && stats.includes('Beats contributed'),
 const { browser, page } = await launch();
 await boot(page);
 await seedScript(page, SCENES_4);
+await installAddon(page, 'action-rewrite');   // v7.05: Rewrite ships as an add-on
 await openTool(page, 'Action Rewrite');
 await page.waitForSelector('.rw-tool', { timeout: 8000 });
 const shell = await page.evaluate(() => ({

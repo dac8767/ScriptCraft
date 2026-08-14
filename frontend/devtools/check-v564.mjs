@@ -2,7 +2,7 @@
 // and the panel still resolves (the Rerun path's resolver is unit-tested;
 // the button renders only with live results, which need the API).
 import { readFileSync } from 'node:fs';
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, installAddon } from './driver.mjs';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -18,6 +18,7 @@ ok(!/[—–]/.test(prompt.split('Variants must not share language')[1].split('\
 const { browser, page } = await launch();
 await boot(page);
 await seedScript(page, SCENES_4);
+await installAddon(page, 'action-rewrite');   // v7.05: Rewrite ships as an add-on
 await openTool(page, 'Action Rewrite');
 await page.waitForSelector('.rw-tool', { timeout: 8000 });
 await page.evaluate(() => {

@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.05",
+  "date": "2026-08-14",
+  "changes": [
+   "Add-ons. Settings ▸ Add-ons is a new tab where extra features can be installed and removed. An add-on that isn't installed contributes nothing at all — no window, no menu entry, no toolbar option — and removing it puts the app back exactly as it was. Everything listed there ships inside ScriptCraft; nothing is downloaded.",
+   "Action Rewrite is now an add-on rather than part of the main app. It's gone from the tool rail, the Tools and Help menus and the toolbar customizer until you install it from Settings ▸ Add-ons. Your choice is remembered between restarts.",
+   "The Design window is a developer surface now: it opens from Help ▸ Developer and is no longer offered in the side panels, the toolbar customizer or the tool rail."
+  ]
+ },
+ {
   "version": "7.04",
   "date": "2026-08-14",
   "changes": [

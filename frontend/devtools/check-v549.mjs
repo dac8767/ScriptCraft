@@ -20,40 +20,31 @@ const seatGap = () => page.evaluate(() => {
   return { gap: dock.left - dz.right, onScreen: dz.left >= 0 && dz.top >= 0 };
 });
 
-// fresh open from the row → right edge touches the panel's left edge
-await page.click('[data-tool-row="design"]');
-await page.waitForSelector('.dz-panel', { timeout: 4000 });
-let seat = await seatGap();
-ok(seat && seat.gap >= 0 && seat.gap <= 12 && seat.onScreen,
-  `fresh pop-out kisses the right panel's edge (gap ${seat?.gap?.toFixed(0)}px)`);
+/* v7.05, Derek ("move design window into the dev tab and remove it as an
+   option from all toolbars and side panels"): the Design window is a DEVELOPER
+   surface now. It has no dock row and no Customize/ribbon entry, and opens from
+   Help ▸ Developer as a floating window.
 
-// dock it, drag the row back out → same seat
-const dzH = await page.evaluate(() => {
-  const r = document.querySelector('.dz-header').getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-});
-const dock = await page.evaluate(() => {
-  const r = document.querySelector('.tool-dock-wrap.tool-dock-right .tool-dock').getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-});
-await page.mouse.move(dzH.x, dzH.y); await page.mouse.down();
-await page.mouse.move(dock.x, dock.y, { steps: 8 }); await page.mouse.up();
-await page.waitForTimeout(400);
-const rowC = await page.evaluate(() => {
-  const r = document.querySelector('[data-tool-row="design"]').getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-});
-const edC = await page.evaluate(() => {
-  const r = document.querySelector('.editor-center').getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-});
-await page.mouse.move(rowC.x, rowC.y); await page.mouse.down();
-await page.mouse.move(edC.x, edC.y, { steps: 8 }); await page.mouse.up();
+   The v5.49 asserts that used to live here — that the pop-out kisses the right
+   panel's edge on a fresh open and again after a dock cycle — are RETIRED
+   rather than quietly dropped: they measured docking behaviour that the tool no
+   longer has. What is still worth pinning is that the window opens, floating
+   and fully on screen. check-v705 covers its absence from the pickers. */
+await page.evaluate(() => window.__scStore.getState().openTool('design'));
 await page.waitForSelector('.dz-panel', { timeout: 4000 });
 await settle(page);
-seat = await seatGap();
-ok(seat && seat.gap >= 0 && seat.gap <= 12 && seat.onScreen,
-  `after a dock cycle the pop-out kisses the edge again (gap ${seat?.gap?.toFixed(0)}px)`);
+const onScreen = await page.evaluate(() => {
+  const r = document.querySelector('.dz-panel')?.getBoundingClientRect();
+  if (!r) return null;
+  return {
+    onScreen: r.left >= 0 && r.top >= 0 && r.right <= window.innerWidth + 1 && r.bottom <= window.innerHeight + 1,
+    w: Math.round(r.width), h: Math.round(r.height),
+  };
+});
+ok(onScreen && onScreen.onScreen && onScreen.w > 100,
+  `Design opens from Help ▸ Developer, floating and fully on screen (${onScreen?.w}×${onScreen?.h})`);
+const noRow = await page.evaluate(() => !document.querySelector('[data-tool-row="design"]'));
+ok(noRow, 'and it has no side-panel dock row — it is not offered as a panel tool');
 await page.screenshot({ path: `${SHOTS}/v549-design-seat.png` });
 await page.click('.dz-close');
 
@@ -111,14 +102,21 @@ await page.click('.markup-save');
 // ── Pages stepper: one frame, tight arrows, number snug ──────────────────
 await openTool(page, 'Pages');
 await page.waitForSelector('.fs-updown', { timeout: 6000 });
+/* v7.05: this block measured `.fs-pages-actions .tool-action-count`, which
+   does not exist — the Pages row renders the SHARED PerRowStepper, whose
+   number is its own typeable input (.fs-perrow-input), not a count span. The
+   selector was stale, so the block threw and these two asserts had silently
+   stopped running (v7.04 reported 8 of this file's 11). Measuring the input
+   that is actually there restores the coverage the asserts were written for:
+   one frame around both arrows, arrows tight, number snug beside them. */
 const spin = await page.evaluate(() => {
   const wrap = document.querySelector('.fs-updown');
   const [up, down] = [...wrap.querySelectorAll('.fs-updown-btn')].map((b) => b.getBoundingClientRect());
-  const count = document.querySelector('.fs-pages-actions .tool-action-count').getBoundingClientRect();
+  const num = document.querySelector('.fs-perrow-input').getBoundingClientRect();
   return {
     framed: getComputedStyle(wrap).borderTopWidth !== '0px',
     tight: down.top - up.bottom <= 1.5,
-    numGap: count.left - wrap.getBoundingClientRect().right,
+    numGap: num.left - wrap.getBoundingClientRect().right,
   };
 });
 ok(spin.framed && spin.tight, 'the arrows share ONE button frame, tight together');

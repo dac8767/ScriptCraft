@@ -9,7 +9,9 @@
  */
 import { BUILTIN_BY_KEY } from './toolbarBuiltins';
 import { TOOLBAR_COMMANDS } from './toolbarCommands';
-import { ALL_TOOLS, WINDOW_IDS } from './ToolDock';
+/* v7.05: availableTools(), not ALL_TOOLS — a tool belonging to an
+   uninstalled add-on, or a dev-only surface, must not be offerable here. */
+import { availableTools, WINDOW_IDS } from './ToolDock';
 
 export interface PaletteCategory {
   id: string;
@@ -32,7 +34,7 @@ const cmdOpt = (id: string) => {
   return c ? [{ value: `c:${c.id}`, label: c.label }] : [];
 };
 const toolOpt = (id: string) => {
-  const t = ALL_TOOLS.find((x) => x.id === id);
+  const t = availableTools().find((x) => x.id === id);
   return t ? [{ value: `t:${t.id}`, label: t.label }] : [];
 };
 
@@ -55,7 +57,7 @@ export function buildRibbonPalette(placed: (v: string) => boolean): PaletteCateg
     {
       id: 'tools', label: 'Tools',
       options: [
-        ...ALL_TOOLS.filter((t) => !WINDOW_IDS.includes(t.id) && t.id !== 'tags').flatMap((t) => toolOpt(t.id)),
+        ...availableTools().filter((t) => !WINDOW_IDS.includes(t.id) && t.id !== 'tags').flatMap((t) => toolOpt(t.id)),
         { value: 'b:scriptNotes', label: 'Notes' },
         ...TOOLS_CMDS.flatMap(cmdOpt),
       ],
@@ -63,7 +65,7 @@ export function buildRibbonPalette(placed: (v: string) => boolean): PaletteCateg
     {
       id: 'project', label: 'Project',
       options: [
-        ...ALL_TOOLS.filter((t) => WINDOW_IDS.includes(t.id)).flatMap((t) => toolOpt(t.id)),
+        ...availableTools().filter((t) => WINDOW_IDS.includes(t.id)).flatMap((t) => toolOpt(t.id)),
         ...PROJECT_CMDS.flatMap(cmdOpt),
         ...PRODUCTION_CMDS.flatMap(cmdOpt),
       ],

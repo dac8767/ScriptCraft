@@ -1,7 +1,7 @@
 // devtools/check-v562.mjs — the writer's note clears when a NEW set of text
 // is targeted (disjoint range), and survives caret moves within the same
 // passage and focus trips into the panel.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, installAddon } from './driver.mjs';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -10,6 +10,7 @@ const ok = (cond, label) => {
 const { browser, page } = await launch();
 await boot(page);
 await seedScript(page, SCENES_4);
+await installAddon(page, 'action-rewrite');   // v7.05: Rewrite ships as an add-on
 await openTool(page, 'Action Rewrite');
 await page.waitForSelector('.rw-tool', { timeout: 8000 });
 

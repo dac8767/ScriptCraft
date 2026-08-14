@@ -13,7 +13,7 @@ import NewScriptLauncher from './NewScriptLauncher';
 import GuidedSetupDialog from './GuidedSetupDialog';
 import RenameDialog from './RenameDialog';
 import HelpReferenceDialog from './HelpReferenceDialog';
-import { ALL_TOOLS } from './ToolDock';
+import { ALL_TOOLS, availableTools } from './ToolDock';
 
 /** Project menu: script structure / story elements / project management. */
 const PROJECT_MENU_GROUPS: string[][] = [
@@ -1597,7 +1597,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         ...PROJECT_MENU_GROUPS.filter((group) => group.length > 0).flatMap((group, gi) => [
           ...(gi > 0 ? [{ separator: true, label: '' }] : []),
           ...group
-            .map((id) => ALL_TOOLS.find((t) => t.id === id))
+            /* v7.05: availableTools() — a gated tool (uninstalled add-on,
+               or dev-only) simply isn't found, and the filter drops it. */
+            .map((id) => availableTools().find((t) => t.id === id))
             .filter((t): t is typeof ALL_TOOLS[number] => !!t)
             .map((t) => ({
               icon: t.icon,
@@ -1623,7 +1625,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         ...TOOL_MENU_GROUPS.flatMap((group, gi) => [
           ...(gi > 0 ? [{ separator: true, label: '' }] : []),
           ...group
-            .map((id) => ALL_TOOLS.find((t) => t.id === id))
+            /* v7.05: availableTools() — a gated tool (uninstalled add-on,
+               or dev-only) simply isn't found, and the filter drops it. */
+            .map((id) => availableTools().find((t) => t.id === id))
             .filter((t): t is typeof ALL_TOOLS[number] => !!t)
             .map((t) => ({
               icon: t.icon,
@@ -1724,7 +1728,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             action: () => setDiagnosticsOpen(true),
           },
           // v6.14, Derek: Action Rewrite lives here now (out of Tools).
-          ...ALL_TOOLS.filter((t) => t.id === 'rewrite').map((t) => ({
+          // v7.05: and only when its ADD-ON is installed — availableTools()
+          // already excludes it otherwise, so this entry vanishes with it.
+          ...availableTools().filter((t) => t.id === 'rewrite').map((t) => ({
             icon: t.icon, label: t.label, action: () => useEditorStore.getState().openTool(t.id),
           })),
           {

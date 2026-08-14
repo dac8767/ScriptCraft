@@ -1,7 +1,7 @@
-# ScriptCraft — continuation brief (current as of v7.04 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.05 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
-> QUEUE — Derek, 2026-08-14 ("add to queue"), NOT yet built — the ADD-ON
-> track. These four are one piece of work; do them together:
+> DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
+> of what was asked and what was built:
 > 1. Build an ADD-ON MODULE: a place add-ons can be installed into. (There is
 >    already a `pluginRegistry` with `getRoutes()` wired in App.tsx — start by
 >    reading it; this may be an extension of that rather than a new system.)
@@ -307,6 +307,40 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.05 — the add-on module; Action Rewrite becomes the first add-on
+
+**What was built.** `src/addons/addonRegistry.ts` — a bundled catalog plus
+install state persisted to `opendraft:addons:installed`. `Settings ▸ Add-ons`
+installs and removes. Action Rewrite is the first add-on; the Design window is
+`devOnly`.
+
+**Be honest about what this is.** Nothing is downloaded or evaluated — the
+add-on ships inside the app and is GATED. That is what Derek asked for (a
+private tool he does not want widely distributed), and running fetched code
+inside a desktop app with filesystem access is a decision to take deliberately.
+The seam for remote add-ons is the catalog.
+
+**THE bug worth remembering: gating a list is not enough.** `availableTools()`
+covers the menus and the Customize/ribbon pickers, but the DOCK RAIL filters on
+the persisted `toolConfig`, which remembers a tool that used to be enabled — so
+Action Rewrite still had a rail row until the rail was gated too. "Removed from
+the app" means every surface, and the surfaces do not share one list.
+
+**And: install state is not store state.** The rail reads `gatedToolIds()`
+during render, so nothing invalidated it — installing from Settings did not
+refresh the rail until some unrelated re-render happened. `useAddonRevision()`
+subscribes; any component reading the gate during render needs it.
+
+**Three stale drivers surfaced, one badly.** check-v554 asserted the OLD
+contract (Help ▸ Developer lists Action Rewrite) — inverted, and it plus five
+others now call the new `installAddon(page, id)` driver helper. check-v549's
+Design dock-seat asserts tested docking the tool no longer does (retired
+explicitly). And its Pages block measured `.fs-pages-actions .tool-action-count`
+— an element that exists nowhere in that tool at v7.04 either, so the block
+threw and THREE of its eleven asserts had silently stopped running. It reported
+"8 passed, 0 failed" and the suite called that green. **A driver that reports
+fewer asserts than it contains is failing quietly** — worth a check of its own.
 
 ### v7.04 — dead-CSS sweep (309 → 223) + the last inline-styling islands
 

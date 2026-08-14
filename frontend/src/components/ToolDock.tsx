@@ -55,6 +55,8 @@ import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
 import HelperTextTool, { HelperTextTitleExtra } from './HelperTextWindow';
 
+import { gatedToolIds, subscribeAddons } from '../addons/addonRegistry';
+
 export interface ToolDef {
   id: ToolId;
   label: string;
@@ -75,6 +77,14 @@ export interface ToolDef {
   keepOpenOnEditorClick?: boolean;
   /** dock group separators, Photoshop-style (per side, in order) */
   group: number;
+  /** v7.05: this tool belongs to an ADD-ON. It is absent from every surface —
+   *  dock rows, ribbon palette, Customize pickers, the Tools menu — until that
+   *  add-on is installed (Settings ▸ Add-ons). See src/addons/addonRegistry.ts. */
+  addonId?: string;
+  /** v7.05, Derek: developer surface. Never offered in the dock, the ribbon or
+   *  any Customize picker; it opens from Help ▸ Developer only. Same treatment
+   *  Helper Text already had, made explicit so it can't drift back. */
+  devOnly?: boolean;
 }
 
 // Default heights sit at ~60% of the original panel lengths (v0.25) — drag
@@ -126,7 +136,7 @@ export const ALL_TOOLS: ToolDef[] = [
   // v5.54, Derek: Action Rewrite — three craft-guided rewrites of selected
   // action lines (Derek's design handoff; prompt + API call live Rust-side,
   // the writer brings their own Anthropic key, stored in the OS keychain).
-  { id: 'rewrite', label: 'Action Rewrite', icon: <FaMagic />, defaultSize: { w: 360, h: 520 }, group: 3 },
+  { id: 'rewrite', label: 'Action Rewrite', icon: <FaMagic />, defaultSize: { w: 360, h: 520 }, group: 3, addonId: 'action-rewrite' },
   // v1.96: the Notebook window is ONLY the pages tree — it sits inline in
   // the panel like Navigator, while the writing surface takes over the
   // editor area (NotebookSurface in ScreenplayEditor). keepOpenOnEditorClick
@@ -157,7 +167,7 @@ export const ALL_TOOLS: ToolDef[] = [
   // v4.23, Derek: the Design (tokens) surface is dockable now — the same body
   // the floating window shows (DesignPanelBody), just in a panel column. Opens
   // FLOATING by default (its sliders want width), but the pop-in button docks it.
-  { id: 'design', label: 'Design', icon: <FaSlidersH />, defaultSize: { w: 360, h: 560 }, group: 3, noPanelFit: true },
+  { id: 'design', label: 'Design', icon: <FaSlidersH />, defaultSize: { w: 360, h: 560 }, group: 3, noPanelFit: true, devOnly: true },
   // v4.23, Derek: Workspaces (saved layouts) as a dockable tool — same store
   // API as the View → Workspaces menu; apply/save/rename/delete in a panel.
   { id: 'workspaces', label: 'Workspaces', icon: <FaColumns />, defaultSize: { w: 300, h: 360 }, group: 3 },
@@ -433,6 +443,39 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
 };
 
 /** Windows summarize script info; everything else is a Tool (v0.24 taxonomy). */
+/**
+ * v7.05 — THE tool list every surface should read.
+ *
+ * `ALL_TOOLS` is the full registry, including tools that belong to an add-on
+ * the user has not installed and developer-only surfaces. Anything that OFFERS
+ * a tool to the user — dock rows, the ribbon palette, the Customize pickers,
+ * the Tools menu — must read this instead, so a gated tool disappears from all
+ * of them at once rather than each caller remembering to filter.
+ *
+ * Opening a tool by id still works regardless (Help ▸ Developer opens Design,
+ * and a persisted layout naming a gated tool is handled where it is restored) —
+ * this governs what is OFFERED, not what can exist.
+ */
+export function availableTools(): ToolDef[] {
+  const gated = gatedToolIds();
+  return ALL_TOOLS.filter((t) => !t.devOnly && !gated.includes(t.id));
+}
+
+/** Re-renders the caller whenever an add-on is installed or removed. Any
+ *  component that reads availableTools() / gatedToolIds() during render needs
+ *  this — the install state lives outside the store, so nothing else will
+ *  invalidate it. */
+export function useAddonRevision(): void {
+  const [, bump] = React.useReducer((n: number) => n + 1, 0);
+  React.useEffect(() => subscribeAddons(bump), []);
+}
+
+/** React-aware tool list: re-renders when an add-on is installed or removed. */
+export function useAvailableTools(): ToolDef[] {
+  useAddonRevision();
+  return availableTools();
+}
+
 export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'history'];
 export const isWindowTool = (id: ToolId) => WINDOW_IDS.includes(id);
 
@@ -846,6 +889,12 @@ function FullscreenMapRailPanel() {
 }
 
 export default function ToolDock({ side, editor, scrollContainer }: ToolDockProps) {
+  /* v7.05: re-render when an add-on is installed or removed. The rail filters
+     on gatedToolIds() below, and that is NOT store state — without this
+     subscription the rail kept showing (or hiding) a tool until some unrelated
+     change happened to re-render it. Installing from Settings must take effect
+     immediately, not eventually. */
+  useAddonRevision();
   const nameUpper = useEditorStore((s) => s.panelNameCase === 'upper');
   const {
     activeTool, setActiveTool, activeToolRight, setActiveToolRight, toolConfig,
@@ -856,8 +905,15 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     const i = toolOrder.indexOf(id);
     return i === -1 ? 1000 + ALL_TOOLS.findIndex((t) => t.id === id) : i;
   };
+  /* v7.05: the DOCK RAIL reads the gated list too. Without this a tool whose
+     add-on is uninstalled (or a dev-only surface) still had a rail row, because
+     the rail filters on the persisted toolConfig — which remembers a tool that
+     used to be enabled. Gating here is what makes "removed from the app" true
+     rather than "hidden from the menus". */
+  const gated = gatedToolIds();
   const tools = ALL_TOOLS.filter((t) => {
     if (PANEL_EXCLUDED_IDS.includes(t.id)) return false;   // never dock these
+    if (t.devOnly || gated.includes(t.id)) return false;
     const cfg = toolConfigFor(toolConfig, t.id);
     return cfg.enabled && cfg.side === side;
   }).sort((a, b) => orderIdx(a.id) - orderIdx(b.id));
