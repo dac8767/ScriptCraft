@@ -336,7 +336,7 @@ try {
     await page.click('.menu-dropdown :text("Set Draft Number")');
     await page.waitForSelector('#draft-input', { timeout: 5000 });
     await page.fill('#draft-input', label);
-    await page.click('.dialog-actions .dialog-primary');
+    await page.click('.dialog-actions .dialog-btn-primary');   // v7.01: was .dialog-primary
     await settle(page);
   };
   await setDraftTo('2nd Draft');

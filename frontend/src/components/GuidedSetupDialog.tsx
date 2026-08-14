@@ -274,7 +274,7 @@ export default function GuidedSetupDialog({ open, onClose, onCreate, onBack }: {
               ? (onBack && <button onClick={onBack}>← Back</button>)
               : <button onClick={() => setStep((s) => s - 1)}>← Back</button>}
             <button onClick={next} title="Leave this step at its default">Skip for now</button>
-            <button className="dialog-primary" onClick={next}>
+            <button className="dialog-btn dialog-btn-primary" onClick={next}>
               {last ? 'Create Script' : 'Next →'}
             </button>
           </div>

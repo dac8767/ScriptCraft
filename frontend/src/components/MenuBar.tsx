@@ -2293,7 +2293,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
           <div className="dialog-actions">
             <button onClick={() => setCheckinOpen(false)}>Cancel</button>
             <button
-              className="dialog-primary"
+              className="dialog-btn dialog-btn-primary"
               onClick={handleCheckinSubmit}
               disabled={checkinSaving || !checkinMessage.trim()}
             >
@@ -2406,7 +2406,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
           <div className="dialog-actions">
             <button onClick={handleDiscardConfirmCancel}>Cancel</button>
             <button onClick={handleDiscardConfirmDiscard}>Discard</button>
-            <button className="dialog-primary" onClick={handleDiscardConfirmSave}>Save &amp; Continue</button>
+            <button className="dialog-btn dialog-btn-primary" onClick={handleDiscardConfirmSave}>Save &amp; Continue</button>
           </div>
         </div>
       </div>
@@ -2438,7 +2438,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
           </div>
           <div className="dialog-actions">
             <button onClick={() => setDocxImportWarningOpen(false)}>Cancel</button>
-            <button className="dialog-primary" onClick={handleConfirmDocxImport}>Continue</button>
+            <button className="dialog-btn dialog-btn-primary" onClick={handleConfirmDocxImport}>Continue</button>
           </div>
         </div>
       </div>

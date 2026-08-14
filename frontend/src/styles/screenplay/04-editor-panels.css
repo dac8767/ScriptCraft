@@ -164,7 +164,7 @@
   min-width: 32px; text-align: center;
 }
 .script-diff-chip-modified {
-  background: #f59e0b; color: white;
+  background: var(--fd-warning); color: white;
   padding: 1px 8px; border-radius: 3px;
   font-weight: 700; font-size: 11px;
   min-width: 32px; text-align: center;
@@ -190,7 +190,8 @@
 .diff-block-label {
   font-size: 9px; text-transform: uppercase;
   color: #888; letter-spacing: 0.05em;
-  margin-bottom: 3px; font-family: sans-serif;
+  margin-bottom: 3px; font-family: inherit; /* v7.01 (V352): was a bare
+     sans-serif — the only UI label opting out of the app font stack. */
 }
 .diff-block-content {
   font-family: 'Courier New', Courier, monospace;
@@ -207,7 +208,7 @@
 }
 .diff-modified {
   background: rgba(245, 158, 11, 0.08);
-  border-left-color: #f59e0b;
+  border-left-color: var(--fd-warning);
 }
 .diff-unchanged { opacity: 0.55; }
 .diff-empty { background: rgba(0, 0, 0, 0.02); }
@@ -478,7 +479,7 @@
   text-transform: uppercase; letter-spacing: 0.03em;
 }
 .location-db-type-interior { color: #3b82f6; }
-.location-db-type-exterior { color: #f59e0b; }
+.location-db-type-exterior { color: var(--fd-warning); }
 .location-db-type-both { color: #8b5cf6; }
 .location-db-card-address {
   flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;

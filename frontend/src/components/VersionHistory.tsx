@@ -496,7 +496,7 @@ const VersionHistory: React.FC = () => {
             </div>
             <div className="dialog-actions">
               <button onClick={() => setRestoreConfirm(null)}>Cancel</button>
-              <button className="dialog-primary" onClick={handleRestoreConfirm}>
+              <button className="dialog-btn dialog-btn-primary" onClick={handleRestoreConfirm}>
                 Restore
               </button>
             </div>

@@ -297,7 +297,7 @@
 .tags-item-notes::placeholder { color: var(--fd-text-muted); }
 .tags-item-editing { background: rgba(74,158,255,.06); border-radius: 4px; }
 .tags-item-notes:focus { border-color: var(--fd-accent); background: rgba(0,0,0,.3); }
-.tags-item-delete:hover { color: #ff6b6b; }
+.tags-item-delete:hover { color: var(--fd-danger); }
 
 /* Entity name display */
 .tags-entity-name { font-weight: 600; }
@@ -382,7 +382,7 @@
   padding: 0 3px;
   flex-shrink: 0;
 }
-.tags-occ-remove:hover { color: #ff6b6b; }
+.tags-occ-remove:hover { color: var(--fd-danger); }
 
 /* Pending tag: step 2 — entity creation / selection */
 .tags-entity-create {
@@ -488,7 +488,7 @@
 .tags-add-input {
   flex: 1;
   height: 26px;
-  background: #222;
+  background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 3px;

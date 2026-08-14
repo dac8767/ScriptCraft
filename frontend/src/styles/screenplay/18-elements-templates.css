@@ -28,7 +28,7 @@
   cursor: pointer;
   padding: 0;
 }
-.color-picker-swatch:hover { border-color: var(--fd-accent, #4a9eff); }
+.color-picker-swatch:hover { border-color: var(--fd-accent, #4a90d9); }
 .color-picker-swatch.active { border-color: #fff; box-shadow: 0 0 0 1px var(--fd-accent); }
 /* v5.26: optional Recent row (wheel picks only — annotation pickers pass it) */
 .color-picker-recent { margin-bottom: 8px; }
@@ -151,7 +151,7 @@
 .template-mode-btn:first-child { border-radius: 4px 0 0 4px; }
 .template-mode-btn:last-child { border-radius: 0 4px 4px 0; border-left: 0; }
 .template-mode-btn.active {
-  background: var(--fd-accent, #4a9eff);
+  background: var(--fd-accent, #4a90d9);
   color: #fff;
   border-color: var(--fd-accent);
 }
@@ -230,7 +230,7 @@
   font-size: 11px;
   padding: 2px;
 }
-.template-delete-btn:hover { color: #ff4444; }
+.template-delete-btn:hover { color: var(--fd-danger); }
 
 /* Element detail */
 .template-editor-detail {
@@ -296,7 +296,7 @@
   cursor: pointer;
   font-size: 12px;
 }
-.template-color-clear:hover { color: #ff4444; }
+.template-color-clear:hover { color: var(--fd-danger); }
 
 .template-editor-preview {
   border: 1px solid var(--fd-border);
@@ -348,9 +348,13 @@
 .template-list-actions { display: flex; gap: 4px; }
 .template-list-footer { display: flex; gap: 8px; margin-top: 4px; }
 
-.dialog-btn-sm { padding: 4px 8px !important; font-size: 12px !important; }
-.dialog-btn-danger { color: #ff4444 !important; }
-.dialog-btn-danger:hover { background: rgba(255,68,68,0.1) !important; }
+/* v7.01 (style audit F133): this set font and padding but NOT height, so the
+   "small" button still stood 34px tall with 12px text — Settings ▸ Page Setup
+   "View" and the Defaults per-row "Reset" both towered over their neighbours.
+   Height is what makes a button small. */
+.dialog-btn-sm { height: var(--dz-dialog-btn-h-sm, 26px) !important; padding: 0 10px !important; font-size: 12px !important; }
+.dialog-btn-danger { color: var(--fd-danger) !important; }
+.dialog-btn-danger:hover { background: color-mix(in srgb, var(--fd-danger) 12%, transparent) !important; }
 
 /* ============ TEMPLATE SELECT DIALOG ============ */
 .template-select-overlay {
@@ -412,7 +416,7 @@
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--fd-accent, #3b82f6);
+  color: var(--fd-accent, #4a90d9);
   background: var(--fd-accent-bg, rgba(59,130,246,0.15));
   padding: 1px 6px;
   border-radius: 4px;
@@ -424,7 +428,7 @@
   text-transform: capitalize;
 }
 .template-select-mode-enforce {
-  color: #f59e0b;
+  color: var(--fd-warning);
   background: rgba(245,158,11,0.15);
 }
 .template-select-mode-override {
@@ -531,17 +535,17 @@
 }
 .fmt-card:hover {
   background: var(--fd-hover, rgba(255,255,255,0.05));
-  border-color: var(--fd-accent, #3b82f6);
+  border-color: var(--fd-accent, #4a90d9);
 }
 .fmt-card.is-selected {
   background: var(--fd-accent-bg, rgba(59,130,246,0.12));
-  border-color: var(--fd-accent, #3b82f6);
+  border-color: var(--fd-accent, #4a90d9);
 }
 .fmt-card-checkbox {
   margin-top: 2px;
   flex-shrink: 0;
   cursor: pointer;
-  accent-color: var(--fd-accent, #3b82f6);
+  accent-color: var(--fd-accent, #4a90d9);
 }
 .fmt-card-info { flex: 1; min-width: 0; }
 .fmt-card-name {
@@ -623,7 +627,7 @@
   margin: 0 0 4px 0;
   font-size: 13px;
   font-weight: 600;
-  color: var(--fd-accent, #3b82f6);
+  color: var(--fd-accent, #4a90d9);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -654,7 +658,7 @@
   padding: 0 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #f59e0b;
+  color: var(--fd-warning);
   background: rgba(245,158,11,0.15);
   border-radius: 4px;
 }

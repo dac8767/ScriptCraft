@@ -1050,7 +1050,7 @@ body.fs-tool-dragging { cursor: grabbing; }
   padding: 10px 12px;
   margin-bottom: 12px;
 }
-.fs-goal-progress.done { border-color: #4caf50; }
+.fs-goal-progress.done { border-color: var(--fd-success); }
 .fs-goal-progress-bar {
   height: 8px;
   border-radius: 4px;
@@ -1062,7 +1062,7 @@ body.fs-tool-dragging { cursor: grabbing; }
   background: var(--fd-accent, #4a90d9);
   transition: width 0.4s;
 }
-.fs-goal-progress.done .fs-goal-progress-bar > div { background: #4caf50; }
+.fs-goal-progress.done .fs-goal-progress-bar > div { background: var(--fd-success); }
 .fs-goal-progress-label {
   font-size: 12px;
   color: var(--fd-text);
@@ -1079,7 +1079,7 @@ body.fs-tool-dragging { cursor: grabbing; }
   padding: 4px 10px;
   cursor: pointer;
 }
-.fs-goal-stop:hover { color: #c0392b; border-color: #c0392b; }
+.fs-goal-stop:hover { color: var(--fd-danger); border-color: var(--fd-danger); }
 .fs-goal-kinds {
   display: inline-flex;
   border: 1px solid var(--fd-border);

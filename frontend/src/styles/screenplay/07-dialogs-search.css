@@ -66,17 +66,17 @@
 [data-theme="light"] .save-failure-banner {
   background: linear-gradient(90deg, #fde8e8 0%, #fef3e2 100%);
   border-bottom-color: #ef9a9a;
-  color: #c62828;
+  color: var(--fd-danger);
 }
 [data-theme="light"] .save-failure-btn {
   border-color: #ef9a9a;
-  color: #c62828;
+  color: var(--fd-danger);
 }
 [data-theme="light"] .save-failure-btn:hover {
   background: #ffcdd2;
 }
 [data-theme="light"] .save-failure-dismiss {
-  color: #c62828;
+  color: var(--fd-danger);
 }
 
 .status-save-unsaved { color: #f0ad4e; }
@@ -226,18 +226,40 @@
   background: var(--fd-toolbar-bg);
   pointer-events: none;
 }
+/* v7.01 (style audit E131): `.dialog-primary` is RETIRED. It was an accent
+   paint with no size of its own, so it looked like a proper primary button
+   inside a .dialog-actions row and like a 19px native button anywhere else
+   (Settings ▸ Draft Number). All 27 call sites now use
+   `dialog-btn dialog-btn-primary`, which carries the shape as well as the
+   color. The rule is kept as an alias ONLY so a stale saved layout or a
+   third-party snippet doesn't render an unstyled button; do not use it in new
+   code — checkNoDialogPrimary in check-all fails the suite if it reappears. */
 .dialog-primary { background: var(--fd-accent) !important; border-color: var(--fd-accent) !important; color: #fff !important; }
-.dialog-primary:hover { opacity: .9; }
+.dialog-primary:hover { background: color-mix(in srgb, var(--fd-accent) 86%, black) !important; }
 .dialog-btn {
   height: var(--dz-dialog-btn-h, 34px); padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 4px); cursor: pointer; font-size: 14px;
 }
-.dialog-btn:hover { background: var(--fd-toolbar-hover); }
+/* v7.01 (C60): excludes primaries — see the note on .dialog-btn-primary:hover
+   below. Relying on source order alone put the two rules one edit apart from
+   breaking again. */
+.dialog-btn:not(.dialog-btn-primary):hover { background: var(--fd-toolbar-hover); }
 .dialog-btn-primary {
   background: var(--fd-accent); border-color: var(--fd-accent); color: #fff;
 }
-.dialog-btn-primary:hover { opacity: .9; }
+/* v7.01 (style audit C60): this MUST set `background`, not just `opacity`.
+   `.dialog-btn:hover` (0-2-0) sets a background and `.dialog-btn-primary`
+   (0-1-0) can't outrank it — so a hovered primary button used to take the
+   PLAIN hover background and lose its accent fill in every dark theme. This
+   rule is the same specificity and comes later, so it wins. Keep it after
+   `.dialog-btn:hover` in source order. */
+.dialog-btn-primary:hover { background: color-mix(in srgb, var(--fd-accent) 86%, black); }
 .dialog-btn-primary:disabled { opacity: .5; cursor: default; }
+/* v7.01: a primary button whose action DESTROYS something (Delete a note,
+   discard). Same shape as the primary, danger fill — so "the scary button" is
+   one class instead of an inline hex per site. */
+.dialog-btn-primary.dialog-btn-danger-fill { background: var(--fd-danger); border-color: var(--fd-danger); }
+.dialog-btn-primary.dialog-btn-danger-fill:hover { background: color-mix(in srgb, var(--fd-danger) 86%, black); }
 .dialog-label { display: block; font-size: 13px; color: var(--fd-text-muted); margin-bottom: 4px; }
 .dialog-input {
   height: 34px; background: var(--fd-input-bg); color: var(--fd-text);

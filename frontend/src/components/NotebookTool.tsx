@@ -665,7 +665,7 @@ function dragStartData(e: React.DragEvent, id: string) {
  *  from this palette by top-level order, or the one picked via right-click.
  *  Subfolders stay monotone. Exported for the test. */
 export const FOLDER_COLORS = [
-  '#e06060', '#e89b4f', '#d9c04a', '#6abf69',
+  'var(--fd-danger)', '#e89b4f', '#d9c04a', '#6abf69',
   '#4cbfbf', '#6fa8dc', '#b58ee0', '#d377b0',
 ];
 export function folderColor(node: { color?: string }, topIndex: number, depth: number): string | undefined {

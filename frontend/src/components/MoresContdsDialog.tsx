@@ -183,7 +183,7 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
           <div className="dialog-actions">
             <button onClick={handleReset} style={{ marginRight: 'auto' }}>Reset to defaults</button>
             <button onClick={onClose}>Cancel</button>
-            <button className="dialog-primary" onClick={handleApply}>Apply</button>
+            <button className="dialog-btn dialog-btn-primary" onClick={handleApply}>Apply</button>
           </div>
         )}
     </>

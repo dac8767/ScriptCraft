@@ -54,6 +54,25 @@ export const THEME_VARS: { key: string; label: string; group: string }[] = [
   { key: '--fd-text', label: 'Text', group: 'Text' },
   { key: '--fd-text-muted', label: 'Muted text', group: 'Text' },
 
+  /* v7.01 (style audit K244-K254): these were defined by every built-in theme
+     but absent from this list, so a CUSTOM theme could not reach them — build
+     a light-ish theme on the dark base and the input fields and dialog bodies
+     stayed dark with no way to change them. Surfaces the user can see are
+     surfaces the user can edit. */
+  { key: '--fd-input-bg', label: 'Input fields', group: 'Surfaces' },
+  { key: '--fd-dialog-bg', label: 'Dialog surface', group: 'Surfaces' },
+  { key: '--fd-overlay-subtle', label: 'Subtle overlay', group: 'Surfaces' },
+  { key: '--fd-overlay-light', label: 'Light overlay', group: 'Surfaces' },
+  { key: '--fd-overlay-medium', label: 'Medium overlay', group: 'Surfaces' },
+  { key: '--fd-shadow', label: 'Shadow', group: 'Surfaces' },
+  { key: '--fd-chrome-separator', label: 'Chrome separator', group: 'Surfaces' },
+  { key: '--fd-hairline', label: 'Edge line', group: 'Surfaces' },
+
+  /* v7.01: the three state colors introduced with the style audit. */
+  { key: '--fd-danger', label: 'Danger / delete', group: 'State' },
+  { key: '--fd-success', label: 'Success', group: 'State' },
+  { key: '--fd-warning', label: 'Warning', group: 'State' },
+
   { key: '--fd-page-bg', label: 'Script page', group: 'Page' },
   // v5.30, Derek: the annotation edit window has its OWN surface — light
   // gray with a white script-like field by default, per-theme editable.

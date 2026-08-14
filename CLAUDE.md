@@ -125,6 +125,23 @@ it actually produced — not by staring at the source and reasoning.
   too, so ternary tooltips are covered, not just literal attributes.
 - **Icons are always monotone** (react-icons line style, currentColor). Never emoji
   in UI chrome — v2.08 swept the Scrapbook's 📄🗂🗑 for exactly this.
+- **Colors come from tokens, never from a hex literal** (v7.01, after the style
+  audit). Chrome reads `--fd-danger` / `--fd-success` / `--fd-warning` /
+  `--fd-accent` and the surface tokens; a raw `#c0392b` in a component or a
+  stylesheet is a bug. `src/styles/tokenResolve.test.ts` fails the suite if a
+  `var(--fd-…)` names a token no theme defines — the exact failure that left ~50
+  hover and selected states painting nothing through v7.00. A NEW token must be
+  defined in `:root` **and** added to `THEME_VARS` (themes.ts) or custom themes
+  can't reach it. The exception is a user-facing color PALETTE (annotation
+  colors, index-card colors): those are choices, not states, and stay literal.
+- **Buttons: `dialog-btn` + a modifier, never a paint-only class** (v7.01). The
+  retired `dialog-primary` set a color but no size, so it looked right in a
+  dialog's button row and like a native browser button anywhere else. The test
+  above fails the suite if it reappears.
+- **Never `window.confirm` / `alert` / `prompt`** — in Tauri they are async IPC
+  shims that return a Promise, and a Promise is always truthy, so `if (confirm(…))`
+  runs whatever the user answers. Use `confirmDialog` / `promptDialog`. Enforced
+  by the same test file.
 - **Never comment on the time of day or suggest he sleep.**
 
 End any message that delivers a change with:

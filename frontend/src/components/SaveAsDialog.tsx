@@ -508,7 +508,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
 
           </div>
           {error && (
-            <div style={{ color: '#ff6b6b', fontSize: 12, marginTop: 8 }}>{error}</div>
+            <div style={{ color: 'var(--fd-danger)', fontSize: 12, marginTop: 8 }}>{error}</div>
           )}
         </div>
         <div className="dialog-actions">
@@ -524,7 +524,7 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
           <span className="fs-saveas-actions-gap" aria-hidden="true" />
           <button onClick={onClose}>Cancel</button>
           <button
-            className="dialog-primary"
+            className="dialog-btn dialog-btn-primary"
             onClick={handleSave}
             disabled={saving || !fileName.trim()}
           >

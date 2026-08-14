@@ -159,7 +159,7 @@ export default function NewScriptDialog({ open, onClose, onCreate, onBack }: {
           )}
           <span className="fs-newscript-actions-gap" aria-hidden="true" />
           <button onClick={onClose}>Cancel</button>
-          <button className="dialog-primary" onClick={create}>Create</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={create}>Create</button>
         </div>
       </div>
     </div>

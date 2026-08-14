@@ -156,7 +156,7 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
                 <button
                   type="button"
                   onClick={() => handleDelete(selected)}
-                  style={{ ...buttonStyle, color: '#c0392b', borderColor: '#c0392b' }}
+                  style={{ ...buttonStyle, color: 'var(--fd-danger)', borderColor: 'var(--fd-danger)' }}
                 >
                   Delete
                 </button>
@@ -238,7 +238,7 @@ const DictionaryLibrary: React.FC<DictionaryLibraryProps> = ({ onClose }) => {
           </div>
         </div>
         <div className="dialog-footer">
-          <button className="dialog-primary" onClick={onClose}>Done</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Done</button>
         </div>
     </Modal>
   );

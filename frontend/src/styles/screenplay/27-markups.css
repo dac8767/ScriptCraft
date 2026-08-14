@@ -183,7 +183,7 @@
 /* v5.49, Derek: the Highlight group hugs the head row's RIGHT edge (and
    keeps hugging it when a narrow window wraps it to its own line). */
 .markup-hl-group { margin-left: auto; }
-.markup-hl-del:hover { color: #c0392b; border-color: #c0392b; opacity: 1; }
+.markup-hl-del:hover { color: var(--fd-danger); border-color: var(--fd-danger); opacity: 1; }
 .markup-add-hl { font-size: 11px; padding: 4px 8px; }
 /* v5.33, Derek: the annotation window is a LIGHT surface in both themes —
    the generic --fd-text hover flipped "Link Script Text" white and
@@ -259,7 +259,7 @@
 /* v5.48, Derek: the window's ⋮ menu is GONE — STATUS and DELETE ride the
    title bar as their own buttons (delete warns first). */
 .markup-win-status.done { color: #2e8b57; opacity: 1; background: rgba(46, 139, 87, 0.14); }
-.markup-win-delete:hover { color: #c0392b; }
+.markup-win-delete:hover { color: var(--fd-danger); }
 .markup-pop-group {
   display: inline-flex;
   align-items: center;

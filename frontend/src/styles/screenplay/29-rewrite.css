@@ -51,7 +51,7 @@
 }
 .rw-note:focus { outline: none; border-color: var(--fd-accent); }
 .rw-note-count { font-size: 10px; opacity: 0.55; flex: none; }
-.rw-note-count.full { color: #e8994f; opacity: 1; }
+.rw-note-count.full { color: var(--fd-warning); opacity: 1; }
 
 .rw-ctl-row { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
 .rw-go { height: 26px; padding: 0 14px; font-size: 12px; flex: 1; }
@@ -70,7 +70,7 @@
 }
 .rw-status { font-size: 12px; opacity: 0.7; padding: 6px 0; line-height: 1.5; }
 .rw-status-icon { margin-right: 6px; vertical-align: -1px; }
-.rw-error { font-size: 12px; color: #e06060; line-height: 1.45; }
+.rw-error { font-size: 12px; color: var(--fd-danger); line-height: 1.45; }
 .rw-retry { margin-left: 8px; height: 24px; padding: 0 10px; font-size: 12px; }
 
 /* v5.59: the results header — assessment (soft when already_strong) + Dismiss */
@@ -84,8 +84,8 @@
 .rw-strong-inline { font-style: italic; opacity: 0.75; color: #2e8b57; flex: 1; }
 .rw-stale {
   font-size: 12px;
-  color: #e8994f;
-  border-left: 3px solid #e8994f;
+  color: var(--fd-warning);
+  border-left: 3px solid var(--fd-warning);
   padding: 4px 8px;
 }
 
@@ -195,7 +195,7 @@
 
 /* the advisory craft linter — visible, never blocking */
 .rw-lint { display: flex; flex-direction: column; gap: 2px; }
-.rw-lint-item { font-size: 10px; color: #e8994f; }
+.rw-lint-item { font-size: 10px; color: var(--fd-warning); }
 .rw-lint-item::before { content: '⚠ '; }
 .rw-card-foot {
   display: flex;

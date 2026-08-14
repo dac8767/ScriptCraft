@@ -144,7 +144,7 @@
 .ctx-color-swatch[data-color="blue"]      { background: #6fa8dc; }
 .ctx-color-swatch[data-color="pink"]      { background: #e06c9f; }
 .ctx-color-swatch[data-color="yellow"]    { background: #f4d35e; }
-.ctx-color-swatch[data-color="green"]     { background: #6abf69; }
+.ctx-color-swatch[data-color="green"]     { background: #2d8a4e; }  /* a color CHOICE, not a state */
 .ctx-color-swatch[data-color="goldenrod"] { background: #daa520; }
 .ctx-color-swatch[data-color="buff"]      { background: #d2b48c; }
 .ctx-color-swatch[data-color="salmon"]    { background: #fa8072; }

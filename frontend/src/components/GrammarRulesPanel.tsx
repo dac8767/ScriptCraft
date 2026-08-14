@@ -122,7 +122,7 @@ const GrammarRulesPanel: React.FC<GrammarRulesPanelProps> = ({ onClose }) => {
                     fontSize: 13,
                     fontWeight: active ? 600 : 400,
                     color: active ? 'var(--fd-text)' : 'var(--fd-text-muted)',
-                    borderBottom: active ? '2px solid var(--fd-accent, #2e7dd7)' : '2px solid transparent',
+                    borderBottom: active ? '2px solid var(--fd-accent, #4a90d9)' : '2px solid transparent',
                     cursor: 'pointer',
                     marginBottom: -1,
                   }}
@@ -140,7 +140,7 @@ const GrammarRulesPanel: React.FC<GrammarRulesPanelProps> = ({ onClose }) => {
             )}
           </div>
           <div className="dialog-footer">
-            <button className="dialog-primary" onClick={onClose}>Done</button>
+            <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Done</button>
           </div>
       </Modal>
       {dictionaryLibraryOpen && (

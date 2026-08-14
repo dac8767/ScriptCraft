@@ -76,7 +76,7 @@ try {
   await settle(page);
 
   const preview = await readLines('.tp-scale-page', ':scope > div', '.tp-scale-page');
-  await page.click('.tp-editor-dialog .dialog-actions .dialog-primary');   // Apply
+  await page.click('.tp-editor-dialog .dialog-actions .dialog-btn-primary');   // Apply (v7.01: was .dialog-primary)
   await page.waitForTimeout(400);
   await goto('All');
   await page.waitForSelector('.page-thumbnail[data-page="title"] .page-thumb-el', { timeout: 8000 });

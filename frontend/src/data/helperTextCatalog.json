@@ -2165,7 +2165,7 @@
   "where": [
    "components/ThesaurusTool.tsx"
   ],
-  "icon": "FaSearch",
+  "icon": "LuSearch",
   "label": "In script:"
  },
  {

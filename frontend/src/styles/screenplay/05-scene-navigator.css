@@ -1139,12 +1139,12 @@
 .nav-row-grip:hover { color: var(--fd-text); }
 .nav-row-grip:active { cursor: grabbing; }
 .navigator-scene.nav-row-dragging { opacity: 0.35; }
-.navigator-scene.nav-moved-up { border-left-color: #2d8a4e; background: rgba(45, 138, 78, 0.08); }
-.navigator-scene.nav-moved-down { border-left-color: #d97706; background: rgba(217, 119, 6, 0.08); }
+.navigator-scene.nav-moved-up { border-left-color: var(--fd-success); background: rgba(45, 138, 78, 0.08); }
+.navigator-scene.nav-moved-down { border-left-color: var(--fd-warning); background: rgba(217, 119, 6, 0.08); }
 /* Same precedence as the cards: a scene's own color (inline style) still
    wins on the badge; uncolored badges take the moved hue. */
-.nav-moved-up .scene-number-badge { background: #2d8a4e; }
-.nav-moved-down .scene-number-badge { background: #d97706; }
+.nav-moved-up .scene-number-badge { background: var(--fd-success); }
+.nav-moved-down .scene-number-badge { background: var(--fd-warning); }
 /* The fixed 22px circle can't fit "5 → 7" — widen into a pill in reorder. */
 .nav-reorder-row .scene-number-badge {
   width: auto;
@@ -1362,7 +1362,7 @@
   background: none; border: none; padding: 2px;
   color: var(--fd-text-muted); font-size: 11px; cursor: pointer;
 }
-.locmap-custom-remove:hover { color: var(--fd-danger, #e05252); }
+.locmap-custom-remove:hover { color: var(--fd-danger); }
 .locmap-add-field {
   margin-top: 8px; padding: 5px 8px;
   font-size: 11px; color: var(--fd-text-secondary, var(--fd-text));
@@ -1446,7 +1446,7 @@
   background: none; border: none; padding: 1px 2px;
   color: var(--fd-text-muted); font-size: 10px; cursor: pointer;
 }
-.locmap-pin-menu-detach:hover { color: var(--fd-danger, #e05252); }
+.locmap-pin-menu-detach:hover { color: var(--fd-danger); }
 .locmap-pin-menu-empty { padding: 2px 8px 6px; font-size: 11px; font-style: italic; color: var(--fd-text-muted); }
 .locmap-pin-menu-sep { height: 1px; margin: 4px 2px; background: var(--fd-border); }
 .locmap-pin-menu-subhead {
@@ -1466,7 +1466,7 @@
 .locmap-pin-menu-item:disabled { opacity: .4; cursor: default; }
 .locmap-pin-menu-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .locmap-pin-menu-item-count { flex: 0 0 auto; font-size: 10px; color: var(--fd-text-muted); }
-.locmap-pin-menu-danger:hover:not(:disabled) { color: var(--fd-danger, #e05252); }
+.locmap-pin-menu-danger:hover:not(:disabled) { color: var(--fd-danger); }
 .locmap-pin-menu-list { display: flex; flex-direction: column; }
 .location-name-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }
 /* v5.79: the flipped capsule must also REVERSE its children, or the marker
@@ -1511,7 +1511,7 @@
   background: none; border: none; padding: 1px 2px;
   color: var(--fd-text-muted); font-size: 10px; cursor: pointer;
 }
-.locmap-attached-remove:hover { color: var(--fd-danger, #e05252); }
+.locmap-attached-remove:hover { color: var(--fd-danger); }
 /* A row that stands for several script locations carries their count. */
 .locmap-rail-badge {
   flex: 0 0 auto;

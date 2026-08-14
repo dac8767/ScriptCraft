@@ -71,7 +71,7 @@
   padding: 1px 8px;
   cursor: pointer;
 }
-.status-goal.done { border-color: #4caf50; color: #4caf50; }
+.status-goal.done { border-color: var(--fd-success); color: var(--fd-success); }
 .status-goal-track {
   width: 46px;
   height: 5px;
@@ -85,7 +85,7 @@
   height: 100%;
   background: var(--fd-accent, #4a90d9);
 }
-.status-goal.done .status-goal-track > span { background: #4caf50; }
+.status-goal.done .status-goal-track > span { background: var(--fd-success); }
 
 /* (v4.33: the script-note focus flash died with the window's script cards —
    notes open in the popover on their highlight now.) */
@@ -678,6 +678,11 @@ input.fs-switch:checked::after { left: 15px; }
   --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(90,70,40,.25);
   --fd-chrome-separator: rgba(0,0,0,0.08);
   --fd-btn-bg: #975e39; --fd-btn-text: #fdf6e8; --fd-btn-hover: #a57454;
+  /* v7.01 (A10): light-warm base — the dark themes' #e06060 has too little
+     contrast here, so this theme takes the light red. */
+  --fd-danger: #c62828;
+  --fd-success: #2d8a4e;
+  --fd-warning: #d97706;
 }
 [data-theme="nord"] {
   --fd-bg: #2e3440; --fd-toolbar-bg: #3b4252; --fd-menu-bg: #3b4252;
@@ -716,6 +721,11 @@ input.fs-switch:checked::after { left: 15px; }
   --fd-overlay-medium: rgba(0,0,0,.12); --fd-shadow: rgba(88,110,117,.25);
   --fd-chrome-separator: rgba(0,0,0,0.08);
   --fd-btn-bg: #1f74b0; --fd-btn-text: #fdf6e3; --fd-btn-hover: #3e87bb;
+  /* v7.01 (A10): light-warm base — the dark themes' #e06060 has too little
+     contrast here, so this theme takes the light red. */
+  --fd-danger: #c62828;
+  --fd-success: #2d8a4e;
+  --fd-warning: #d97706;
 }
 [data-theme="midnight"] {
   --fd-bg: #0d1117; --fd-toolbar-bg: #161b22; --fd-menu-bg: #161b22;
@@ -746,6 +756,11 @@ input.fs-switch:checked::after { left: 15px; }
   --fd-btn-bg: #1565c0; --fd-btn-text: #ffffff; --fd-btn-hover: #357ac8;
   --anno-win-bg: #eceef0; --anno-win-text: #24262a;
   --anno-field-bg: #ffffff; --anno-field-text: #1a1a1a;
+  /* v7.01 (A10): light-warm base — the dark themes' #e06060 has too little
+     contrast here, so this theme takes the light red. */
+  --fd-danger: #c62828;
+  --fd-success: #2d8a4e;
+  --fd-warning: #d97706;
 }
 [data-theme="gruvbox"] {
   --fd-bg: #282828; --fd-toolbar-bg: #3c3836; --fd-menu-bg: #3c3836;
@@ -801,7 +816,7 @@ input.fs-switch:checked::after { left: 15px; }
 }
 [data-theme="light"] .tool-dock-item.active {
   background: #cfe0f3;
-  border-color: var(--fd-accent, #1565c0);
+  border-color: var(--fd-accent, #4a90d9);
 }
 
 /* Workspace dialogs (Save Workspace / Edit Workspaces) */
@@ -870,25 +885,16 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 14px;
   outline: none;
 }
-.ws-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: var(--fd-toolbar-bg);
-  color: var(--fd-text-muted);
-  border: 1px solid var(--fd-border);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  flex-shrink: 0;
-}
-.ws-icon-btn:hover { color: var(--fd-text); background: var(--fd-menu-hover); }
+/* v7.01 (style audit L257-L261): `.ws-icon-btn` was declared TWICE in this one
+   file — a bordered 28px version here and a borderless 26px version further
+   down. Same specificity, so the later block silently won every overlapping
+   property and this one was dead weight that still looked authoritative.
+   The base declaration now lives ONCE, at the later block (search
+   `.ws-icon-btn {`). Only the states that block does not define survive here:
+   :disabled, and the .ws-confirm hover. */
 .ws-icon-btn:disabled { opacity: .4; cursor: default; }
-.ws-icon-btn.ws-danger:hover { color: #d05050; border-color: #d05050; }
-.ws-icon-btn.ws-confirm:hover { color: var(--fd-accent); border-color: var(--fd-accent); }
-.ws-confirm-label { font-size: 12.5px; color: #d05050; font-weight: 600; flex-shrink: 0; }
+.ws-icon-btn.ws-confirm:hover { color: var(--fd-accent); }
+.ws-confirm-label { font-size: 12.5px; color: var(--fd-danger); font-weight: 600; flex-shrink: 0; }
 
 /* ═══ v0.12 ═══ */
 
@@ -1142,7 +1148,13 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 14px;
   color: var(--fd-text);
 }
-.prefs-field-row select {
+/* v7.01 (style audit D67-D70, D76): ONE prefs select style. The selects on
+   General (Window on launch, Units, Date format, Time format) and in Guided
+   Setup carried no class at all, so they rendered as NATIVE controls — 19px
+   tall, 13.33px UA font, light-gray body — right beside this one. They now
+   share this declaration instead of getting a second copy of it. */
+.prefs-field-row select,
+.prefs-select {
   height: 32px;
   background: var(--fd-input-bg);
   color: var(--fd-text);
@@ -1151,6 +1163,8 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 0 8px;
   font-size: 13.5px;
 }
+.prefs-field-row select:focus,
+.prefs-select:focus { outline: none; border-color: var(--fd-accent); }
 .prefs-field-row + .prefs-hint { margin-left: 0; }
 @media (max-width: 700px) {
   .prefs-layout { flex-direction: column; }
@@ -1660,7 +1674,7 @@ input.fs-switch:checked::after { left: 15px; }
 /* Status bar: per-location save chips */
 .status-item.status-saved { color: #4caf7d; }
 .status-item.status-saving { color: var(--fd-text-muted); }
-.status-item.status-error { color: #d05050; }
+.status-item.status-error { color: var(--fd-danger); }
 
 /* ═══ v0.25 ═══ */
 
@@ -1720,7 +1734,7 @@ input.fs-switch:checked::after { left: 15px; }
   color: var(--fd-text-muted); cursor: pointer; font-size: 12px;
 }
 .ws-icon-btn:hover { background: var(--fd-overlay-light); color: var(--fd-text); }
-.ws-icon-btn.ws-danger { color: #e05656; }
+.ws-icon-btn.ws-danger { color: var(--fd-danger); }
 .ws-item-editing { padding: 4px 2px; gap: 4px; }
 .ws-edit-input {
   flex: 1; min-width: 0;
@@ -1758,11 +1772,11 @@ input.fs-switch:checked::after { left: 15px; }
   -webkit-backdrop-filter: blur(6px);   /* WebKit wants the prefix */
   backdrop-filter: blur(6px);
 }
-.fb-sent-msg { font-size: 14.5px; font-weight: 600; color: #27ae60; }
+.fb-sent-msg { font-size: 14.5px; font-weight: 600; color: var(--fd-success); }
 .fb-queued {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 10px; border-radius: 5px;
-  border: 1px solid #e5a50a; color: var(--fd-text);
+  border: 1px solid var(--fd-warning); color: var(--fd-text);
   background: rgba(229, 165, 10, 0.08);
 }
 .fb-retry { margin-left: auto; }
@@ -1842,7 +1856,7 @@ input.fs-switch:checked::after { left: 15px; }
   background: none; border: none; cursor: pointer;
   color: var(--fd-text-muted); padding: 2px; display: inline-flex;
 }
-.fb-shot-x:hover { color: #c0392b; }
+.fb-shot-x:hover { color: var(--fd-danger); }
 
 /* While a Feedback capture runs: hide the Feedback window (floating, docked,
    fullscreen takeover), so the shot shows the app underneath — not the tool

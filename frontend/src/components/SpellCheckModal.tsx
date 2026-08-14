@@ -279,7 +279,7 @@ const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose, embe
         <div className="spell-modal-actions">
           <div className="spell-modal-actions-col" />
           <div className="spell-modal-actions-col">
-            {!embedded && <button className="dialog-primary" onClick={onClose}>Close</button>}
+            {!embedded && <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Close</button>}
           </div>
         </div>
       </div>
@@ -309,7 +309,7 @@ const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose, embe
             <button onClick={handleRecheck}>Recheck</button>
           </div>
           <div className="spell-modal-actions-col">
-            {!embedded && <button className="dialog-primary" onClick={onClose}>Close</button>}
+            {!embedded && <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Close</button>}
           </div>
         </div>
       </div>
@@ -414,7 +414,7 @@ const SpellCheckModal: React.FC<SpellCheckModalProps> = ({ editor, onClose, embe
           })()}
         </div>
         <div className="spell-modal-actions-col">
-          <button className="dialog-primary" onClick={handleChange}>Change</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={handleChange}>Change</button>
           <button onClick={handleChangeAll}>Change All</button>
           <button onClick={handleRecheck}>Recheck</button>
           {!embedded && <button onClick={onClose}>Close</button>}

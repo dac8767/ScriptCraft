@@ -50,14 +50,14 @@
   color: #fff;
 }
 .fs-confirm-danger {
-  background: #c0392b;
-  border-color: #c0392b;
+  background: var(--fd-danger);
+  border-color: var(--fd-danger);
 }
 /* v3.49: the middle "Don't Save" button of a three-way save prompt — neutral,
    but tinted a touch warm so it doesn't read as the plain Cancel beside it. */
 .fs-confirm-tertiary {
-  border-color: color-mix(in srgb, #c0392b 45%, var(--fd-border));
-  color: color-mix(in srgb, #c0392b 70%, var(--fd-text));
+  border-color: color-mix(in srgb, var(--fd-danger) 45%, var(--fd-border));
+  color: color-mix(in srgb, var(--fd-danger) 70%, var(--fd-text));
 }
 .fs-confirm-actions button:hover { filter: brightness(1.1); }
 /* v3.36: a requireText confirm — the button is dead until the phrase matches. */
@@ -496,7 +496,7 @@
   font-size: 11px; line-height: 1; cursor: pointer;
 }
 .fs-obviz-ctrls button:disabled { opacity: .4; cursor: default; }
-.fs-obviz-x:hover:not(:disabled) { border-color: var(--fd-danger, #e06060); color: var(--fd-danger, #e06060); }
+.fs-obviz-x:hover:not(:disabled) { border-color: var(--fd-danger); color: var(--fd-danger); }
 .fs-obviz-grip {
   position: absolute; left: 0; right: 0; bottom: -2px; height: 6px;
   cursor: ns-resize; touch-action: none;

@@ -212,7 +212,7 @@ const WritingSuggestionsModal: React.FC<WritingSuggestionsModalProps> = ({ edito
         <div className="spell-modal-actions">
           <div className="spell-modal-actions-col" />
           <div className="spell-modal-actions-col">
-            {!embedded && <button className="dialog-primary" onClick={onClose}>Close</button>}
+            {!embedded && <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Close</button>}
           </div>
         </div>
       </div>
@@ -307,7 +307,7 @@ const WritingSuggestionsModal: React.FC<WritingSuggestionsModalProps> = ({ edito
         </div>
         <div className="spell-modal-actions-col">
           <button onClick={goPrev} disabled={currentIndex === 0}>Previous</button>
-          <button className="dialog-primary" onClick={goNext} disabled={currentIndex >= issues.length - 1}>Next</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={goNext} disabled={currentIndex >= issues.length - 1}>Next</button>
           {!embedded && <button onClick={onClose}>Close</button>}
         </div>
       </div>

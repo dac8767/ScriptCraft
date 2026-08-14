@@ -266,19 +266,24 @@ function DraftNumberRow({ editor }: { editor: Editor | null }) {
     <>
     <div className="prefs-field-row">
       <label htmlFor="prefs-draft-label">Draft label</label>
+      {/* v7.01 (style audit D71-D73): all three of these were unstyled —
+          a native white text field and a native gray button, with an accent
+          paint over a 19px native button between them. */}
       <input
         id="prefs-draft-label"
+        className="dialog-input"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="e.g. Second Draft"
         style={{ minWidth: 180 }}
       />
       <button
-        className="dialog-primary"
+        className="dialog-btn dialog-btn-primary"
         disabled={!trimmed || trimmed === draftLabel}
         onClick={() => applyDraftNumber(editor, trimmed)}
       >Apply</button>
       <button
+        className="dialog-btn"
         disabled={!trimmed || trimmed === defaultDraftLabel}
         onClick={() => setDefaultDraftLabel(trimmed)}
       >Set as Default</button>
@@ -494,15 +499,15 @@ function SaveLocationsTab() {
         </p>
         <div className="prefs-field-row">
           <input
-            style={{ flex: 1, height: 30, background: 'var(--fd-input-bg)', color: 'var(--fd-text)', border: '1px solid var(--fd-border)', borderRadius: 4, padding: '0 8px', fontSize: 12.5 }}
+            className="dialog-input" style={{ flex: 1 }}
             value={gdriveClientId}
             placeholder="Google OAuth Client ID (…apps.googleusercontent.com)"
             onChange={(e) => setGdriveClientId(e.target.value.trim())}
           />
           {gConnected ? (
-            <button onClick={() => { disconnectGDrive(); setGConnected(false); setSaveToGDrive(false); }}>Disconnect</button>
+            <button className="dialog-btn" onClick={() => { disconnectGDrive(); setGConnected(false); setSaveToGDrive(false); }}>Disconnect</button>
           ) : (
-            <button className="dialog-primary" disabled={!gdriveClientId || busy === 'g'} onClick={() => doConnect('g')}>
+            <button className="dialog-btn dialog-btn-primary" disabled={!gdriveClientId || busy === 'g'} onClick={() => doConnect('g')}>
               {busy === 'g' ? 'Connecting…' : 'Connect'}
             </button>
           )}
@@ -520,15 +525,15 @@ function SaveLocationsTab() {
         </p>
         <div className="prefs-field-row">
           <input
-            style={{ flex: 1, height: 30, background: 'var(--fd-input-bg)', color: 'var(--fd-text)', border: '1px solid var(--fd-border)', borderRadius: 4, padding: '0 8px', fontSize: 12.5 }}
+            className="dialog-input" style={{ flex: 1 }}
             value={onedriveClientId}
             placeholder="Azure Application (client) ID"
             onChange={(e) => setOnedriveClientId(e.target.value.trim())}
           />
           {oConnected ? (
-            <button onClick={() => { disconnectOneDrive(); setOConnected(false); setSaveToOneDrive(false); }}>Disconnect</button>
+            <button className="dialog-btn" onClick={() => { disconnectOneDrive(); setOConnected(false); setSaveToOneDrive(false); }}>Disconnect</button>
           ) : (
-            <button className="dialog-primary" disabled={!onedriveClientId || busy === 'o'} onClick={() => doConnect('o')}>
+            <button className="dialog-btn dialog-btn-primary" disabled={!onedriveClientId || busy === 'o'} onClick={() => doConnect('o')}>
               {busy === 'o' ? 'Connecting…' : 'Connect'}
             </button>
           )}
@@ -614,6 +619,7 @@ function GeneralTab({ editor }: { editor: Editor | null }) {
         <label className="prefs-check-row">
           <span>Window on launch</span>
           <select
+            className="prefs-select"
             value={windowStartup}
             onChange={(e) => setWindowStartup(e.target.value as 'maximized' | 'remember')}
           >
@@ -685,6 +691,7 @@ function GeneralTab({ editor }: { editor: Editor | null }) {
         <label className="prefs-check-row">
           <span>Units</span>
           <select
+            className="prefs-select"
             value={units}
             onChange={(e) => setUnits(e.target.value as 'in' | 'cm')}
           >
@@ -707,6 +714,7 @@ function GeneralTab({ editor }: { editor: Editor | null }) {
         <label className="prefs-check-row">
           <span>Date format</span>
           <select
+            className="prefs-select"
             value={dateFormat}
             onChange={(e) => setDateFormat(e.target.value as DateFormatId)}
           >
@@ -722,6 +730,7 @@ function GeneralTab({ editor }: { editor: Editor | null }) {
         <label className="prefs-check-row">
           <span>Time format</span>
           <select
+            className="prefs-select"
             value={timeFormat}
             onChange={(e) => setTimeFormat(e.target.value as '12h' | '24h')}
           >

@@ -253,7 +253,7 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
               style={{
                 padding: '6px 10px',
                 background: 'rgba(192,57,43,0.12)',
-                color: '#c0392b',
+                color: 'var(--fd-danger)',
                 borderRadius: 4,
                 fontSize: 12,
               }}
@@ -385,7 +385,7 @@ const LanguageInstallerDialog: React.FC<{ onClose: () => void }> = ({ onClose })
           </div>
         </div>
         <div className="dialog-footer">
-          <button className="dialog-primary" onClick={onClose}>Done</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Done</button>
         </div>
     </Modal>
   );

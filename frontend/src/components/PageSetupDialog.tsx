@@ -355,7 +355,7 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = f
           </button>
           <div className="page-setup-spacer" />
           {!embedded && <button onClick={onClose}>Cancel</button>}
-          <button className="dialog-primary" onClick={handleApply}>
+          <button className="dialog-btn dialog-btn-primary" onClick={handleApply}>
             Apply
           </button>
         </div>

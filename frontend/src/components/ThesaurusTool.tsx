@@ -15,7 +15,10 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { FaArrowLeft, FaSearch, FaExchangeAlt } from 'react-icons/fa';
+import { FaArrowLeft, FaExchangeAlt } from 'react-icons/fa';
+/* v7.01 (style audit Q319): the search glyph is LuSearch app-wide (17 uses);
+   this tool was the one place still drawing the heavier Fa version. */
+import { LuSearch } from 'react-icons/lu';
 import { showToast } from './Toast';
 import {
   loadThesaurus, wordAt, matchCase, POS_LABELS,
@@ -209,7 +212,7 @@ export default function ThesaurusTool({ editor }: { editor: Editor | null }) {
           title="Look up"
           disabled={!api}
           onClick={() => runLookup(input)}
-        ><FaSearch /></button>
+        ><LuSearch /></button>
       </div>
       {target && (
         <div className="thes-context">

@@ -73,6 +73,47 @@
   --fd-dialog-bg: #333;
   --fd-input-bg: rgba(0,0,0,.2);
 
+  /* v7.01 (style audit A1-A10): these six were CONSUMED by the stylesheets and
+     defined by NO theme — so ~50 hover/selected/background sites computed to
+     nothing. A hovered primary dialog button went transparent; the selected row
+     in the Element Templates editor had an invisible highlight.
+
+     They are aliases on purpose. [data-theme="…"] sits on <html>, the same
+     element as :root, so the reference resolves against whichever theme is
+     active — including custom themes, which write their vars to that element
+     too. Six lines cover all eleven themes; a theme that wants a distinct
+     value just redefines the token in its own block.
+
+     Do not "simplify" these away by inlining a color: that re-breaks every
+     theme but dark. See docs/STYLE-AUDIT-2026-08-14.md §S1-1. */
+  --fd-toolbar-hover: var(--fd-menu-hover);
+  --fd-hover-bg: var(--fd-menu-hover);
+  --fd-hover: var(--fd-menu-hover);
+  --fd-background: var(--fd-bg);
+  --fd-text-dim: var(--fd-text-muted);
+  --fd-text-secondary: var(--fd-text-muted);
+
+  /* v7.01 (A8): ONE red. Ten different hardcoded reds meant the same thing
+     across the app — #c0392b, #ff6b6b, #ff4444, #e05252, #d05050, #e05656,
+     #ef5350, #e06060, #c62828, #e57373. This is the one they collapse to;
+     the light themes override it below. */
+  --fd-danger: #e06060;
+  --fd-success: #4caf50;
+  --fd-warning: #e5a50a;
+
+  /* v7.01 (A226-A227): these seven were only ever reached through a var()
+     FALLBACK, which means the fallback always won and no theme could influence
+     them — a hardcoded color wearing a token's clothes. Defined here, derived
+     from the theme's own surfaces, so they follow every theme including custom
+     ones. The fallbacks still at the call sites are now inert. */
+  --fd-accent-bg: color-mix(in srgb, var(--fd-accent) 13%, transparent);
+  --fd-bg-dim: var(--fd-overlay-subtle);
+  --fd-bg-hover: var(--fd-overlay-light);
+  --fd-canvas-bg: var(--fd-bg);
+  --fd-panel-bg: var(--fd-navigator-bg);
+  --fd-tooltip-bg: var(--fd-dropdown-bg);
+  --fd-tooltip-text: var(--fd-text);
+
   /* v0.83: toolbar button surface. Every theme sets its own so a button looks
      native to the theme instead of a fixed blue chip on all of them. */
   --fd-btn-bg: #2c5e98;
@@ -132,6 +173,11 @@
   --fd-dialog-bg: #f5f5f5;
   --fd-input-bg: #ffffff;
   --fd-btn-bg: #1565c0; --fd-btn-text: #ffffff; --fd-btn-hover: #357ac8;
+  /* v7.01 (A9): the light themes already used a darker red for danger text —
+     the dark themes' #e06060 has too little contrast on a white surface. */
+  --fd-danger: #c62828;
+  --fd-success: #2d8a4e;
+  --fd-warning: #d97706;
   /* v5.30: annotation window on the light base — a touch grayer than the
      chrome so the window still reads as its own surface. */
   --anno-win-bg: #e2e4e8;
@@ -272,7 +318,13 @@
   color: var(--fd-text);
   border-color: var(--fd-border);
 }
-[data-theme="light"] .dialog-btn:hover {
+/* v7.01 (C60/C61): `:not(.dialog-btn-primary)` is the ROOT of the specificity
+   trap, not a workaround for it. The plain-button hover should never have been
+   in a position to repaint a PRIMARY button — it outranks the primary's own
+   hover here (0-3-0 vs 0-2-0), which is why the accent fill vanished. Excluding
+   primaries lets ONE rule (.dialog-btn-primary:hover, in 07-dialogs-search.css)
+   own the primary hover in every theme, with no second color to drift. */
+[data-theme="light"] .dialog-btn:not(.dialog-btn-primary):hover {
   background: var(--fd-menu-hover);
 }
 [data-theme="light"] .dialog-btn-primary {
@@ -280,9 +332,9 @@
   border-color: var(--fd-accent);
   color: #fff;
 }
-[data-theme="light"] .dialog-btn-primary:hover {
-  background: #104d8f;
-}
+/* v7.01 (C61): deleted the light-only `background:#104d8f` hover — the base
+   rule now darkens `--fd-accent` with color-mix, which is correct in every
+   theme, so one rule governs the hover instead of two that could drift. */
 [data-theme="light"] .dialog-footer button {
   background: var(--fd-toolbar-bg);
   color: var(--fd-text);
@@ -300,7 +352,7 @@
   background: var(--fd-menu-hover);
 }
 [data-theme="light"] .collab-revoke-btn {
-  color: #c62828;
+  color: var(--fd-danger);
 }
 [data-theme="light"] .collab-revoke-btn:hover {
   background: #ffebee;
@@ -392,6 +444,22 @@ body {
   color: var(--fd-text);
   font-size: 13px;
 }
+
+/* v7.01 (style audit D64): tell the engine which palette the app is in.
+   WebKit paints NATIVE widgets — an unstyled <select>, a checkbox, a scrollbar
+   — in LIGHT style unless this is set, which is why bare controls showed up as
+   light-gray chips inside dark windows. Both keywords are listed because the
+   app ships light themes too; the active theme's own background decides. */
+:root { color-scheme: dark light; }
+
+/* v7.01 (D65): form controls do NOT inherit the page font by default — they
+   fall back to the browser's own (13.33px Arial on WebKit). That is why a
+   dropdown could sit beside a text field at a visibly different size and face.
+   Only the FAMILY is forced here: forcing `font: inherit` outright would
+   resize every control in the app at once, including the many that rely on
+   their own font-size today. Controls lacking an explicit size are given one
+   individually — see the audit change list, items 65-66 and 287-288. */
+button, input, select, textarea, optgroup { font-family: inherit; }
 
 /* ---- App Container ---- */
 .app-container {

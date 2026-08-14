@@ -1731,7 +1731,7 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
             <div className="dialog-actions">
               <button onClick={() => setPendingRemoveChar(null)}>Cancel</button>
               <button
-                className="dialog-primary"
+                className="dialog-btn dialog-btn-primary"
                 style={{ background: '#c0392b' }}
                 onClick={() => {
                   deleteCharacterProfile(pendingRemoveChar);

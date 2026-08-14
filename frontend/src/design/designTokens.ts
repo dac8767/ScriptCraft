@@ -311,6 +311,9 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { id: 'dialogHeaderFont', label: 'Header font size', cssVar: '--dz-dialog-header-font', unit: 'px', min: 12, max: 24, step: 0.5, def: 16 },
       { id: 'dialogBodyPad', label: 'Body padding', cssVar: '--dz-dialog-body-pad', unit: 'px', min: 4, max: 40, step: 1, def: 20 },
       { id: 'dialogBtnHeight', label: 'Button height', cssVar: '--dz-dialog-btn-h', unit: 'px', min: 24, max: 48, step: 1, def: 34 },
+      /* v7.01 (style audit F137): the compact button (.dialog-btn-sm) is now a
+         real size rather than the full-height button with smaller text. */
+      { id: 'dialogBtnHeightSm', label: 'Small button height', cssVar: '--dz-dialog-btn-h-sm', unit: 'px', min: 18, max: 40, step: 1, def: 26 },
       { id: 'dialogBtnRadius', label: 'Button corner radius', cssVar: '--dz-dialog-btn-radius', unit: 'px', min: 0, max: 16, step: 1, def: 4 },
       { id: 'dialogLabelFont', label: 'Field label font', cssVar: '--dz-dialog-label-font', unit: 'px', min: 10, max: 20, step: 0.5, def: 14 },
       { id: 'dialogInputH', label: 'Input height', cssVar: '--dz-dialog-input-h', unit: 'px', min: 24, max: 48, step: 1, def: 36 },

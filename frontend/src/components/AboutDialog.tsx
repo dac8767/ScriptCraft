@@ -156,7 +156,7 @@ export function AboutDialog({ onClose, onShowChangelog }: { onClose: () => void;
             </svg>
             <span>Buy me a coffee</span>
           </button>
-          <button className="dialog-primary" onClick={onClose}>Close</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Close</button>
         </div>
     </Modal>
   );

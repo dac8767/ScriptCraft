@@ -63,7 +63,7 @@ const GoToPage: React.FC<GoToPageProps> = ({ onGoToPage }) => {
         </div>
         <div className="dialog-actions">
           <button onClick={() => setGoToPageOpen(false)}>Cancel</button>
-          <button className="dialog-primary" onClick={handleGo}>
+          <button className="dialog-btn dialog-btn-primary" onClick={handleGo}>
             Go
           </button>
         </div>

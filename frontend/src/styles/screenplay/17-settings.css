@@ -133,7 +133,7 @@
   line-height: 1.5;
   margin-bottom: 8px;
 }
-.settings-account-danger { border-top-color: rgba(255,68,68,0.4); }
+.settings-account-danger { border-top-color: color-mix(in srgb, var(--fd-danger) 40%, transparent); }
 
 .settings-switch {
   display: inline-flex;

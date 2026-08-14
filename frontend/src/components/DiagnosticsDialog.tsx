@@ -106,7 +106,7 @@ export function DiagnosticsDialog({ onClose }: { onClose: () => void }) {
           >
             {copied ? 'Copied ✓' : 'Copy Report'}
           </button>
-          <button className="dialog-primary" onClick={onClose}>Close</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Close</button>
         </div>
     </Modal>
   );

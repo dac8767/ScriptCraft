@@ -30,7 +30,7 @@ export default class AppErrorBoundary extends React.Component<React.PropsWithChi
         color: '#e8e8e8', font: '14px/1.6 system-ui, sans-serif', padding: 40,
         overflow: 'auto',
       }}>
-        <h1 style={{ color: '#ff6b6b', fontSize: 20, marginBottom: 12 }}>
+        <h1 style={{ color: 'var(--fd-danger)', fontSize: 20, marginBottom: 12 }}>
           ScriptCraft hit an error
         </h1>
         <p style={{ marginBottom: 16, maxWidth: 560 }}>
@@ -46,7 +46,7 @@ export default class AppErrorBoundary extends React.Component<React.PropsWithChi
           }}
         >Reload ScriptCraft</button>
         <pre style={{
-          whiteSpace: 'pre-wrap', color: '#ff6b6b', fontFamily: 'monospace',
+          whiteSpace: 'pre-wrap', color: 'var(--fd-danger)', fontFamily: 'monospace',
           fontSize: 12, opacity: 0.8,
         }}>{this.state.error.stack || String(this.state.error)}</pre>
       </div>

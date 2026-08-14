@@ -21,6 +21,7 @@ import TemplateConflictDialog from './TemplateConflictDialog';
 import { detectTemplateConflicts, resolveTemplateConflicts, getEnabledElementOptions } from '../utils/templateConflicts';
 import type { TemplateConflicts } from '../utils/templateConflicts';
 import { showToast } from './Toast';
+import { confirmDialog } from './ConfirmDialog';
 
 interface TemplateSelectDialogProps {
   editor: Editor | null;
@@ -179,11 +180,20 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
               <button
                 className="dialog-btn dialog-btn-sm dialog-btn-danger"
                 onClick={async () => {
-                  if (confirm(`Delete template "${t.name}"?`)) {
-                    await deleteTemplate(t.id);
-                    if (selectedId === t.id) setSelectedId(INDUSTRY_STANDARD_ID);
-                    showToast('Template deleted', 'success');
-                  }
+                  /* v7.01 (style audit U350): was native `confirm()`. In the
+                     Tauri app window.confirm is an ASYNC IPC shim that returns
+                     a Promise — and a Promise is always truthy — so this branch
+                     ran whatever the user answered, and the template was
+                     deleted either way. ConfirmDialog.tsx's header documents
+                     the rule; this is the same call PageSetupTab's delete makes. */
+                  const ok = await confirmDialog(
+                    `Delete the template “${t.name}”? This cannot be undone.`,
+                    { title: 'Delete template?', confirmLabel: 'Delete', danger: true },
+                  );
+                  if (!ok) return;
+                  await deleteTemplate(t.id);
+                  if (selectedId === t.id) setSelectedId(INDUSTRY_STANDARD_ID);
+                  showToast('Template deleted', 'success');
                 }}
               >
                 Delete

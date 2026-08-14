@@ -319,7 +319,9 @@ export default function ScriptNotePopover({ editor }: { editor: Editor | null })
             </div>
             <div className="dialog-actions">
               <button onClick={() => setConfirmDelete(false)}>Cancel</button>
-              <button className="dialog-primary" style={{ background: '#c0392b' }} onClick={handleDelete}>
+              {/* v7.01 (style audit G202): the inline #c0392b was one of ten
+                  hardcoded reds meaning "danger"; it reads the token now. */}
+              <button className="dialog-btn dialog-btn-primary dialog-btn-danger-fill" onClick={handleDelete}>
                 Delete
               </button>
             </div>

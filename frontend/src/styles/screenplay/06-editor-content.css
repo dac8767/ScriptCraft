@@ -199,7 +199,7 @@
   display: flex;
   gap: 0;
   margin-top: 12pt;
-  border-left: 2px solid var(--fd-accent, #3b82f6);
+  border-left: 2px solid var(--fd-accent, #4a90d9);
   border-radius: 2px;
 }
 .dual-dialogue-column {
@@ -457,9 +457,9 @@
 /* ============ LANGUAGE SELECTOR ============ */
 .language-selector {
   height: 24px;
-  background: #2a2a2a;
+  background: var(--fd-input-bg);
   color: var(--fd-text);
-  border: 1px solid #555;
+  border: 1px solid var(--fd-border);
   border-radius: 3px;
   padding: 0 8px;
   font-size: 12px;

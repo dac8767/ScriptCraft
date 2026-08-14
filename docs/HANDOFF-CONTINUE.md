@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.00 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.01 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
@@ -292,6 +292,48 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.01 — the style audit's fixes (report → change list → shipped)
+
+Derek: *"do a full style audit… make sure that things which should be the same
+are actually the same"*, then *"give me the full suggested change list"*, then
+*"continue with all suggestions that you can do on your own."*
+
+- **`docs/STYLE-AUDIT-2026-08-14.md`** — the audit (3 passes: scripted CSS
+  inventory, live computed-style probe, source re-verification).
+- **`docs/STYLE-AUDIT-CHANGE-LIST.md`** — 360 itemized changes; 218 marked ✅
+  shipped in v7.01, the rest split into "waiting on Derek" vs "not yet done".
+
+**The headline bug.** Six `--fd-*` tokens were consumed by the stylesheets and
+defined by NO theme (and not written by `themes.ts` either), so ~50 hover,
+selected and background declarations computed to nothing. They are `:root`
+ALIASES now — `[data-theme]` sits on the same element as `:root`, so one line
+per token covers all 11 themes plus custom ones. **Do not inline them.**
+
+**The trap worth remembering.** Fixing the primary-button hover took two goes:
+adding a background to `.dialog-btn-primary:hover` fixed dark, but the light
+theme has its own `[data-theme="light"] .dialog-btn:hover` at 0-3-0, which
+outranks it. The fix is `:not(.dialog-btn-primary)` on BOTH plain-button hover
+rules, so the plain rule can never target a primary. Source order alone was one
+edit away from breaking again.
+
+**Also in:** `color-scheme` + a font-family reset (native controls in Settings);
+27 `dialog-primary` → `dialog-btn dialog-btn-primary`; `dialog-btn-sm` given a
+real height; 117 hardcoded state colors → `--fd-danger`/`--fd-success`/
+`--fd-warning`; 11 more keys in `THEME_VARS`; the `#222` controls tokenized so
+sepia/paper stop showing black boxes; `TemplateSelectDialog`'s native
+`confirm()` (which deleted regardless of the answer) → `confirmDialog`.
+
+**New gates:** `src/styles/tokenResolve.test.ts` (7 asserts — undefined tokens,
+fallback-only tokens, no `dialog-primary`, no native dialogs) and
+`devtools/check-v701.mjs` (16 computed-style asserts across 11 themes).
+
+**Three stale drivers found and fixed** — `check-v574`, `check-v673` (both
+clicked the retired `.dialog-primary`) and `check-v677`, whose Defaults probe
+had been looking for a `.swn-add-btn` labelled "Reset Items" since the **v7.00**
+rebuild renamed those rows. v677 and v574 had been aborting mid-run, so ~14
+asserts had not been running at all. If a driver "flakes", check whether it is
+actually stale before believing the flake.
 
 ### v7.00 — Settings IA reorg + Defaults rebuild + per-template View
 

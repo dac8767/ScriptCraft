@@ -90,7 +90,7 @@ export default function RenameDialog({ open, onClose }: { open: boolean; onClose
         </div>
         <div className="dialog-actions">
           <button onClick={onClose}>Cancel</button>
-          <button className="dialog-primary" disabled={!canApply} onClick={() => void apply()}>
+          <button className="dialog-btn dialog-btn-primary" disabled={!canApply} onClick={() => void apply()}>
             {saving ? 'Renaming…' : 'Rename'}
           </button>
         </div>

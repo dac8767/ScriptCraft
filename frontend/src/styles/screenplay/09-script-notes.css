@@ -108,7 +108,7 @@
 /* ── Inline links in notes ── */
 .note-video-link,
 .note-inline-link {
-  color: var(--fd-accent, #6ea0f7);
+  color: var(--fd-accent, #4a90d9);
   text-decoration: underline;
   cursor: pointer;
   word-break: break-all;

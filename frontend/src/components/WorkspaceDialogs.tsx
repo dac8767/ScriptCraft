@@ -69,7 +69,7 @@ export function SaveWorkspaceDialog({ open, onClose }: { open: boolean; onClose:
         </div>
         <div className="dialog-actions">
           <button onClick={onClose}>Cancel</button>
-          <button className="dialog-primary" onClick={save} disabled={!trimmed}>
+          <button className="dialog-btn dialog-btn-primary" onClick={save} disabled={!trimmed}>
             {exists ? 'Replace' : 'Save'}
           </button>
         </div>
@@ -229,7 +229,7 @@ export function EditWorkspacesDialog({ open, onClose }: { open: boolean; onClose
           )}
         </div>
         <div className="dialog-actions">
-          <button className="dialog-primary" onClick={onClose}>Done</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Done</button>
         </div>
       </div>
     </div>

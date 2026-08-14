@@ -134,7 +134,7 @@ export default function SetDraftDialog({ open, onClose, editor }: {
         </div>
         <div className="dialog-actions">
           <button onClick={onClose}>Cancel</button>
-          <button className="dialog-primary" onClick={apply} disabled={!finalLabel}>Apply</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={apply} disabled={!finalLabel}>Apply</button>
         </div>
     </Modal>
   );

@@ -214,8 +214,17 @@ try {
   await page.evaluate(() => [...document.querySelectorAll('.prefs-tab')]
     .find((b) => b.textContent.trim() === 'Defaults')?.click());
   await page.waitForSelector('.fs-defaults-tab', { timeout: 5000 });
-  await page.evaluate(() => [...document.querySelectorAll('.fs-defaults-tab .swn-add-btn')]
-    .find((b) => b.textContent === 'Reset Items')?.click());
+  /* v7.01: the v7.00 rebuild turned these rows into .fs-defaults-row (a named
+     row + a dialog-btn-sm "Reset"), so the old .swn-add-btn/"Reset Items"
+     lookup silently found nothing and the click never happened — the probe
+     then timed out waiting for a confirm that was never asked for. Address the
+     row by its NAME, which is what the tab actually shows. */
+  await page.evaluate(() => {
+    const row = [...document.querySelectorAll('.fs-defaults-tab .fs-defaults-row')]
+      .find((r) => r.querySelector('.fs-defaults-name')?.textContent === 'Reset Items');
+    if (!row) throw new Error('no "Reset Items" row on the Defaults tab');
+    row.querySelector('button')?.click();
+  });
   await page.waitForSelector('.fs-confirm-overlay', { timeout: 5000 });
   ok(/back to the app defaults/.test(await confirmBox()),
     'Settings ▸ Defaults resets warn too — same wrapper as the Customize tabs');

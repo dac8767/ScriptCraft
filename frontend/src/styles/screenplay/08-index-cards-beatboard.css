@@ -48,7 +48,7 @@
 .ic-action-btn.active { background: var(--fd-accent); border-color: var(--fd-accent); color: #fff; }
 .ic-action-btn:disabled { opacity: 0.4; cursor: default; }
 .ic-action-btn:disabled:hover { border-color: var(--fd-border); color: var(--fd-text-muted); }
-.ic-apply-btn.active { background: #2d8a4e; border-color: #2d8a4e; }
+.ic-apply-btn.active { background: var(--fd-success); border-color: var(--fd-success); }
 .ic-undo-redo-btn { display: flex; align-items: center; justify-content: center; padding: 3px 6px; }
 /* v0.64: fit as many whole cards per row as the CONTAINER allows and wrap the
    rest, instead of squeezing 3 columns into a narrow panel. The old fixed
@@ -70,10 +70,10 @@
 .ic-draggable { cursor: grab; }
 .ic-draggable:active { cursor: grabbing; }
 .ic-dragging { opacity: .25; }
-.ic-moved-up { border-color: #2d8a4e; box-shadow: 0 0 0 1px #2d8a4e; }
-.ic-moved-down { border-color: #d97706; box-shadow: 0 0 0 1px #d97706; }
-.ic-moved-up .index-card-badge { background: #2d8a4e; }
-.ic-moved-down .index-card-badge { background: #d97706; }
+.ic-moved-up { border-color: var(--fd-success); box-shadow: 0 0 0 1px var(--fd-success); }
+.ic-moved-down { border-color: var(--fd-warning); box-shadow: 0 0 0 1px var(--fd-warning); }
+.ic-moved-up .index-card-badge { background: var(--fd-success); }
+.ic-moved-down .index-card-badge { background: var(--fd-warning); }
 /* Floating drag overlay — exact clone of the card */
 .ic-drag-overlay {
   position: fixed;
@@ -385,7 +385,7 @@
   transition: opacity 0.15s;
 }
 .beat-column-header:hover .beat-column-delete { opacity: 1; }
-.beat-column-delete:hover { color: #ff6b6b; }
+.beat-column-delete:hover { color: var(--fd-danger); }
 /* ── Maximize / restore button ── */
 .beat-column-maximize {
   background: none;
@@ -699,7 +699,7 @@
   line-height: 1;
 }
 .beat-card-delete:hover {
-  color: #ff6b6b;
+  color: var(--fd-danger);
 }
 
 /* ── Description ── (v2.44: no manual resize grip — the text box grows and

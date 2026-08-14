@@ -116,7 +116,7 @@
 .char-profiles-search-input {
   width: 100%;
   height: var(--dz-char-input-h, 28px); /* v4.26: shares the toolbar row with Sort — must track it */
-  background: #222;
+  background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 4px;
@@ -191,7 +191,7 @@
 .char-sort-select {
   flex: 1;
   height: var(--dz-char-input-h, 22px); /* v4.26: field-height Design knob */
-  background: #222;
+  background: var(--fd-input-bg);
   color: var(--fd-text);
   border: 1px solid var(--fd-border);
   border-radius: 3px;
@@ -328,7 +328,7 @@
   background: transparent; border: 1px solid var(--fd-border); border-radius: 4px;
   color: var(--fd-text-muted); font-size: 16px; cursor: pointer; line-height: 1;
 }
-.char-rel-delete:hover { color: #e06060; border-color: #e06060; }
+.char-rel-delete:hover { color: var(--fd-danger); border-color: var(--fd-danger); }
 /* List */
 .char-profiles-list {
   flex: 1;
@@ -397,14 +397,14 @@
   background: rgba(224,96,96,.1);
   border-bottom: 1px solid rgba(224,96,96,.2);
   font-size: 10px;
-  color: #e06060;
+  color: var(--fd-danger);
 }
 .char-orphaned-remove {
   padding: 2px 8px;
   background: transparent;
-  border: 1px solid #e06060;
+  border: 1px solid var(--fd-danger);
   border-radius: 3px;
-  color: #e06060;
+  color: var(--fd-danger);
   font-size: 10px;
   cursor: pointer;
 }
@@ -536,7 +536,7 @@
   text-align: center;
 }
 .char-completeness-tooltip-row.filled span {
-  color: #4caf50;
+  color: var(--fd-success);
 }
 .char-completeness-tooltip-row:not(.filled) span {
   color: #f44336;
@@ -795,7 +795,7 @@
   line-height: 1;
 }
 .char-profile-rel-remove:hover {
-  color: #ef5350;
+  color: var(--fd-danger);
 }
 .char-profile-rel-desc {
   margin-top: 3px;
@@ -878,11 +878,11 @@
 }
 .char-profile-rel-form-btn:hover { background: var(--fd-overlay-light, rgba(255,255,255,0.08)); }
 .char-profile-rel-form-btn-primary {
-  background: var(--fd-accent, #8b5cf6);
-  border-color: var(--fd-accent, #8b5cf6);
+  background: var(--fd-accent, #4a90d9);
+  border-color: var(--fd-accent, #4a90d9);
   color: #fff;
 }
-.char-profile-rel-form-btn-primary:hover { background: var(--fd-accent, #8b5cf6); opacity: 0.9; }
+.char-profile-rel-form-btn-primary:hover { background: var(--fd-accent, #4a90d9); opacity: 0.9; }
 .char-profile-rel-form-btn-primary:disabled { opacity: 0.4; cursor: default; }
 /* === Relationship Map === */
 .rel-map-container {
@@ -965,17 +965,17 @@
 }
 .rel-map-btn:hover { background: var(--fd-overlay-light, rgba(255,255,255,0.08)); }
 .rel-map-btn-primary {
-  background: var(--fd-accent, #8b5cf6);
-  border-color: var(--fd-accent, #8b5cf6);
+  background: var(--fd-accent, #4a90d9);
+  border-color: var(--fd-accent, #4a90d9);
   color: #fff;
 }
-.rel-map-btn-primary:hover { background: var(--fd-accent, #8b5cf6); opacity: 0.9; }
+.rel-map-btn-primary:hover { background: var(--fd-accent, #4a90d9); opacity: 0.9; }
 .rel-map-btn-primary:disabled { opacity: 0.4; cursor: default; }
 .rel-map-btn-danger {
-  color: #ef5350;
-  border-color: #ef5350;
+  color: var(--fd-danger);
+  border-color: var(--fd-danger);
 }
-.rel-map-btn-danger:hover { background: rgba(239,83,80,0.1); }
+.rel-map-btn-danger:hover { background: color-mix(in srgb, var(--fd-danger) 10%, transparent); }
 .rel-map-form-overlay {
   position: absolute;
   inset: 0;

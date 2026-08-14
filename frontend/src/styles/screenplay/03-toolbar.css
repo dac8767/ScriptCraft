@@ -84,7 +84,7 @@
 .fs-reset-confirm-overlay { z-index: 10060; }
 .fs-reset-confirm-dialog { max-width: 400px; }
 .fs-reset-confirm-dialog .dialog-body p { margin: 0; font-size: 12.5px; line-height: 1.5; }
-.settings-reset-all-btn { border-color: #c62828 !important; color: #e57373; }
+.settings-reset-all-btn { border-color: var(--fd-danger) !important; color: var(--fd-danger); }
 .settings-reset-all-btn:hover { background: rgba(198, 40, 40, 0.12) !important; }
 
 /* ── Settings: Auto Saves number inputs (v0.51) ── */
@@ -903,19 +903,19 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar-ribbon .rib-single [data-key="newScreenplay"] svg,
 .toolbar-ribbon .rib-single [data-key="print"] svg,
 .toolbar-ribbon .rib-single [data-key="preview"] svg { color: #6fa8dc; }
-.toolbar-ribbon .rib-single [data-key="exportPDF"] svg { color: #e06060; }
+.toolbar-ribbon .rib-single [data-key="exportPDF"] svg { color: var(--fd-danger); }
 .toolbar-ribbon .rib-single [data-key="insertSection"] svg { color: #b58ee0; }
 .toolbar-ribbon .rib-single [data-key="insertNote"] svg { color: #e8c34f; }
-.toolbar-ribbon .rib-single [data-key="insertChecklist"] svg { color: #6abf69; }
-.toolbar-ribbon .rib-single [data-key="insertMarker"] svg { color: #e06060; }
+.toolbar-ribbon .rib-single [data-key="insertChecklist"] svg { color: var(--fd-success); }
+.toolbar-ribbon .rib-single [data-key="insertMarker"] svg { color: var(--fd-danger); }
 .toolbar-ribbon .rib-single [data-key="insertImage"] svg { color: #b58ee0; }
 .toolbar-ribbon .rib-single [data-key="find"] svg,
 .toolbar-ribbon .rib-single [data-key="goto"] svg { color: #4cbfbf; }
 .toolbar-ribbon .rib-single [data-key="customize"] svg { color: #d377b0; }
 .toolbar-ribbon .rib-single [data-key="spellCheck"] svg,
-.toolbar-ribbon .rib-single [data-key="writingSuggestions"] svg { color: #6abf69; }
+.toolbar-ribbon .rib-single [data-key="writingSuggestions"] svg { color: var(--fd-success); }
 .toolbar-ribbon .rib-single [data-key="addBookmark"] svg,
-.toolbar-ribbon .rib-single [data-key="lastEditLocation"] svg { color: #e06060; }
+.toolbar-ribbon .rib-single [data-key="lastEditLocation"] svg { color: var(--fd-danger); }
 .toolbar-ribbon .rib-single [data-key="takeSnapshot"] svg,
 .toolbar-ribbon .rib-single [data-key="snapshots"] svg,
 .toolbar-ribbon .rib-single [data-key="compareSnapshot"] svg { color: #d9a441; }
@@ -925,7 +925,7 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 /* pinned side-panel tools (Outline, Notes, To-Do, ...) */
 .toolbar-ribbon .rib-single [data-key="beatboard"] svg { color: #b58ee0; }
 .toolbar-ribbon .rib-single [data-key="sticky"] svg { color: #e8c34f; }
-.toolbar-ribbon .rib-single [data-key="todo"] svg { color: #6abf69; }
+.toolbar-ribbon .rib-single [data-key="todo"] svg { color: var(--fd-success); }
 .toolbar-ribbon .rib-single [data-key="indexcards"] svg { color: #6fa8dc; }
 .toolbar-ribbon .rib-single [data-key="highlights"] svg { color: #e8c34f; }
 .toolbar-ribbon .rib-single [data-key="goals"] svg { color: #4cbfbf; }

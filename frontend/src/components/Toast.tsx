@@ -53,7 +53,7 @@ const Toast: React.FC = () => {
             maxWidth: 420,
             cursor: 'pointer',
             boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-            background: m.type === 'error' ? '#c0392b' : m.type === 'success' ? '#27ae60' : '#2c3e50',
+            background: m.type === 'error' ? 'var(--fd-danger)' : m.type === 'success' ? '#27ae60' : '#2c3e50',
           }}
         >
           {m.text}

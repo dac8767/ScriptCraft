@@ -1,5 +1,20 @@
 [
  {
+  "version": "7.01",
+  "date": "2026-08-14",
+  "changes": [
+   "Style audit fixes. Six theme colors were used by the stylesheets but defined by no theme, so about fifty hover, selected-row and background states quietly painted nothing: hovering a blue dialog button turned it transparent, the selected row in the Element Templates editor had an invisible highlight, and tool-window ⋯ menus, title-bar buttons, zoom menus and Design-panel rows gave no hover feedback at all. All six are defined now, in every theme.",
+   "Hovering a blue primary button keeps it blue. A specificity clash let the plain button's hover repaint the primary one; the plain rule no longer targets primaries, so one rule owns that hover in every theme.",
+   "Settings ▸ General no longer shows raw browser controls. Window on launch, Units, Date format and Time format were unstyled native dropdowns (19px, light gray) sitting beside the app's own; the Draft Number row had a native white text box and an unstyled 'Set as Default' button. All are house controls now, and the app declares its color scheme so no native widget renders in light style inside a dark theme.",
+   "One blue primary button style instead of two. Twenty-seven buttons used a paint-only class with no size of its own — it looked right inside a dialog's button row and like a tiny native button anywhere else (Settings ▸ Draft Number ▸ Apply). Small buttons are genuinely small now, too: the compact size set its font but never its height, so Page Setup's View and the Defaults tab's Reset stood full height with small text.",
+   "One red for danger, one green for success, one amber for warning — 117 hardcoded colors across the app collapsed onto three theme colors, so a theme (including your own custom themes) can change them. Annotation and index-card color palettes are untouched: those are your color choices, not app states.",
+   "Custom themes reach the whole app. Input fields, dialog surfaces, overlays, shadows, the edge line and the three new state colors are editable in Themes now — building a light custom theme on a dark base used to leave the input fields dark with no way to change them.",
+   "Deleting a formatting template asks first. The confirmation used the browser's own dialog, which in the desktop app answers 'yes' before you do — the template was deleted whatever you clicked. It now uses the app's confirm window.",
+   "The near-black boxes are gone from the Sepia, Paper and Solarized Light themes: eight search fields and dropdowns hardcoded a dark background instead of following the theme.",
+   "Housekeeping: the Thesaurus search icon matches the one used everywhere else, a duplicate button style that had been silently overriding itself was merged, dead Settings CSS removed, and the Script History diff labels use the app font."
+  ]
+ },
+ {
   "version": "7.00",
   "date": "2026-08-14",
   "changes": [
