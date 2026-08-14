@@ -7,6 +7,7 @@ import { DEFAULT_HEADER_CONTENT, DEFAULT_FOOTER_CONTENT, resolveMoresContds } fr
 import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
 import { resolveImageUrl, loadImageData } from './imageAsset';
 import { isWorkingNoteNode } from './workingNotes';
+import { stackTitlePageBlocks } from './titlePageLayout';
 import {
   LINE_HEIGHT_PT, PTS_PER_INCH, FD_CHAR_WIDTH_PT, SPACE_BEFORE, columnFor,
 } from './screenplayMetrics';
@@ -412,31 +413,53 @@ export async function exportPDF(doc: JSONContent, title: string, layout: PageLay
     const leftX = layout.leftMargin * PTS_PER_INCH;
     const rightX = pageWidthPt - layout.rightMargin * PTS_PER_INCH;
     const bottom = pageHeightPt - bottomMarginPt;
-    let y = topMarginPt;
+
+    /* v7.09, Derek ("i exported a title page as a pdf and it did not export
+       all of the information"): the title page is a LINE GRID — the builder
+       in utils/titlePageLayout positions everything by emitting blank lines.
+       This loop used to add 4pt "a small gap between elements" after EVERY
+       block, blanks included: ~180pt across a title page's ~45 blocks, which
+       slid the draft / contact / copyright / notes block off the bottom,
+       where the fit check below dropped it without a word. The stacking is
+       stackTitlePageBlocks' job now — one grid walk, shared with its test —
+       and this loop only draws. */
+    const lineHOf = (it: TitleItem) => (it.field === 'title' ? (it.titleSize || 12) : LINE_HEIGHT_PT);
+    const placed = stackTitlePageBlocks(
+      titleItems.map((it, k) => {
+        if (it.kind === 'image') {
+          const im = titleImgData.get(k);
+          return { blank: false, heightPt: im ? im.hPt + 6 : 0 };
+        }
+        const lines = Math.max(1, (it.text || '').split('\n').length);
+        return { blank: !(it.text || '').trim(), heightPt: lines * lineHOf(it) };
+      }),
+      bottom - topMarginPt,
+      LINE_HEIGHT_PT,
+    );
+
     for (let k = 0; k < titleItems.length; k++) {
+      if (placed[k].skipped) continue;
       const it = titleItems[k];
+      let y = topMarginPt + placed[k].y;
       if (it.kind === 'image') {
         const im = titleImgData.get(k);
         if (!im || y + im.hPt > bottom) continue;
         const align = (it.attrs?.align as string) || 'center';
         const x = align === 'left' ? leftX : align === 'right' ? rightX - im.wPt : centerX - im.wPt / 2;
         pdf.addImage(im.dataUrl, 'PNG', x, y, im.wPt, im.hPt);
-        y += im.hPt + 6;
       } else {
         const isTitle = it.field === 'title';
         const align: 'left' | 'center' | 'right' =
           it.field === 'draft' ? 'left' : (it.field === 'contact' || it.field === 'copyright') ? 'right' : 'center';
-        const lineH = isTitle ? (it.titleSize || 12) : LINE_HEIGHT_PT;
+        const lineH = lineHOf(it);
         pdf.setFont(EXPORT_FONT, isTitle ? 'bold' : 'normal');
         pdf.setFontSize(isTitle ? (it.titleSize || 12) : 12);
         const x = align === 'left' ? leftX : align === 'right' ? rightX : centerX;
-        const lines = (it.text || '').split('\n');
-        for (const line of lines) {
+        for (const line of (it.text || '').split('\n')) {
           if (line && y + lineH <= bottom) pdf.text(isTitle ? line.toUpperCase() : line, x, y + lineH, { align });
           y += lineH;
         }
         pdf.setFontSize(12);
-        y += 4; // small gap between elements
       }
     }
 

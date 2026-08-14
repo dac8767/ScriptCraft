@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.09",
+  "date": "2026-08-14",
+  "changes": [
+   "Exporting a title page to PDF now includes all of it — draft, contact, copyright, WGA registration and notes. The title page is laid out as a grid of lines, and the PDF exporter was adding a few extra points after every one of them, blanks included; across a full page that added up to two and a half inches of drift, which pushed the bottom block off the page. Anything that no longer fit was dropped without a word.",
+   "If a title page genuinely cannot fit — a very large title, a long contact block — the export now removes blank lines, starting with the widest gap, instead of dropping the text. Words never disappear from an export to make room for whitespace."
+  ]
+ },
+ {
   "version": "7.08",
   "date": "2026-08-14",
   "changes": [

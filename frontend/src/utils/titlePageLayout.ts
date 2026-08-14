@@ -115,6 +115,58 @@ export function titlePageBlockSpecs(data: TitlePageData, aboveLines = 0, belowLi
   return blocks;
 }
 
+/**
+ * v7.09, Derek: "i exported a title page as a pdf and it did not export all of
+ * the information."
+ *
+ * The builder above lays the page out as a LINE GRID — spacers do the
+ * positioning. A renderer that adds any per-block padding on top of that grid
+ * drifts, and the drift is cumulative across the ~45 blocks a title page has.
+ * The PDF exporter added 4pt after every block, blanks included: ~180pt, two
+ * and a half inches, which pushed the draft / contact / copyright / notes
+ * block off the bottom of the page, where a fit check dropped it in silence.
+ *
+ * So the stacking is ONE function, here, where a test can drive it: walk the
+ * blocks on the grid, and if they still don't fit, trim BLANK lines — widest
+ * run first, so the page loses air rather than ink. Content is never dropped.
+ *
+ * `heightPt` is each block's own height (a 32pt title is 32pt; a three-line
+ * contact is three lines). Returns one entry per block, in order.
+ */
+export function stackTitlePageBlocks(
+  blocks: { blank: boolean; heightPt: number }[],
+  availablePt: number,
+  lineHeightPt: number,
+): { y: number; skipped: boolean }[] {
+  const skip = new Set<number>();
+  let total = blocks.reduce((s, b) => s + b.heightPt, 0);
+  for (let guard = 0; total > availablePt && guard < blocks.length; guard++) {
+    // The widest surviving run of blanks — that's the page's biggest gap.
+    let bestStart = -1, bestLen = 0, runStart = -1, runLen = 0;
+    for (let k = 0; k <= blocks.length; k++) {
+      if (k < blocks.length && blocks[k].blank && !skip.has(k)) {
+        if (runStart < 0) { runStart = k; runLen = 0; }
+        runLen++;
+      } else {
+        if (runLen > bestLen) { bestLen = runLen; bestStart = runStart; }
+        runStart = -1; runLen = 0;
+      }
+    }
+    if (bestStart < 0) break;            // nothing left but ink
+    skip.add(bestStart);
+    total -= blocks[bestStart].heightPt || lineHeightPt;
+  }
+
+  const out: { y: number; skipped: boolean }[] = [];
+  let y = 0;
+  for (let k = 0; k < blocks.length; k++) {
+    if (skip.has(k)) { out.push({ y, skipped: true }); continue; }
+    out.push({ y, skipped: false });
+    y += blocks[k].heightPt;
+  }
+  return out;
+}
+
 /** The specs as TipTap JSON nodes — what the importers splice into the doc. */
 export function titlePageJsonNodes(data: TitlePageData): Array<{ type: string; attrs: Record<string, unknown>; content?: Array<{ type: string; text: string }> }> {
   return titlePageBlockSpecs(data).map((s) => ({

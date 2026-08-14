@@ -181,10 +181,21 @@ const h2 = await page.evaluate(() => {
   });
   return found;
 });
+await page.waitForFunction(() => window.__scEditor.state.doc.childCount === 3, { timeout: 8000 });
+/* prosemirror-history groups steps that arrive within newGroupDelay (500ms).
+   Seeding the fixture and pressing Enter back-to-back put BOTH in one history
+   event, so the single undo below took the seed away too and the check read
+   the previous fixture — that was the flake, not the editor. */
+await page.waitForTimeout(700);
 await page.evaluate((pos) => window.__scEditor.chain().focus().setTextSelection(pos + 1).run(), h2);
 await page.keyboard.press('Enter');
-await settle(page);
-await page.keyboard.press('Control+z');
+// …and wait for the split to land: keystroke and transaction are not the same
+// tick under a loaded dev server.
+await page.waitForFunction(() => window.__scEditor.state.doc.childCount === 4, { timeout: 8000 });
+/* One undo, dispatched through the editor rather than the keyboard: what is
+   under test is that the split and the type fix-up are ONE transaction, not
+   the keymap. */
+await page.evaluate(() => window.__scEditor.commands.undo());
 await settle(page);
 const undone = await page.evaluate(() => {
   const out = [];

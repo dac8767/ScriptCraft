@@ -24,6 +24,7 @@ import {
   deriveTitleFields,
   titlePageBlockSpecs,
   titlePageJsonNodes,
+  stackTitlePageBlocks,
 } from './titlePageLayout';
 
 /** Data constructor: blank slate + overrides, like the Title Page editor does. */
@@ -219,5 +220,98 @@ describe('titlePageJsonNodes', () => {
     // The empty-string title gets no text child either — same falsy-text
     // rule as the spacers — but keeps the full structured attrs.
     expect(nodes[14]).toEqual({ type: 'titlePage', attrs: { field: 'title', ...EMPTY_TITLE_PAGE } });
+  });
+});
+
+/**
+ * v7.09, Derek: "i exported a title page as a pdf and it did not export all of
+ * the information." His page — 32pt title, subtitle, credit, draft, contact,
+ * copyright + WGA, notes — went to PDF with everything below the credit line
+ * missing. The exporter added 4pt after each of the ~45 blocks, drifted ~180pt
+ * past the page and then silently skipped whatever no longer fit.
+ *
+ * These drive the stacker with US Letter's real numbers: 792pt tall, 72pt
+ * margins ⇒ 648pt of usable height, 12pt lines.
+ */
+describe('stackTitlePageBlocks (v7.09)', () => {
+  const LINE = 12;
+  const AVAIL = 792 - 72 - 72;   // US Letter, 1in margins → 648pt = 54 lines
+
+  /** Derek's title page, as the blocks the PDF exporter builds from it. */
+  const derekBlocks = () => {
+    const data = tp({
+      tpTitle: 'SCRIPTCRAFT',
+      tpTitleFontSize: 32,
+      tpTitle2: '"The best screenwriting app in the world ... for free."',
+      tpWrittenBy: 'You',
+      tpDraft: '1st Draft',
+      tpContact: 'Name\nAgency\nemail@example.com',
+      tpCopyright: 'Copyright 2026 Author Name',
+      tpWgaRegistration: 'WGAw #123456',
+      tpNotes: 'No code? Join our newsletter for updates about a public release.',
+    });
+    const specs = titlePageBlockSpecs(data);
+    const blocks = specs.map((s) => ({
+      blank: !s.text.trim(),
+      heightPt: Math.max(1, s.text.split('\n').length) * (s.field === 'title' ? 32 : LINE),
+    }));
+    return { specs, blocks };
+  };
+
+  it("keeps every line of Derek's title page on the page", () => {
+    const { specs, blocks } = derekBlocks();
+    const placed = stackTitlePageBlocks(blocks, AVAIL, LINE);
+    const dropped = specs.filter((s, i) => placed[i].skipped && s.text.trim()).map((s) => s.field);
+    expect(dropped).toEqual([]);
+    for (let i = 0; i < specs.length; i++) {
+      if (!specs[i].text.trim()) continue;
+      expect(placed[i].y + blocks[i].heightPt, specs[i].field).toBeLessThanOrEqual(AVAIL);
+    }
+  });
+
+  it('puts the title about a third down and the bottom block near the bottom', () => {
+    const { specs, blocks } = derekBlocks();
+    const placed = stackTitlePageBlocks(blocks, AVAIL, LINE);
+    const yOf = (field: string) => placed[specs.findIndex((s) => s.field === field)].y;
+    expect(yOf('title')).toBeGreaterThan(AVAIL * 0.2);
+    expect(yOf('title')).toBeLessThan(AVAIL * 0.45);
+    // draft / contact / copyright / notes all sit in the bottom third
+    expect(yOf('draft')).toBeGreaterThan(AVAIL * 0.6);
+    expect(yOf('date')).toBeGreaterThan(yOf('copyright'));
+  });
+
+  it('stacks on the grid with no per-block padding', () => {
+    // Three 12pt lines land at 0, 12, 24 — the drift bug made them 0, 16, 32.
+    const placed = stackTitlePageBlocks(
+      [{ blank: false, heightPt: 12 }, { blank: false, heightPt: 12 }, { blank: false, heightPt: 12 }],
+      AVAIL, LINE,
+    );
+    expect(placed.map((p) => p.y)).toEqual([0, 12, 24]);
+  });
+
+  it('trims blank lines — widest gap first — rather than dropping content', () => {
+    // 4 lines of ink and 6 blanks into room for 8 lines: 2 blanks must go,
+    // both from the 4-long run, and no inked line may be skipped.
+    const blocks = [
+      { blank: false, heightPt: 12 },
+      { blank: true, heightPt: 12 }, { blank: true, heightPt: 12 },
+      { blank: false, heightPt: 12 },
+      { blank: true, heightPt: 12 }, { blank: true, heightPt: 12 },
+      { blank: true, heightPt: 12 }, { blank: true, heightPt: 12 },
+      { blank: false, heightPt: 12 }, { blank: false, heightPt: 12 },
+    ];
+    const placed = stackTitlePageBlocks(blocks, 8 * 12, LINE);
+    expect(placed.filter((p, i) => p.skipped && !blocks[i].blank)).toEqual([]);
+    expect(placed.filter((p) => p.skipped)).toHaveLength(2);
+    expect([4, 5, 6, 7].filter((i) => placed[i].skipped)).toHaveLength(2);
+    const lastInk = placed[9];
+    expect(lastInk.y + 12).toBeLessThanOrEqual(8 * 12);
+  });
+
+  it('gives up trimming when only ink is left, instead of looping', () => {
+    const blocks = Array.from({ length: 10 }, () => ({ blank: false, heightPt: 12 }));
+    const placed = stackTitlePageBlocks(blocks, 24, LINE);
+    expect(placed.filter((p) => p.skipped)).toHaveLength(0);   // nothing to trim
+    expect(placed[9].y).toBe(108);
   });
 });
