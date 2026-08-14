@@ -1,5 +1,16 @@
 [
  {
+  "version": "7.08",
+  "date": "2026-08-14",
+  "changes": [
+   "FADE IN: is left-aligned in the Pages tool, the way it already was in the script. The page thumbnails kept their own copy of the element measurements, with every transition pinned to the right margin; they now ask the same question the editor and the PDF export ask, so the opening transition sits at the left margin everywhere.",
+   "The character name suggestions list only names that are actually in your script. The list used to be a cache refreshed when the cursor crossed a name line, so a name you typed, left and then deleted stayed on offer — a stray \"S\" beside SCRIPTCRAFT. It is read from the script now, and the name you are in the middle of typing is never suggested back to you.",
+   "Pressing Enter at the start of a line puts the cursor on the new blank line above, not on the line you just pushed down. Adding something above a scene heading used to leave the cursor in the heading, so the next thing you typed — or the element you picked — landed on the heading and turned it into an action.",
+   "That same Enter is one undo step again. Inserting the line and setting the two element types were two separate edits, so one Undo took back only half of it.",
+   "Transition is offered on an empty page. FADE IN: is the opening transition and belongs at the top of a script, but the element list treated \"nothing above\" the same as \"an unusual element above\" and hid it."
+  ]
+ },
+ {
   "version": "7.07",
   "date": "2026-08-14",
   "changes": [

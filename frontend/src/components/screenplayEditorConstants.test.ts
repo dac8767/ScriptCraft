@@ -77,7 +77,7 @@ describe('allowedElementsAfter', () => {
   });
 
   it('unlisted contexts allow everything except parenthetical and transition', () => {
-    for (const prev of [null, 'shot', 'general', 'lyrics']) {
+    for (const prev of ['shot', 'general', 'lyrics']) {
       const set = allowedSet(prev);
       expect(set, String(prev)).not.toContain('parenthetical');
       expect(set, String(prev)).not.toContain('transition');
@@ -85,6 +85,17 @@ describe('allowedElementsAfter', () => {
       expect(set, String(prev)).toContain('sceneHeading');
       expect(set, String(prev)).toContain('general');
     }
+  });
+
+  // v7.08, Derek: "when the page is empty, transition should be an available
+  // element to use, but it is not." Nothing above ≠ an unlisted element above:
+  // the opening transition (FADE IN:) lives at the top of the script.
+  it('an empty page offers Transition, but never Parenthetical', () => {
+    const set = allowedSet(null);
+    expect(set).toContain('transition');
+    expect(set).not.toContain('parenthetical');
+    expect(set).toContain('action');
+    expect(set).toContain('sceneHeading');
   });
 
   it('a user-edited table overrides the default (v4.59)', () => {

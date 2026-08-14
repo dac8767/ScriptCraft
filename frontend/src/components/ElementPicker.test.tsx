@@ -92,13 +92,15 @@ describe('ElementPicker ordering', () => {
     expect(labels()).not.toContain('Parenthetical');
   });
 
-  it('transition appears after dialogue but not after a character or at the top', () => {
+  // v7.08, Derek: an EMPTY page offers Transition now — the opening
+  // transition (FADE IN:) is the first thing in a script.
+  it('transition appears after dialogue and on an empty page, but not after a character', () => {
     render({ prevScriptType: 'dialogue' });
     expect(labels()).toContain('Transition');
     render({ prevScriptType: 'character' });
     expect(labels()).not.toContain('Transition');
     render({ prevScriptType: null });
-    expect(labels()).not.toContain('Transition');
+    expect(labels()).toContain('Transition');
   });
 
   // v4.59: Customize ▸ Editor ▸ Element Suggestions.

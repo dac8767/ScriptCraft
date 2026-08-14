@@ -86,6 +86,13 @@ export function allowedElementsAfter(
   // speaks in terms of it (it IS the grammar's name-line concept), so a row
   // that allows a name line allows "Dialogue", which starts at the name.
   if (row) return (id) => row.includes(id) || (id === 'dialogue' && row.includes('character'));
+  /* v7.08, Derek ("when the page is empty, transition should be an available
+     element to use, but it is not"): NOTHING above is not the same as an
+     unlisted element above. The top of a script is exactly where a transition
+     belongs — FADE IN: is one, and v6.30 gave it the left margin for being the
+     OPENING transition — so an empty page offers it. A parenthetical still
+     needs a name above it, there as everywhere. */
+  if (prevType == null) return (id) => id !== 'parenthetical';
   return (id) => id !== 'parenthetical' && id !== 'transition';
 }
 

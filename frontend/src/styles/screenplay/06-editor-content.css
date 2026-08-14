@@ -70,7 +70,8 @@
 .screenplay-element[class*="title-page"] {
   margin-right: 0;
 }
-.transition.transition-left { margin-right: -14px; }
+/* FADE IN: is the exception — it wraps LEFT, so it keeps the allowance.
+   Declared once, with the rest of its look, at `.transition-left` below. */
 
 /* Scene Heading: TWO blank lines before (24pt) — the spec-standard gap
    (v6.30, Derek's side-by-side against another program; Final Draft's
@@ -140,10 +141,16 @@
 /* v6.30, Derek + the standard: FADE IN: is the OPENING transition — left
    margin, no transition indent. The class is a live decoration
    (Transition.ts), same predicate the PDF exporter uses. */
-.transition.transition-left {
+/* v7.08: the selector carries `.page .screenplay-element` because a CUSTOM
+   formatting template injects `.page .screenplay-element.transition` (0-3-0,
+   utils/templateCss.getSelector) — a plain `.transition.transition-left`
+   (0-2-0) loses to it and FADE IN: snaps back to the right margin on every
+   template but Industry Standard. Match that weight and add the class. */
+.page .screenplay-element.transition.transition-left {
   text-align: left;
   padding-left: 0;
   padding-right: calc(var(--pw, 8.26in) - 7.80in - var(--pr, 0.76in));
+  margin-right: -14px;
 }
 
 /* General */

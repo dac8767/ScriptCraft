@@ -1058,6 +1058,10 @@
   text-align: right;
   text-transform: uppercase;
 }
+/* v7.08: FADE IN: is the opening transition — left margin, left aligned.
+   SceneNavigator adds this class from utils/transitions.isLeftTransition,
+   the same predicate the editor decoration and the PDF exporter use. */
+.page-thumb-transition.page-thumb-transition-left { text-align: left; }
 .page-thumb-newAct,
 .page-thumb-endOfAct {
   text-align: center;

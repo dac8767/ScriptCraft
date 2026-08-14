@@ -25,6 +25,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import FontFamily from '@tiptap/extension-font-family';
 import { Extension } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
 
 import {
   SceneHeading, Action, Character, Dialogue, Parenthetical,
@@ -380,7 +381,8 @@ const ScreenplayEditor: React.FC = () => {
   // Character autocomplete state. v3.44, Derek: the same dropdown also serves
   // scene headings (INT./EXT.) and transitions — `mode` picks how a pick is
   // inserted (a trailing space for scene prefixes).
-  const [knownCharacters, setKnownCharacters] = useState<string[]>([]);
+  // v7.08: the cast is no longer mirrored into local state — collectCast()
+  // reads the document, so the dropdown and the tools can't drift apart.
   const [charAutoState, setCharAutoState] = useState<{
     visible: boolean;
     mode: 'character' | 'scene' | 'transition';
@@ -759,14 +761,23 @@ const ScreenplayEditor: React.FC = () => {
               : currentType;
             const elementRule = activeTemplate.rules[effectiveType];
             const nextType = elementRule?.nextOnEnter || DEFAULT_NEXT_TYPE[currentType] || currentType;
-            editor.chain().splitBlock().run();
+            /* v7.08, Derek ("if I try to add anything above a scene header, the
+               scene header below the added text loses its element type and bold
+               formatting"): the fix-up rides the SAME transaction as the split
+               now. It used to be a second `view.dispatch` after the chain, which
+               made one Enter two undo steps and — the part Derek hit — left the
+               caret sitting in the SCENE HEADING after inserting a blank line
+               above it. Everything he did next (typing, or picking Action from
+               the element dropdown) landed on the heading instead of the new
+               line, which is how a heading ends up an un-bolded action. */
+            editor.chain().splitBlock().command(({ tr, dispatch }) => {
+              if (!dispatch) return true;
+              const schema = editor.schema;
+              // After the split the caret is in the new (second) block.
+              const pos = tr.selection.$from;
+              const newBlockStart = pos.before(pos.depth);
 
-            // After split, cursor is in the new (second) block.
-            const { tr, schema, selection } = editor.state;
-            const pos = selection.$from;
-            const newBlockStart = pos.before(pos.depth);
-
-            if (atBlockStart) {
+              if (atBlockStart) {
               // Cursor was at position 0: user is inserting a blank line above.
               // The second block (with content) should keep the original type.
               // The first block (empty, above) becomes action for a clean blank line.
@@ -780,6 +791,10 @@ const ScreenplayEditor: React.FC = () => {
               if (actionType && tr.doc.nodeAt(prevBlockStart)?.type.name !== 'action') {
                 tr.setNodeMarkup(prevBlockStart, actionType);
               }
+              // The caret belongs on the line the writer just made, not on the
+              // element they pushed down. setNodeMarkup keeps positions, so
+              // prevBlockStart + 1 is inside the new empty block.
+              tr.setSelection(TextSelection.create(tr.doc, prevBlockStart + 1));
             } else {
               // Cursor was in the middle/end: apply normal type transition.
               // Fix the new block's type, and ensure the first block kept original type.
@@ -810,9 +825,8 @@ const ScreenplayEditor: React.FC = () => {
                 // For customElement, the type is already correct from splitBlock
               }
             }
-            if (tr.steps.length > 0) {
-              editor.view.dispatch(tr);
-            }
+              return true;
+            }).run();
             return true;
           },
         };
@@ -1310,21 +1324,38 @@ const ScreenplayEditor: React.FC = () => {
   const moresContds = resolveMoresContds(pageLayout);
   const { characterContd, contdText } = moresContds;
 
+  /* v7.08, Derek ("I only had one name on the script (SCRIPTCRAFT), but the
+     name auto suggest shows two entries, one of which is just the letter S"):
+     THE cast reader — every consumer asks this, nobody keeps a private copy.
+     Two things were wrong with the old arrangement:
+       · the autocomplete filtered a CACHED array, refreshed only when the
+         cursor crossed a character node's edge. Type "S", leave, delete the
+         cue — "S" stayed in the cache with nothing in the script behind it,
+         which is the ghost entry in Derek's screenshot.
+       · nothing excluded the cue being typed, so a half-written name could
+         be offered back as if it were a real character.
+     `skipPos` is the position of the node the cursor sits in — the caller
+     passes it when a name is mid-typing. */
+  const collectCast = useCallback((skipPos?: number): string[] => {
+    if (!editor) return [];
+    const names = new Set<string>();
+    editor.state.doc.descendants((node, pos) => {
+      if (!node.isBlock) return false;   // never walk into text/marks
+      if (node.type.name !== 'character') return true;  // dual dialogue nests
+      if (pos === skipPos) return false;
+      const base = stripCharacterExtension(node.textContent.trim().toUpperCase());
+      if (base) names.add(base);
+      return false;
+    });
+    return Array.from(names).sort();
+  }, [editor, stripCharacterExtension]);
+
   const updateCharacters = useCallback(() => {
     if (!editor) return;
-    const names = new Set<string>();
-    editor.state.doc.descendants((node) => {
-      if (node.type.name === 'character') {
-        const raw = node.textContent.trim().toUpperCase();
-        const base = stripCharacterExtension(raw);
-        if (base) names.add(base);
-      }
-      return true;
-    });
-    const sorted = Array.from(names).sort();
-    setKnownCharacters(sorted);
-    setCharacters(sorted);
-  }, [editor, stripCharacterExtension, setCharacters]);
+    // No skip here: a cue the cursor happens to be parked in is still a real
+    // cast member as far as the Characters and Navigator tools go.
+    setCharacters(collectCast());
+  }, [editor, collectCast, setCharacters]);
 
   useEffect(() => {
     if (!editor) return;
@@ -1550,7 +1581,10 @@ const ScreenplayEditor: React.FC = () => {
       let pool: string[];
       let text: string;
       if (mode === 'character') {
-        pool = knownCharacters;
+        /* v7.08: read the CAST OUT OF THE DOCUMENT, here, now — not out of a
+           cache that goes stale the moment a cue is deleted — and leave out
+           the cue being typed so a half-written name can't suggest itself. */
+        pool = collectCast($from.before($from.depth));
         text = stripCharacterExtension(rawText);
       } else if (mode === 'transition') {
         // v4.22: the customizable list (Customize ▸ Script Editor ▸ Transitions).
@@ -1600,7 +1634,7 @@ const ScreenplayEditor: React.FC = () => {
     editor.on('selectionUpdate', onUpdate);
     editor.on('blur', onBlur);
     return () => { editor.off('update', onUpdate); editor.off('selectionUpdate', onUpdate); editor.off('blur', onBlur); };
-  }, [editor, knownCharacters, stripCharacterExtension]);
+  }, [editor, collectCast, stripCharacterExtension]);
 
   // Re-measure overlays after editor updates (decorations settle)
   useEffect(() => {

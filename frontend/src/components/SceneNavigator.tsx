@@ -18,6 +18,7 @@ import { confirmDialog } from './ConfirmDialog';
 import TitlePagePanel from './TitlePagePanel';
 import { computeSceneTiming, formatSceneDuration } from '../utils/scriptTiming';
 import { titleLineStyle, titlePaperShiftPx } from '../utils/titlePageLayout';
+import { isLeftTransition } from '../utils/transitions';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
@@ -652,7 +653,17 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
     if (block.typeName === 'screenplayImage') {
       return { height: `${(block.imageLines ?? 8) * LINE_HEIGHT_PX}px` };
     }
-    const [left, right] = FD_INDENTS[block.typeName] || [1.50, 7.50];
+    /* v7.08, Derek ("in the script 'Fade In:' is aligned left, as it should
+       be, but in the page tool it still shows aligned right"): FADE IN: is the
+       OPENING transition and sits at the LEFT margin. The editor gets that
+       from a live ProseMirror decoration (extensions/Transition.ts) — a
+       thumbnail never runs decorations, so it has to ask the SAME predicate
+       (utils/transitions.isLeftTransition, which the PDF exporter uses too).
+       Geometry and alignment both move: action indents [1.50, 7.50], and the
+       -left class turns off the right alignment .page-thumb-transition sets. */
+    const [left, right] = block.typeName === 'transition' && isLeftTransition(block.text)
+      ? FD_INDENTS.action
+      : FD_INDENTS[block.typeName] || [1.50, 7.50];
     const padL = Math.max(0, (left - pageLayout.leftMargin) * 96);
     const padR = Math.max(0, (pageLayout.pageWidth - right - pageLayout.rightMargin) * 96);
     const sb = isFirst ? 0 : (SPACE_BEFORE[block.typeName] ?? 0);
@@ -1354,7 +1365,9 @@ const SceneNavigator: React.FC<SceneNavigatorProps> = ({ editor, scrollContainer
                         {page.blocks.map((block, i) => (
                           <div
                             key={i}
-                            className={`page-thumb-el page-thumb-${block.typeName}`}
+                            className={`page-thumb-el page-thumb-${block.typeName}${
+                              block.typeName === 'transition' && isLeftTransition(block.text)
+                                ? ' page-thumb-transition-left' : ''}`}
                             style={getBlockStyle(block, i === 0)}
                           >
                             {block.text || '\u00A0'}
