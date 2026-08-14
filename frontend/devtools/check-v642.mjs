@@ -179,8 +179,21 @@ try {
   ok(save.heads.includes('Auto Saves') && !save.heads.includes('Auto Save Locations'),
     `ONE merged Auto Saves section (${save.heads.join(' | ')})`);
   ok(save.hints === 2, `helper text only under Google Drive + OneDrive (${save.hints} hint blocks)`);
-  ok(save.border === '1px' && save.pos === 'absolute' && save.h3bg === save.anc,
-    `sections are bordered boxes, titles set INTO the border on the window's own color (${save.border}/${save.pos})`);
+  ok(save.border === '1px' && save.pos === 'static',
+    `sections are bordered boxes with the title IN-FLOW inside them (v6.98) (${save.border}/${save.pos})`);
+  ok(await page.evaluate(() => {
+    const sec = document.querySelector('.prefs-general section');
+    const h3 = sec.querySelector('h3');
+    return h3.getBoundingClientRect().top - sec.getBoundingClientRect().top > 4;
+  }), 'the title sits fully WITHIN the box, not on its edge (v6.98)');
+  const btnAlign = await page.evaluate(() => {
+    const btns = [...document.querySelectorAll('.prefs-general .prefs-check-row .prefs-inline-btn')]
+      .filter((b) => b.textContent.includes('Choose Folder'));
+    const rights = btns.map((b) => Math.round(b.getBoundingClientRect().right));
+    return { n: rights.length, spread: Math.max(...rights) - Math.min(...rights) };
+  });
+  ok(btnAlign.n >= 3 && btnAlign.spread <= 1,
+    `Choose Folder buttons right-align row to row (${btnAlign.n} buttons, spread ${btnAlign.spread}px)`);
   // v6.97, Derek: the box FILLS a shade apart from the window background
   ok(await page.evaluate(() => {
     const sec = document.querySelector('.prefs-general section');

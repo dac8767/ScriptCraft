@@ -1054,34 +1054,30 @@ input.fs-switch:checked::after { left: 15px; }
   overflow-y: auto;
   padding: 16px 20px 20px;
 }
-/* v6.95, Derek (via the feedback form, his reference screenshot): settings
-   sections are bordered GROUP BOXES with the name set into the border line.
-   The label's background must equal the WINDOW'S — the Settings window is a
-   dz-panel shell (dialog-bg chain), NOT a tool-window (--fd-bg); a probe
-   proved the difference — or it reads as a wrong-colored pill. */
+/* v6.95→v6.98, Derek (via the feedback form): settings sections are
+   FILLED, bordered group boxes (v6.97 fill — the border alone was too
+   faint) with the title INSIDE the box (v6.98 — it used to sit inset on
+   the border line). Every spacing here is a Design knob. */
 .prefs-general section {
   position: relative;
   border: 1px solid var(--fd-border);
   border-radius: 6px;
-  /* v6.97, Derek: the box FILLS a shade apart from the window background —
-     the border alone was too faint — and every padding is a Design knob. */
   background: var(--fd-overlay-subtle, var(--fd-overlay-light));
-  padding: var(--dz-prefs-title-gap, 16px) var(--dz-prefs-pad-side, 14px) var(--dz-prefs-pad-bottom, 13px);
+  padding: var(--dz-prefs-pad-top, 12px) var(--dz-prefs-pad-side, 14px) var(--dz-prefs-pad-bottom, 13px);
   margin-bottom: var(--dz-prefs-section-gap, 18px);
 }
 .prefs-general h3 {
-  position: absolute;
-  top: -8px;
-  left: 10px;
-  margin: 0;
-  padding: 0 6px;
-  background: var(--fd-dialog-bg, var(--fd-navigator-bg));
+  margin: 0 0 var(--dz-prefs-title-gap, 10px);
   font-size: 11.5px;
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--fd-text-muted);
 }
 .prefs-general .prefs-check-row { padding: 3px 0; }
+/* v6.98, Derek: every Choose Folder… (and its row-mates) sits at the box's
+   right edge, aligned row to row. */
+.prefs-general .prefs-check-row .prefs-inline-btn { margin-left: auto; }
+.prefs-general .prefs-check-row .prefs-inline-btn ~ .prefs-inline-btn { margin-left: 8px; }
 .prefs-check-row {
   display: flex;
   align-items: center;

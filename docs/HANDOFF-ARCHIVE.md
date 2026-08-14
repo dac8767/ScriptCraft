@@ -151,7 +151,26 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.92 and older (newest first)
+## Version history — v6.93 and older (newest first)
+
+### v6.93 — attach buttons onto the header row + nine Design knobs
+
+- Derek items 1-3: the three attach buttons live ON the "Attach a
+  Screenshot" row (`.fb-attach-head` wraps: paperclip, `.fb-attach-title`
+  span, `.fb-attach-btns`, then the ?), and Send Feedback → "Submit".
+- Item 4: Design panel group `feedback` (before `behavior`) — NINE css-var
+  tokens, each the ONLY source of its gap (head gap is `6px 0` so wrap
+  rows breathe but columns are all margins): fbNameGap 5 (`.fb-who
+  strong` margin; the JSX space after "Name:" was removed so the knob is
+  the source), fbEditGap 8, fbHeadGap 10 (btns margin-left), fbBtnGap 6,
+  fbHelpGap 6, fbRowGap 10 (wrap gap), fbPadSide 16 / fbPadTop 14 /
+  fbPadBottom 14 (wrap padding split three ways). designTokens.test.ts
+  generic suites enforce consumption + fallback==def; a new pin fixes
+  the nine ids. check-v684 25 (head structure; applyDesignVars
+  fbRowGap→24 proves computed rowGap moves — in-page import of
+  designTokens is SAFE here because applyDesignVars writes the real
+  documentElement, unlike store-instance imports).
+- Gates: tsc 0, vitest 1201, build ok, check-all 1081/0. Catalog 480.
 
 ### v6.92 — feedback window wording pass (11 Derek items)
 

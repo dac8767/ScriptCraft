@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v6.97 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v6.98 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
 > (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
@@ -41,8 +41,10 @@
 > READ the `feedback_report` VIEW (his date format baked in, US Eastern:
 > "Aug 13, 2026 — 3:28 PM"); the raw table's timestamp column is
 > `created` (NOT created_at) — write status updates to the TABLE, the
-> view is read-only. Messages may carry v6.96 markdown markers
-> (**bold**, lists, <u>u</u>) — print them AS-IS; chat renders them.
+> view is read-only. Messages may carry list markers — print AS-IS.
+> STATUS RULE (Derek 2026-08-14): when he TELLS a session to do a
+> feedback item, mark that row Complete on shipping — he follows up
+> with a NEW form if needed; don't wait for a retest.
 
 > READ FIRST — v4.84 fixed a v4.81 bug worth learning from: the window
 > shape-memory was written correctly and then OVERWRITTEN by the dock-row
@@ -285,6 +287,27 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v6.98 — titles into the boxes; aligned buttons; steadier lists
+
+- Feedback row 12:19 AM (all four items, marked Complete on shipping —
+  the new STATUS RULE above): (1) section h3 is IN-FLOW inside the box
+  again (the v6.95 absolute inset + its bg-parity dance are GONE); (2)
+  settingsWin grew prefsPadTop 12 (--dz-prefs-pad-top) and
+  prefsTitleGap RETARGETED to the h3's margin-bottom (same id + var —
+  persisted overrides keep meaning "title to items" — def 16→10);
+  (3) list-continuation hardening: the onKeyDown now reads
+  ta.value (the DOM), NOT the render-closure `message` — any lag
+  between them made Enter silently skip (his "suddenly it started
+  working"); bare "-"/"1." with no trailing space now counts as an
+  empty item ("-word" stays text); (4) `.prefs-check-row
+  .prefs-inline-btn { margin-left: auto }` right-aligns every Choose
+  Folder… (spread 0px across 4 rows, asserted).
+- check-v642 24/0 (title in-flow + within-box + button alignment;
+  the h3-bg parity assert died with the inset design). check-v684 26/0.
+  GOTCHA: a check driven while Vite is mid-HMR from fresh edits can
+  fail on remounts — rerun once the compile settles before diagnosing.
+- Gates: tsc 0, vitest 1203, build ok, check-all 1088/0.
+
 ### v6.97 — settings-box knobs + fill; typed lists replace the buttons
 
 - Feedback row 11:29 PM: Design group `settingsWin` (before `behavior`) —
@@ -369,30 +392,12 @@ Durable bits kept live here:
   toggle trio); tests 1200 (the ? toggle test removed).
 - Gates: tsc 0, vitest 1200, build ok, check-all 1079/0. Catalog 480.
 
-### v6.93 — attach buttons onto the header row + nine Design knobs
-
-- Derek items 1-3: the three attach buttons live ON the "Attach a
-  Screenshot" row (`.fb-attach-head` wraps: paperclip, `.fb-attach-title`
-  span, `.fb-attach-btns`, then the ?), and Send Feedback → "Submit".
-- Item 4: Design panel group `feedback` (before `behavior`) — NINE css-var
-  tokens, each the ONLY source of its gap (head gap is `6px 0` so wrap
-  rows breathe but columns are all margins): fbNameGap 5 (`.fb-who
-  strong` margin; the JSX space after "Name:" was removed so the knob is
-  the source), fbEditGap 8, fbHeadGap 10 (btns margin-left), fbBtnGap 6,
-  fbHelpGap 6, fbRowGap 10 (wrap gap), fbPadSide 16 / fbPadTop 14 /
-  fbPadBottom 14 (wrap padding split three ways). designTokens.test.ts
-  generic suites enforce consumption + fallback==def; a new pin fixes
-  the nine ids. check-v684 25 (head structure; applyDesignVars
-  fbRowGap→24 proves computed rowGap moves — in-page import of
-  designTokens is SAFE here because applyDesignVars writes the real
-  documentElement, unlike store-instance imports).
-- Gates: tsc 0, vitest 1201, build ok, check-all 1081/0. Catalog 480.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.93** — attach buttons joined the header row; Submit; the first nine Feedback design knobs (fb* group)
 - **v6.92** — feedback window wording pass ×11: Name:/Type:/Description:, Full Screen button, Attach a Screenshot header, how-to behind a ? (retired v6.94)
 - **v6.91** — feedback categories renamed: Bug Report / Suggestion / Feature Request / Other (Praise retired)
 - **v6.90** — attachment area header renamed "Attach an Image" (v6.92 later made it "Attach a Screenshot")

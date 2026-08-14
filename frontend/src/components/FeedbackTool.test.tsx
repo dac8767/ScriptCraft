@@ -231,6 +231,11 @@ describe('FeedbackTool — typed lists continue themselves (v6.97)', () => {
     expect(continueListOnEnter('1. one', 6)).toEqual({ value: '1. one\n2. ', caret: 10 });
     expect(continueListOnEnter('- ', 2)).toEqual({ value: '', caret: 0 });   // empty item ends the list
     expect(continueListOnEnter('plain line', 10)).toBeNull();                // not a list
+    // v6.98: bare markers without the trailing space are empty items too,
+    // and "-word" stays ordinary text
+    expect(continueListOnEnter('-', 1)).toEqual({ value: '', caret: 0 });
+    expect(continueListOnEnter('1.', 2)).toEqual({ value: '', caret: 0 });
+    expect(continueListOnEnter('-word', 5)).toBeNull();
   });
 
   it('Enter in the box continues a typed list (no buttons anywhere)', async () => {

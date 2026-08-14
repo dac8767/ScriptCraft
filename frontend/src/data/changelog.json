@@ -1,5 +1,13 @@
 [
  {
+  "version": "6.98",
+  "date": "2026-08-14",
+  "changes": [
+   "Settings sections: the titles moved inside the boxes (they sat on the border edge), the Design panel's Settings Window group gained a fifth knob so “Title to first item” and “Section top padding” are separate controls, and every Choose Folder… button right-aligns to the box edge, row to row.",
+   "The feedback box's list continuation is steadier: it now reads what's actually in the box (an internal lag could make Enter silently skip), and a bare “-” or “1.” with nothing after it counts as an empty item."
+  ]
+ },
+ {
   "version": "6.97",
   "date": "2026-08-14",
   "changes": [

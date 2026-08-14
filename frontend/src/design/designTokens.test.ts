@@ -171,12 +171,12 @@ describe('feedback group', () => {
   });
 });
 
-// v6.97: the Settings Window group — the section-box spacing knobs.
+// v6.97/v6.98: the Settings Window group — the section-box spacing knobs.
 describe('settings window group', () => {
-  it('exists and carries the four spacing knobs', () => {
+  it('exists and carries the five spacing knobs', () => {
     const g = DESIGN_GROUPS.find((x) => x.id === 'settingsWin');
     expect(g!.tokens.map((t) => t.id)).toEqual([
-      'prefsTitleGap', 'prefsPadBottom', 'prefsPadSide', 'prefsSectionGap',
+      'prefsPadTop', 'prefsTitleGap', 'prefsPadBottom', 'prefsPadSide', 'prefsSectionGap',
     ]);
   });
 });

@@ -414,11 +414,12 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     id: 'settingsWin',
     label: 'Settings Window',
     tokens: [
-      // v6.97, Derek (via the feedback form): the section boxes' spacing,
-      // for EVERY tab at once (they all share .prefs-general section). The
-      // title sits ON the top border, so "title to items" IS the box's
-      // inner top padding.
-      { id: 'prefsTitleGap', label: 'Title to items', cssVar: '--dz-prefs-title-gap', unit: 'px', min: 6, max: 40, step: 1, def: 16 },
+      // v6.97/v6.98, Derek (via the feedback form): the section boxes'
+      // spacing, for EVERY tab at once (they all share .prefs-general
+      // section). v6.98 moved the title INSIDE the box, so "title to first
+      // item" is the h3's own margin and top padding is the box's again.
+      { id: 'prefsPadTop', label: 'Section top padding', cssVar: '--dz-prefs-pad-top', unit: 'px', min: 0, max: 40, step: 1, def: 12 },
+      { id: 'prefsTitleGap', label: 'Title to first item', cssVar: '--dz-prefs-title-gap', unit: 'px', min: 0, max: 32, step: 1, def: 10 },
       { id: 'prefsPadBottom', label: 'Section bottom padding', cssVar: '--dz-prefs-pad-bottom', unit: 'px', min: 0, max: 40, step: 1, def: 13 },
       { id: 'prefsPadSide', label: 'Section side padding', cssVar: '--dz-prefs-pad-side', unit: 'px', min: 0, max: 40, step: 1, def: 14 },
       { id: 'prefsSectionGap', label: 'Space between sections', cssVar: '--dz-prefs-section-gap', unit: 'px', min: 0, max: 48, step: 1, def: 18 },

@@ -36,14 +36,17 @@ const CATEGORIES = ['Bug Report', 'Suggestion', 'Feature Request', 'Other'] as c
 export function continueListOnEnter(value: string, caret: number): { value: string; caret: number } | null {
   const ls = value.lastIndexOf('\n', caret - 1) + 1;
   const line = value.slice(ls, caret);
-  const m = /^(\s*)(- |(\d+)\. )(.*)$/.exec(line);
+  // v6.98: a bare "-" / "1." with no trailing space counts as an (empty)
+  // item too — but "-word" stays ordinary text.
+  const m = /^(\s*)(-|(\d+)\.)( ?)(.*)$/.exec(line);
   if (!m) return null;
-  const [, indent, marker, num, rest] = m;
+  const [, indent, , num, space, rest] = m;
+  if (!space && rest !== '') return null;
   if (rest.trim() === '') {
     // Enter on an empty item ends the list — the marker comes off
     return { value: value.slice(0, ls) + indent + value.slice(caret), caret: ls + indent.length };
   }
-  const insert = `\n${indent}${num ? `${parseInt(num, 10) + 1}. ` : marker}`;
+  const insert = `\n${indent}${num ? `${parseInt(num, 10) + 1}. ` : '- '}`;
   return { value: value.slice(0, caret) + insert + value.slice(caret), caret: caret + insert.length };
 }
 
@@ -258,7 +261,10 @@ export default function FeedbackTool() {
             if (e.key !== 'Enter' || e.shiftKey) return;
             const ta = e.currentTarget;
             if (ta.selectionStart !== ta.selectionEnd) return;
-            const r = continueListOnEnter(message, ta.selectionStart);
+            // v6.98 (Derek: "it was inconsistent"): read the DOM's live value,
+            // not the render-closure state — any lag between the two made
+            // Enter see stale text and silently skip the continuation.
+            const r = continueListOnEnter(ta.value, ta.selectionStart);
             if (!r) return;
             e.preventDefault();
             setMessage(r.value);
