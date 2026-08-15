@@ -138,20 +138,37 @@ try {
   /* ── v6.97: typed lists continue on Enter (the v6.96 buttons are GONE) ── */
   ok(await page.evaluate(() => !document.querySelector('.fb-fmt-row')),
     'v6.97: the v6.96 formatting buttons are gone');
+  /* v7.12: WAIT for the controlled value instead of reading it on the next
+     line. fill → focus → setSelectionRange → keypress is four round trips, and
+     under a loaded dev server (check-all runs four browsers) the keystroke
+     could land before React had re-rendered the field, so this pair failed
+     only in the full suite. Waiting on the value is the real condition. */
+  const fbValue = () => page.evaluate(() => document.querySelector('.fb-text').value);
+  const waitValue = async (want) => {
+    try {
+      await page.waitForFunction((w) => document.querySelector('.fb-text')?.value === w, want, { timeout: 4000 });
+      return true;
+    } catch { return false; }
+  };
   await page.fill('.fb-text', '- alpha');
+  await waitValue('- alpha');
   await page.focus('.fb-text');
   await page.evaluate(() => {
     const ta = document.querySelector('.fb-text');
     ta.setSelectionRange(ta.value.length, ta.value.length);
   });
   await page.keyboard.press('Enter');
-  await page.keyboard.type('beta');
-  ok(await page.evaluate(() => document.querySelector('.fb-text').value) === '- alpha\n- beta',
-    'Enter continues a typed "- " list');
+  /* delay per keystroke: .fb-text is a CONTROLLED textarea, so every character
+     is a React round trip that re-applies value and caret. Typing at full
+     speed interleaved with those renders and landed "etab" — a scrambled
+     value, not a missing one, which is why waiting on it alone still failed. */
+  await page.keyboard.type('beta', { delay: 40 });
+  ok(await waitValue('- alpha\n- beta'),
+    `Enter continues a typed "- " list (${JSON.stringify(await fbValue())})`);
   await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');
-  ok(await page.evaluate(() => document.querySelector('.fb-text').value) === '- alpha\n- beta\n',
-    'Enter on an empty item ends the list');
+  ok(await waitValue('- alpha\n- beta\n'),
+    `Enter on an empty item ends the list (${JSON.stringify(await fbValue())})`);
   await page.fill('.fb-text', '');
   await page.evaluate(async () => {
     const { applyDesignVars } = await import('/src/design/designTokens.ts');

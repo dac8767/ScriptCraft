@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.12",
+  "date": "2026-08-15",
+  "changes": [
+   "Page Setup opens with a list of every template — View, and for your own templates Edit and Delete. The Shown and Hidden columns sit below it and are now only about visibility: a row there is a name and one toggle, and dragging between the columns sets what the New Script picker offers.",
+   "Settings has its own gear icon. It had been wearing the wrench that the Tools menu and every Customize… item also wear — three different things reading alike — and there was no gear anywhere in the app. The gear is used in the menu, on the toolbar button, and in the ScriptCraft menu on macOS, where it is the system's own preferences gear rather than a picture we ship."
+  ]
+ },
+ {
   "version": "7.11",
   "date": "2026-08-15",
   "changes": [

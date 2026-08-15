@@ -128,7 +128,8 @@ ok('the row button moves a template to Hidden',
 console.log('\n5. native Settings icon');
 const src = await (await fetch('http://localhost:5199/src/menu/nativeMenuSync.ts')).text();
 ok('the ScriptCraft menu builds Settings as an IconMenuItem', /IconMenuItem\.new\(/.test(src), '');
-ok('…using the system preferences icon', /NativeIcon\.Advanced/.test(src), '');
+// v7.12, Derek asked for a different gear: PreferencesGeneral, not Advanced.
+ok('…using the system preferences gear', /NativeIcon\.PreferencesGeneral/.test(src), '');
 ok('…and falls back to a plain item rather than losing the menu',
   /catch[\s\S]{0,200}MenuItem\.new\(opts\)/.test(src), '');
 

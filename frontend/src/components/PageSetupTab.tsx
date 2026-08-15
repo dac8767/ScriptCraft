@@ -106,16 +106,20 @@ export default function PageSetupTab() {
     showToast('Template deleted', 'success');
   };
 
-  /* v7.11, Derek: "change the page setup tab so that it uses the Shown and
-     Hidden windows like the screenshot." That is DndColumns — the same
-     component the Context Menu, Toolbar, Side Panels and Quick Access tabs
-     use — so a template drags between the columns exactly like everything
-     else, and there is still one implementation of that interaction. The
-     per-row buttons stay: nothing here REQUIRES a drag. */
-  const rowContent = (t: FormattingTemplate, isShown: boolean) => {
+  /* v7.12, Derek: "add a list of all of the page setup templates to the top of
+     the page setup tab. this list is where the view, edit, and delete (for
+     custom templates only) buttons are. bellow that is the shown and hidden
+     columns."
+
+     So the tab answers two different questions in two places: WHAT each
+     template is and how to work on it (the list), and WHICH ones the New
+     Script picker offers (the columns). The columns carry no action buttons
+     any more — a row there is a name and a visibility toggle, which is what
+     the Context Menu tab's rows are too. */
+  const actionRow = (t: FormattingTemplate) => {
     const isSystem = t.category === 'system';
     return (
-      <div className="pst-dndrow">
+      <div key={t.id} className="pst-listrow">
         <div className="fmt-card-info">
           <div className="fmt-card-name">
             <span>{t.name}</span>
@@ -132,15 +136,26 @@ export default function PageSetupTab() {
           {!isSystem && (
             <button className="dialog-btn dialog-btn-sm" title="Delete this template" onClick={() => { void remove(t); }}>Delete</button>
           )}
-          <button
-            className="fs-dnd-rowbtn"
-            title={isShown ? 'Hide from the New Script picker' : 'Show in the New Script picker'}
-            onClick={() => setShown(isShown ? shownIds.filter((x) => x !== t.id) : [...shownIds, t.id])}
-          >{isShown ? '×' : '+'}</button>
         </div>
       </div>
     );
   };
+
+  /* The Shown/Hidden rows: name + the one toggle. Same DndColumns every other
+     customization list uses (v7.11), so the drag behaves identically. */
+  const columnRow = (t: FormattingTemplate, isShown: boolean) => (
+    <div className="pst-dndrow">
+      <div className="fmt-card-name">
+        <span>{t.name}</span>
+        {t.scriptTypeGroup && <span className="fmt-card-group">{t.scriptTypeGroup}</span>}
+      </div>
+      <button
+        className="fs-dnd-rowbtn"
+        title={isShown ? 'Hide from the New Script picker' : 'Show in the New Script picker'}
+        onClick={() => setShown(isShown ? shownIds.filter((x) => x !== t.id) : [...shownIds, t.id])}
+      >{isShown ? '×' : '+'}</button>
+    </div>
+  );
 
   const columns: DndColumnSpec[] = [
     {
@@ -153,7 +168,7 @@ export default function PageSetupTab() {
           onClick={() => setShown(all.map((t) => t.id))}
         >Show All</button>
       ),
-      sections: [{ rows: shown.map((t) => ({ key: t.id, content: rowContent(t, true) })) }],
+      sections: [{ rows: shown.map((t) => ({ key: t.id, content: columnRow(t, true) })) }],
     },
     {
       id: 'hidden',
@@ -168,7 +183,7 @@ export default function PageSetupTab() {
           onClick={() => setShown([])}
         >Hide All</button>
       ),
-      sections: [{ rows: hidden.map((t) => ({ key: t.id, content: rowContent(t, false) })) }],
+      sections: [{ rows: hidden.map((t) => ({ key: t.id, content: columnRow(t, false) })) }],
     },
   ];
 
@@ -190,10 +205,11 @@ export default function PageSetupTab() {
         <section>
           <h3>Page Templates</h3>
           <p className="prefs-hint">
-            Drag a template between Shown and Hidden — what’s shown is what the
-            New Script picker offers. View opens that template’s page setup.
+            Every template, and what you can do with one. View opens its page
+            setup — page size, margins, header and footer — which you can edit
+            for the built-ins too.
           </p>
-          <DndColumns columns={columns} onDrop={onDrop} />
+          <div className="pst-list">{all.map(actionRow)}</div>
           {creating ? (
             <div className="pst-newrow">
               Base it on
@@ -210,6 +226,14 @@ export default function PageSetupTab() {
               </button>
             </div>
           )}
+        </section>
+        <section>
+          <h3>New Script Picker</h3>
+          <p className="prefs-hint">
+            Drag a template between Shown and Hidden — what’s shown is what the
+            New Script picker offers, in this order.
+          </p>
+          <DndColumns columns={columns} onDrop={onDrop} />
         </section>
       </div>
 

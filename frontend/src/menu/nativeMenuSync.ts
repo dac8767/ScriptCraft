@@ -180,9 +180,10 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
     })));
 
   /* v7.11, Derek: "Add an icon for Settings in the ScriptCraft menu."
-     macOS menu items take a NATIVE icon — `Advanced` is the system's own
-     preferences-gear, so it matches whatever the OS draws elsewhere rather
-     than shipping a bitmap that ages. NativeIcon is macOS-only (Windows and
+     macOS menu items take a NATIVE icon, so it matches whatever the OS draws
+     rather than a bitmap that ages. v7.12, Derek ("use a different gear icon
+     for settings"): `PreferencesGeneral` is the plain GEAR; `Advanced` — what
+     this used first — is the gears-and-slider Advanced-pane icon. NativeIcon is macOS-only (Windows and
      Linux are documented as unsupported), and a throw here would take the
      WHOLE menu bar down with it — so any failure falls back to the plain
      item this replaced. A menu that loses its icon is a blemish; a menu that
@@ -194,7 +195,7 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
       action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'settings' })); },
     };
     try {
-      return await IconMenuItem.new({ ...opts, icon: NativeIcon.Advanced });
+      return await IconMenuItem.new({ ...opts, icon: NativeIcon.PreferencesGeneral });
     } catch (err) {
       console.warn('[nativeMenu] Settings icon unavailable — plain item:', err);
       return await MenuItem.new(opts);

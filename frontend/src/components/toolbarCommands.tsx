@@ -13,7 +13,7 @@ import {
   FaFilePdf, FaFileExport, FaFileWord, FaCut, FaCopy, FaPaste,
   FaMousePointer, FaColumns, FaImage, FaSearchPlus, FaSearchMinus,
   FaRulerHorizontal, FaInfoCircle, FaKeyboard, FaExternalLinkAlt,
-  FaPencilAlt, FaCamera, FaWrench, FaRegEye,
+  FaPencilAlt, FaCamera, FaCog, FaRegEye,
 } from 'react-icons/fa';
 import { PanelLeftIcon, PanelRightIcon } from './uiIcons';
 import { useEditorStore, type EditorState } from '../stores/editorStore';
@@ -63,7 +63,8 @@ export const TOOLBAR_COMMANDS: ToolbarCommand[] = [
   { id: 'exportFDX', label: 'Export FDX', icon: <FaFileExport />, run: () => emit('exportFDX') },
   { id: 'exportFountain', label: 'Export Fountain', icon: <FaFileAlt />, run: () => emit('exportFountain') },
   { id: 'exportDocx', label: 'Export Word (.docx)', icon: <FaFileWord />, run: () => emit('exportDocx') },
-  { id: 'settings', label: 'Settings', icon: <FaWrench />, run: () => emit('settings') },
+    // v7.12: the gear is Settings' own icon; FaWrench stays with Tools/Customize.
+  { id: 'settings', label: 'Settings', icon: <FaCog />, run: () => emit('settings') },
   // v3.42, Derek: show/hide the side panels from the ribbon (same toggles the
   // panel edge strips use).
   // v4.53, Derek: distinct icons — the filled side is the panel it toggles.

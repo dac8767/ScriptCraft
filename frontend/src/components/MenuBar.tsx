@@ -126,7 +126,7 @@ import {
   FaFileSignature,
   FaRegClone, FaStream,   FaEdit, FaRegEdit,
   FaTags,
-  FaMarker, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench,
+  FaMarker, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench, FaCog,
   FaBug,
   FaRulerHorizontal,
   FaPencilAlt, FaCoffee, FaBoxOpen,
@@ -1696,7 +1696,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       ...(nativeMenus ? [] : [
         { icon: <FaInfoCircle />, label: 'About ScriptCraft', action: () => setAboutOpen(true) },
         { separator: true, label: '' },
-        { icon: <FaWrench />, label: 'Settings…', shortcut: sc('settings'), action: () => setPrefsOpen(true) },
+        /* v7.12, Derek ("use a different gear icon for settings"): Settings had
+           been borrowing FaWrench — the same icon the Tools MENU and every
+           Customize… item wear, so three different things read alike. There
+           was no gear anywhere in the app; this is it. */
+        { icon: <FaCog />, label: 'Settings…', shortcut: sc('settings'), action: () => setPrefsOpen(true) },
         { separator: true, label: '' },
       ]),
       {

@@ -171,10 +171,10 @@ try {
   await settle(page);
   const pst = await page.evaluate(() => ({
     heads: [...document.querySelectorAll('.fs-dnd-col-head')].map((h) => h.textContent.trim()),
-    cards: document.querySelectorAll('.fs-dnd-col .fs-dnd-row').length,
+    cards: document.querySelectorAll('.pst-listrow').length,
     defaults: document.querySelectorAll('.pst-default-badge').length,
     newBtn: [...document.querySelectorAll('.prefs-window button')].some((b) => b.textContent.trim() === 'New Template…'),
-    deletableDefaults: [...document.querySelectorAll('.fs-dnd-col .fs-dnd-row')].filter((r) =>
+    deletableDefaults: [...document.querySelectorAll('.pst-listrow')].filter((r) =>
       r.querySelector('.pst-default-badge') && [...r.querySelectorAll('button')].some((b) => b.textContent === 'Delete')).length,
   }));
   /* v7.11, Derek: "change the page setup tab so that it uses the Shown and
@@ -184,14 +184,16 @@ try {
     `Page Setup uses the Shown/Hidden columns (${pst.heads.join(' | ')})`);
   ok(pst.cards >= 6 && pst.defaults >= 6 && pst.deletableDefaults === 0 && pst.newBtn,
     `six Default templates, none deletable, plus New Template… (${pst.cards} cards)`);
+  /* v7.12, Derek: View/Edit/Delete live in the LIST above the columns now —
+     a column row is a name and its visibility toggle. */
   ok(await page.evaluate(() => {
-    const rows = [...document.querySelectorAll('.fs-dnd-col .fs-dnd-row')];
+    const rows = [...document.querySelectorAll('.pst-listrow')];
     return rows.length > 0
       && rows.every((r) => [...r.querySelectorAll('button')].some((b) => b.textContent === 'View'))
       && ![...document.querySelectorAll('.prefs-content button')].some((b) => b.textContent.trim() === 'Apply');
   }), 'every template row has View; the geometry block (and its Apply) left the tab');
   await page.evaluate(() => {
-    [...document.querySelectorAll('.fs-dnd-col .fs-dnd-row')[0].querySelectorAll('button')].find((b) => b.textContent === 'View')?.click();
+    [...document.querySelectorAll('.pst-listrow')[0].querySelectorAll('button')].find((b) => b.textContent === 'View')?.click();
   });
   await settle(page);
   /* v7.10, Derek ("make equivalents for the other templates", built-ins

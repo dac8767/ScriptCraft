@@ -108,19 +108,33 @@ if (viewBtn) {
   ok('…with the real Page Setup sections', fields.sections.length >= 3, JSON.stringify(fields.sections));
   ok('…titled for that template', /Page Setup/.test(fields.header) && fields.header !== 'Page Setup', fields.header);
 
-  // Edit a built-in's page size and prove it is stored against THAT template.
+  /* Edit a BUILT-IN's page size through the dialog that is open, and prove it
+     lands in storage under that template's id.
+
+     Driven through the UI on purpose (v7.12): a dynamic import from the driver
+     can hand back a SECOND copy of a store module, and writing to that copy
+     proves nothing about the app — check-v712 hit exactly that, creating a
+     template the mounted list never showed. localStorage is shared by both, so
+     that is what gets asserted. */
   const saved = await page.evaluate(async () => {
-    const m = await import('/src/stores/formattingTemplateStore.ts');
-    const { INDUSTRY_STANDARD_ID } = await import('/src/stores/formattingTypes.ts');
-    const s = m.useFormattingTemplateStore.getState();
-    const base = s.getTemplatePageLayout(INDUSTRY_STANDARD_ID);
-    s.setTemplatePageLayout(INDUSTRY_STANDARD_ID, { ...base, pageWidth: 8.27, pageHeight: 11.69 });
-    const after = m.useFormattingTemplateStore.getState().getTemplatePageLayout(INDUSTRY_STANDARD_ID);
+    const widthInput = [...document.querySelectorAll('.page-setup-dialog input[type=number]')][0];
+    const set = (el, v) => {
+      const proto = Object.getPrototypeOf(el);
+      Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, String(v));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    set(widthInput, 8.27);
+    await new Promise((r) => setTimeout(r, 120));
+    const apply = [...document.querySelectorAll('.page-setup-dialog .dialog-actions button')]
+      .find((b) => b.textContent.trim() === 'Apply');
+    apply.click();
+    await new Promise((r) => setTimeout(r, 250));
     const stored = JSON.parse(localStorage.getItem('opendraft:templatePageLayouts') || '{}');
-    return { width: after.pageWidth, storedIds: Object.keys(stored) };
+    const ids = Object.keys(stored);
+    return { ids, width: ids.length ? stored[ids[0]].pageWidth : null };
   });
   ok('a BUILT-IN template keeps an edited page size', saved.width === 8.27, JSON.stringify(saved));
-  ok('…persisted under its own id', saved.storedIds.length === 1, JSON.stringify(saved.storedIds));
+  ok('…persisted under its own id', saved.ids.length === 1, JSON.stringify(saved.ids));
 }
 
 console.log(`\ncheck-v710: ${pass} passed, ${fail} failed`);

@@ -1041,11 +1041,21 @@ input.fs-switch:checked::after { left: 15px; }
   border-top: 1px solid var(--fd-border);
   flex-shrink: 0;
 }
-/* v7.11, Derek: the Shown/Hidden lists ARE the shared DndColumns now, so the
-   headings and the empty-state line went with the old markup. What's left is
-   the row's own layout inside a .fs-dnd-row. */
-.pst-dndrow { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-.pst-dndrow .fmt-card-info { flex: 1; min-width: 0; }
+/* v7.11: the Shown/Hidden lists ARE the shared DndColumns, so the old headings
+   and empty-state line went with that markup.
+   v7.12, Derek: the ACTIONS live in a list above the columns — so a column row
+   is just a name and its one toggle, and the list row is where View/Edit/Delete
+   are. Two rows, two jobs; neither repeats the other. */
+.pst-list { display: flex; flex-direction: column; }
+.pst-listrow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0;
+  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
+}
+.pst-listrow:last-child { border-bottom: none; }
+.pst-listrow .fmt-card-info { flex: 1; min-width: 0; }
+.pst-dndrow { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.pst-dndrow .fmt-card-name { flex: 1; min-width: 0; }
 .pst-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .pst-default-badge { opacity: .8; }
 .pst-newrow {
