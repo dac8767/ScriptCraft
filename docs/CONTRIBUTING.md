@@ -1,6 +1,6 @@
-# Contributing to OpenDraft
+# Contributing to ScriptCraft
 
-Thank you for your interest in contributing to OpenDraft! This document explains how to get started.
+Thank you for your interest in contributing to ScriptCraft! This document explains how to get started.
 
 ---
 

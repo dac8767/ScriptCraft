@@ -4,22 +4,22 @@
 
 ## Overview
 
-OpenDraft is a screenwriting application developed by Proteus Technologies Private Limited, available on macOS, iOS, iPadOS, Windows, Linux, and Android. Your privacy is important to us.
+ScriptCraft is a screenwriting application developed by Proteus Technologies Private Limited, available on macOS, iOS, iPadOS, Windows, Linux, and Android. Your privacy is important to us.
 
 ## Data Collection
 
-**OpenDraft does not collect, store, transmit, or share any personal data.** The application runs entirely on your device.
+**ScriptCraft does not collect, store, transmit, or share any personal data.** The application runs entirely on your device.
 
 Specifically:
 
 - **No analytics or tracking** — We do not use any analytics services, crash reporters, or tracking tools.
 - **No user accounts required** — No registration, login, or authentication is required for core functionality.
 - **No cloud storage** — All your screenplays and project data are stored locally on your device.
-- **No advertising** — OpenDraft does not display ads or use advertising identifiers.
+- **No advertising** — ScriptCraft does not display ads or use advertising identifiers.
 
 ## Network Connections
 
-OpenDraft works fully offline. The only optional network feature is **real-time collaboration**, which requires connecting to a collaboration server. When using collaboration:
+ScriptCraft works fully offline. The only optional network feature is **real-time collaboration**, which requires connecting to a collaboration server. When using collaboration:
 
 - You choose which server to connect to (self-hosted or the public demo server).
 - Only your screenplay content and a display name are transmitted to the collaboration server during an active session.
@@ -40,19 +40,19 @@ This data never leaves your device unless you explicitly export or share it. You
 
 ## Third-Party Services
 
-OpenDraft does not integrate with or send data to any third-party services. No SDKs from third-party analytics, advertising, or tracking providers are included in the application.
+ScriptCraft does not integrate with or send data to any third-party services. No SDKs from third-party analytics, advertising, or tracking providers are included in the application.
 
 ## Children's Privacy
 
-OpenDraft does not collect any data from any users, including children under 13. The app is safe for use by all ages.
+ScriptCraft does not collect any data from any users, including children under 13. The app is safe for use by all ages.
 
 ## Your Rights
 
-Since OpenDraft does not collect personal data, there is no personal data to access, correct, or delete. Your screenplay files are entirely under your control on your device.
+Since ScriptCraft does not collect personal data, there is no personal data to access, correct, or delete. Your screenplay files are entirely under your control on your device.
 
 ## Changes to This Policy
 
-If we update this privacy policy, we will post the changes here with a revised date. Since OpenDraft does not collect data, we do not anticipate significant changes.
+If we update this privacy policy, we will post the changes here with a revised date. Since ScriptCraft does not collect data, we do not anticipate significant changes.
 
 ## Contact
 

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="images/OpenDraft-1024x1024.png" alt="OpenDraft Logo" width="120">
+  <img src="images/OpenDraft-1024x1024.png" alt="ScriptCraft Logo" width="120">
 </p>
 
-<h1 align="center">OpenDraft</h1>
+<h1 align="center">ScriptCraft</h1>
 
 <p align="center">
   <strong>Write professional screenplays for free</strong><br>
@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://open-draft.com">
-    <img src="https://img.shields.io/badge/%E2%96%B6_Try_OpenDraft_Now-c455ce?style=for-the-badge&labelColor=4a154b" alt="Try OpenDraft Now">
+    <img src="https://img.shields.io/badge/%E2%96%B6_Try_ScriptCraft_Now-c455ce?style=for-the-badge&labelColor=4a154b" alt="Try ScriptCraft Now">
   </a>
 </p>
 <p align="center"><em>No account needed. Opens in your browser in seconds.</em></p>
@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <img src="images/opendraft-demo.gif" alt="OpenDraft in action — writing a screenplay" width="80%"><br>
+  <img src="images/opendraft-demo.gif" alt="ScriptCraft in action — writing a screenplay" width="80%"><br>
   <em>Professional screenplay formatting, planning, collaboration, and version history — all in one app.</em>
 </p>
 
@@ -50,9 +50,9 @@
 
 ---
 
-## Why OpenDraft?
+## Why ScriptCraft?
 
-Your script is your intellectual property. Cloud-based screenwriting tools store your work on corporate servers — where it can be mined, leaked, or used to train AI. OpenDraft keeps every word on your machine.
+Your script is your intellectual property. Cloud-based screenwriting tools store your work on corporate servers — where it can be mined, leaked, or used to train AI. ScriptCraft keeps every word on your machine.
 
 - **Never pay for your own words** — Free forever under the MIT license. No trial, no subscription, no feature gating.
 - **Switch without starting over** — Import from Final Draft (.fdx), Fountain, or PDF. Export anytime. Your scripts are never locked in.
@@ -114,9 +114,9 @@ Full-featured mobile apps with 100% of the desktop functionality — write, edit
 
 ## Comparison
 
-How does OpenDraft stack up against commercial screenwriting software?
+How does ScriptCraft stack up against commercial screenwriting software?
 
-| Feature | OpenDraft | Final Draft | WriterDuet | Fade In |
+| Feature | ScriptCraft | Final Draft | WriterDuet | Fade In |
 |---------|:---------:|:-----------:|:----------:|:-------:|
 | **Price** | Free | $250 | Free / $12/mo | $80 |
 | **Open Source** | Yes (MIT) | No | No | No |
@@ -149,13 +149,13 @@ Get the latest version — no account required, just install and start writing. 
 
 | Platform | Download |
 |----------|----------|
-| **macOS** (Apple Silicon) | [Download .dmg](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/OpenDraft_0.19.0_aarch64.dmg) |
-| **macOS** (Intel) | [Download .dmg](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/OpenDraft_0.19.0_x64.dmg) |
-| **Windows** (64-bit) | [Download .exe](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/OpenDraft_0.19.0_x64-setup.exe) |
-| **Windows** (MSI) | [Download .msi](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/OpenDraft_0.19.0_x64_en-US.msi) |
-| **Linux** (Debian/Ubuntu) | [Download .deb](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/OpenDraft_0.19.0_amd64.deb) |
-| **Linux** (AppImage) | [Download .AppImage](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/OpenDraft_0.19.0_amd64.AppImage) |
-| **Linux** (RPM/Fedora) | [Download .rpm](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/OpenDraft-0.19.0-1.x86_64.rpm) |
+| **macOS** (Apple Silicon) | [Download .dmg](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_aarch64.dmg) |
+| **macOS** (Intel) | [Download .dmg](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_x64.dmg) |
+| **Windows** (64-bit) | [Download .exe](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_x64-setup.exe) |
+| **Windows** (MSI) | [Download .msi](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_x64_en-US.msi) |
+| **Linux** (Debian/Ubuntu) | [Download .deb](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_amd64.deb) |
+| **Linux** (AppImage) | [Download .AppImage](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_amd64.AppImage) |
+| **Linux** (RPM/Fedora) | [Download .rpm](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft-0.19.0-1.x86_64.rpm) |
 
 ### Mobile
 
@@ -177,12 +177,12 @@ For all versions and platforms, visit the [Releases](https://github.com/Proteus-
 
 ## Getting Started
 
-New to OpenDraft? Here's everything you need:
+New to ScriptCraft? Here's everything you need:
 
 - **Just want to try it?** [Open the demo](https://open-draft.com) — no account, no install, opens in seconds.
 - **Ready to install?** Grab the [latest download](#download) for your platform.
 - **Need a walkthrough?** Read the [User Manual](https://proteus-technologies-private-limited.github.io/OpenDraft/user-manual/).
-- **Want to learn more?** Visit the [OpenDraft website](https://proteus-technologies-private-limited.github.io/OpenDraft/).
+- **Want to learn more?** Visit the [ScriptCraft website](https://proteus-technologies-private-limited.github.io/OpenDraft/).
 - **Have a question?** Start a [Discussion](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/discussions) — the community is happy to help.
 
 ---
@@ -260,7 +260,7 @@ See [docs/DESKTOP-RELEASE.md](docs/DESKTOP-RELEASE.md) for detailed desktop buil
 
 ### Run in Browser (Self-Hosted) — For Developers / Advanced Users
 
-To run your own instance of OpenDraft in a browser:
+To run your own instance of ScriptCraft in a browser:
 
 ```bash
 git clone https://github.com/Proteus-Technologies-Private-Limited/OpenDraft.git
@@ -272,7 +272,7 @@ Installs dependencies, builds the app, and opens it at **http://localhost:8000**
 
 Requires Python 3.12+, Node.js 18+, and Git. See [docs/INSTALLATION.md](docs/INSTALLATION.md) for details.
 
-> **Note:** This is for developers who want to self-host or contribute. If you just want to use OpenDraft, [download the desktop app](#download) or [try the demo](https://open-draft.com).
+> **Note:** This is for developers who want to self-host or contribute. If you just want to use ScriptCraft, [download the desktop app](#download) or [try the demo](https://open-draft.com).
 
 </details>
 
@@ -280,7 +280,7 @@ Requires Python 3.12+, Node.js 18+, and Git. See [docs/INSTALLATION.md](docs/INS
 
 ## License
 
-OpenDraft is open-source software licensed under the [MIT License](LICENSE). Free to use, modify, and distribute.
+ScriptCraft is open-source software licensed under the [MIT License](LICENSE). Free to use, modify, and distribute.
 
 ---
 
@@ -290,5 +290,5 @@ OpenDraft is open-source software licensed under the [MIT License](LICENSE). Fre
 
 <p align="center">
   <em>Write screenplays, not subscriptions.</em><br>
-  If OpenDraft helps your writing, a <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft">star on GitHub</a> helps others discover it.
+  If ScriptCraft helps your writing, a <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft">star on GitHub</a> helps others discover it.
 </p>

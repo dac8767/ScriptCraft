@@ -1,6 +1,6 @@
 # Windows Code Signing
 
-This guide covers how to set up free Windows EXE/MSI code signing for OpenDraft releases.
+This guide covers how to set up free Windows EXE/MSI code signing for ScriptCraft releases.
 
 ---
 
@@ -128,10 +128,10 @@ After a release with signing configured:
 
 ```powershell
 # Check signature on the installer
-Get-AuthenticodeSignature "OpenDraft_*_x64-setup.exe"
+Get-AuthenticodeSignature "ScriptCraft_*_x64-setup.exe"
 
 # Or using signtool
-signtool verify /pa "OpenDraft_*_x64-setup.exe"
+signtool verify /pa "ScriptCraft_*_x64-setup.exe"
 ```
 
 A properly signed binary shows:

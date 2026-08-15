@@ -84,6 +84,40 @@ export async function boot(page) {
         sessionStorage.setItem('__driver_cleared', '1');
       }
     } catch { /* storage unavailable on the very first navigation */ }
+
+    /* v7.15 — THE SECOND-INSTANCE TRAP, made impossible to fall into.
+       A check that wants the app's live module writes
+       `await window.__scImport('/src/services/api.ts')`, never a bare
+       `import('/src/services/api.ts')`.
+
+       Why: Vite stamps an invalidated module with a cache-buster, so a dev
+       server that has seen ANY edit serves the app
+       `/src/services/api.ts?t=1786775615204` while a bare import gets
+       `/src/services/api.ts` — a SECOND copy of the module, with its own
+       state. check-v673 patched api.getVersions on that copy, the panel went
+       on calling the real one, and the check failed in a way that looked
+       like a regression in Script History. The same trap silently WEAKENS a
+       check instead of failing it whenever the second copy is only read
+       from: it answers about a module nothing on screen is using.
+
+       Resolving through the resource timings means we import the exact URL
+       the app imported, and throwing when there is no entry means a check
+       can never quietly get a private copy instead. The buffer holds 250
+       entries by default and the app loads more modules than that, so it is
+       raised here — before any of them load. */
+    try { performance.setResourceTimingBufferSize(5000); } catch { /* older engines */ }
+    window.__scImport = (spec) => {
+      const hits = performance.getEntriesByType('resource')
+        .map((r) => r.name)
+        .filter((n) => { try { return new URL(n).pathname === spec; } catch { return false; } });
+      if (!hits.length) {
+        throw new Error(
+          `__scImport('${spec}'): the app never loaded that module, so importing it `
+          + 'here would make a second instance. Open the feature that uses it first.',
+        );
+      }
+      return import(/* @vite-ignore */ hits[hits.length - 1]);  // newest wins after HMR
+    };
   });
   await page.goto(VITE_URL, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.ProseMirror', { timeout: 25000 });

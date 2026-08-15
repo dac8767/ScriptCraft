@@ -1,5 +1,5 @@
 /**
- * ScriptCraft auth server (formerly the OpenDraft "collab server").
+ * ScriptCraft auth server (formerly the ScriptCraft "collab server").
  *
  * v6.40: the real-time collaboration half (Hocuspocus, Yjs documents, the
  * WebSocket upgrade path, /api/collab invite management, reset/close-document)

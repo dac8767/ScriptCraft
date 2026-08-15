@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.14 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.15 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:
@@ -351,6 +351,72 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.15 — the brand sweep, Derek's thin-line gear, and the check that was lying
+
+- **Brand sweep.** Derek: "look through all code and make sure any instance of
+  'Freedraft' or 'OpenDraft' are removed (excluding the about page which
+  actually talks about OpenDraft) and replaced with ScriptCraft."
+  `devtools/brand-sweep.mjs` does it, and **refuses to touch anything that
+  NAMES a thing**: the 224 `opendraft:` storage keys, `.odraft`,
+  `com.freedraft.*`, `OPENDRAFT_*` env vars, service/volume/project slugs,
+  asset filenames, opendraft domains, the upstream GitHub URL, and — the one
+  that would have broken a build — the Android keystore's `-alias opendraft
+  -storepass opendraft`, whose partner `${ANDROID_KEY_ALIAS:-opendraft}` sits
+  fifteen lines below where a word-boundary rule can't see it. 61 files
+  rewritten; two fixed by hand (README's `Try_ScriptCraft_Now` badge label,
+  deploy.sh's example project names). `frontend/devtools/check-brand.mjs`
+  runs `--check` in check-all so a new mention can't creep back.
+  - **Every rule in `standsAlone` is a thing the tool broke on its first run
+    and I caught by reading the diff.** In order: reverse-DNS identifiers
+    (`package com.proteus.opendraft` in `android-src/MainActivity.kt`, whose
+    directory the release workflow derives from it; the iOS
+    PRODUCT_BUNDLE_IDENTIFIER; the entitlements keys; the Play Store URL; and
+    `%APPDATA%\com.proteus.opendraft`, where a Windows writer's data lives).
+    `cd OpenDraft` under a `git clone …/OpenDraft.git` (clone one folder,
+    enter another). `depends_on: - opendraft` in the compose file, whose
+    service key `opendraft:` the storage-key rule happened to protect.
+    `DB_USER="opendraft"` twenty lines above `${DB_USER:-opendraft}` — the
+    keystore bug again, in a second file. `images/ios-config/project.yml`, a
+    stashed copy of the generated iOS project that must keep matching it.
+    And `images/OpenDraft-1024x1024.png`, renamed by my own too-greedy rpm
+    rule. **If you extend this tool, read the diff line by line — the check
+    only proves nothing was MISSED, never that nothing was wrongly taken.**
+- **The download names were stale and nobody had noticed.** `productName`
+  became "ScriptCraft" at v1.34, so tauri has been emitting
+  `ScriptCraft_0.19.0_aarch64.dmg` and `ScriptCraft.app` ever since — while
+  `release.yml`, `release.sh`, the README table and the landing page all still
+  asked for `OpenDraft_*`, and release.sh's Cargo.lock bump was `perl`-ing a
+  package called `opendraft` that hasn't existed since v2.85 (silent no-op).
+  Now derived consistently, as a second rule set inside brand-sweep so
+  `--check` guards it. It went unseen because the pipeline never runs:
+  `build-desktop.sh`, the script Derek actually uses, finds the .dmg by glob.
+  **`frontend/src/` is swept BY HAND and skipped by the tool** — most of its
+  mentions are provenance ("OpenDraft's inherited A4 geometry") and rewriting
+  those makes true sentences false. Same reason KEEP_FILES holds the
+  changelog, the handoffs, CLAUDE.md and AboutDialog.
+  - The first run over-reached exactly that way — it rewrote provenance
+    comments, changelog history, and a *search pattern*
+    (`/scriptcraft|freedraft|opendraft/i` → three identical alternatives).
+    Reverted with `git checkout -- .`, then tightened. If you extend this
+    tool, re-read the reverted mistakes before trusting a diff of 60+ files.
+- **The Settings gear.** Derek drew one, then sent the thin-line version plus
+  a screenshot of the macOS ScriptCraft menu: "match the size and color of the
+  gear icon to the icons in the screenshot." Now 12 teeth, `TOOTH = 0.52`,
+  `FLANK = 0.10`, `R_TIP = 238`, `R_ROOT = 186`, stroke 16, inner circle
+  r 128 — `GEAR_PATH`/`GearIcon` in `uiIcons.tsx`, and the SAME path
+  rasterized at `rasterizeGear(32)` with `INSET = 0.88` for the native menu
+  item. One path, two renderers.
+- **check-v673 was failing, and it was the check that was wrong.** See §2 —
+  this is the most transferable thing in the version.
+- Gates: tsc 0, vitest 1213, build ok, check-all 1119/0. Catalog unchanged.
+
+### v7.11–v7.14 — one line each (no separate sections; the changelog has the detail)
+
+- **v7.14** — Lock All out of the Settings tabs (kept in the Customize window); Backup & Restore its own bottom tab carrying Presets; "Toolbar" → "Ribbon Toolbar"; the Downloads tab deleted with its two sections folded into Save Options (Screenshots last); feedback attach buttons aligned to the paperclip; the sent message favours the top; **"Saved" flashes in the Quick Access bar** (`utils/saveFlash.ts`, `SavedFlash` in `TitleBar.tsx`) instead of toasting from the corner.
+- **v7.13** — the gear Derek drew, in white: `--fd-icon-strong` (white on dark themes, `var(--fd-text)` on light/sepia/solarized-light/paper), and the native menu item rasterizes the same path.
+- **v7.12** — the Page Setup tab grew a template LIST at the top (View / Edit / Delete, delete on custom only) above the shared Shown/Hidden `DndColumns`; first cut of a gear for Settings.
+- **v7.11** — built-in templates got editable page setups (`templatePageLayouts` override map in `formattingTemplateStore`, persisted to `opendraft:templatePageLayouts`, with `getTemplateBasePageLayout` for Reset); extensions put on hold at Derek's word.
 
 ### v7.10 — Action Rewrite removed, extensions on hold, page setup per template
 
@@ -742,29 +808,12 @@ actually stale before believing the flake.
   targeted checks still run per feature.
 - Gates: tsc 0, vitest 1203, build ok, check-all 1086/0.
 
-### v6.96 — formatting buttons in the feedback Description box
-
-- Derek (via the form): "add formatting options in the feedback textbox
-  so I can make lists, underline, bold, etc". DECISION: the box stays a
-  plain textarea and `message` stays plain TEXT — five `.fb-fmt-btn`
-  buttons (B/I/U/UL/OL) wrap the live selection in markdown-style
-  markers via `applyMarkdownFormat` (pure, exported): **bold**,
-  *italic*, <u>underline</u>, "- "/"1. " whole-line prefixes; empty
-  selection inserts a selected "text" placeholder. No TipTap instance,
-  no serializer, no schema change — dashboard reads it raw, chat
-  reports render it. Buttons preventDefault on mousedown so the
-  selection survives the click; the handler restores focus + selection
-  via requestAnimationFrame.
-- Tests 1202 (pure-fn matrix + live-selection click); check-v684 25
-  (select-all bullet, exact-selection bold, driven).
-- Gates: tsc 0, vitest 1202, build ok, check-all 1084/0. Catalog 485
-  (+5 button tooltips).
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.96** — formatting buttons in the feedback Description box (B/I/U/UL/OL wrap the live selection in markdown markers via `applyMarkdownFormat`; the box stays a plain textarea, `message` stays plain text)
 - **v6.95** — settings clean pass (Auto Saves merged, helper text pruned, bordered group boxes) + Settings moved to Help below About ScriptCraft
 - **v6.94** — the ? retired from the feedback form; "Description:"; five more Feedback knobs (13 total; fbHelpGap removed with the ?)
 - **v6.93** — attach buttons joined the header row; Submit; the first nine Feedback design knobs (fb* group)
@@ -1017,6 +1066,38 @@ on ⇒ no Mac App Store (the signed-`.dmg` plan); rotate the embedded GitHub PAT
 ## 2. Best practices & footguns learned THIS run (add to the ones in CLAUDE.md §4)
 
 These each cost a bug. They're specific to what this run touched.
+
+- **A bare `import('/src/…')` inside `page.evaluate` gives you a SECOND copy of
+  the module — use `window.__scImport(spec)` instead (v7.15).** Vite stamps an
+  invalidated module with a cache-buster, so a dev server that has seen *any*
+  edit serves the app `/src/services/api.ts?t=1786775615204` while the check's
+  bare import gets `/src/services/api.ts`: different URL, different module,
+  different state. check-v673 patched `api.getVersions` on its private copy,
+  the Script History panel went on calling the real server, and the check
+  failed with `waitForSelector: .version-item timed out` — which reads exactly
+  like a regression in Script History. It wasn't; nothing was broken.
+  - **The failure mode is the mild version.** When the second copy is only
+    *read* from, nothing times out — the check quietly answers about a module
+    nothing on screen is using, and passes. Five checks (v642, v684, v710,
+    v711, v712) were doing that with `settingsStore`/`editorStore`/
+    `feedbackBackend`; check-v642 even carried the comment "vite serves the
+    module, so this is the app's own store instance". They all still pass, but
+    they were passing by luck of timing.
+  - `__scImport` lives in `driver.mjs`'s init script: it resolves the URL the
+    app *actually* loaded from the resource timings (newest wins after HMR),
+    and **throws** when the app never loaded that module, so a check can never
+    silently get a private copy. It also raises the resource-timing buffer
+    from its 250-entry default first — the app loads more modules than that.
+  - Stateless utility modules (`pdfExporter`, `titlePageLayout`,
+    `designTokens`, `saveFlash`) are still imported bare on purpose: a second
+    copy of a pure function is the same function, and those modules are often
+    not loaded by the app until the feature runs, which `__scImport` refuses.
+    **The rule: anything with state — a store, a singleton, a cache — goes
+    through `__scImport`.**
+  - This is the same family as the trap logged for check-v712 last run
+    (a driver-imported store that the mounted list never showed). It has now
+    cost time twice. Prefer driving the app's own buttons; when you must reach
+    a module, reach the app's.
 
 - **Assets on desktop can't be `fetch()`ed.** Derek runs the Tauri SQLite backend, whose
   `getAssetUrl` returns a `convertFileSrc` `asset://…` URL — the webview loads it fine via

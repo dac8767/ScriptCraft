@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── OpenDraft Collab Server — Deploy to Google Cloud Run ──
+# ── ScriptCraft Collab Server — Deploy to Google Cloud Run ──
 #
 # Deploys the collaboration server to Cloud Run (free tier).
 # Cloud Run provides HTTPS + WSS automatically (TLS terminated at load balancer).
@@ -17,7 +17,7 @@ set -euo pipefail
 
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
-echo "║  OpenDraft Collab Server — Cloud Run Deployment  ║"
+echo "║  ScriptCraft Collab Server — Cloud Run Deployment  ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo ""
 
@@ -87,7 +87,7 @@ if ! gcloud artifacts repositories describe "$REPO_NAME" \
     --repository-format=docker \
     --location="$REGION" \
     --project="$PROJECT_ID" \
-    --description="OpenDraft container images" \
+    --description="ScriptCraft container images" \
     --quiet
   echo "  Repository '$REPO_NAME' created."
 else

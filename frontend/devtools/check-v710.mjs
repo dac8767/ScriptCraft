@@ -25,7 +25,7 @@ const railLabels = await page.evaluate(() =>
 ok('no dock row', !railLabels.some((l) => /Rewrite/i.test(l)), JSON.stringify(railLabels));
 
 const registry = await page.evaluate(async () => {
-  const m = await import('/src/components/ToolDock.tsx');
+  const m = await window.__scImport('/src/components/ToolDock.tsx');
   return {
     all: m.ALL_TOOLS.map((t) => t.id),
     available: m.availableTools().map((t) => t.id),
@@ -62,7 +62,7 @@ ok('not in the Tools or Help ▸ Developer menus', !menuHits.some((l) => /Rewrit
   JSON.stringify(menuHits.filter((l) => /Rewrite/i.test(l))));
 
 const leftovers = await page.evaluate(async () => {
-  const store = await import('/src/stores/editorStore.ts');
+  const store = await window.__scImport('/src/stores/editorStore.ts');
   const s = window.__scStore.getState();
   return {
     inDefaultOrder: store.DEFAULT_TOOL_ORDER.includes('rewrite'),

@@ -100,16 +100,17 @@ try {
   ok(saveTab.alwaysOnHasChooser, 'the always-on row carries Choose Folder…');
   ok(saveTab.backupRow, 'the backup-location row is still there');
   // the always-on chip reflects localSaveFolder — the SAME field Save As
-  // writes (vite serves the module, so this is the app's own store instance)
+  /* writes through the APP's store instance — __scImport, never a bare
+     import(): after any HMR stamp the two are different modules (v7.15). */
   const chip = await page.evaluate(async () => {
-    const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+    const { useSettingsStore } = await window.__scImport('/src/stores/settingsStore.ts');
     useSettingsStore.getState().setLocalSaveFolder('/tmp/scriptcraft-primary');
     await new Promise((r) => setTimeout(r, 50));
     return document.querySelector('#prefs-save-locations .prefs-check-row code')?.textContent ?? null;
   });
   ok(chip === '/tmp/scriptcraft-primary', `the always-on chip shows the chosen folder (${chip})`);
   await page.evaluate(async () => {
-    const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+    const { useSettingsStore } = await window.__scImport('/src/stores/settingsStore.ts');
     useSettingsStore.getState().setLocalSaveFolder('');
   });
 
@@ -213,7 +214,7 @@ try {
   });
   await settle(page);
   const beforeShown = await page.evaluate(async () => {
-    const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+    const { useSettingsStore } = await window.__scImport('/src/stores/settingsStore.ts');
     return useSettingsStore.getState().enabledScriptFormats.slice();
   });
   await page.evaluate(() => {
@@ -222,7 +223,7 @@ try {
   });
   await settle(page);
   const afterHide = await page.evaluate(async () => {
-    const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+    const { useSettingsStore } = await window.__scImport('/src/stores/settingsStore.ts');
     return useSettingsStore.getState().enabledScriptFormats.slice();
   });
   ok(afterHide.length > 0 && (beforeShown.length === 0 || afterHide.length === beforeShown.length - 1),
@@ -235,7 +236,7 @@ try {
   await page.click('.prefs-footer button:has-text("Cancel")');
   await settle(page);
   const reverted = await page.evaluate(async () => {
-    const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+    const { useSettingsStore } = await window.__scImport('/src/stores/settingsStore.ts');
     return { open: !!document.querySelector('.prefs-window'), ids: useSettingsStore.getState().enabledScriptFormats.slice() };
   });
   ok(!reverted.open && JSON.stringify(reverted.ids) === JSON.stringify(beforeShown),

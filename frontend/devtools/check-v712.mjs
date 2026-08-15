@@ -95,11 +95,11 @@ ok('rows still drag', colRows.handles === colRows.count, JSON.stringify(colRows)
 // ── 2. the gear ──────────────────────────────────────────────────────
 console.log('\n2. the Settings gear');
 const icons = await page.evaluate(async () => {
-  const m = await import('/src/components/toolbarCommands.tsx');
+  const m = await window.__scImport('/src/components/toolbarCommands.tsx');
   const cmd = m.TOOLBAR_COMMANDS.find((c) => c.id === 'settings');
   // react-icons render as an <svg> whose path data identifies the glyph;
   // compare Settings' icon against the wrench the Tools menu wears.
-  const { MENU_ICONS, TOOLBAR_ICONS } = await import('/src/components/uiIcons.tsx');
+  const { MENU_ICONS, TOOLBAR_ICONS } = await window.__scImport('/src/components/uiIcons.tsx');
   return {
     hasSettingsCmd: !!cmd,
     toolsIsWrench: !!MENU_ICONS.Tools,
@@ -145,6 +145,7 @@ const gear = await page.evaluate(() => {
     stroke: svg?.getAttribute('stroke') ?? null,
     fill: svg?.getAttribute('fill') ?? null,
     teeth: (svg?.querySelector('path')?.getAttribute('d')?.match(/A186/g) || []).length,
+    stroke_w: svg?.getAttribute('stroke-width') ?? null,
     hollow: !!svg?.querySelector('circle'),
     color: g?.color ?? null,
     otherColor: o?.color ?? null,
@@ -152,7 +153,10 @@ const gear = await page.evaluate(() => {
 });
 ok('Settings wears the drawn gear', gear.cls === 'icon-gear-strong', JSON.stringify(gear));
 ok('…as an OUTLINE — stroked, not filled', gear.stroke === 'currentColor' && gear.fill === 'none', JSON.stringify(gear));
-ok('…with eight teeth and a hollow centre', gear.teeth === 8 && gear.hollow, JSON.stringify(gear));
+/* v7.15, Derek sent a THIN-LINE version — twelve teeth, hairline stroke —
+   because the first cut read bold beside the macOS menu glyphs. */
+ok('…with twelve teeth and a hollow centre', gear.teeth === 12 && gear.hollow, JSON.stringify(gear));
+ok('…drawn hairline, not bold', Number(gear.stroke_w) <= 18, String(gear.stroke_w));
 ok('…and WHITE lines', gear.color === 'rgb(255, 255, 255)', gear.color);
 ok('…brighter than the other icons in that menu, which stay muted',
   gear.otherColor && gear.otherColor !== gear.color, JSON.stringify({ gear: gear.color, other: gear.otherColor }));

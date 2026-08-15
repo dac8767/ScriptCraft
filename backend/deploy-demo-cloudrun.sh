@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── OpenDraft Demo Server — Deploy to Google Cloud Run ──
+# ── ScriptCraft Demo Server — Deploy to Google Cloud Run ──
 #
 # Deploys the demo server (backend + compiled frontend) to Cloud Run.
 # Uses the same GCP project as the collab server.
@@ -21,7 +21,7 @@ set -euo pipefail
 
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
-echo "║  OpenDraft Demo Server — Cloud Run Deployment    ║"
+echo "║  ScriptCraft Demo Server — Cloud Run Deployment    ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo ""
 
@@ -96,7 +96,7 @@ if ! gcloud artifacts repositories describe "$REPO_NAME" \
     --repository-format=docker \
     --location="$REGION" \
     --project="$PROJECT_ID" \
-    --description="OpenDraft container images" \
+    --description="ScriptCraft container images" \
     --quiet
   echo "  Repository '$REPO_NAME' created."
 else

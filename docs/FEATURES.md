@@ -1,6 +1,6 @@
-# OpenDraft Features
+# ScriptCraft Features
 
-A complete list of features in OpenDraft.
+A complete list of features in ScriptCraft.
 
 ## Screenplay Editor
 
@@ -61,5 +61,5 @@ A complete list of features in OpenDraft.
 
 ## Extensibility
 
-- **Plugin Architecture** -- Extend OpenDraft with custom plugins
+- **Plugin Architecture** -- Extend ScriptCraft with custom plugins
 - **Open API** -- FastAPI backend with documented endpoints

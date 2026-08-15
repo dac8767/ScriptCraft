@@ -109,8 +109,19 @@ if (typeof window !== 'undefined') {
   (window as unknown as { __scSettingsIcon?: () => string }).__scSettingsIcon = settingsIconKind;
 }
 
-/** The gear, drawn to a square RGBA buffer. White — a macOS menu in dark
- *  appearance draws its labels white, and this sits beside one. */
+/** The gear, drawn to a square RGBA buffer.
+ *
+ *  v7.15, Derek: "match the size and color of the gear icon to the icons in
+ *  the screenshot." Two corrections to the first cut, both visible beside the
+ *  system glyphs in his screenshot:
+ *   · WEIGHT — macOS menu icons are hairline. 34/512 read as bold next to
+ *     Hide Others and Quit; 16 matches them.
+ *   · SIZE — those glyphs do not fill their box. Drawing the art into 88% of
+ *     the canvas gives the same optical size rather than a gear that looms.
+ *  White, because the label beside it is white; macOS auto-tints its own
+ *  template images and cannot be asked to tint a supplied one, so the drawn
+ *  gear matches the state Derek is looking at rather than every state.
+ */
 async function rasterizeGear(size: number): Promise<{ data: Uint8Array; size: number } | null> {
   try {
     const canvas = document.createElement('canvas');
@@ -118,14 +129,16 @@ async function rasterizeGear(size: number): Promise<{ data: Uint8Array; size: nu
     canvas.height = size;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
-    const scale = size / 512;
+    const INSET = 0.88;
+    const scale = (size / 512) * INSET;
+    ctx.translate((size * (1 - INSET)) / 2, (size * (1 - INSET)) / 2);
     ctx.scale(scale, scale);
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 34;
+    ctx.lineWidth = 16;
     ctx.lineJoin = 'round';
     ctx.stroke(new Path2D(GEAR_PATH));
     ctx.beginPath();
-    ctx.arc(256, 256, 112, 0, Math.PI * 2);
+    ctx.arc(256, 256, 128, 0, Math.PI * 2);
     ctx.stroke();
     const { data } = ctx.getImageData(0, 0, size, size);
     return { data: new Uint8Array(data.buffer.slice(0)), size };
@@ -239,7 +252,7 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
       action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'settings' })); },
     };
     try {
-      const rgba = await rasterizeGear(36);
+      const rgba = await rasterizeGear(32);
       if (rgba) {
         const { Image } = await import('@tauri-apps/api/image');
         const img = await Image.new(rgba.data, rgba.size, rgba.size);

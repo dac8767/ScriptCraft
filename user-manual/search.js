@@ -1,5 +1,5 @@
 /**
- * OpenDraft User Manual - Client-side Search Engine
+ * ScriptCraft User Manual - Client-side Search Engine
  * Indexes all manual pages and provides instant search.
  */
 
@@ -9,8 +9,8 @@
   // Search index: each entry has page, title, section, text, url
   const searchIndex = [
     // Index / Home
-    { page: 'Home', title: 'Welcome to OpenDraft', section: '', text: 'Free open-source screenwriting application. Professional screenplay editing. No subscription required.', url: 'index.html' },
-    { page: 'Home', title: 'Quick Start', section: 'Quick Start', text: 'Install OpenDraft download desktop app. Create a project. Start writing new script. Save your work Cmd S check in version checkpoint.', url: 'index.html#quick-start' },
+    { page: 'Home', title: 'Welcome to ScriptCraft', section: '', text: 'Free open-source screenwriting application. Professional screenplay editing. No subscription required.', url: 'index.html' },
+    { page: 'Home', title: 'Quick Start', section: 'Quick Start', text: 'Install ScriptCraft download desktop app. Create a project. Start writing new script. Save your work Cmd S check in version checkpoint.', url: 'index.html#quick-start' },
     { page: 'Home', title: "What's New in v0.19.0", section: "What's New", text: 'Save prompt before new open import. Unsaved changes dialog auto-save catch up. Faster panel search navigation. Instant scroll scene character note tag match. Save reliability windows WAL onedrive detection diagnostics. Storage fallback recovery. Mobile dialogs soft keyboard. Treatment documents location database act sequence structure version diff multi-format templates DOCX import export title page editor script statistics WGA fields scene navigator search synopsis character relationships cloud projects per-user files self-hosted docker.', url: 'index.html#whats-new' },
 
     // Getting Started
@@ -23,8 +23,8 @@
     { page: 'Getting Started', title: 'Explore Panels', section: 'Panels', text: 'Navigator scenes jump. Index cards visual rearranging. Beat board story planning. Characters profiles stats. Script notes annotations. Tags production tagging.', url: 'getting-started.html#explore-panels' },
 
     // Installation
-    { page: 'Installation', title: 'Installation', section: '', text: 'Get OpenDraft running on your computer. Download install desktop app. Browser self-hosted.', url: 'installation.html' },
-    { page: 'Installation', title: 'macOS Installation', section: 'macOS', text: 'Download DMG file. Drag OpenDraft into Applications folder. Apple Silicon. Gatekeeper unidentified developer system settings privacy security open anyway.', url: 'installation.html#macos' },
+    { page: 'Installation', title: 'Installation', section: '', text: 'Get ScriptCraft running on your computer. Download install desktop app. Browser self-hosted.', url: 'installation.html' },
+    { page: 'Installation', title: 'macOS Installation', section: 'macOS', text: 'Download DMG file. Drag ScriptCraft into Applications folder. Apple Silicon. Gatekeeper unidentified developer system settings privacy security open anyway.', url: 'installation.html#macos' },
     { page: 'Installation', title: 'Windows Installation', section: 'Windows', text: 'Download EXE installer or MSI. Run installer follow prompts. Start menu.', url: 'installation.html#windows' },
     { page: 'Installation', title: 'Linux Installation', section: 'Linux', text: 'Ubuntu Debian DEB package. Fedora RHEL RPM. AppImage portable. dpkg rpm install commands.', url: 'installation.html#linux' },
     { page: 'Installation', title: 'Run in Browser', section: 'Browser', text: 'Self-hosted browser. Python 3.12 Node.js 18 Git requirements. Setup script clone install. localhost 8000. Manual setup venv pip npm.', url: 'installation.html#browser' },

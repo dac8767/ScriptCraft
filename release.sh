@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# ── OpenDraft Release Script ─────────────────────────────────────────────────
+# ── ScriptCraft Release Script ─────────────────────────────────────────────────
 # Release process (no downtime for download links):
 #   1. Creates release branch with version bump (code + download links)
 #   2. Tags the branch and pushes tag → triggers CI builds
@@ -24,7 +24,7 @@ TAG="v${NEW_VERSION}"
 BRANCH="release/v${NEW_VERSION}"
 
 echo ""
-echo "=== OpenDraft Release ${TAG} ==="
+echo "=== ScriptCraft Release ${TAG} ==="
 echo ""
 
 # ── Preflight checks ────────────────────────────────────────────────────────
@@ -91,24 +91,24 @@ sed -i '' "s/return '${OLD_VERSION}';/return '${NEW_VERSION}';/g" \
 echo "  ✓ frontend/src/services/diagnostics.ts"
 
 # README.md download links
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_aarch64\.dmg/OpenDraft_${NEW_VERSION}_aarch64.dmg/g" "$PROJECT_ROOT/README.md"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_x64\.dmg/OpenDraft_${NEW_VERSION}_x64.dmg/g" "$PROJECT_ROOT/README.md"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_x64-setup\.exe/OpenDraft_${NEW_VERSION}_x64-setup.exe/g" "$PROJECT_ROOT/README.md"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_x64_en-US\.msi/OpenDraft_${NEW_VERSION}_x64_en-US.msi/g" "$PROJECT_ROOT/README.md"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_amd64\.deb/OpenDraft_${NEW_VERSION}_amd64.deb/g" "$PROJECT_ROOT/README.md"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_amd64\.AppImage/OpenDraft_${NEW_VERSION}_amd64.AppImage/g" "$PROJECT_ROOT/README.md"
-sed -i '' "s/OpenDraft-[0-9]*\.[0-9]*\.[0-9]*-1\.x86_64\.rpm/OpenDraft-${NEW_VERSION}-1.x86_64.rpm/g" "$PROJECT_ROOT/README.md"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_aarch64\.dmg/ScriptCraft_${NEW_VERSION}_aarch64.dmg/g" "$PROJECT_ROOT/README.md"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_x64\.dmg/ScriptCraft_${NEW_VERSION}_x64.dmg/g" "$PROJECT_ROOT/README.md"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_x64-setup\.exe/ScriptCraft_${NEW_VERSION}_x64-setup.exe/g" "$PROJECT_ROOT/README.md"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_x64_en-US\.msi/ScriptCraft_${NEW_VERSION}_x64_en-US.msi/g" "$PROJECT_ROOT/README.md"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_amd64\.deb/ScriptCraft_${NEW_VERSION}_amd64.deb/g" "$PROJECT_ROOT/README.md"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_amd64\.AppImage/ScriptCraft_${NEW_VERSION}_amd64.AppImage/g" "$PROJECT_ROOT/README.md"
+sed -i '' "s/ScriptCraft-[0-9]*\.[0-9]*\.[0-9]*-1\.x86_64\.rpm/ScriptCraft-${NEW_VERSION}-1.x86_64.rpm/g" "$PROJECT_ROOT/README.md"
 echo "  ✓ README.md (download links)"
 
 # landing/index.html download links
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_aarch64\.dmg/OpenDraft_${NEW_VERSION}_aarch64.dmg/g" "$PROJECT_ROOT/landing/index.html"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_x64-setup\.exe/OpenDraft_${NEW_VERSION}_x64-setup.exe/g" "$PROJECT_ROOT/landing/index.html"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_amd64\.deb/OpenDraft_${NEW_VERSION}_amd64.deb/g" "$PROJECT_ROOT/landing/index.html"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_x64\.dmg/OpenDraft_${NEW_VERSION}_x64.dmg/g" "$PROJECT_ROOT/landing/index.html"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_x86_64-legacy\.dmg/OpenDraft_${NEW_VERSION}_x86_64-legacy.dmg/g" "$PROJECT_ROOT/landing/index.html"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_x64_en-US\.msi/OpenDraft_${NEW_VERSION}_x64_en-US.msi/g" "$PROJECT_ROOT/landing/index.html"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_amd64\.AppImage/OpenDraft_${NEW_VERSION}_amd64.AppImage/g" "$PROJECT_ROOT/landing/index.html"
-sed -i '' "s/OpenDraft_[0-9]*\.[0-9]*\.[0-9]*_android\.apk/OpenDraft_${NEW_VERSION}_android.apk/g" "$PROJECT_ROOT/landing/index.html"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_aarch64\.dmg/ScriptCraft_${NEW_VERSION}_aarch64.dmg/g" "$PROJECT_ROOT/landing/index.html"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_x64-setup\.exe/ScriptCraft_${NEW_VERSION}_x64-setup.exe/g" "$PROJECT_ROOT/landing/index.html"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_amd64\.deb/ScriptCraft_${NEW_VERSION}_amd64.deb/g" "$PROJECT_ROOT/landing/index.html"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_x64\.dmg/ScriptCraft_${NEW_VERSION}_x64.dmg/g" "$PROJECT_ROOT/landing/index.html"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_x86_64-legacy\.dmg/ScriptCraft_${NEW_VERSION}_x86_64-legacy.dmg/g" "$PROJECT_ROOT/landing/index.html"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_x64_en-US\.msi/ScriptCraft_${NEW_VERSION}_x64_en-US.msi/g" "$PROJECT_ROOT/landing/index.html"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_amd64\.AppImage/ScriptCraft_${NEW_VERSION}_amd64.AppImage/g" "$PROJECT_ROOT/landing/index.html"
+sed -i '' "s/ScriptCraft_[0-9]*\.[0-9]*\.[0-9]*_android\.apk/ScriptCraft_${NEW_VERSION}_android.apk/g" "$PROJECT_ROOT/landing/index.html"
 echo "  ✓ landing/index.html (download links)"
 
 # user-manual - footer version in all HTML files
@@ -125,13 +125,13 @@ sed -i '' "s/What's New in v${OLD_VERSION}/What's New in v${NEW_VERSION}/g" \
   "$PROJECT_ROOT/user-manual/search.js"
 echo "  ✓ user-manual/search.js"
 
-# Update Cargo.lock — bump ONLY the opendraft package version. Do NOT run
+# Update Cargo.lock — bump ONLY the scriptcraft package version. Do NOT run
 # `cargo generate-lockfile`/`cargo update`: that re-resolves every dependency to
 # the latest version and pulls in incompatible Tauri releases (wry/tauri-runtime)
 # that break the build. The pinned dependency versions must stay as-is.
 echo ""
-echo "  Updating Cargo.lock (opendraft version only)..."
-perl -0pi -e "s/(name = \"opendraft\"\nversion = \")${OLD_VERSION}(\")/\${1}${NEW_VERSION}\${2}/" \
+echo "  Updating Cargo.lock (scriptcraft version only)..."
+perl -0pi -e "s/(name = \"scriptcraft\"\nversion = \")${OLD_VERSION}(\")/\${1}${NEW_VERSION}\${2}/" \
   "$PROJECT_ROOT/src-tauri/Cargo.lock"
 echo "  ✓ src-tauri/Cargo.lock"
 
@@ -180,14 +180,14 @@ TMPDIR=$(mktemp -d)
 
 EXTENSIONS=("aarch64.dmg" "x64-setup.exe" "x64_en-US.msi" "amd64.deb" "amd64.AppImage" "android.apk" "ios.ipa")
 for ext in "${EXTENSIONS[@]}"; do
-  OLD_NAME="OpenDraft_${OLD_VERSION}_${ext}"
+  OLD_NAME="ScriptCraft_${OLD_VERSION}_${ext}"
   if gh release download "$OLD_TAG" --repo "$REPO" -p "$OLD_NAME" -D "$TMPDIR" 2>/dev/null; then
     gh release upload "$TAG" "$TMPDIR/$OLD_NAME" --repo "$REPO" --clobber 2>/dev/null
     echo "    ✓ ${OLD_NAME}"
   fi
 done
-# RPM uses different naming: OpenDraft-VERSION-1.x86_64.rpm
-OLD_RPM="OpenDraft-${OLD_VERSION}-1.x86_64.rpm"
+# RPM uses different naming: ScriptCraft-VERSION-1.x86_64.rpm
+OLD_RPM="ScriptCraft-${OLD_VERSION}-1.x86_64.rpm"
 if gh release download "$OLD_TAG" --repo "$REPO" -p "$OLD_RPM" -D "$TMPDIR" 2>/dev/null; then
   gh release upload "$TAG" "$TMPDIR/$OLD_RPM" --repo "$REPO" --clobber 2>/dev/null
   echo "    ✓ ${OLD_RPM}"
@@ -242,9 +242,9 @@ done
 # Remove old-version binaries now that links on main point to new version
 echo "  Cleaning up old-version binaries from release..."
 for ext in "${EXTENSIONS[@]}"; do
-  gh release delete-asset "$TAG" "OpenDraft_${OLD_VERSION}_${ext}" --repo "$REPO" -y 2>/dev/null
+  gh release delete-asset "$TAG" "ScriptCraft_${OLD_VERSION}_${ext}" --repo "$REPO" -y 2>/dev/null
 done
-gh release delete-asset "$TAG" "OpenDraft-${OLD_VERSION}-1.x86_64.rpm" --repo "$REPO" -y 2>/dev/null
+gh release delete-asset "$TAG" "ScriptCraft-${OLD_VERSION}-1.x86_64.rpm" --repo "$REPO" -y 2>/dev/null
 echo "  ✓ Old-version binaries removed"
 
 # Switch back to main

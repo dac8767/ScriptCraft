@@ -127,6 +127,10 @@ ok('the flash renders inside the Quick Access row',
 console.log('\n6. the native Settings gear');
 const nat = readFileSync(new URL('../src/menu/nativeMenuSync.ts', import.meta.url), 'utf8');
 ok('the macOS item rasterizes the DRAWN gear', /rasterizeGear\(/.test(nat) && /Image\.new\(/.test(nat), '');
+// v7.15: sized and weighted against the system glyphs beside it.
+ok('…at the menu\'s own 16pt box, inset like the system glyphs',
+  /rasterizeGear\(32\)/.test(nat) && /INSET/.test(nat), '');
+ok('…hairline, matching them', /ctx\.lineWidth = 16/.test(nat), '');
 ok('…from the same path the React icon draws', /GEAR_PATH/.test(nat), '');
 ok('…falling back to the system gear, then a plain item',
   /NativeIcon\.PreferencesGeneral/.test(nat) && /MenuItem\.new\(opts\)/.test(nat), '');

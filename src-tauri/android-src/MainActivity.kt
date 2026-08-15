@@ -55,7 +55,7 @@ class MainActivity : TauriActivity() {
         setIntent(intent)
         intent.data?.let { uri ->
             newIntentUri = uri.toString()
-            android.util.Log.i("OpenDraft", "[file-assoc] onNewIntent URI: $newIntentUri")
+            android.util.Log.i("ScriptCraft", "[file-assoc] onNewIntent URI: $newIntentUri")
         }
     }
 
@@ -72,11 +72,11 @@ class MainActivity : TauriActivity() {
                             )
                         } catch (_: Exception) {}
                         pickedFileUri = uri.toString()
-                        android.util.Log.i("OpenDraft", "[file-picker] picked URI: $pickedFileUri")
+                        android.util.Log.i("ScriptCraft", "[file-picker] picked URI: $pickedFileUri")
                     }
                 } else {
                     pickedFileUri = ""
-                    android.util.Log.i("OpenDraft", "[file-picker] user cancelled")
+                    android.util.Log.i("ScriptCraft", "[file-picker] user cancelled")
                 }
             }
             EXPORT_FILE_REQUEST -> {
@@ -91,9 +91,9 @@ class MainActivity : TauriActivity() {
                                         input.copyTo(out)
                                     }
                                 }
-                                android.util.Log.i("OpenDraft", "[export] Saved to: $destUri")
+                                android.util.Log.i("ScriptCraft", "[export] Saved to: $destUri")
                             } catch (e: Exception) {
-                                android.util.Log.e("OpenDraft", "[export] Failed to save: ${e.message}")
+                                android.util.Log.e("ScriptCraft", "[export] Failed to save: ${e.message}")
                             } finally {
                                 exportSourcePath = null
                             }
@@ -101,7 +101,7 @@ class MainActivity : TauriActivity() {
                     }
                 } else {
                     exportSourcePath = null
-                    android.util.Log.i("OpenDraft", "[export] user cancelled save-as")
+                    android.util.Log.i("ScriptCraft", "[export] user cancelled save-as")
                 }
             }
         }

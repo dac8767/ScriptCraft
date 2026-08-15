@@ -192,10 +192,13 @@ export const PanelRightIcon: React.FC<{ size?: number }> = ({ size = 13 }) => (
 );
 
 /**
- * v7.13, Derek — he sent the gear he wants for Settings: a stroked OUTLINE
- * gear, eight teeth, hollow centre. react-icons has no gear in that shape
- * (FaCog is solid; the line-style sets are all six-tooth), so it is drawn
- * here, in the one icon registry, rather than a component keeping its own.
+ * v7.13/v7.15, Derek — he sent the gear he wants for Settings, then a
+ * THIN-LINE version of it: "use the attached icon if the thin line matches
+ * the icons in the ScriptCraft menu better." It does — macOS menu glyphs are
+ * hairline, and the first cut sat among them looking bold. Twelve teeth,
+ * hollow centre, uniform thin stroke. react-icons has no gear in this shape
+ * (FaCog is solid; the line sets are six-tooth), so it is drawn here, in the
+ * one icon registry, rather than a component keeping its own.
  *
  * `.icon-gear-strong` is what makes the lines white: menu-dropdown icons are
  * painted --fd-text-muted, and Derek wants this one at full strength.
@@ -203,17 +206,17 @@ export const PanelRightIcon: React.FC<{ size?: number }> = ({ size = 13 }) => (
  */
 /** The gear outline, shared: the React icon below AND the macOS menu
  *  item, which rasterizes this exact path (menu/nativeMenuSync). */
-const GEAR_D = 'M208.3 76.2L213.2 21.9L298.8 21.9L303.7 76.2A186 186 0 0 1 349.4 95.2L349.4 95.2L391.3 60.2L451.8 120.7L416.8 162.6A186 186 0 0 1 435.8 208.3L435.8 208.3L490.1 213.2L490.1 298.8L435.8 303.7A186 186 0 0 1 416.8 349.4L416.8 349.4L451.8 391.3L391.3 451.8L349.4 416.8A186 186 0 0 1 303.7 435.8L303.7 435.8L298.8 490.1L213.2 490.1L208.3 435.8A186 186 0 0 1 162.6 416.8L162.6 416.8L120.7 451.8L60.2 391.3L95.2 349.4A186 186 0 0 1 76.2 303.7L76.2 303.7L21.9 298.8L21.9 213.2L76.2 208.3A186 186 0 0 1 95.2 162.6L95.2 162.6L60.2 120.7L120.7 60.2L162.6 95.2A186 186 0 0 1 208.3 76.2Z';
+const GEAR_D = 'M221.1 73.3L223.7 20.2L288.3 20.2L290.9 73.3A186 186 0 0 1 317.2 80.3L317.2 80.3L345.9 35.6L401.9 67.9L377.5 115.2A186 186 0 0 1 396.8 134.5L396.8 134.5L444.1 110.1L476.4 166.1L431.7 194.8A186 186 0 0 1 438.7 221.1L438.7 221.1L491.8 223.7L491.8 288.3L438.7 290.9A186 186 0 0 1 431.7 317.2L431.7 317.2L476.4 345.9L444.1 401.9L396.8 377.5A186 186 0 0 1 377.5 396.8L377.5 396.8L401.9 444.1L345.9 476.4L317.2 431.7A186 186 0 0 1 290.9 438.7L290.9 438.7L288.3 491.8L223.7 491.8L221.1 438.7A186 186 0 0 1 194.8 431.7L194.8 431.7L166.1 476.4L110.1 444.1L134.5 396.8A186 186 0 0 1 115.2 377.5L115.2 377.5L67.9 401.9L35.6 345.9L80.3 317.2A186 186 0 0 1 73.3 290.9L73.3 290.9L20.2 288.3L20.2 223.7L73.3 221.1A186 186 0 0 1 80.3 194.8L80.3 194.8L35.6 166.1L67.9 110.1L115.2 134.5A186 186 0 0 1 134.5 115.2L134.5 115.2L110.1 67.9L166.1 35.6L194.8 80.3A186 186 0 0 1 221.1 73.3Z';
 export const GEAR_PATH = GEAR_D;
 export const GearIcon: React.FC<{ size?: number | string }> = ({ size = '1em' }) => (
   <svg
     className="icon-gear-strong"
     width={size} height={size} viewBox="0 0 512 512"
-    fill="none" stroke="currentColor" strokeWidth={34} strokeLinejoin="round"
+    fill="none" stroke="currentColor" strokeWidth={16} strokeLinejoin="round"
     aria-hidden="true"
   >
     <path d={GEAR_D} />
-    <circle cx="256" cy="256" r="112" />
+    <circle cx="256" cy="256" r="128" />
   </svg>
 );
 

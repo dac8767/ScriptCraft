@@ -1,4 +1,4 @@
-# OpenDraft Mobile Build Guide
+# ScriptCraft Mobile Build Guide
 
 ## Prerequisites
 

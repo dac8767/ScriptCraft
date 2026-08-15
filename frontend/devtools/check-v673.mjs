@@ -31,7 +31,10 @@ try {
   // an in-memory version store behind the app's own api module — seeded
   // with the pile Derek is looking at: old Auto save rows + one deliberate
   await page.evaluate(async () => {
-    const { api } = await import('/src/services/api.ts');
+    /* v7.15: the APP's api module, not a private second copy of it — see
+       __scImport in driver.mjs. A bare import here patched a module nothing
+       on screen was using, and the panel went on calling the real server. */
+    const { api } = await window.__scImport('/src/services/api.ts');
     const mem = [
       { hash: 'h-auto-1', short_hash: 'auto1', message: 'Auto save', date: new Date().toISOString() },
       { hash: 'h-auto-2', short_hash: 'auto2', message: 'Auto save', date: new Date().toISOString() },

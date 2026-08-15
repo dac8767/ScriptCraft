@@ -1,5 +1,15 @@
 [
  {
+  "version": "7.15",
+  "date": "2026-08-15",
+  "changes": [
+   "The Settings gear is the thin-line version, sized and weighted to sit among the macOS menu icons rather than beside them. The first cut was drawn bold and full-box; those glyphs are hairline and inset.",
+   "OpenDraft and FreeDraft are gone from everything a person reads — the setup and deploy scripts, the build scripts, the README and landing pages, all 25 user-manual pages, the GitHub issue templates, the security policy, the account emails, and the backend and collab server. 61 files, and a check that fails if a new one appears.",
+   "The download names were stale, which nobody had noticed: the app has been called ScriptCraft since v1.34, so the build has been producing ScriptCraft_0.19.0_aarch64.dmg while the release pipeline, the release script and every download link on the site still asked for OpenDraft_0.19.0_aarch64.dmg. Those now match. So does the version bump, which had been editing a package that no longer exists under that name.",
+   "What deliberately did NOT change, because renaming it would lose data or break a build: the 224 opendraft: storage keys behind every setting you have, the .odraft file format, the identifiers macOS, iOS and Android know the app by, the deployment environment variables, the service, volume and database names, and the Android signing keystore. The brand art keeps its filenames, the About window still credits OpenDraft as the upstream project, and the changelog still says what it said."
+  ]
+ },
+ {
   "version": "7.14",
   "date": "2026-08-15",
   "changes": [

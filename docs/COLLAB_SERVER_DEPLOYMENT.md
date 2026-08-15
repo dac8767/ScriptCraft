@@ -40,7 +40,7 @@ supported; pick whichever fits your operational model.
 |---------|-------|
 | Project ID | `opendraft-app` |
 | Project Number | `267958344432` |
-| Billing Account | OpenDraft (`011A68-37FD6B-93D32A`) |
+| Billing Account | ScriptCraft (`011A68-37FD6B-93D32A`) |
 | Region | `us-central1` |
 | Service Name | `opendraft-collab` |
 | Image | `us-central1-docker.pkg.dev/opendraft-app/opendraft/opendraft-collab` |

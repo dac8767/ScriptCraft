@@ -1,29 +1,29 @@
 # Installation Guide
 
-This guide covers all the ways to install and run OpenDraft.
+This guide covers all the ways to install and run ScriptCraft.
 
 ---
 
 ## Option 1: Desktop App (Recommended for most users)
 
-The easiest way to use OpenDraft. Download, install, and start writing.
+The easiest way to use ScriptCraft. Download, install, and start writing.
 
 ### macOS
 
 1. Go to the [Releases](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest) page
 2. Download **OpenDraft.dmg**
 3. Open the `.dmg` file
-4. Drag **OpenDraft** into your **Applications** folder
-5. Double-click OpenDraft to launch
+4. Drag **ScriptCraft** into your **Applications** folder
+5. Double-click ScriptCraft to launch
 
-> **First launch on macOS:** You may see "OpenDraft can't be opened because it is from an unidentified developer." Right-click the app, select **Open**, then click **Open** in the dialog. You only need to do this once.
+> **First launch on macOS:** You may see "ScriptCraft can't be opened because it is from an unidentified developer." Right-click the app, select **Open**, then click **Open** in the dialog. You only need to do this once.
 
 ### Windows
 
 1. Go to the [Releases](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest) page
 2. Download **OpenDraft.msi**
 3. Double-click the installer and follow the prompts
-4. Launch OpenDraft from the Start Menu or Desktop shortcut
+4. Launch ScriptCraft from the Start Menu or Desktop shortcut
 
 ### Linux
 
@@ -43,7 +43,7 @@ chmod +x OpenDraft.AppImage
 ### What's included in the desktop app?
 
 The desktop app is fully self-contained. It bundles:
-- The OpenDraft editor (web frontend)
+- The ScriptCraft editor (web frontend)
 - The backend API server (runs automatically in the background)
 - All required libraries and dependencies
 
@@ -58,7 +58,7 @@ Your screenplays are stored locally:
 
 ## Option 2: Browser (Self-Hosted)
 
-Run OpenDraft in your web browser. Good for teams who want to host a shared instance, or if you prefer a browser-based workflow.
+Run ScriptCraft in your web browser. Good for teams who want to host a shared instance, or if you prefer a browser-based workflow.
 
 ### Prerequisites
 
@@ -93,7 +93,7 @@ The script will:
 4. Build the frontend
 5. Start the server and open your browser
 
-OpenDraft will be available at **http://localhost:8000**.
+ScriptCraft will be available at **http://localhost:8000**.
 
 Press **Ctrl+C** to stop the server.
 
@@ -165,7 +165,7 @@ Or simply run `./setup.sh` again — it skips steps that are already done and st
 
 ## Option 3: Development Mode
 
-For developers who want to contribute or modify OpenDraft. This gives you hot-reloading on both frontend and backend.
+For developers who want to contribute or modify ScriptCraft. This gives you hot-reloading on both frontend and backend.
 
 ```bash
 git clone https://github.com/Proteus-Technologies-Private-Limited/OpenDraft.git
@@ -223,7 +223,7 @@ cd backend
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8080
 ```
 
-### macOS: "OpenDraft can't be opened"
+### macOS: "ScriptCraft can't be opened"
 
 Right-click the app icon, select **Open**, and click **Open** in the dialog. This is a macOS Gatekeeper check for apps not from the App Store.
 

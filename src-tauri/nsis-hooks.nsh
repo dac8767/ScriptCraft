@@ -1,4 +1,4 @@
-; OpenDraft NSIS Installer Hooks
+; ScriptCraft NSIS Installer Hooks
 
 !macro NSIS_HOOK_PREINSTALL
 !macroend

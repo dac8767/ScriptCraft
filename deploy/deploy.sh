@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── OpenDraft VPS Deploy ──
+# ── ScriptCraft VPS Deploy ──
 #
 # One-shot deploy for demo + collab on a single Ubuntu 22.04 VPS
 # (Hostinger KVM 1, Contabo, or any Docker-capable host).
@@ -12,7 +12,7 @@ set -euo pipefail
 #
 # DNS (free, no domain purchase):
 #   1. Sign up at https://www.duckdns.org (GitHub/Google login).
-#   2. Create two subdomains, e.g. opendraft + opendraft-collab.
+#   2. Create two subdomains, e.g. scriptcraft + scriptcraft-collab.
 #   3. Point both to this VPS's public IPv4 address.
 #
 # First run:

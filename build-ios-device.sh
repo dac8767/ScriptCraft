@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# OpenDraft — iOS Build Script
+# ScriptCraft — iOS Build Script
 # Builds the iOS app, patches Info.plist with file associations,
 # re-signs, re-exports the IPA, and installs on a connected device or simulator.
 #
@@ -48,7 +48,7 @@ cfg['bundle'].pop('externalBin', None)
 cfg['app']['windows'] = [{
     'label': 'main',
     'url': 'index.html',
-    'title': 'OpenDraft',
+    'title': 'ScriptCraft',
     'width': 1280,
     'height': 800,
     'resizable': True,
@@ -109,7 +109,7 @@ plist["CFBundleDocumentTypes"] = [
      "LSHandlerRank": "Default", "LSItemContentTypes": ["com.finaldraft.fdx"]},
     {"CFBundleTypeName": "Fountain Screenplay", "CFBundleTypeRole": "Editor",
      "LSHandlerRank": "Default", "LSItemContentTypes": ["com.proteus.opendraft.fountain"]},
-    {"CFBundleTypeName": "OpenDraft Screenplay", "CFBundleTypeRole": "Editor",
+    {"CFBundleTypeName": "ScriptCraft Screenplay", "CFBundleTypeRole": "Editor",
      "LSHandlerRank": "Owner", "LSItemContentTypes": ["com.proteus.opendraft.document"]},
     {"CFBundleTypeName": "Text File", "CFBundleTypeRole": "Editor",
      "LSHandlerRank": "Alternate", "LSItemContentTypes": ["public.plain-text"]},
@@ -122,7 +122,7 @@ plist["UTImportedTypeDeclarations"] = [
     {"UTTypeIdentifier": "com.proteus.opendraft.fountain", "UTTypeDescription": "Fountain Screenplay",
      "UTTypeConformsTo": ["public.plain-text"],
      "UTTypeTagSpecification": {"public.filename-extension": ["fountain"], "public.mime-type": "text/plain"}},
-    {"UTTypeIdentifier": "com.proteus.opendraft.document", "UTTypeDescription": "OpenDraft Screenplay",
+    {"UTTypeIdentifier": "com.proteus.opendraft.document", "UTTypeDescription": "ScriptCraft Screenplay",
      "UTTypeConformsTo": ["public.json"],
      "UTTypeTagSpecification": {"public.filename-extension": ["odraft"], "public.mime-type": "application/json"}},
 ]
@@ -163,7 +163,7 @@ if [ "$SIM_MODE" = true ]; then
   open -a Simulator
 
   echo ""
-  echo "==> Done! OpenDraft launched on $SIM_DEVICE"
+  echo "==> Done! ScriptCraft launched on $SIM_DEVICE"
 else
   # Device: re-sign, re-export IPA, install
   echo "==> Re-signing .app..."
@@ -207,5 +207,5 @@ else
   xcrun devicectl device install app --device "$DEVICE_ID" "$PATCHED_IPA"
 
   echo ""
-  echo "==> Done! Unlock your device and launch OpenDraft."
+  echo "==> Done! Unlock your device and launch ScriptCraft."
 fi

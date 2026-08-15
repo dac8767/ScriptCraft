@@ -151,7 +151,25 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.95 and older (newest first)
+## Version history — v6.96 and older (newest first)
+
+### v6.96 — formatting buttons in the feedback Description box
+
+- Derek (via the form): "add formatting options in the feedback textbox
+  so I can make lists, underline, bold, etc". DECISION: the box stays a
+  plain textarea and `message` stays plain TEXT — five `.fb-fmt-btn`
+  buttons (B/I/U/UL/OL) wrap the live selection in markdown-style
+  markers via `applyMarkdownFormat` (pure, exported): **bold**,
+  *italic*, <u>underline</u>, "- "/"1. " whole-line prefixes; empty
+  selection inserts a selected "text" placeholder. No TipTap instance,
+  no serializer, no schema change — dashboard reads it raw, chat
+  reports render it. Buttons preventDefault on mousedown so the
+  selection survives the click; the handler restores focus + selection
+  via requestAnimationFrame.
+- Tests 1202 (pure-fn matrix + live-selection click); check-v684 25
+  (select-all bullet, exact-selection bold, driven).
+- Gates: tsc 0, vitest 1202, build ok, check-all 1084/0. Catalog 485
+  (+5 button tooltips).
 
 ### v6.95 — settings clean pass + Settings moved to Help (4 feedback items)
 

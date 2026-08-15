@@ -50,12 +50,12 @@ ok('an imported string is left alone when no format is given',
 
 // The Title Page editor reads the live setting — change it, read the preview.
 await page.evaluate(async () => {
-  const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+  const { useSettingsStore } = await window.__scImport('/src/stores/settingsStore.ts');
   useSettingsStore.getState().setDateFormat('friendly');
 });
 await settle(page);
 const liveFmt = await page.evaluate(async () => {
-  const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+  const { useSettingsStore } = await window.__scImport('/src/stores/settingsStore.ts');
   return useSettingsStore.getState().dateFormat;
 });
 ok('the Settings choice is what the builder is handed', liveFmt === 'friendly', liveFmt);
@@ -110,7 +110,7 @@ ok('the old single-list markup is gone', await page.evaluate(() =>
 
 // hiding a template moves it across
 const moved = await page.evaluate(async () => {
-  const { useSettingsStore } = await import('/src/stores/settingsStore.ts');
+  const { useSettingsStore } = await window.__scImport('/src/stores/settingsStore.ts');
   const before = document.querySelectorAll('.fs-dnd-col')[0].querySelectorAll('.fs-dnd-row').length;
   const btn = document.querySelectorAll('.fs-dnd-col')[0].querySelector('.fs-dnd-rowbtn');
   btn.click();

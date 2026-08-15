@@ -39,7 +39,7 @@ try {
 
   // the fetch stub — Supabase URLs only; everything else passes through
   await page.evaluate(async () => {
-    const { FEEDBACK_BACKEND } = await import('/src/services/feedbackBackend.ts');
+    const { FEEDBACK_BACKEND } = await window.__scImport('/src/services/feedbackBackend.ts');
     const BASE = FEEDBACK_BACKEND.url;
     window.__fbCalls = [];
     window.__fbFail = false;
@@ -158,14 +158,32 @@ try {
     ta.setSelectionRange(ta.value.length, ta.value.length);
   });
   await page.keyboard.press('Enter');
-  /* delay per keystroke: .fb-text is a CONTROLLED textarea, so every character
-     is a React round trip that re-applies value and caret. Typing at full
-     speed interleaved with those renders and landed "etab" — a scrambled
-     value, not a missing one, which is why waiting on it alone still failed. */
-  await page.keyboard.type('beta', { delay: 40 });
-  ok(await waitValue('- alpha\n- beta'),
+  /* v7.15: WAIT for the caret, not for a delay. .fb-text is a CONTROLLED
+     textarea, so the Enter handler re-applies both value AND caret through
+     React; typing before the caret restore lands writes into the OLD
+     position, and "beta" came out "etab" — scrambled, not missing. A
+     per-keystroke delay (v7.12's fix) only made the race less likely, and it
+     came back under the full suite's four concurrent browsers. The real
+     precondition is: the continued value is in, and the caret is at its end.
+     Typing one character at a time and waiting for each to appear at the end
+     turns any remaining stall into a clean failure instead of a scramble. */
+  const waitCaretEnd = () => page.waitForFunction(() => {
+    const ta = document.querySelector('.fb-text');
+    return !!ta && ta.selectionStart === ta.value.length && ta.selectionEnd === ta.value.length;
+  }, null, { timeout: 4000 }).then(() => true, () => false);
+  const typeSteady = async (text) => {
+    for (const ch of text) {
+      const want = (await fbValue()) + ch;
+      await page.keyboard.type(ch);
+      if (!(await waitValue(want))) return false;
+    }
+    return true;
+  };
+  const continued = await waitValue('- alpha\n- ') && await waitCaretEnd();
+  ok(continued && await typeSteady('beta') && await waitValue('- alpha\n- beta'),
     `Enter continues a typed "- " list (${JSON.stringify(await fbValue())})`);
   await page.keyboard.press('Enter');
+  await waitValue('- alpha\n- beta\n- ');
   await page.keyboard.press('Enter');
   ok(await waitValue('- alpha\n- beta\n'),
     `Enter on an empty item ends the list (${JSON.stringify(await fbValue())})`);
