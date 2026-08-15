@@ -15,7 +15,10 @@
 >    every toolbar and side panel. (`DEV_TOOLS` in editorStore is the existing
 >    dev-only mechanism — the Design window should join it.)
 >
-> QUEUE — Derek, 2026-08-14 ("queue:"), NOT yet built — THE BRAND SWEEP:
+> QUEUE — Derek, 2026-08-14 ("queue:"), **DELIVERED v7.15** — THE BRAND SWEEP.
+> `devtools/brand-sweep.mjs` does it and `check-brand` guards it; §1's v7.15
+> section lists every protection rule and why each exists. The analysis below
+> is kept because it is still the map of what must never be renamed:
 > "at some point recently you gave me terminal code that still had 'freedraft'
 > in it. look through all code and make sure any instance of 'Freedraft' or
 > 'OpenDraft' are removed (excluding the about page which actually talks about
@@ -59,17 +62,19 @@
 > add a check that fails if "freedraft"/"opendraft" appears anywhere outside an
 > allow-list naming each permitted survivor — otherwise this recurs.
 
-> QUEUE — Derek, 2026-08-13 ("add to queue"), NOT yet built:
+> QUEUE — Derek, 2026-08-13 ("add to queue"), **BOTH DELIVERED v7.16**:
 > (Old #1 — Settings to File's bottom — was SUPERSEDED by his feedback row
 > and DELIVERED v6.95: Settings sits in Help below About ScriptCraft.)
-> 1. The blank-line-before-a-scene-heading rule must NOT apply to the very
->    first scene heading on page 1 (his screenshot: the opening heading
->    sits below an inserted blank). Find the rule's one source (enforce
->    machinery / paginator) before touching it.
-> 2. Ribbon EDITOR item spacing/size ≠ the real ribbon bar's (two
->    screenshots: edit mode renders larger paddings/gaps around the same
->    controls). Likely the rib-edit-item wrappers add chrome the live bar
->    lacks — parity like v6.83's alignment item.
+> 1. ~~The blank-line-before-a-scene-heading rule must NOT apply to the very
+>    first scene heading on page 1~~ — v7.16. The rule's one source was
+>    `isFirst ? 0 : SPACE_BEFORE[type]`, already honoured by the paginator,
+>    the exporter and the thumbnails; the EDITOR said it for scene headings
+>    only, so opening on FADE IN: began 12pt down. Now
+>    `.screenplay-element:first-child`, once, for every element.
+> 2. ~~Ribbon EDITOR item spacing/size ≠ the real ribbon bar's~~ — v7.16.
+>    Three pieces of edit chrome each cost layout (section padding, an
+>    auto-height wrapper that broke a two-row control's `height: 80%`, and
+>    divider padding); check-v716 now diffs the whole bar in both modes.
 > Also: Supabase ↔ Claude connectivity is LIVE in this remote environment
 > (Derek opened the network policy and added SUPABASE_SECRET_KEY as an env
 > var — v6.86/87 sessions read and can update real feedback rows via REST;
