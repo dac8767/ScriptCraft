@@ -15,26 +15,6 @@
 >    every toolbar and side panel. (`DEV_TOOLS` in editorStore is the existing
 >    dev-only mechanism — the Design window should join it.)
 >
-> OPEN — Derek's 4:17 PM feedback row, items 3 and 5. Both need a decision
-> from him before they can be built right; everything else in that row shipped
-> in v7.06/v7.07.
-> - **item 3, "install external files":** should an imported extension file
->   NAME a feature that already ships (safe — the file is a manifest, the
->   import flow is what gets tested), or CARRY CODE the app runs (a real
->   extension system, and a desktop app with filesystem access executing a
->   file off disk is a deliberate security decision, not a detail)? Recommended
->   the first. Not yet answered.
-> - **item 5, "a full page of fields per template":** the View button on a
->   Page Setup row opens `TemplatePageInfo`, a READ-ONLY 7-row box. The full
->   field page already exists — `PageSetupDialog`, which has an `embedded`
->   mode — so the job is to give it an optional value/onChange instead of
->   always writing the document's layout, and host it per template. THE TRAP:
->   the three system templates are immutable constants, NOT rows in
->   `templates[]`, so `updateTemplate()` on one is a SILENT NO-OP (the
->   v0.63–v0.70 bug). Editable built-in page sizes need an override map in the
->   store, the way `elementHidden`/`elementOrder` do it. Ask Derek whether
->   built-ins should be editable at all before building the override.
->
 > QUEUE — Derek, 2026-08-14 ("queue:"), NOT yet built — THE BRAND SWEEP:
 > "at some point recently you gave me terminal code that still had 'freedraft'
 > in it. look through all code and make sure any instance of 'Freedraft' or
@@ -371,6 +351,49 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.10 — Action Rewrite removed, extensions on hold, page setup per template
+
+**Action Rewrite is gone at every layer**, because Derek asked for it
+"completely": the tool, `RewriteTarget`, `utils/actionRewrite`, `29-rewrite.css`,
+the ToolId, the default tool config/order, the declutter setting, the Help ▸
+Developer entry — and the Rust side (`rewrite.rs`, `rewrite_log.rs`, eight
+tauri commands). **Removing a feature can retire a DEPENDENCY:** `keyring` had
+exactly one user (the BYO key in the OS keychain), so the crate went with it and
+the About window's open-source list dropped keyring-rs in the same commit, per
+the standing rule. `cargo check` before/after: same two pre-existing warnings.
+
+**Extensions are on hold — and the v7.05 registry was removed, not parked.**
+Derek wants COMMUNITY extensions eventually; that is a different design from
+the bundled catalog, so leaving `addonRegistry.ts` unwired would have been dead
+code encoding a superseded model. Recover from git at `daf89df` if the
+community design reuses any of it. The Extensions tab is out of Settings rather
+than left offering an empty list.
+
+**Page setup per template — and the built-ins are editable ("Built ins").**
+Three things worth keeping:
+
+- **ONE page of fields.** `PageSetupDialog` gained optional `value` / `onSave` /
+  `resetTo`; without them it writes the document's layout exactly as before.
+  `PageSetupTab`'s View hands it a template's. Do not fork it — twenty fields in
+  two copies WILL drift.
+- **The override lives in a store map, not on the template.** The six system
+  templates are immutable constants, NOT rows in `templates[]`, so
+  `updateTemplate()` on one is a SILENT NO-OP — the exact shape of the
+  v0.63–v0.70 Show/Hide bug. `templatePageLayouts` + `getTemplatePageLayout`
+  (defaults → the template's own → the override) is the same arrangement
+  `elementHidden`/`elementOrder` already use for the element list.
+- **Choosing a template applies its page setup.** Nothing read
+  `template.pageLayout` before this — the field existed and did nothing. A page
+  of fields that changes nothing is the failure mode this repo keeps finding.
+
+**Two check lessons.** check-v710's first cut called
+`setPreferencesOpen()`, which does not exist — Settings never opened, and
+"no Extensions tab" PASSED against an empty list. *A removal assertion that can
+pass vacuously is worse than no assertion:* assert the list is non-empty in the
+same breath. And the import that made `templateMigration.test.ts` fail was one
+line — the template store now reaches `editorStore`, which reads localStorage at
+module scope, so that test needs jsdom.
 
 ### v7.09 — the title page PDF exported the title and lost the rest
 
