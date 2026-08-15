@@ -35,6 +35,7 @@ import { smartUndo, smartRedo, useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
+import { flashSaved } from '../utils/saveFlash';
 import { DiagnosticsDialog } from './DiagnosticsDialog';
 import { AboutDialog } from './AboutDialog';
 import { ChangelogDialog } from './ChangelogDialog';
@@ -284,7 +285,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       const content = buildSaveContent();
       await scriptApi.saveScript(currentProject.id, currentScriptId, { content });
       setSaveStatus('saved');
-      showToast('Saved', 'success');   // the brief confirmation a silent save owes you
+      /* v7.14, Derek: this confirmation belongs beside the Save button, not in
+         the bottom-right toast corner — utils/saveFlash puts it in the Quick
+         Access bar. Failures still toast: those you DO need to read. */
+      flashSaved();
       if (content) {
         void mirrorSave({
           projectId: currentProject.id,

@@ -1,5 +1,18 @@
 [
  {
+  "version": "7.14",
+  "date": "2026-08-15",
+  "changes": [
+   "The Downloads tab is gone. Its two sections — where downloaded scripts go, and where screenshots go — are at the bottom of Save Options, Screenshots last.",
+   "Backup & Restore is its own tab at the end of the list, and the Presets section has joined it. Both are \"carry my setup elsewhere\", so they belong together; General is shorter for it.",
+   "Defaults sits directly above Backup & Restore. Keyboard sits directly above Ribbon Toolbar, which is what the Toolbar tab is called now.",
+   "Lock All is out of the Settings tabs and stays in the Customize window, where it was.",
+   "The Saved confirmation appears in the Quick Access bar beside the Save button instead of the bottom-right corner. A save is something you just did — the confirmation belongs where you did it. Failures still appear in the corner, because those you need to read.",
+   "In the Feedback window, the attach buttons line up with the paperclip above them when they wrap onto their own row, and \"Your feedback has been sent\" sits above centre rather than dead middle.",
+   "The Settings gear now reaches the ScriptCraft menu on macOS as the drawn gear itself, not a system substitute. If a platform refuses it, Help ▸ Developer ▸ Diagnostics says which icon was used — a fallback nobody can see is indistinguishable from nothing having changed."
+  ]
+ },
+ {
   "version": "7.13",
   "date": "2026-08-15",
   "changes": [

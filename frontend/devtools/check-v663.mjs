@@ -37,9 +37,9 @@ try {
   // one saved workspace, no custom themes and no outline presets — so the
   // tab shows both an available count row and two empty ones
   await page.evaluate(() => window.__scStore.getState().saveWorkspace('Writing'));
-  /* v7.11, Derek: "presets shouldn't be it's own tab. make is a section within
-     the defaults tab." Same panel, one tab along. */
-  await page.evaluate(() => window.__scStore.getState().openPreferences('defaults'));
+  /* v7.11 moved Presets into Defaults; v7.14 moved it on to the new Backup &
+     Restore tab, beside the whole-app settings file. Same panel throughout. */
+  await page.evaluate(() => window.__scStore.getState().openPreferences('backup'));
   await page.waitForSelector(P, { timeout: 8000 });
   await settle(page);
 

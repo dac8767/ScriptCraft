@@ -39,7 +39,7 @@ import FloatingWindow from './FloatingWindow';
    ───────────────────────────────────────────────────────────────────────── */
 
 type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'markups' | 'themes';
-type PrefTab = 'general' | 'saveloc' | 'downloads' | 'languages' | 'keys' | 'page' | 'defaults' | `cz-${CustomizeCat}`;
+type PrefTab = 'general' | 'saveloc' | 'languages' | 'keys' | 'page' | 'defaults' | 'backup' | `cz-${CustomizeCat}`;
 
 /* v7.00, Derek (via the feedback form): the sidebar is CATEGORIZED —
    System (app behavior), Page (script setup), then Customize. The old
@@ -47,15 +47,13 @@ type PrefTab = 'general' | 'saveloc' | 'downloads' | 'languages' | 'keys' | 'pag
 const SYSTEM_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   { id: 'general', label: 'General', icon: <FaWrench /> },
   { id: 'saveloc', label: 'Save Options', icon: <FaCloudUploadAlt /> },
-  /* v7.00: default folder for downloaded/exported scripts + the moved
-     Screenshots section — directly under Save Options. */
-  { id: 'downloads', label: 'Downloads', icon: <FaDownload /> },
+  /* v7.14, Derek: "Delete the downloads tab in settings" — its two sections
+     are at the bottom of Save Options now. */
   /* v7.00: broken out of General into its own tab. */
   /* v7.06: renamed Region — language, units and date/time live here. */
   { id: 'languages', label: 'Region', icon: <FaLanguage /> },
-  /* v4.30 batch-v7 #3, Derek: hotkeys are behavior, not workspace layout —
-     moved here from Customize. */
-  { id: 'keys', label: 'Keyboard', icon: <FaKeyboard /> },
+  /* v7.14, Derek: "move keyboard above 'Ribbon Toolbar' tab" — it leads the
+     customize run below rather than sitting with the system tabs. */
   /* v7.05, Derek: add-ons install here. An add-on contributes nothing to the
      app until installed, so this tab is where it first becomes visible. */
 ];
@@ -67,8 +65,6 @@ const PAGE_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = 
      to that category and the Defaults tab still finds its resets — only the
      sidebar grouping changed, and only here. */
   { id: 'cz-elements', label: 'Editor', icon: <FaEdit /> },
-  /* v4.65, Derek: every reset in one place — plus Reset All. */
-  { id: 'defaults', label: 'Defaults', icon: <FaUndo /> },
 ];
 
 /* v4.64, Derek: the Customize tabs are first-class entries in THIS sidebar —
@@ -80,8 +76,17 @@ const PAGE_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = 
    is listed under PAGE in this sidebar (see PAGE_TABS) while still rendering
    the very same CustomizePanelsDialog pinned to soloCategory="elements" — the
    standalone Customize window is untouched. */
+/* v7.14, Derek: Keyboard leads this run, "Toolbar" is "Ribbon Toolbar", and
+   Defaults then Backup & Restore close the list. */
+const TAIL_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
+  { id: 'keys', label: 'Keyboard', icon: <FaKeyboard /> },
+];
+const END_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
+  { id: 'defaults', label: 'Defaults', icon: <FaUndo /> },
+  { id: 'backup', label: 'Backup & Restore', icon: <FaDownload /> },
+];
 const CUSTOMIZE_TABS: Array<{ id: CustomizeCat; label: string; icon: React.ReactNode }> = [
-  { id: 'toolbar', label: 'Toolbar', icon: <FaGripHorizontal /> },
+  { id: 'toolbar', label: 'Ribbon Toolbar', icon: <FaGripHorizontal /> },
   { id: 'panels', label: 'Side Panels', icon: <FaColumns /> },
   { id: 'qat', label: 'Quick Access', icon: <FaBolt /> },
   { id: 'context', label: 'Context Menu', icon: <FaMousePointer /> },
@@ -94,7 +99,9 @@ const CUSTOMIZE_TABS: Array<{ id: CustomizeCat; label: string; icon: React.React
 const ALL_PREF_TAB_IDS: readonly PrefTab[] = [
   ...SYSTEM_TABS.map((t) => t.id),
   ...PAGE_TABS.map((t) => t.id),
+  ...TAIL_TABS.map((t) => t.id),
   ...CUSTOMIZE_TABS.map((t) => `cz-${t.id}` as PrefTab),
+  ...END_TABS.map((t) => t.id),
 ];
 
 /* v4.65 → v7.00, Derek: "find a better layout for the default tab… and
@@ -144,76 +151,8 @@ function DefaultsTab() {
           <ResetAllButton />
         </div>
       </section>
-      {/* v7.11, Derek: "presets shouldn't be it's own tab. make is a section
-          within the defaults tab." Same PresetsPanel, one level shallower —
-          and it belongs here: a preset is a saved set of defaults. */}
-      <section>
-        <h3>Presets</h3>
-        <p className="prefs-hint">
-          Export any of these to a file, or import one — the file type is
-          spelled out at the end of every filename.
-        </p>
-        <PresetsPanel />
-      </section>
-    </div>
-  );
-}
-
-function DownloadsTab() {
-  const { downloadFolder, setDownloadFolder, screenshotFolder, setScreenshotFolder } = useSettingsStore();
-  return (
-    <div className="prefs-general">
-      <section>
-        <h3>Downloads</h3>
-        <div className="prefs-check-row">
-          <span>
-            Save downloaded scripts to
-            {downloadFolder ? <code className="prefs-path-chip">{downloadFolder}</code> : ' — ask every time'}
-          </span>
-          <button
-            className="prefs-inline-btn"
-            onClick={async (e) => {
-              e.preventDefault();
-              const folder = await pickFolder('Folder for downloaded scripts');
-              if (folder) setDownloadFolder(folder);
-            }}
-          >Choose Folder…</button>
-          {downloadFolder && (
-            <button
-              className="prefs-inline-btn"
-              onClick={(e) => { e.preventDefault(); setDownloadFolder(''); }}
-            >Reset</button>
-          )}
-        </div>
-      </section>
-      {/* v7.00: moved here from Save Options — a screenshot is a download. */}
-      <section>
-        <h3>Screenshots</h3>
-        {/* v3.95, Derek: where the Screenshot tool writes PNGs. Empty = the
-            browser's Downloads folder. A chosen folder needs the desktop app. */}
-        <div className="prefs-check-row">
-          <span>
-            Save screenshots to
-            {screenshotFolder
-              ? <code className="prefs-path-chip">{screenshotFolder}</code>
-              : ' Downloads (default)'}
-          </span>
-          <button
-            className="prefs-inline-btn"
-            onClick={async (e) => {
-              e.preventDefault();
-              const folder = await pickFolder('Folder for screenshots');
-              if (folder) setScreenshotFolder(folder);
-            }}
-          >Choose Folder…</button>
-          {screenshotFolder && (
-            <button
-              className="prefs-inline-btn"
-              onClick={(e) => { e.preventDefault(); setScreenshotFolder(''); }}
-            >Reset to Downloads</button>
-          )}
-        </div>
-      </section>
+      {/* v7.11 put Presets here; v7.14, Derek moved it on to the new Backup &
+          Restore tab, beside the whole-app settings file. Same PresetsPanel. */}
     </div>
   );
 }
@@ -292,6 +231,8 @@ async function pickFolder(title = 'Folder for auto save copies'): Promise<string
 
 function SaveLocationsTab() {
   const {
+    downloadFolder, setDownloadFolder,
+    screenshotFolder, setScreenshotFolder,
     autoSnapshotMinutes, setAutoSnapshotMinutes,
     localSaveFolder, setLocalSaveFolder,
     saveToGDrive, setSaveToGDrive,
@@ -526,6 +467,62 @@ function SaveLocationsTab() {
         </div>
       </section>
 
+
+      {/* v7.14, Derek: "move the screenshots section in settings > downloads to
+          the bottom of the save options tab" + "Delete the downloads tab in
+          settings". The download-folder option came with it — deleting the tab
+          must not delete the setting, and both of these are "where files land",
+          which is what this tab is. Screenshots sits last, as he asked. */}
+      <section>
+        <h3>Downloads</h3>
+        <div className="prefs-check-row">
+          <span>
+            Save downloaded scripts to
+            {downloadFolder ? <code className="prefs-path-chip">{downloadFolder}</code> : ' — ask every time'}
+          </span>
+          <button
+            className="prefs-inline-btn"
+            onClick={async (e) => {
+              e.preventDefault();
+              const folder = await pickFolder('Folder for downloaded scripts');
+              if (folder) setDownloadFolder(folder);
+            }}
+          >Choose Folder…</button>
+          {downloadFolder && (
+            <button
+              className="prefs-inline-btn"
+              onClick={(e) => { e.preventDefault(); setDownloadFolder(''); }}
+            >Reset</button>
+          )}
+        </div>
+      </section>
+      <section>
+        <h3>Screenshots</h3>
+        {/* v3.95, Derek: where the Screenshot tool writes PNGs. Empty = the
+            browser's Downloads folder. A chosen folder needs the desktop app. */}
+        <div className="prefs-check-row">
+          <span>
+            Save screenshots to
+            {screenshotFolder
+              ? <code className="prefs-path-chip">{screenshotFolder}</code>
+              : ' Downloads (default)'}
+          </span>
+          <button
+            className="prefs-inline-btn"
+            onClick={async (e) => {
+              e.preventDefault();
+              const folder = await pickFolder('Folder for screenshots');
+              if (folder) setScreenshotFolder(folder);
+            }}
+          >Choose Folder…</button>
+          {screenshotFolder && (
+            <button
+              className="prefs-inline-btn"
+              onClick={(e) => { e.preventDefault(); setScreenshotFolder(''); }}
+            >Reset to Downloads</button>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
@@ -620,29 +617,6 @@ function GeneralTab() {
     smartTypography, setSmartTypography,
     openToLastTab, setOpenToLastTab,
   } = useSettingsStore();
-
-  // v4.22, Derek: Backup & Restore. Dev and a release build load from different
-  // origins, so their localStorage (all settings/customizations) is separate —
-  // export here, import into the other app.
-  const fileRef = React.useRef<HTMLInputElement>(null);
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';               // allow re-picking the same file later
-    if (!file) return;
-    try {
-      const text = await readFileText(file);
-      const ok = await confirmDialog(
-        'This replaces this app\'s current settings and customizations with the ones in the file, then reloads. Your scripts are not affected.',
-        { title: 'Import settings?', confirmLabel: 'Import & Reload', danger: true },
-      );
-      if (!ok) return;
-      const { imported } = applyBackup(text);
-      showToast(`Imported ${imported} settings — reloading…`);
-      setTimeout(() => window.location.reload(), 500);
-    } catch (err) {
-      showToast((err as Error).message || 'Could not import that file.');
-    }
-  };
 
   return (
     <div className="prefs-general">
@@ -743,6 +717,41 @@ function GeneralTab() {
       </section>
 
       {/* v7.06, Derek: Measurements and Dates & Times moved to REGION. */}
+    </div>
+  );
+}
+
+/* v7.14, Derek: "remove BACKUP & RESTORE from the general tab in settings and
+   make it its own tab at the bottom of the list. move the Presets section from
+   the Defaults tab to the new 'Backup & Restore' tab." Both of these are
+   "carry my setup somewhere else", so they belong together: the whole-app
+   backup file, and the per-part preset bundle. */
+function BackupRestoreTab() {
+  // v4.22, Derek: dev and a release build load from different
+  // origins, so their localStorage (all settings/customizations) is separate —
+  // export here, import into the other app.
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';               // allow re-picking the same file later
+    if (!file) return;
+    try {
+      const text = await readFileText(file);
+      const ok = await confirmDialog(
+        'This replaces this app\'s current settings and customizations with the ones in the file, then reloads. Your scripts are not affected.',
+        { title: 'Import settings?', confirmLabel: 'Import & Reload', danger: true },
+      );
+      if (!ok) return;
+      const { imported } = applyBackup(text);
+      showToast(`Imported ${imported} settings — reloading…`);
+      setTimeout(() => window.location.reload(), 500);
+    } catch (err) {
+      showToast((err as Error).message || 'Could not import that file.');
+    }
+  };
+
+  return (
+    <div className="prefs-general">
       <section>
         <h3>Backup &amp; Restore</h3>
         <p className="prefs-hint">
@@ -772,6 +781,14 @@ function GeneralTab() {
           Sign-in, cloud tokens and this device's identity are left out of the
           file for safety — sign in once on the other app.
         </p>
+      </section>
+      <section>
+        <h3>Presets</h3>
+        <p className="prefs-hint">
+          Export any of these to a file, or import one — the file type is
+          spelled out at the end of every filename.
+        </p>
+        <PresetsPanel />
       </section>
     </div>
   );
@@ -868,11 +885,31 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
                 <span>{t.label}</span>
               </button>
             ))}
+            {TAIL_TABS.map((t) => (
+              <button
+                key={t.id}
+                className={`prefs-tab${tab === t.id ? ' active' : ''}`}
+                onClick={() => setTab(t.id)}
+              >
+                <span className="prefs-tab-icon">{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            ))}
             {CUSTOMIZE_TABS.map((t) => (
               <button
                 key={t.id}
                 className={`prefs-tab${tab === `cz-${t.id}` ? ' active' : ''}`}
                 onClick={() => setTab(`cz-${t.id}`)}
+              >
+                <span className="prefs-tab-icon">{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            ))}
+            {END_TABS.map((t) => (
+              <button
+                key={t.id}
+                className={`prefs-tab${tab === t.id ? ' active' : ''}`}
+                onClick={() => setTab(t.id)}
               >
                 <span className="prefs-tab-icon">{t.icon}</span>
                 <span>{t.label}</span>
@@ -892,11 +929,11 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             {tab === 'page' && <PageSetupTab />}
             {tab === 'keys' && <KeyboardShortcutsTab />}
             {tab === 'saveloc' && <SaveLocationsTab />}
-            {tab === 'downloads' && <DownloadsTab />}
             {tab === 'languages' && (
 <RegionTab />
             )}
             {tab === 'defaults' && <DefaultsTab />}
+            {tab === 'backup' && <BackupRestoreTab />}
           </div>
         </div>
         <div className="prefs-footer">

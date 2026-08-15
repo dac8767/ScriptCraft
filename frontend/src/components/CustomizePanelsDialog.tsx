@@ -740,7 +740,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   // the embedded (Settings) view, which has no footer.
   // v4.65, Derek: Reset All MOVED to Settings ▸ Defaults (customizeResets'
   // ResetAllButton) — only the lock lives here now.
-  const globalsButtons = (<>
+  /* v7.14, Derek: "remove the Lock All button from all tabs in Settings. Keep
+     it in the Customize window." So the lock is split out of the group — the
+     WINDOW footer renders lock + presets, the embedded (Settings) views render
+     the presets only. Still one definition of each button. */
+  const lockButton = (
     <button
       className={uiResizeLocked ? 'active' : ''}
       title={uiResizeLocked
@@ -748,6 +752,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         : 'Freeze every customization: sizing, spacing, and layout edits'}
       onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
     >{uiResizeLocked ? 'Locked' : 'Lock All'}</button>
+  );
+  const presetButtons = (<>
     {/* v4.79, Derek: carry these choices between installs or scripts. Both
         run the shared preset flows (PresetsPanel), so the Customize footer,
         the Presets window and Settings ▸ Presets can never drift. Import
@@ -761,6 +767,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       onClick={() => { void importCustomizationsFlow(); }}
     >Import…</button>
   </>);
+  const globalsButtons = (<>{lockButton}{presetButtons}</>);
 
   const body = (
       // v0.83: tabs live in a LEFT SIDEBAR, the same shape as Settings
@@ -786,7 +793,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               here they show only in the embedded (Settings) view, which has no
               footer. */}
           {embedded && (
-            <div className="fs-customize-globals fs-customize-globals-row">{globalsButtons}</div>
+            <div className="fs-customize-globals fs-customize-globals-row">{presetButtons}</div>
           )}
         </div>
         )}
@@ -946,7 +953,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {/* Solo mode has no rail to host the global controls — they close
               the tab's content instead. */}
           {soloCategory && (
-            <div className="fs-customize-globals fs-customize-globals-row fs-customize-globals-solo">{globalsButtons}</div>
+            <div className="fs-customize-globals fs-customize-globals-row fs-customize-globals-solo">{presetButtons}</div>
           )}
         </div>
       </div>

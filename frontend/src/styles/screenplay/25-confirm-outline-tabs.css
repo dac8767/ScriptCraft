@@ -472,6 +472,25 @@
   background: var(--fd-border);
 }
 .fs-titlebar-spacer { flex: none; width: 16px; }
+/* v7.14, Derek: the "Saved" flash lives in the Quick Access bar now, not the
+   bottom-right toast corner. It fades in, holds, and leaves — and takes no
+   space when it is not up, so the bar never shifts under the pointer. */
+.fs-titlebar-saved {
+  flex: none; align-self: center;
+  margin-left: 6px; padding: 1px 7px;
+  border-radius: 9px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .02em;
+  color: var(--fd-success);
+  background: color-mix(in srgb, var(--fd-success) 15%, transparent);
+  pointer-events: none;
+  animation: fs-saved-flash 1.8s ease-in-out forwards;
+}
+@keyframes fs-saved-flash {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
 
 /* (v6.49: the v2.43 Arrangement toggle and its v2.48 dead-center block are
    GONE — the header's standard View dropdown navigates between Sections

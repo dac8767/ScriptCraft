@@ -76,14 +76,15 @@ ok('no section captions', rail.captions === 0, `captions=${rail.captions}`);
 ok('no section dividers', rail.dividers === 0, `dividers=${rail.dividers}`);
 ok('Presets is not a tab', !rail.tabs.includes('Presets'), JSON.stringify(rail.tabs));
 
-await page.evaluate(() => window.__scStore.getState().openPreferences('defaults'));
+// v7.14, Derek: Presets lives on Backup & Restore now, not Defaults.
+await page.evaluate(() => window.__scStore.getState().openPreferences('backup'));
 await settle(page);
 await page.waitForTimeout(300);
 const defaults = await page.evaluate(() => ({
   heads: [...document.querySelectorAll('.prefs-content h3')].map((e) => e.textContent.trim()),
   hasPanel: !!document.querySelector('.prefs-content .presets-panel, .prefs-content .preset-row, .prefs-content [class*="preset"]'),
 }));
-ok('Defaults carries a Presets section', defaults.heads.includes('Presets'), JSON.stringify(defaults.heads));
+ok('Backup & Restore carries a Presets section', defaults.heads.includes('Presets'), JSON.stringify(defaults.heads));
 ok('…and the presets panel renders in it', defaults.hasPanel, '');
 
 // ── 3. Page Setup uses the shared Shown/Hidden columns ───────────────

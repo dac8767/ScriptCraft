@@ -20,6 +20,11 @@ export interface DiagnosticsReport {
   sqliteDbPath: string | null;
   oneDriveSuspect: boolean;
   compat: Array<{ label: string; mode: string; using: string; errorReason?: string }>;
+  /** v7.14: which icon the macOS ScriptCraft ▸ Settings… item ended up with.
+   *  The build falls back silently when a platform will not take one, and a
+   *  silent fallback is indistinguishable from "the icon never changed" —
+   *  which is exactly the report that led here. */
+  settingsMenuIcon: string;
   collectedAt: string;
 }
 
@@ -88,8 +93,23 @@ export async function collectDiagnostics(): Promise<DiagnosticsReport> {
       using: e.using,
       errorReason: e.errorReason,
     })),
+    settingsMenuIcon: describeSettingsIcon(),
     collectedAt: new Date().toISOString(),
   };
+}
+
+function describeSettingsIcon(): string {
+  try {
+    // Static import would pull the menu module into every web build.
+    const kind = (window as unknown as { __scSettingsIcon?: () => string }).__scSettingsIcon?.();
+    switch (kind) {
+      case 'drawn': return 'the drawn gear';
+      case 'system': return 'the system gear (drawn one refused)';
+      case 'none': return 'NONE — this platform took no icon';
+      case 'unbuilt': return 'n/a — no native menu in this build';
+      default: return 'n/a — no native menu in this build';
+    }
+  } catch { return 'unknown'; }
 }
 
 function getAppVersion(): string {
@@ -111,6 +131,7 @@ export function formatReport(r: DiagnosticsReport): string {
   if (r.storageError) lines.push(`Storage error: ${r.storageError}`);
   if (r.appDataDir) lines.push(`App data dir: ${r.appDataDir}`);
   if (r.sqliteDbPath) lines.push(`SQLite DB path: ${r.sqliteDbPath}`);
+  lines.push(`Settings menu icon: ${r.settingsMenuIcon}`);
   if (r.oneDriveSuspect) {
     lines.push('');
     lines.push('⚠ OneDrive interference suspected — the app data directory appears to');

@@ -123,7 +123,9 @@ try {
      window." One flat list — captions and dividers gone. */
   ok(rail.captions.length === 0, `the sidebar is one flat list, no section captions (${rail.captions.length})`);
   ok(!rail.labels.includes('System')
-      && rail.labels.indexOf('Downloads') === rail.labels.indexOf('Save Options') + 1
+      /* v7.14, Derek: "Delete the downloads tab in settings" — its sections
+         live at the foot of Save Options now, asserted below. */
+      && !rail.labels.includes('Downloads')
       /* v7.06, Derek: the Languages tab is RENAMED Region (it owns units and
          date/time now too), and Editor moved under the Page group. */
       && rail.labels.includes('Region')
@@ -134,15 +136,17 @@ try {
       && !rail.labels.includes('Keyboard Shortcuts')
       && !rail.labels.includes('Presets')
       && rail.labels.indexOf('Editor') === rail.labels.indexOf('Page Setup') + 1,
-    `System tab gone; Downloads under Save Options; Region replaces Languages; Editor sits under Page Setup (${rail.labels.slice(0, 8).join(' | ')})`);
+    `System tab gone; no Downloads tab; Region replaces Languages; Editor sits under Page Setup (${rail.labels.slice(0, 8).join(' | ')})`);
+  /* v7.14, Derek deleted the Downloads TAB — the download folder and the
+     screenshot folder sit at the foot of Save Options, Screenshots last. */
   await page.evaluate(() => {
-    [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Downloads')?.click();
+    [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Save Options')?.click();
   });
   await settle(page);
   ok(await page.evaluate(() => {
     const heads = [...document.querySelectorAll('.prefs-general section > h3')].map((h) => h.textContent);
-    return heads.includes('Downloads') && heads.includes('Screenshots');
-  }), 'Downloads holds the download folder + the MOVED Screenshots section');
+    return heads.includes('Downloads') && heads[heads.length - 1] === 'Screenshots';
+  }), 'Save Options holds the download folder + Screenshots, last');
   await page.evaluate(() => {
     [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Defaults')?.click();
   });
@@ -305,8 +309,8 @@ try {
     return { heads, hints, border: cs?.borderTopWidth, pos: hb?.position, h3bg: hb?.backgroundColor, anc };
   });
   ok(save.heads.includes('Auto Saves') && !save.heads.includes('Auto Save Locations')
-      && !save.heads.includes('Draft Number') && !save.heads.includes('Screenshots'),
-    `ONE merged Auto Saves section; Draft Number and Screenshots both moved out (${save.heads.join(' | ')})`);
+      && !save.heads.includes('Draft Number') && save.heads[save.heads.length - 1] === 'Screenshots',
+    `ONE merged Auto Saves; Draft Number gone; Screenshots back, last (v7.14) (${save.heads.join(' | ')})`);
   ok(save.hints === 2, `helper text only under Google Drive + OneDrive (${save.hints} hint blocks)`);
   ok(save.border === '1px' && save.pos === 'static',
     `sections are bordered boxes with the title IN-FLOW inside them (v6.98) (${save.border}/${save.pos})`);

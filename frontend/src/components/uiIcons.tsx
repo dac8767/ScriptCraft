@@ -201,6 +201,10 @@ export const PanelRightIcon: React.FC<{ size?: number }> = ({ size = 13 }) => (
  * painted --fd-text-muted, and Derek wants this one at full strength.
  * currentColor as always — the class sets the colour, the icon inherits it.
  */
+/** The gear outline, shared: the React icon below AND the macOS menu
+ *  item, which rasterizes this exact path (menu/nativeMenuSync). */
+const GEAR_D = 'M208.3 76.2L213.2 21.9L298.8 21.9L303.7 76.2A186 186 0 0 1 349.4 95.2L349.4 95.2L391.3 60.2L451.8 120.7L416.8 162.6A186 186 0 0 1 435.8 208.3L435.8 208.3L490.1 213.2L490.1 298.8L435.8 303.7A186 186 0 0 1 416.8 349.4L416.8 349.4L451.8 391.3L391.3 451.8L349.4 416.8A186 186 0 0 1 303.7 435.8L303.7 435.8L298.8 490.1L213.2 490.1L208.3 435.8A186 186 0 0 1 162.6 416.8L162.6 416.8L120.7 451.8L60.2 391.3L95.2 349.4A186 186 0 0 1 76.2 303.7L76.2 303.7L21.9 298.8L21.9 213.2L76.2 208.3A186 186 0 0 1 95.2 162.6L95.2 162.6L60.2 120.7L120.7 60.2L162.6 95.2A186 186 0 0 1 208.3 76.2Z';
+export const GEAR_PATH = GEAR_D;
 export const GearIcon: React.FC<{ size?: number | string }> = ({ size = '1em' }) => (
   <svg
     className="icon-gear-strong"
@@ -208,7 +212,7 @@ export const GearIcon: React.FC<{ size?: number | string }> = ({ size = '1em' })
     fill="none" stroke="currentColor" strokeWidth={34} strokeLinejoin="round"
     aria-hidden="true"
   >
-    <path d="M208.3 76.2L213.2 21.9L298.8 21.9L303.7 76.2A186 186 0 0 1 349.4 95.2L349.4 95.2L391.3 60.2L451.8 120.7L416.8 162.6A186 186 0 0 1 435.8 208.3L435.8 208.3L490.1 213.2L490.1 298.8L435.8 303.7A186 186 0 0 1 416.8 349.4L416.8 349.4L451.8 391.3L391.3 451.8L349.4 416.8A186 186 0 0 1 303.7 435.8L303.7 435.8L298.8 490.1L213.2 490.1L208.3 435.8A186 186 0 0 1 162.6 416.8L162.6 416.8L120.7 451.8L60.2 391.3L95.2 349.4A186 186 0 0 1 76.2 303.7L76.2 303.7L21.9 298.8L21.9 213.2L76.2 208.3A186 186 0 0 1 95.2 162.6L95.2 162.6L60.2 120.7L120.7 60.2L162.6 95.2A186 186 0 0 1 208.3 76.2Z" />
+    <path d={GEAR_D} />
     <circle cx="256" cy="256" r="112" />
   </svg>
 );

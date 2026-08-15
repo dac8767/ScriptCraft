@@ -19,6 +19,7 @@
  * ProseMirror history.
  */
 import { isTauri } from '../services/platform';
+import { GEAR_PATH } from '../components/uiIcons';
 
 export interface NativeItemData {
   label: string;
@@ -94,6 +95,43 @@ function actionAt(path: number[]): (() => void) | undefined {
     items = it?.children;
   }
   return it?.action;
+}
+
+/** Which icon the macOS Settings… item actually got. Read by Diagnostics —
+ *  the fallbacks are invisible otherwise, and an invisible fallback is
+ *  indistinguishable from "nothing changed". */
+export type SettingsIconKind = 'drawn' | 'system' | 'none' | 'unbuilt';
+let lastSettingsIcon: SettingsIconKind = 'unbuilt';
+export const settingsIconKind = (): SettingsIconKind => lastSettingsIcon;
+/* Diagnostics reads this without importing the menu module (which would pull
+   Tauri APIs into every web build). */
+if (typeof window !== 'undefined') {
+  (window as unknown as { __scSettingsIcon?: () => string }).__scSettingsIcon = settingsIconKind;
+}
+
+/** The gear, drawn to a square RGBA buffer. White — a macOS menu in dark
+ *  appearance draws its labels white, and this sits beside one. */
+async function rasterizeGear(size: number): Promise<{ data: Uint8Array; size: number } | null> {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const scale = size / 512;
+    ctx.scale(scale, scale);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 34;
+    ctx.lineJoin = 'round';
+    ctx.stroke(new Path2D(GEAR_PATH));
+    ctx.beginPath();
+    ctx.arc(256, 256, 112, 0, Math.PI * 2);
+    ctx.stroke();
+    const { data } = ctx.getImageData(0, 0, size, size);
+    return { data: new Uint8Array(data.buffer.slice(0)), size };
+  } catch {
+    return null;
+  }
 }
 
 export async function syncNativeMenu(sections: NativeSectionData[]): Promise<void> {
@@ -179,15 +217,21 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
       ]) as never[],
     })));
 
-  /* v7.11, Derek: "Add an icon for Settings in the ScriptCraft menu."
-     macOS menu items take a NATIVE icon, so it matches whatever the OS draws
-     rather than a bitmap that ages. v7.12, Derek ("use a different gear icon
-     for settings"): `PreferencesGeneral` is the plain GEAR; `Advanced` — what
-     this used first — is the gears-and-slider Advanced-pane icon. NativeIcon is macOS-only (Windows and
-     Linux are documented as unsupported), and a throw here would take the
-     WHOLE menu bar down with it — so any failure falls back to the plain
-     item this replaced. A menu that loses its icon is a blemish; a menu that
-     fails to build is the app without menus. */
+  /* v7.11–v7.14, Derek: "Add an icon for Settings in the ScriptCraft menu",
+     then "use this as the icon" (his gear), then — after a version where
+     nothing changed on his screen — the reason why.
+
+     IN NATIVE MENU MODE THIS IS THE ONLY SETTINGS ICON HE CAN SEE. MenuBar
+     drops the in-window Settings… entry when the native bar is on (that is
+     where the macOS app menu owns it), so the React <GearIcon /> never
+     renders for him. Painting it there and stopping was the mistake.
+
+     So this item carries HIS gear as a real image: the same path the React
+     icon draws (uiIcons.GEAR_PATH) rasterized to RGBA at 2× menu size. The
+     fallbacks descend — image → the system preferences gear → a plain item —
+     and `lastSettingsIcon` records which one landed, because a silent
+     fallback is how "the icon hasn't changed" happens with every test
+     passing. Help ▸ Developer ▸ Diagnostics shows it. */
   const settingsItem = async () => {
     const opts = {
       text: 'Settings…',
@@ -195,9 +239,22 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
       action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'settings' })); },
     };
     try {
+      const rgba = await rasterizeGear(36);
+      if (rgba) {
+        const { Image } = await import('@tauri-apps/api/image');
+        const img = await Image.new(rgba.data, rgba.size, rgba.size);
+        lastSettingsIcon = 'drawn';
+        return await IconMenuItem.new({ ...opts, icon: img });
+      }
+    } catch (err) {
+      console.warn('[nativeMenu] drawn gear unavailable:', err);
+    }
+    try {
+      lastSettingsIcon = 'system';
       return await IconMenuItem.new({ ...opts, icon: NativeIcon.PreferencesGeneral });
     } catch (err) {
       console.warn('[nativeMenu] Settings icon unavailable — plain item:', err);
+      lastSettingsIcon = 'none';
       return await MenuItem.new(opts);
     }
   };

@@ -13,6 +13,7 @@
  * (decorations stay native there), and the web build has no titlebar at all.
  */
 import React from 'react';
+import { subscribeSaveFlash, SAVE_FLASH_MS } from '../utils/saveFlash';
 import {
   FaSave, FaRegSave, FaUndo, FaRedo, FaFolderOpen, FaFile, FaPrint, FaRegEye,
   FaFilePdf, FaSpellCheck,
@@ -61,6 +62,24 @@ export const showTitleBar = (): boolean =>
   (isDesktopTauri() && isMacLike)
   || (import.meta.env.DEV && localStorage.getItem('scriptcraft:devTitlebar') === '1');
 
+/* v7.14, Derek: "move the 'Saved' indicator into the quick access bar instead
+   of the bottom right corner of the app." It rides at the end of the QAT row
+   and fades out; nothing else in the bar moves, because it only occupies space
+   while it is up. */
+const SavedFlash: React.FC = () => {
+  const [text, setText] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    let timer = 0;
+    return subscribeSaveFlash((t) => {
+      setText(t);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setText(null), SAVE_FLASH_MS);
+    });
+  }, []);
+  if (!text) return null;
+  return <span className="fs-titlebar-saved" role="status">{text}</span>;
+};
+
 const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
   const title = useEditorStore((s) => s.documentTitle);
   const qatItems = useEditorStore((s) => s.qatItems);
@@ -99,6 +118,7 @@ const TitleBar: React.FC<{ editor: Editor | null }> = ({ editor }) => {
             </button>
           );
         })}
+        <SavedFlash />
       </div>
       <div className="fs-titlebar-title">{title}</div>
       {/* right counterweight keeps the title centered against the QAT.
