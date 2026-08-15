@@ -108,20 +108,66 @@ const icons = await page.evaluate(async () => {
 });
 ok('the Settings command still exists', icons.hasSettingsCmd, '');
 
-// Render the ribbon's Settings button and the Tools menu icon, compare paths.
+/* v7.13, Derek sent the gear he wants: a stroked OUTLINE gear, eight teeth,
+   hollow centre — drawn in uiIcons (react-icons has no gear that shape) — and
+   "make the lines white". Dropdown icons are painted --fd-text-muted, so the
+   white is a real, checkable difference from every other icon in that menu. */
 const glyphs = await page.evaluate(() => {
   const svgPath = (el) => el?.querySelector('svg path')?.getAttribute('d') ?? null;
   const menuTools = [...document.querySelectorAll('.menu-item')].find((e) => /Tools/.test(e.textContent));
   return { toolsPath: svgPath(menuTools) };
 });
-const settingsPath = await page.evaluate(async () => {
-  const m = await import('/src/components/toolbarCommands.tsx');
-  const cmd = m.TOOLBAR_COMMANDS.find((c) => c.id === 'settings');
-  const type = cmd?.icon?.type;
-  return typeof type === 'function' ? type.name || String(type).slice(0, 40) : String(type);
-});
-ok('Settings no longer uses the wrench component', !/Wrench/i.test(settingsPath), settingsPath);
 ok('the Tools menu still has its wrench', Boolean(glyphs.toolsPath), '');
+
+/* Clear the decks first: section 1 leaves the Settings window and the template
+   editor it opened on screen, and an overlay eats the menu click — Playwright
+   calls that "intercepts pointer events", not a miss. The template editor has
+   NO Escape handler (only Cancel and an overlay click), so pressing Escape at
+   it does nothing; click the button it actually has. */
+const cancel = await page.$('.template-editor-header .dialog-btn');
+if (cancel) { await cancel.click(); await settle(page); }
+await page.evaluate(() => window.__scStore.getState().closePreferences());
+await settle(page);
+await page.waitForSelector('.template-editor-overlay, .prefs-window', { state: 'detached', timeout: 8000 }).catch(() => {});
+
+const help = await page.$('.menu-item:has-text("Help")');
+await help.click();
+await settle(page);
+const gear = await page.evaluate(() => {
+  const item = [...document.querySelectorAll('.menu-dropdown-item')].find((e) => /Settings/.test(e.textContent));
+  const svg = item?.querySelector('svg');
+  const other = [...document.querySelectorAll('.menu-dropdown-item')]
+    .find((e) => !/Settings/.test(e.textContent) && e.querySelector('.menu-dropdown-icon svg'));
+  const g = svg ? getComputedStyle(svg) : null;
+  const o = other ? getComputedStyle(other.querySelector('.menu-dropdown-icon svg')) : null;
+  return {
+    cls: svg?.getAttribute('class') ?? null,
+    stroke: svg?.getAttribute('stroke') ?? null,
+    fill: svg?.getAttribute('fill') ?? null,
+    teeth: (svg?.querySelector('path')?.getAttribute('d')?.match(/A186/g) || []).length,
+    hollow: !!svg?.querySelector('circle'),
+    color: g?.color ?? null,
+    otherColor: o?.color ?? null,
+  };
+});
+ok('Settings wears the drawn gear', gear.cls === 'icon-gear-strong', JSON.stringify(gear));
+ok('…as an OUTLINE — stroked, not filled', gear.stroke === 'currentColor' && gear.fill === 'none', JSON.stringify(gear));
+ok('…with eight teeth and a hollow centre', gear.teeth === 8 && gear.hollow, JSON.stringify(gear));
+ok('…and WHITE lines', gear.color === 'rgb(255, 255, 255)', gear.color);
+ok('…brighter than the other icons in that menu, which stay muted',
+  gear.otherColor && gear.otherColor !== gear.color, JSON.stringify({ gear: gear.color, other: gear.otherColor }));
+
+/* A light theme must not paint it white — that is an invisible icon. */
+const onLight = await page.evaluate(async () => {
+  document.documentElement.setAttribute('data-theme', 'light');
+  await new Promise((r) => setTimeout(r, 80));
+  const svg = [...document.querySelectorAll('.menu-dropdown-item')]
+    .find((e) => /Settings/.test(e.textContent))?.querySelector('svg');
+  const c = svg ? getComputedStyle(svg).color : null;
+  document.documentElement.setAttribute('data-theme', 'dark');
+  return c;
+});
+ok('a light theme paints it dark instead of white', onLight !== null && onLight !== 'rgb(255, 255, 255)', String(onLight));
 
 const src = readFileSync(new URL('../src/menu/nativeMenuSync.ts', import.meta.url), 'utf8');
 ok('the native menu uses the plain GEAR, not the Advanced pane icon',
@@ -132,7 +178,7 @@ ok('…still with the fallback that keeps the menu alive',
 /* Read the SOURCE, not the served module: Vite compiles JSX away, so
    `<FaCog />` never appears in what the browser is given. */
 const menuSrc = readFileSync(new URL('../src/components/MenuBar.tsx', import.meta.url), 'utf8');
-ok('the in-app Settings… item uses the gear too', /<FaCog \/>, label: 'Settings…'/.test(menuSrc), '');
+ok('the in-app Settings… item uses the drawn gear', /<GearIcon \/>, label: 'Settings…'/.test(menuSrc), '');
 
 console.log(`\ncheck-v712: ${pass} passed, ${fail} failed`);
 await browser.close();

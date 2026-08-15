@@ -153,6 +153,10 @@ describe('custom themes can reach every colour', () => {
       ['--fd-panel-bg', 'alias of --fd-navigator-bg'],
       ['--fd-tooltip-bg', 'alias of --fd-dropdown-bg'],
       ['--fd-tooltip-text', 'alias of --fd-text'],
+      // v7.13: full-strength icon ink (the Settings gear). Not a theme colour
+      // a writer picks — it is white on the dark themes and the text colour on
+      // the light ones, so the icon is never invisible.
+      ['--fd-icon-strong', 'derived: white on dark themes, --fd-text on light'],
       ['--fd-btn-bg', 'editable'], ['--fd-btn-text', 'editable'], ['--fd-btn-hover', 'editable'],
     ]);
     const unreachable = rootTokens.filter((t) => !editable.has(t) && !EXEMPT.has(t)).sort();

@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.13",
+  "date": "2026-08-15",
+  "changes": [
+   "Settings wears the gear you sent — an outline gear with eight teeth and a hollow centre. No icon set in the app had that shape, so it is drawn in the app's icon registry rather than approximated.",
+   "Its lines are white, and only its lines: the other icons in a menu are deliberately dimmer, so the gear stands out. On the light, sepia, paper and Solarized Light themes it takes the text colour instead — white on a light menu is an icon you cannot see."
+  ]
+ },
+ {
   "version": "7.12",
   "date": "2026-08-15",
   "changes": [

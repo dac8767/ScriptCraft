@@ -59,7 +59,7 @@ import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
 import { pluginRegistry } from '../plugins/registry';
 import { LuSearch, LuZoomIn } from 'react-icons/lu';
-import { MENU_ICONS, CirclePlusIcon, CircleMinusIcon } from './uiIcons';
+import { MENU_ICONS, CirclePlusIcon, CircleMinusIcon, GearIcon } from './uiIcons';
 import { useScrapbookMenus } from './NotebookTool';
 import { FaTable, FaImage as FaImageIcon, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
@@ -126,7 +126,7 @@ import {
   FaFileSignature,
   FaRegClone, FaStream,   FaEdit, FaRegEdit,
   FaTags,
-  FaMarker, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench, FaCog,
+  FaMarker, FaRegEyeSlash, FaRegEye, FaCheck, FaWrench,
   FaBug,
   FaRulerHorizontal,
   FaPencilAlt, FaCoffee, FaBoxOpen,
@@ -1698,9 +1698,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         { separator: true, label: '' },
         /* v7.12, Derek ("use a different gear icon for settings"): Settings had
            been borrowing FaWrench — the same icon the Tools MENU and every
-           Customize… item wear, so three different things read alike. There
-           was no gear anywhere in the app; this is it. */
-        { icon: <FaCog />, label: 'Settings…', shortcut: sc('settings'), action: () => setPrefsOpen(true) },
+           Customize… item wear, so three different things read alike.
+           v7.13: and it is the gear Derek drew for it (uiIcons.GearIcon),
+           at full strength rather than the muted icon colour. */
+        { icon: <GearIcon />, label: 'Settings…', shortcut: sc('settings'), action: () => setPrefsOpen(true) },
         { separator: true, label: '' },
       ]),
       {

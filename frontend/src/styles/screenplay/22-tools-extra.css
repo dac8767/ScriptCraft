@@ -663,6 +663,7 @@ input.fs-switch:checked::after { left: 15px; }
    #7d4a26 (5.89:1) — same hue family, legible as text. The report's tinted-
    page idea is NOT applied (it touches the page/export pipeline). */
 [data-theme="sepia"] {
+  --fd-icon-strong: var(--fd-text);   /* v7.13: white would vanish here */
   --fd-bg: #efe6d5; --fd-toolbar-bg: #f7f0e2; --fd-menu-bg: #f4ecdd;
   --fd-menu-hover: #ddd0b8; --fd-accent: #7d4a26; --fd-border: #d4c5a9;
   --fd-text: #4a3f2f; --fd-text-muted: #6e5f45; --fd-navigator-bg: #e7dcc7;
@@ -702,6 +703,7 @@ input.fs-switch:checked::after { left: 15px; }
   --fd-btn-bg: #1c699f; --fd-btn-text: #eee8d5; --fd-btn-hover: #3b7eac;
 }
 [data-theme="solarized-light"] {
+  --fd-icon-strong: var(--fd-text);   /* v7.13: white would vanish here */
   --fd-bg: #fdf6e3; --fd-toolbar-bg: #fffdf5; --fd-menu-bg: #fffcf1;
   --fd-menu-hover: #e4ddc8; --fd-accent: #268bd2; --fd-border: #d9d2be;
   /* v6.46: Solarized Light reproduced the spec's famous flaw — body text
@@ -738,6 +740,7 @@ input.fs-switch:checked::after { left: 15px; }
    - Catppuccin Mocha: canonical crust/mantle/base map EXACTLY onto the
      status/panels/body ladder; subtext0 muted (7.37:1), mauve accent. */
 [data-theme="paper"] {
+  --fd-icon-strong: var(--fd-text);   /* v7.13: white would vanish here */
   --fd-bg: #fafaf8; --fd-toolbar-bg: #ffffff; --fd-menu-bg: #fefefc;
   --fd-menu-hover: #e8e8e4; --fd-accent: #1565c0; --fd-border: #e0e0dc;
   --fd-text: #202124; --fd-text-muted: #5f6368; --fd-navigator-bg: #f1f1ee;
