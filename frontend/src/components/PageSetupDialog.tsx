@@ -8,6 +8,20 @@ interface PageSetupDialogProps {
   onClose: () => void;
   /** Render only the content (no overlay/box) — used inside Preferences. */
   embedded?: boolean;
+  /* v7.10, Derek: "'page setup' used to have a full page of fields for the
+     various measurement options. This is what you should see when clicking
+     view on an item in the current Page Setup tab. make equivalents for the
+     other templates."
+
+     THIS is that page of fields, and there is only one of it. Given `value`
+     + `onSave` it edits whatever the caller owns — a TEMPLATE's page layout
+     — instead of the open document's. Left out (File ▸ Page Setup, Settings
+     ▸ Page Setup) it behaves exactly as before and writes the document. Do
+     not fork it: two copies of these twenty fields WILL drift. */
+  value?: PageLayout;
+  onSave?: (next: PageLayout) => void;
+  /** Reset returns to this instead of the app defaults (a template's own). */
+  resetTo?: PageLayout;
 }
 
 // name is the stable option value; the visible label is built per the units setting.
@@ -27,8 +41,11 @@ function inToPt(inches: number): number {
 
 const CM_PER_IN = 2.54;
 
-const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = false }) => {
-  const { pageLayout, setPageLayout } = useEditorStore();
+const PageSetupDialog: React.FC<PageSetupDialogProps> = ({
+  onClose, embedded = false, value, onSave, resetTo,
+}) => {
+  const { pageLayout: docLayout, setPageLayout } = useEditorStore();
+  const pageLayout = value ?? docLayout;
 
   // v1.61: Settings > General > Measurements. The layout is STORED in inches
   // (and points for the pt-based margins) regardless — only the display converts,
@@ -107,13 +124,14 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({ onClose, embedded = f
   );
 
   const handleApply = useCallback(() => {
-    setPageLayout(layout);
+    if (onSave) onSave(layout);
+    else setPageLayout(layout);
     onClose();
-  }, [layout, setPageLayout, onClose]);
+  }, [layout, onSave, setPageLayout, onClose]);
 
   const handleReset = useCallback(() => {
-    setLayout({ ...DEFAULT_PAGE_LAYOUT });
-  }, []);
+    setLayout({ ...(resetTo ?? DEFAULT_PAGE_LAYOUT) });
+  }, [resetTo]);
 
   const body = (
     <>

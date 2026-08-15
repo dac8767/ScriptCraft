@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useFormattingTemplateStore, SYSTEM_TEMPLATES, SYSTEM_TEMPLATE_LIST } from '../stores/formattingTemplateStore';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
+import { useEditorStore } from '../stores/editorStore';
 import { INDUSTRY_STANDARD_TEMPLATE } from '../stores/industryStandardTemplate';
 import type { FormattingTemplate } from '../stores/formattingTypes';
 import TemplateEditorDialog from './TemplateEditorDialog';
@@ -74,6 +75,14 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
     } else {
       setActiveTemplateId(template.id);
     }
+    /* v7.10, Derek: a template's PAGE SETUP is part of the template. Settings
+       ▸ Page Setup ▸ View edits a full page of fields per template (built-ins
+       included); choosing the template is what puts those measurements on the
+       script. Without this the fields would look like they worked and change
+       nothing — the failure mode this repo keeps finding. */
+    useEditorStore.getState().setPageLayout(
+      useFormattingTemplateStore.getState().getTemplatePageLayout(template.id),
+    );
     // Seed starter content for empty docs (e.g. new-script flow). Existing content is left untouched.
     if (template.starterDocument && template.starterDocument.length > 0 && editor && !editor.isDestroyed && isEmptyDoc()) {
       try {

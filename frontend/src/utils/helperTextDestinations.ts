@@ -27,7 +27,6 @@ const TOOL_BY_FILE: [RegExp, ToolId][] = [
   [/AnalyticsTool|GenderAnalysisTool|ScriptStatistics/, 'analytics'],
   [/ThesaurusTool/, 'thesaurus'],
   [/NotebookTool/, 'notebook'],
-  [/RewriteTool/, 'rewrite'],
   [/TagsPanel/, 'tags'],
   [/SpellCheckPanel/, 'spelling'],
   [/WorkspacesTool/, 'workspaces'],

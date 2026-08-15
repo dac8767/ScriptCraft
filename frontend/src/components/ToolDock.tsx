@@ -23,7 +23,7 @@ import {
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard,
   FaStream, FaTags, FaBoxes, FaSpellCheck, FaHistory,
   FaKeyboard, FaRobot, FaBook, FaBookOpen, FaSlidersH, FaColumns,
-  FaCommentDots, FaChevronRight, FaChevronDown, FaMarker, FaMagic,
+  FaCommentDots, FaChevronRight, FaChevronDown, FaMarker,
   FaRegEdit,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, FULLSCREEN_ONLY_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
@@ -47,7 +47,6 @@ import FeedbackTool from './FeedbackTool';
 import TagsPanel, { TagsTitleExtra, TagsWindowActions, useTagsTabs } from './TagsPanel';
 import MarkupsPanel, { MarkupsTitleExtra, MarkupsControls } from './MarkupsPanel';
 import ThesaurusTool from './ThesaurusTool';
-import RewriteTool, { RewriteHeaderControls } from './RewriteTool';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls, useOutlineTabs, OutlineTabsExtra, OutlineBeatCount } from './BeatBoard';
 import TypewriterTool, { FocusHeaderControls } from './TypewriterTool';
@@ -55,7 +54,6 @@ import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
 import HelperTextTool, { HelperTextTitleExtra } from './HelperTextWindow';
 
-import { gatedToolIds, subscribeAddons } from '../addons/addonRegistry';
 
 export interface ToolDef {
   id: ToolId;
@@ -77,10 +75,6 @@ export interface ToolDef {
   keepOpenOnEditorClick?: boolean;
   /** dock group separators, Photoshop-style (per side, in order) */
   group: number;
-  /** v7.05: this tool belongs to an ADD-ON. It is absent from every surface —
-   *  dock rows, ribbon palette, Customize pickers, the Tools menu — until that
-   *  add-on is installed (Settings ▸ Add-ons). See src/addons/addonRegistry.ts. */
-  addonId?: string;
   /** v7.05, Derek: developer surface. Never offered in the dock, the ribbon or
    *  any Customize picker; it opens from Help ▸ Developer only. Same treatment
    *  Helper Text already had, made explicit so it can't drift back. */
@@ -133,10 +127,6 @@ export const ALL_TOOLS: ToolDef[] = [
   // locally under public/thesaurus/; follows the script caret, replaces
   // in place. No network involved (see utils/thesaurus.ts).
   { id: 'thesaurus', label: 'Thesaurus', icon: <FaBookOpen />, defaultSize: { w: 320, h: 420 }, group: 3 },
-  // v5.54, Derek: Action Rewrite — three craft-guided rewrites of selected
-  // action lines (Derek's design handoff; prompt + API call live Rust-side,
-  // the writer brings their own Anthropic key, stored in the OS keychain).
-  { id: 'rewrite', label: 'Action Rewrite', icon: <FaMagic />, defaultSize: { w: 360, h: 520 }, group: 3, addonId: 'action-rewrite' },
   // v1.96: the Notebook window is ONLY the pages tree — it sits inline in
   // the panel like Navigator, while the writing surface takes over the
   // editor area (NotebookSurface in ScreenplayEditor). keepOpenOnEditorClick
@@ -430,7 +420,6 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
   // v6.19, Derek: the Analytics tab options ride the window header too.
   analytics: { useTabs: useAnalyticsTabs },
   notebook: { Controls: NotebookHeaderExtra },   // v2.05: declutter + create buttons
-  rewrite: { Controls: RewriteHeaderControls },  // v5.60: the same declutter eye
   typewriter: { Controls: FocusHeaderControls }, // v5.66: the "?" in the header
   // v2.41: count/Arrangement/help. v6.48, Derek: the variation tabs moved up
   // into the header (rename/close/+ ride the shared strip's optional slots),
@@ -457,23 +446,7 @@ export const TOOL_CHROME: Partial<Record<ToolId, ToolChrome>> = {
  * this governs what is OFFERED, not what can exist.
  */
 export function availableTools(): ToolDef[] {
-  const gated = gatedToolIds();
-  return ALL_TOOLS.filter((t) => !t.devOnly && !gated.includes(t.id));
-}
-
-/** Re-renders the caller whenever an add-on is installed or removed. Any
- *  component that reads availableTools() / gatedToolIds() during render needs
- *  this — the install state lives outside the store, so nothing else will
- *  invalidate it. */
-export function useAddonRevision(): void {
-  const [, bump] = React.useReducer((n: number) => n + 1, 0);
-  React.useEffect(() => subscribeAddons(bump), []);
-}
-
-/** React-aware tool list: re-renders when an add-on is installed or removed. */
-export function useAvailableTools(): ToolDef[] {
-  useAddonRevision();
-  return availableTools();
+  return ALL_TOOLS.filter((t) => !t.devOnly);
 }
 
 export const WINDOW_IDS: ToolId[] = ['navigator', 'pages', 'scenes', 'locations', 'characters', 'assets', 'spelling', 'history'];
@@ -629,8 +602,6 @@ export function ToolContent({ id, editor, scrollContainer, inTakeover = false }:
       return <MarkupsPanel editor={editor} />;
     case 'thesaurus':
       return <ThesaurusTool editor={editor} />;
-    case 'rewrite':
-      return <RewriteTool editor={editor} />;
     case 'fragments':
       return <FragmentsTool editor={editor} />;
     case 'tags':
@@ -889,12 +860,6 @@ function FullscreenMapRailPanel() {
 }
 
 export default function ToolDock({ side, editor, scrollContainer }: ToolDockProps) {
-  /* v7.05: re-render when an add-on is installed or removed. The rail filters
-     on gatedToolIds() below, and that is NOT store state — without this
-     subscription the rail kept showing (or hiding) a tool until some unrelated
-     change happened to re-render it. Installing from Settings must take effect
-     immediately, not eventually. */
-  useAddonRevision();
   const nameUpper = useEditorStore((s) => s.panelNameCase === 'upper');
   const {
     activeTool, setActiveTool, activeToolRight, setActiveToolRight, toolConfig,
@@ -905,15 +870,13 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
     const i = toolOrder.indexOf(id);
     return i === -1 ? 1000 + ALL_TOOLS.findIndex((t) => t.id === id) : i;
   };
-  /* v7.05: the DOCK RAIL reads the gated list too. Without this a tool whose
-     add-on is uninstalled (or a dev-only surface) still had a rail row, because
-     the rail filters on the persisted toolConfig — which remembers a tool that
-     used to be enabled. Gating here is what makes "removed from the app" true
-     rather than "hidden from the menus". */
-  const gated = gatedToolIds();
+  /* v7.05: the DOCK RAIL filters on the persisted toolConfig, which remembers
+     a tool that used to be enabled — so a dev-only surface still had a rail row
+     until this filtered too. "Removed from the app" means every surface, and
+     the surfaces do not share one list. */
   const tools = ALL_TOOLS.filter((t) => {
     if (PANEL_EXCLUDED_IDS.includes(t.id)) return false;   // never dock these
-    if (t.devOnly || gated.includes(t.id)) return false;
+    if (t.devOnly) return false;
     const cfg = toolConfigFor(toolConfig, t.id);
     return cfg.enabled && cfg.side === side;
   }).sort((a, b) => orderIdx(a.id) - orderIdx(b.id));
@@ -980,14 +943,7 @@ export default function ToolDock({ side, editor, scrollContainer }: ToolDockProp
   const scrapbookOpenForSolo = useNotebookStore((s) => s.notebookOpen);
   const scrapbookExclusive = useSettingsStore((s) => s.scrapbookExclusive);
   const scrapbookSolo = scrapbookOpenForSolo && scrapbookExclusive;
-  // v5.60, Derek: Action Rewrite gets the same declutter. isToolOpen is the
-  // store's one answer to "open" (docked, floating, or fullscreen); the
-  // selector calls it so the boolean re-derives on every store change.
-  const rewriteOpenForSolo = useEditorStore((s) => s.isToolOpen('rewrite'));
-  const rewriteExclusive = useSettingsStore((s) => s.rewriteExclusive);
-  // If both claim solo, the Scrapbook wins — its surface owns the editor.
-  const soloId: ToolId | null = scrapbookSolo ? 'notebook'
-    : (rewriteOpenForSolo && rewriteExclusive) ? 'rewrite' : null;
+  const soloId: ToolId | null = scrapbookSolo ? 'notebook' : null;
   // neverDock tools float regardless — even a stale small toolSize from before
   // the flag existed must not pull them inline.
   const inline = !iconsMode && !!(active && activeSize && activeMode === 'docked' && !active.neverDock);

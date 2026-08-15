@@ -1068,13 +1068,8 @@ input.fs-switch:checked::after { left: 15px; }
   font-size: 12.5px; color: var(--fd-text-muted);
 }
 .pst-baseselect { min-width: 200px; }
-/* v7.00: the per-template page-size window + the redone Defaults rows */
-.pst-info-row {
-  display: flex; justify-content: space-between; gap: 16px;
-  padding: 4px 0;
-  font-size: 12.5px; color: var(--fd-text);
-}
-.pst-info-row span { color: var(--fd-text-muted); }
+/* v7.10: the read-only page-size box is gone — View opens the real page of
+   Page Setup fields now. The Defaults rows below stayed. */
 .fs-defaults-row { display: flex; align-items: center; gap: 12px; padding: 5px 0; }
 .fs-defaults-info { flex: 1; min-width: 0; }
 .fs-defaults-name { font-size: 12.5px; font-weight: 600; color: var(--fd-text); }
@@ -1987,26 +1982,3 @@ body.fs-shot-veil-feedback .fs-tool-takeover-feedback { visibility: hidden !impo
   gap: 6px;
 }
 
-/* ── Settings ▸ Add-ons (v7.05) ────────────────────────────────────────────
-   One row per add-on. Sizes come from the v7.02 scales; nothing here invents
-   a new one. */
-.fs-addon-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--fd-border);
-}
-.fs-addon-row:last-child { border-bottom: none; }
-.fs-addon-icon { color: var(--fd-text-muted); font-size: 15px; margin-top: 2px; flex-shrink: 0; }
-.fs-addon-info { flex: 1; min-width: 0; }
-.fs-addon-name { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
-.fs-addon-version { font-size: 11px; font-weight: 400; color: var(--fd-text-muted); }
-.fs-addon-badge {
-  font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px;
-  background: color-mix(in srgb, var(--fd-success) 16%, transparent);
-  color: var(--fd-success);
-}
-.fs-addon-summary { font-size: 12.5px; color: var(--fd-text); margin-top: 2px; }
-.fs-addon-details { font-size: 12px; color: var(--fd-text-muted); margin-top: 4px; line-height: 1.5; }
-.fs-addon-empty { font-size: 12.5px; color: var(--fd-text-muted); padding: 8px 0; }

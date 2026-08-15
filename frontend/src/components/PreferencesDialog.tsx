@@ -1,13 +1,12 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaWrench, FaColumns, FaRulerCombined, FaCloudUploadAlt, FaDownload, FaLanguage, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaMarker, FaPuzzlePiece } from 'react-icons/fa';
+import { FaWrench, FaColumns, FaRulerCombined, FaCloudUploadAlt, FaDownload, FaLanguage, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaMarker } from 'react-icons/fa';
 import PresetsPanel from './PresetsPanel';
 import { CUSTOMIZE_RESETS, ResetAllButton, runCustomizeReset, type CustomizeTabId } from './customizeResets';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { DATE_FORMATS, type DateFormatId } from '../utils/dateFormat';
 import PageSetupTab from './PageSetupTab';
-import AddonsTab from './AddonsTab';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
 import { showToast } from './Toast';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
@@ -40,7 +39,7 @@ import FloatingWindow from './FloatingWindow';
    ───────────────────────────────────────────────────────────────────────── */
 
 type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'markups' | 'themes';
-type PrefTab = 'general' | 'saveloc' | 'downloads' | 'languages' | 'keys' | 'addons' | 'page' | 'presets' | 'defaults' | `cz-${CustomizeCat}`;
+type PrefTab = 'general' | 'saveloc' | 'downloads' | 'languages' | 'keys' | 'page' | 'presets' | 'defaults' | `cz-${CustomizeCat}`;
 
 /* v7.00, Derek (via the feedback form): the sidebar is CATEGORIZED —
    System (app behavior), Page (script setup), then Customize. The old
@@ -59,7 +58,6 @@ const SYSTEM_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> 
   { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
   /* v7.05, Derek: add-ons install here. An add-on contributes nothing to the
      app until installed, so this tab is where it first becomes visible. */
-  { id: 'addons', label: 'Extensions', icon: <FaPuzzlePiece /> },
 ];
 const PAGE_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = [
   /* v6.99, Derek: Templates and Page Setup are ONE tab. */
@@ -886,7 +884,6 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             )}
             {tab === 'page' && <PageSetupTab />}
             {tab === 'keys' && <KeyboardShortcutsTab />}
-            {tab === 'addons' && <AddonsTab />}
             {tab === 'saveloc' && <SaveLocationsTab />}
             {tab === 'downloads' && <DownloadsTab />}
             {tab === 'languages' && (

@@ -48,11 +48,10 @@ objc2-foundation = "=0.3.2"
 objc2-app-kit = "=0.3.2"
 objc2-pdf-kit = "=0.3.2"
 
-# v5.54: OS-keychain storage for the Action Rewrite BYO API key (rewrite.rs).
-# Desktop-only — mobile builds compile keyless stubs instead (no keychain
-# store there), which is why this sits in a target table, not [dependencies].
-[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+# v7.10, Derek: "remove the Action Rewrite tool completely from the app." That
+# retired the only user of `keyring` (the BYO Anthropic key lived in the OS
+# keychain), so the crate goes with it — and the About window's open-source
+# list drops keyring-rs in this same change, per the standing rule.
 
 [profile.release]
 panic = "abort"

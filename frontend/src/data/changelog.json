@@ -1,5 +1,16 @@
 [
  {
+  "version": "7.10",
+  "date": "2026-08-15",
+  "changes": [
+   "Action Rewrite has been removed from the app. The tool, its editor extension, its stylesheet and the Rust-side API call and keychain storage are all gone — nothing about it ships any more. The About window's open-source list drops keyring-rs with it, since the OS keychain was only ever used to hold that tool's API key.",
+   "Extensions are on hold. The Extensions tab is out of Settings until the community-extension design is decided, rather than leaving a tab that offers nothing.",
+   "Page Setup ▸ View opens a full page of measurement fields for that template — page size, all four margins, header and footer margins, header and footer content — instead of a seven-line summary. It is the same page of fields as File ▸ Page Setup, pointed at the template.",
+   "Built-in templates can be edited too. Industry Standard, Multicam Sitcom, One-Hour Drama, Stage Play, Radio Play and A/V Script each keep their own page setup, saved separately so the built-in itself is untouched and Reset Default always brings it back.",
+   "Choosing a template now applies its page setup to the script. Without that the fields would have looked like they worked and changed nothing."
+  ]
+ },
+ {
   "version": "7.09",
   "date": "2026-08-14",
   "changes": [

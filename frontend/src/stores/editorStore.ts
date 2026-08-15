@@ -407,7 +407,7 @@ export type ToolId =
   | 'beatboard' | 'tags' | 'projects' | 'assets' | 'markups'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
   | 'spelling' | 'history' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
-  | 'notebook' | 'design' | 'workspaces' | 'feedback' | 'thesaurus' | 'rewrite'
+  | 'notebook' | 'design' | 'workspaces' | 'feedback' | 'thesaurus'
   /** v6.52, Derek: the Helper Text editor is a real TOOL now — draggable
    *  into a side panel like any window. Opens from Help ▸ Developer; no
    *  dock row by default (enabled:false). */
@@ -617,8 +617,6 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   aiwriter: { side: 'right', enabled: true },
   // v5.53, Derek: the Thesaurus (local MyThes/WordNet data — no network)
   thesaurus: { side: 'right', enabled: true },
-  // v5.54, Derek: Action Rewrite (AI action-line rewrites, BYO key)
-  rewrite: { side: 'right', enabled: true },
   notebook: { side: 'right', enabled: true },
   analytics: { side: 'right', enabled: true },
 
@@ -630,7 +628,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'markups', 'fragments', 'beatboard', 'goals', 'typewriter', 'aiwriter', 'thesaurus', 'rewrite', 'notebook', 'analytics',
+  'sticky', 'markups', 'fragments', 'beatboard', 'goals', 'typewriter', 'aiwriter', 'thesaurus', 'notebook', 'analytics',
   'tags',
 ];
 

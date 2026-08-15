@@ -132,18 +132,6 @@ export async function seedScript(page, scenes) {
 }
 
 /** Open a tool from the side panel by its label. */
-/** v7.05: install a bundled ADD-ON so its tool exists. Action Rewrite is an
- *  add-on now — with it uninstalled there is no dock row, no menu entry and no
- *  ribbon option, so any driver testing that TOOL must install it first.
- *  (check-v705 is the one that tests the gating itself.) */
-export async function installAddon(page, id) {
-  await page.evaluate(async (addonId) => {
-    const m = await import('/src/addons/addonRegistry.ts');
-    m.installAddon(addonId);
-  }, id);
-  await page.waitForTimeout(200);
-}
-
 export async function openTool(page, label) {
   const row = await page.$(`.tool-dock-item:has-text("${label}")`);
   if (!row) throw new Error(`no dock row labelled ${label}`);

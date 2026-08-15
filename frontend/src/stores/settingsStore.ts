@@ -75,11 +75,6 @@ interface SettingsState {
    *  restores the sidebars (render-time only — nothing is rewritten). */
   scrapbookExclusive: boolean;
   setScrapbookExclusive: (v: boolean) => void;
-  /** v5.60, Derek: the same declutter for Action Rewrite — while its window
-   *  is open, every other sidebar tool hides and the outline bar drops
-   *  (render-time only, like the Scrapbook's). */
-  rewriteExclusive: boolean;
-  setRewriteExclusive: (v: boolean) => void;
   /** v4.71 (Settings > General): tabbed windows reopen on their last-used tab;
    *  off = they always open on their first tab. */
   openToLastTab: boolean;
@@ -194,7 +189,6 @@ function saveEditorViews(v: { order: string[]; hidden: string[] }) {
   try { localStorage.setItem(STORAGE_KEY_EDITORVIEWS, JSON.stringify(v)); } catch { /* ignore */ }
 }
 const STORAGE_KEY_SBEXCL = 'opendraft:scrapbookExclusive';
-const STORAGE_KEY_RWEXCL = 'opendraft:rewriteExclusive';
 /* v4.71, Derek: tabbed windows reopen on their last-used tab (or always the
    first tab, when the setting is off). One map for every tabbed window —
    Settings/Customize, Characters, Tags — keyed by a stable window id. */
@@ -334,11 +328,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setScrapbookExclusive: (v) => {
     try { localStorage.setItem(STORAGE_KEY_SBEXCL, v ? '1' : '0'); } catch { /* ignore */ }
     set({ scrapbookExclusive: v });
-  },
-  rewriteExclusive: localStorage.getItem(STORAGE_KEY_RWEXCL) === '1',
-  setRewriteExclusive: (v) => {
-    try { localStorage.setItem(STORAGE_KEY_RWEXCL, v ? '1' : '0'); } catch { /* ignore */ }
-    set({ rewriteExclusive: v });
   },
   // ON unless explicitly turned off — Derek asked for last-tab reopening
   // first and for the switch second, so remembering is the default.

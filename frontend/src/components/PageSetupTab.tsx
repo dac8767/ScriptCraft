@@ -16,32 +16,44 @@ import type { FormattingTemplate } from '../stores/formattingTypes';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { useSettingsStore } from '../stores/settingsStore';
 import TemplateEditorDialog from './TemplateEditorDialog';
-import { DEFAULT_PAGE_LAYOUT } from '../stores/editorStore';
+import PageSetupDialog from './PageSetupDialog';
 import { confirmDialog } from './ConfirmDialog';
 import { showToast } from './Toast';
 
-/* v7.00, Derek (via the feedback form): the page-size info left the bottom
-   of the tab — each template row's View opens it for THAT template
-   instead (template.pageLayout over the app defaults). */
-function TemplatePageInfo({ t, onClose }: { t: FormattingTemplate; onClose: () => void }) {
-  const p = { ...DEFAULT_PAGE_LAYOUT, ...(t.pageLayout ?? {}) };
-  const inches = (v: number) => `${v}"`;
-  const pts = (v: number) => `${v} pt`;
+/* v7.10, Derek: "'page setup' used to have a full page of fields for the
+   various measurement options. This is what you should seen when clicking view
+   on an item in the current Page Setup tab. make equivalents for the other
+   templates." — and, asked whether built-ins should be editable too: "Built
+   ins".
+
+   So View opens THE page of fields (PageSetupDialog, given a value + onSave)
+   scoped to this template, not a seven-row read-only box. There is one such
+   page in the app; this hands it a template's layout instead of the document's.
+
+   The built-ins are why the layout is stored in the STORE and not on the
+   template: the six system templates are immutable constants, so writing to
+   one through updateTemplate() would be a silent no-op. */
+function TemplatePageSetup({ t, onClose }: { t: FormattingTemplate; onClose: () => void }) {
+  const getLayout = useFormattingTemplateStore((s) => s.getTemplatePageLayout);
+  const getBase = useFormattingTemplateStore((s) => s.getTemplateBasePageLayout);
+  const setLayout = useFormattingTemplateStore((s) => s.setTemplatePageLayout);
+  // Subscribed so Reset Default in another surface re-renders this one.
+  useFormattingTemplateStore((s) => s.templatePageLayouts[t.id]);
   return (
     <div className="dialog-overlay" onClick={onClose}>
-      <div className="fmt-dialog fmt-dialog-narrow" onClick={(e) => e.stopPropagation()}>
-        <div className="dialog-header">{t.name} — Page Size</div>
-        <div className="fmt-dialog-body pst-info">
-          <div className="pst-info-row"><span>Page size</span><strong>{inches(p.pageWidth)} × {inches(p.pageHeight)}</strong></div>
-          <div className="pst-info-row"><span>Left margin</span><strong>{inches(p.leftMargin)}</strong></div>
-          <div className="pst-info-row"><span>Right margin</span><strong>{inches(p.rightMargin)}</strong></div>
-          <div className="pst-info-row"><span>Top margin</span><strong>{pts(p.topMargin)}</strong></div>
-          <div className="pst-info-row"><span>Bottom margin</span><strong>{pts(p.bottomMargin)}</strong></div>
-          <div className="pst-info-row"><span>Header margin</span><strong>{pts(p.headerMargin)}</strong></div>
-          <div className="pst-info-row"><span>Footer margin</span><strong>{pts(p.footerMargin)}</strong></div>
-        </div>
-        <div className="dialog-actions">
-          <button className="dialog-btn dialog-btn-primary" onClick={onClose}>Close</button>
+      <div className="fmt-dialog page-setup-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-header">{t.name} — Page Setup</div>
+        <div className="fmt-dialog-body">
+          <PageSetupDialog
+            embedded
+            value={getLayout(t.id)}
+            resetTo={getBase(t.id)}
+            onSave={(next) => {
+              setLayout(t.id, next);
+              showToast(`Page setup saved for ${t.name}.`, 'success');
+            }}
+            onClose={onClose}
+          />
         </div>
       </div>
     </div>
@@ -106,7 +118,7 @@ export default function PageSetupTab() {
           <div className="fmt-card-tagline">{t.scriptTypeTagline || t.description}</div>
         </div>
         <div className="pst-row-actions">
-          <button className="dialog-btn dialog-btn-sm" title="View this template's page size" onClick={() => setViewing(t)}>View</button>
+          <button className="dialog-btn dialog-btn-sm" title="Open this template's page setup" onClick={() => setViewing(t)}>View</button>
           {!isSystem && (
             <button className="dialog-btn dialog-btn-sm" title="Edit this template" onClick={() => setEditing(t)}>Edit</button>
           )}
@@ -153,7 +165,7 @@ export default function PageSetupTab() {
         </section>
       </div>
 
-      {viewing && <TemplatePageInfo t={viewing} onClose={() => setViewing(null)} />}
+      {viewing && <TemplatePageSetup t={viewing} onClose={() => setViewing(null)} />}
 
       {editing && (
         <TemplateEditorDialog

@@ -22,7 +22,7 @@ const PROJECT_MENU_GROUPS: string[][] = [
 ];
 /** Tools menu (v6.14, Derek's menu reorg — his order; Spelling & Grammar's
  *  submenu and the Thesaurus are appended after these in the menu itself,
- *  and Action Rewrite lives under Help ▸ Developer now). */
+ *  under Help ▸ Developer now). */
 const TOOL_MENU_GROUPS: string[][] = [
   ['beatboard', 'sticky', 'notebook', 'markups', 'goals', 'typewriter', 'analytics'],
 ];
@@ -1735,12 +1735,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             label: 'Diagnostics',
             action: () => setDiagnosticsOpen(true),
           },
-          // v6.14, Derek: Action Rewrite lives here now (out of Tools).
-          // v7.05: and only when its ADD-ON is installed — availableTools()
-          // already excludes it otherwise, so this entry vanishes with it.
-          ...availableTools().filter((t) => t.id === 'rewrite').map((t) => ({
-            icon: t.icon, label: t.label, action: () => useEditorStore.getState().openTool(t.id),
-          })),
           {
             // v6.22, Derek: the Helper Text editor's own window. v6.52: a
             // real tool now — dockable into a side panel like any window.

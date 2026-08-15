@@ -11,7 +11,6 @@ import Dropcursor from '@tiptap/extension-dropcursor';
 import SmartTypography from '../editor/extensions/SmartTypography';
 import VomitLock from '../editor/extensions/VomitLock';
 import TypewriterScroll, { refreshTypewriterChrome, centerCaretLine } from '../editor/extensions/TypewriterScroll';
-import { RewriteTarget } from '../editor/extensions/RewriteTarget';
 import OutlineBar from './OutlineBar';
 import { NotebookSurface } from './NotebookTool';
 import ScriptNotePopover from './ScriptNotePopover';
@@ -1018,7 +1017,6 @@ const ScreenplayEditor: React.FC = () => {
       SmartTypography,
       VomitLock,
       TypewriterScroll,
-      RewriteTarget,
       SpellCheck,
       Grammar,
       ...pluginRegistry.getEditorExtensions(),
@@ -1903,13 +1901,8 @@ const ScreenplayEditor: React.FC = () => {
   const notebookOpen = useNotebookStore((st) => st.notebookOpen);
   // v2.35: the Scrapbook's declutter toggle also drops the outline bar —
   // render-time only, outlineBarOpen itself is never rewritten.
-  // v5.60: Action Rewrite's declutter does the same while its window is open.
   const scrapbookDeclutter = useSettingsStore((st) => st.scrapbookExclusive);
-  const rewriteDeclutter = useSettingsStore((st) => st.rewriteExclusive);
-  const rewriteOpenHere = useEditorStore((st) => st.isToolOpen('rewrite'));
-  const outlineBarShown = outlineBarOpen
-    && !(notebookOpen && scrapbookDeclutter)
-    && !(rewriteOpenHere && rewriteDeclutter);
+  const outlineBarShown = outlineBarOpen && !(notebookOpen && scrapbookDeclutter);
   // v2.55: the sizing lock hides the resize strips. Subscribed HERE, top
   // level — never inside a short-circuited JSX expression (rules of hooks).
   const uiResizeLocked = useEditorStore((st) => st.uiResizeLocked);

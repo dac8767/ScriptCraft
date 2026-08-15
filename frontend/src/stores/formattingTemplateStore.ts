@@ -7,6 +7,8 @@
 
 import { create } from 'zustand';
 import { uuid } from '../utils/uuid';
+import { DEFAULT_PAGE_LAYOUT } from './editorStore';
+import type { PageLayout } from './editorStore';
 
 /** Element visibility/order overrides — persisted separately from templates,
  *  which may be immutable system constants. */
@@ -26,6 +28,29 @@ function loadElementOverrides(): { hidden: string[]; order: string[] } {
 }
 function saveElementOverrides(v: { hidden: string[]; order: string[] }) {
   try { localStorage.setItem(ELEMENT_OVERRIDES_KEY, JSON.stringify(v)); } catch { /* ignore */ }
+}
+
+/* v7.10, Derek — "make equivalents for the other templates", built-ins
+   included. A template can carry its own page setup, and the writer can edit
+   it. THE TRAP this map exists to avoid: the six system templates are
+   IMMUTABLE CONSTANTS, not rows in `templates[]`, so updateTemplate() on one
+   is a silent no-op — the same shape as the v0.63–v0.70 Show/Hide bug, where
+   a control looked like it worked and wrote into the void. Overrides live
+   here, keyed by template id, exactly the way elementHidden/elementOrder do
+   it for the element list. */
+const TEMPLATE_PAGE_KEY = 'opendraft:templatePageLayouts';
+function loadTemplatePageLayouts(): Record<string, Partial<PageLayout>> {
+  try {
+    const raw = localStorage.getItem(TEMPLATE_PAGE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (p && typeof p === 'object' && !Array.isArray(p)) return p as Record<string, Partial<PageLayout>>;
+    }
+  } catch { /* ignore */ }
+  return {};
+}
+function saveTemplatePageLayouts(v: Record<string, Partial<PageLayout>>) {
+  try { localStorage.setItem(TEMPLATE_PAGE_KEY, JSON.stringify(v)); } catch { /* ignore */ }
 }
 
 /** v4.22, Derek: the transition auto-complete list is customizable in Customize
@@ -100,6 +125,17 @@ interface FormattingTemplateState {
    *  immutable constants, NOT rows in `templates[]` — so updateTemplate() on
    *  one is a silent no-op, which is why Edit Elements' Show/Hide/reorder did
    *  nothing (v0.63–v0.70 bug). Overrides live here instead. */
+  /** v7.10: per-template page setup. `getTemplatePageLayout` is the ONE
+   *  resolver — app defaults, then the template's own pageLayout, then the
+   *  writer's override — so the Page Setup tab, a new script and the info
+   *  page can't disagree about what a template's page is. */
+  templatePageLayouts: Record<string, Partial<PageLayout>>;
+  getTemplatePageLayout: (templateId: string) => PageLayout;
+  /** The template's own page setup, WITHOUT the writer's override — what
+   *  "Reset Default" on that template's page goes back to. */
+  getTemplateBasePageLayout: (templateId: string) => PageLayout;
+  setTemplatePageLayout: (templateId: string, layout: PageLayout) => void;
+  resetTemplatePageLayout: (templateId: string) => void;
   elementHidden: string[];
   elementOrder: string[];
   setElementHidden: (ids: string[]) => void;
@@ -204,6 +240,28 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
       if (found) return found;
     }
     return INDUSTRY_STANDARD_TEMPLATE;
+  },
+
+  templatePageLayouts: loadTemplatePageLayouts(),
+  getTemplateBasePageLayout: (templateId) => {
+    const sys = SYSTEM_TEMPLATES[templateId];
+    const t = sys || get().templates.find((x) => x.id === templateId);
+    return { ...DEFAULT_PAGE_LAYOUT, ...(t?.pageLayout ?? {}) };
+  },
+  getTemplatePageLayout: (templateId) => ({
+    ...get().getTemplateBasePageLayout(templateId),
+    ...(get().templatePageLayouts[templateId] ?? {}),
+  }),
+  setTemplatePageLayout: (templateId, layout) => {
+    const next = { ...get().templatePageLayouts, [templateId]: layout };
+    saveTemplatePageLayouts(next);
+    set({ templatePageLayouts: next });
+  },
+  resetTemplatePageLayout: (templateId) => {
+    const next = { ...get().templatePageLayouts };
+    delete next[templateId];
+    saveTemplatePageLayouts(next);
+    set({ templatePageLayouts: next });
   },
 
   elementHidden: loadElementOverrides().hidden,

@@ -1,3 +1,7 @@
+// @vitest-environment jsdom
+// (v7.10: the template store now resolves per-template PAGE SETUP, so its
+//  import chain reaches editorStore, which reads localStorage at module
+//  scope — the same reason titlePageLayout.test.ts asks for jsdom.)
 import { describe, it, expect, vi } from 'vitest';
 
 /*

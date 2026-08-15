@@ -406,16 +406,6 @@
   ]
  },
  {
-  "text": "Back to what the model offered",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Action Rewrite Window",
-  "where": [
-   "components/RewriteTool.tsx"
-  ],
-  "label": "Start from:"
- },
- {
   "text": "Block quote",
   "kind": "tooltip",
   "sites": 1,
@@ -547,16 +537,6 @@
   "where": [
    "components/OutlineBar.tsx"
   ]
- },
- {
-  "text": "Clear this slot",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Action Rewrite Window",
-  "where": [
-   "components/RewriteTool.tsx"
-  ],
-  "label": "Start from:"
  },
  {
   "text": "Click the map to set the pin, or press Escape",
@@ -887,26 +867,6 @@
   "area": "Scrapbook Window",
   "where": [
    "components/NotebookTool.tsx"
-  ],
-  "icon": "FaRegEyeSlash"
- },
- {
-  "text": "Declutter — hide every other tool while this window is open",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Action Rewrite Window",
-  "where": [
-   "components/RewriteTool.tsx"
-  ],
-  "icon": "FaRegEyeSlash"
- },
- {
-  "text": "Decluttered — click to show the other tools again",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Action Rewrite Window",
-  "where": [
-   "components/RewriteTool.tsx"
   ],
   "icon": "FaRegEyeSlash"
  },
@@ -2399,13 +2359,14 @@
   ]
  },
  {
-  "text": "Optional note to the rewriter — it guides interpretation, never overrides the craft rules",
+  "text": "Open this template's page setup",
   "kind": "tooltip",
   "sites": 1,
-  "area": "Action Rewrite Window",
+  "area": "Everything Else",
   "where": [
-   "components/RewriteTool.tsx"
-  ]
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "View"
  },
  {
   "text": "Order the locations",
@@ -2879,16 +2840,6 @@
   ]
  },
  {
-  "text": "Run the same passage again — add a note first to steer it (e.g. avoid a phrase)",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Action Rewrite Window",
-  "where": [
-   "components/RewriteTool.tsx"
-  ],
-  "label": "Rerun"
- },
- {
   "text": "Save (⌘S)",
   "kind": "tooltip",
   "sites": 1,
@@ -3235,15 +3186,6 @@
   ]
  },
  {
-  "text": "Start a new paragraph",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Action Rewrite Window",
-  "where": [
-   "components/RewriteTool.tsx"
-  ]
- },
- {
   "text": "Sticky color",
   "kind": "tooltip",
   "sites": 1,
@@ -3523,16 +3465,6 @@
   "area": "Everything Else",
   "where": [
    "components/VersionHistory.tsx"
-  ],
-  "label": "View"
- },
- {
-  "text": "View this template's page size",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Everything Else",
-  "where": [
-   "components/PageSetupTab.tsx"
   ],
   "label": "View"
  },
@@ -4315,15 +4247,6 @@
   ]
  },
  {
-  "text": "sk-ant-…",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Action Rewrite Window",
-  "where": [
-   "components/RewriteTool.tsx"
-  ]
- },
- {
   "text": "Synopsis contains...",
   "kind": "placeholder",
   "sites": 1,
@@ -4415,30 +4338,12 @@
   ]
  },
  {
-  "text": "What’s this beat for? Anything that must stay?",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Action Rewrite Window",
-  "where": [
-   "components/RewriteTool.tsx"
-  ]
- },
- {
   "text": "Write a synopsis for this scene...",
   "kind": "placeholder",
   "sites": 1,
   "area": "Dialogs",
   "where": [
    "components/SynopsisModal.tsx"
-  ]
- },
- {
-  "text": "Write it your way, or borrow beats below…",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Action Rewrite Window",
-  "where": [
-   "components/RewriteTool.tsx"
   ]
  },
  {

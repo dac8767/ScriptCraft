@@ -186,12 +186,16 @@ try {
     [...document.querySelectorAll('.pst-row')[0].querySelectorAll('button')].find((b) => b.textContent === 'View')?.click();
   });
   await settle(page);
+  /* v7.10, Derek ("make equivalents for the other templates", built-ins
+     included): View opens the FULL page of measurement fields for that
+     template now, not a seven-row read-only summary. */
   ok(await page.evaluate(() => {
-    const d = [...document.querySelectorAll('.dialog-header')].find((h) => h.textContent.includes('Page Size'));
-    return !!d && document.body.textContent.includes('Page size');
-  }), "View opens that template's page-size window");
+    const d = [...document.querySelectorAll('.dialog-header')].find((h) => /Page Setup$/.test(h.textContent.trim()));
+    const fields = document.querySelectorAll('.page-setup-dialog input, .page-setup-dialog select').length;
+    return !!d && d.textContent.trim() !== 'Page Setup' && fields >= 12;
+  }), "View opens that template's own page of Page Setup fields");
   await page.evaluate(() => {
-    [...document.querySelectorAll('.dialog-actions button')].find((b) => b.textContent.trim() === 'Close')?.click();
+    [...document.querySelectorAll('.dialog-actions button')].find((b) => /Apply|Close/.test(b.textContent.trim()))?.click();
   });
   await settle(page);
   const beforeShown = await page.evaluate(async () => {

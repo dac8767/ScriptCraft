@@ -31,6 +31,15 @@ to be most of the work, and only worth doing if the area is being changed.
 | check-v531.mjs | the tag combos moved into the tag manager |
 | check-v533.mjs | the per-window ⋮ became the shared window chrome |
 | check-v537.mjs | Design became a single-window tool |
+| check-v554.mjs | Action Rewrite removed from the app (v7.10) |
+| check-v558.mjs | Action Rewrite removed from the app (v7.10) |
+| check-v559.mjs | Action Rewrite removed from the app (v7.10) |
+| check-v560.mjs | Action Rewrite removed from the app (v7.10) |
+| check-v562.mjs | Action Rewrite removed from the app (v7.10) |
+| check-v563.mjs | Action Rewrite removed from the app (v7.10) |
+| check-v564.mjs | Action Rewrite removed from the app (v7.10) |
+| check-v705.mjs | the add-on module went on hold with it (v7.10) |
+| check-v561.mjs | drove Action Rewrite's .rw-grow draft box (v7.10) |
 
 A note on why these five are here rather than repaired: their stale
 assertions could be removed cleanly, but the SETUP that drove the retired
@@ -42,3 +51,8 @@ the areas have been rebuilt since. Better parked than half-repaired.
 had been rebuilt and the file was archived. Where a few failed among many,
 the stale assertions were removed and the file kept — those files still
 describe today's app and go on guarding it.
+
+v7.10 note: the eight rows above drove ACTION REWRITE and the add-on
+module. Derek removed the tool outright and put extensions on hold, so
+they test a feature the app no longer has — reviving any of them means
+the feature came back, not that a selector drifted.
