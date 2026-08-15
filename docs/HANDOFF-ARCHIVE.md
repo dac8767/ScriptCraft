@@ -151,7 +151,30 @@ reliable; re-run before believing a weird worker failure.
 
 ---
 
-## Version history — v6.96 and older (newest first)
+## Version history — v6.97 and older (newest first)
+
+### v6.97 — settings-box knobs + fill; typed lists replace the buttons
+
+- Feedback row 11:29 PM: Design group `settingsWin` (before `behavior`) —
+  prefsTitleGap 16 (the inset title sits ON the border, so title→items IS
+  the box's inner top padding), prefsPadBottom 13, prefsPadSide 14,
+  prefsSectionGap 18 (margin between boxes). All on the ONE
+  `.prefs-general section` rule = every tab at once. The box now FILLS
+  var(--fd-overlay-subtle, --fd-overlay-light) — Derek: the faint border
+  wasn't enough. check-v642 22/0 adds fill≠window-bg (the h3-label parity
+  assert still compares against the WINDOW bg — the walk starts at the
+  section's parent, so the fill doesn't break it).
+- Feedback row 11:26 PM: the v6.96 `.fb-fmt-*` BUTTONS are GONE ("some
+  are just adding markdown code") — `applyMarkdownFormat` too. Replacement
+  `continueListOnEnter` (pure, exported): typing "- " or "N. " then Enter
+  continues the list (numbers count up), Enter on an empty item strips the
+  marker. Wired via textarea onKeyDown (Shift+Enter and selections pass
+  through). check-v684 26/0 types a real list; catalog back to 480 (-5
+  button tooltips).
+- CADENCE (Derek: "we're back to updates taking 30 minutes"): batch every
+  message into ONE version, run the FULL check-all ONCE per delivery;
+  targeted checks still run per feature.
+- Gates: tsc 0, vitest 1203, build ok, check-all 1086/0.
 
 ### v6.96 — formatting buttons in the feedback Description box
 

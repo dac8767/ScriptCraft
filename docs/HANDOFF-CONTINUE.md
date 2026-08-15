@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.15 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.16 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:
@@ -351,6 +351,58 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.16 — the two queued formatting items, and two bugs found next door
+
+Both were queued 2026-08-13. Both were "one rule, several renderers, and one
+of them never got told" — the pattern §2 keeps logging.
+
+- **Nothing sits below a blank on the first line of page 1.** The rule
+  (`isFirst ? 0 : SPACE_BEFORE[type]`) was already in the paginator, the PDF
+  exporter and the Pages thumbnails. The EDITOR only said it about scene
+  headings — `.scene-heading:first-child { margin-top: 0 }` — so a script
+  opening the normal way, on FADE IN:, started 12pt down, and one opening on
+  ACT ONE started 24pt down. Now `.screenplay-element:first-child`, stated
+  once for every element (`06-editor-content.css`). A custom template still
+  overrides it through `templateCss`, which emits its own matching-weight
+  `:first-child` per element.
+- **The ribbon editor renders the live bar's geometry.** Three separate bits
+  of edit-only chrome each cost layout, and they added up to Derek's two
+  screenshots (`24-notebook.css`):
+  1. `.rib-edit-section { padding: 0 2px }` — every section 4px wider, 2px
+     left. Gone; the dashed ring moved to `outline-offset: 1px`, which costs
+     nothing (v4.22 had already made it an outline for exactly this reason).
+  2. `.rib-edit-item` wrapped controls in an auto-height inline-flex, which
+     broke the `height: 80%` on a two-row control — a percentage with no
+     definite base falls back to content height, and the Customize block went
+     43px → 48px. `align-self: stretch` + `align-items: center` gives the row
+     height back and centres like the live row does.
+  3. `.rib-edit-sep { padding: 0 4px }` made each divider 10px against the
+     live bar's 2px, so every section after the first drifted 8px right. The
+     padding stays (a 2px divider is unclickable) and an equal negative margin
+     cancels it — **at matching weight**: `.toolbar.toolbar-ribbon
+     .rib-section-sep { margin: 0 }` (0-3-0) silently beat a plain
+     `.rib-edit-sep` (0-1-0), so the first attempt looked applied and wasn't.
+  - A `::before` overlay was tried first for (3) and was worse: it left the
+    ELEMENT 2px wide and an adjacent × badge won the hit test. check-v683
+    caught it. **Prefer changing the box you already have over adding an
+    invisible one.**
+- **Found while fixing (3): an invisible × was eating clicks.** `.rib-edit-x`
+  is `opacity: 0` at rest and hangs 7px outside its item, so it was
+  intercepting clicks meant for the divider beside it — you click the line,
+  nothing happens, nothing says why. It is `pointer-events: none` until the
+  hover that reveals it. check-v716 clicks it after hovering, so the badge
+  can't quietly stop working.
+- **Found while fixing (1): the Pages tool kept PRIVATE copies** of
+  `FD_INDENTS` and `SPACE_BEFORE`, headed "same as pagination.ts". They
+  weren't: scene headings still took ONE blank line (v6.30 made it two) and
+  the right edge was still 7.50in (v6.33 measured 7.80). Imported from
+  `utils/screenplayMetrics` now. **A comment claiming two things match is not
+  a mechanism that makes them match.**
+- check-v716 (18) covers all of it: five opening element types measured in
+  the editor, the whole bar diffed live-vs-edit section by section and button
+  by button, the × still removing, and the source-level assertions that the
+  copies are gone. Gates: tsc 0, vitest 1213, build ok, check-all 1180/0.
 
 ### v7.15 — the brand sweep, Derek's thin-line gear, and the check that was lying
 
@@ -785,34 +837,12 @@ actually stale before believing the flake.
   fail on remounts — rerun once the compile settles before diagnosing.
 - Gates: tsc 0, vitest 1203, build ok, check-all 1088/0.
 
-### v6.97 — settings-box knobs + fill; typed lists replace the buttons
-
-- Feedback row 11:29 PM: Design group `settingsWin` (before `behavior`) —
-  prefsTitleGap 16 (the inset title sits ON the border, so title→items IS
-  the box's inner top padding), prefsPadBottom 13, prefsPadSide 14,
-  prefsSectionGap 18 (margin between boxes). All on the ONE
-  `.prefs-general section` rule = every tab at once. The box now FILLS
-  var(--fd-overlay-subtle, --fd-overlay-light) — Derek: the faint border
-  wasn't enough. check-v642 22/0 adds fill≠window-bg (the h3-label parity
-  assert still compares against the WINDOW bg — the walk starts at the
-  section's parent, so the fill doesn't break it).
-- Feedback row 11:26 PM: the v6.96 `.fb-fmt-*` BUTTONS are GONE ("some
-  are just adding markdown code") — `applyMarkdownFormat` too. Replacement
-  `continueListOnEnter` (pure, exported): typing "- " or "N. " then Enter
-  continues the list (numbers count up), Enter on an empty item strips the
-  marker. Wired via textarea onKeyDown (Shift+Enter and selections pass
-  through). check-v684 26/0 types a real list; catalog back to 480 (-5
-  button tooltips).
-- CADENCE (Derek: "we're back to updates taking 30 minutes"): batch every
-  message into ONE version, run the FULL check-all ONCE per delivery;
-  targeted checks still run per feature.
-- Gates: tsc 0, vitest 1203, build ok, check-all 1086/0.
-
 ### Older versions — one line each (full sections in `docs/HANDOFF-ARCHIVE.md`)
 
 Newest first. When a version rolls out of the detailed set above, its section
 moves verbatim to the archive and its line lands here.
 
+- **v6.97** — settings-box knobs + fill (Design group `settingsWin`, one `.prefs-general section` rule for every tab); the v6.96 format buttons replaced by `continueListOnEnter` (typing "- "/"N. " then Enter continues the list)
 - **v6.96** — formatting buttons in the feedback Description box (B/I/U/UL/OL wrap the live selection in markdown markers via `applyMarkdownFormat`; the box stays a plain textarea, `message` stays plain text)
 - **v6.95** — settings clean pass (Auto Saves merged, helper text pruned, bordered group boxes) + Settings moved to Help below About ScriptCraft
 - **v6.94** — the ? retired from the feedback form; "Description:"; five more Feedback knobs (13 total; fbHelpGap removed with the ?)

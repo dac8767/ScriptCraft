@@ -82,7 +82,21 @@
   margin-top: 24pt;
   position: relative;
 }
-.scene-heading:first-child { margin-top: 0; }
+/* v7.16, Derek: "the blank-line-before-a-scene-heading rule must NOT apply to
+   the very first scene heading on page 1" — his screenshot had the opening
+   line sitting below an inserted blank.
+
+   The rule was here, but only for ONE element type, so a script opening the
+   normal way (FADE IN:, a transition) started 12pt down the page, and so did
+   one opening on ACT ONE (24pt). The paginator, the PDF exporter and the
+   Pages thumbnails have always agreed that the FIRST element takes no space
+   before it (`isFirst ? 0 : SPACE_BEFORE[type]`); the editor was the one
+   renderer that only said it about scene headings. Stated once, for every
+   element, so nothing has to remember to add its own.
+
+   A custom template still overrides this from utils/templateCss, which emits
+   its own `<selector>:first-child { margin-top: 0 }` at matching weight. */
+.screenplay-element:first-child { margin-top: 0; }
 
 /* Scene numbers — shown on both sides of the heading when .show-scene-numbers is active */
 .show-scene-numbers .scene-heading[data-scene-number]::before,

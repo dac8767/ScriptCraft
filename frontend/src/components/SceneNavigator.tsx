@@ -19,6 +19,7 @@ import TitlePagePanel from './TitlePagePanel';
 import { computeSceneTiming, formatSceneDuration } from '../utils/scriptTiming';
 import { titleLineStyle, titlePaperShiftPx } from '../utils/titlePageLayout';
 import { isLeftTransition } from '../utils/transitions';
+import { FD_INDENTS, SPACE_BEFORE, LINE_HEIGHT_PT } from '../utils/screenplayMetrics';
 import { SCENE_SWATCH_COLORS } from '../utils/palettes';
 import { computeScriptStructure, sceneActLabel, type ScriptStructure } from '../utils/scriptStructure';
 import { parseHeading, computeSceneFilterDetails, sceneFilterOptions, filterSceneIndices, countActiveSceneFilters, type SceneFilterDetail } from '../utils/sceneFilters';
@@ -209,25 +210,14 @@ const SceneLengthIcon: React.FC<{ pages: number }> = React.memo(({ pages }) => {
   );
 });
 
-// ── Page thumbnail: exact-match layout constants (same as pagination.ts) ─
-
-const FD_INDENTS: Record<string, [number, number]> = {
-  sceneHeading: [1.50, 7.50], action: [1.50, 7.50],
-  character: [3.50, 7.50], dialogue: [2.50, 6.00],
-  parenthetical: [3.00, 5.50], transition: [5.50, 7.50],
-  general: [1.50, 7.50], shot: [1.50, 7.50],
-  newAct: [1.50, 7.50], endOfAct: [1.50, 7.50],
-  lyrics: [2.50, 6.00], showEpisode: [1.50, 7.50],
-  castList: [1.50, 7.50],
-};
-
-const SPACE_BEFORE: Record<string, number> = {
-  sceneHeading: 1, action: 1, character: 1, dialogue: 0,
-  parenthetical: 0, transition: 1, general: 0, shot: 1,
-  newAct: 2, endOfAct: 2, lyrics: 0, showEpisode: 1, castList: 0,
-};
-
-const LINE_HEIGHT_PX = 12 * (96 / 72); // 16px — matches pagination LINE_HEIGHT_PT
+/* ── Page thumbnail layout ────────────────────────────────────────────────
+   These used to be COPIES sitting here, headed "same as pagination.ts". They
+   were not the same any more: the copy still said scene headings take ONE
+   blank line (v6.30 made it two, the spec-standard double) and still put the
+   right edge at 7.50in (v6.33 measured it to 7.80). So the thumbnails drew a
+   page nobody would ever print — the exact drift CLAUDE.md warns about, in a
+   file whose comment claimed it couldn't happen. Imported now. */
+const LINE_HEIGHT_PX = LINE_HEIGHT_PT * (96 / 72); // 16px
 
 // ── Main component ──────────────────────────────────────────────────────
 

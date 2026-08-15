@@ -505,15 +505,28 @@
      outside the box with zero layout cost, so an edited section is exactly the
      size it will be once saved. */
   outline: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
-  outline-offset: -1px;
+  /* v7.16: the ring sits just OUTSIDE the box instead of just inside, so the
+     section keeps its breathing room without the `padding: 0 2px` that used
+     to buy it — that padding widened every edited section by 4px and slid it
+     2px left, the first of the three things that made an edited bar bigger
+     than the saved one. Outline offset, like outline, costs no layout. */
+  outline-offset: 1px;
   border-radius: 5px;
-  padding: 0 2px;
   cursor: grab;
   touch-action: none;
   background: color-mix(in srgb, var(--fd-navigator-bg) 40%, transparent);
 }
 .rib-edit-section:hover { outline-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
-.rib-edit-item { position: relative; display: inline-flex; }
+/* v7.16, Derek (two screenshots): edit mode drew the SAME controls bigger.
+   Measured — Find & Replace 44x26 live became 44x28, and the two-row
+   Customize block 65x43 became 65x48. The cause is a percentage that lost its
+   base: a two-row control is `height: 80%`, which live resolves against the
+   54px row it sits in (43.2). Wrapping it in an auto-height inline-flex made
+   that percentage circular, so it fell back to content height and the control
+   grew. `align-self: stretch` gives the wrapper the row's height back, and
+   `align-items: center` reproduces what the live row does with its children.
+   Same rule as v4.22's outline-not-border: edit chrome costs no layout. */
+.rib-edit-item { position: relative; display: inline-flex; align-self: stretch; align-items: center; }
 /* the cover eats clicks so the real control never fires while editing */
 .rib-edit-cover {
   position: absolute;
@@ -539,21 +552,40 @@
   cursor: pointer;
   opacity: 0;
   z-index: 5;
+  /* v7.16: an INVISIBLE × must not eat clicks. It hangs 7px outside its own
+     item, so at opacity 0 it was still winning the hit test over whatever
+     sits beside it — the divider between two sections, most of the time.
+     That is the silent-no-op shape: you click the line, nothing happens, and
+     nothing tells you why. It arms itself when it becomes visible. */
+  pointer-events: none;
 }
 .rib-edit-item:hover > .rib-edit-x,
 .rib-edit-section:hover > .rib-edit-secclose,
 .rib-edit-break:hover > .rib-edit-x,
-.rib-edit-alignsplit:hover > .rib-edit-x { opacity: 1; }
+.rib-edit-alignsplit:hover > .rib-edit-x { opacity: 1; pointer-events: auto; }
 /* v4.75: removable boundary dividers. v6.83, Derek: NO × — clicking the
    line hides it, clicking the ghost brings it back; one gesture both ways.
-   The line stays 1px visually (background-clip) while the horizontal
-   padding gives the click a real target. */
+   v7.16: the click target no longer costs layout. That `padding: 0 4px` made
+   each divider 10px wide against the live bar's 2px, so every section after
+   the first sat 8px further right in edit mode than it would once saved —
+   the third and largest of the spacing gaps in Derek's screenshots. The
+   padding stays, because a 2px divider is unclickable; an equal negative
+   margin cancels its effect on the flow, so the box you click is still 10px
+   and the bar is laid out exactly as it will be saved. (A ::before overlay
+   was the first attempt and it was worse: it left the ELEMENT 2px wide, and
+   an adjacent item's × badge then won the hit test — check-v683 caught it.)
+   Third instance of the same rule in this file: edit chrome costs no layout. */
 .rib-edit-sep {
   cursor: pointer;
   padding: 0 4px;
   box-sizing: content-box;
   background-clip: content-box;
 }
+/* The cancelling margin has to carry the weight of the rule it is answering:
+   `.toolbar.toolbar-ribbon .rib-section-sep { margin: 0 }` (0-3-0) sets every
+   divider's margin, and a plain `.rib-edit-sep` (0-1-0) loses to it silently
+   — the padding stays, the cancellation doesn't, and the bar shifts anyway. */
+.toolbar.toolbar-ribbon .rib-edit-sep { margin: 0 -4px; }
 .rib-edit-sep:hover { background-color: var(--fd-accent); }
 .rib-edit-sep-ghost {
   width: 8px;

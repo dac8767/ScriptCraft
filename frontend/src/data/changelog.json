@@ -1,5 +1,15 @@
 [
  {
+  "version": "7.16",
+  "date": "2026-08-15",
+  "changes": [
+   "The first line on page 1 no longer starts a line down the page. The blank-line-before rule was written for scene headings only, so a script opening the way most do — FADE IN: — began below an inserted blank, and so did one opening on ACT ONE. The rule is now stated once, for every element: whatever comes first sits at the top of the page. Everything below it is unchanged, so a heading after FADE IN: still gets its two blank lines.",
+   "The ribbon editor now renders the bar at exactly the size it will be once saved. Editing widened every section by 4px, pushed each one 8px further right than the last, and grew the two-row buttons from 43 to 48 pixels — so the bar you were arranging was not the bar you were going to get. Measured in both modes now, section by section and button by button.",
+   "A remove × that you cannot see no longer eats clicks. Each one hangs slightly outside its button, so at rest they were swallowing clicks meant for the section dividers beside them: you clicked the line, nothing happened, and nothing said why.",
+   "The Pages tool was drawing a page nobody would print. It kept its own copies of the text geometry under a comment saying they matched the real one; they hadn't for a while — scene headings took one blank line instead of two, and the right margin was 0.3 inches off. It reads the same numbers as the editor, the page count and the PDF now."
+  ]
+ },
+ {
   "version": "7.15",
   "date": "2026-08-15",
   "changes": [
