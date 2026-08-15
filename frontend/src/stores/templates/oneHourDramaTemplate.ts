@@ -36,12 +36,22 @@ export const ONE_HOUR_DRAMA_TEMPLATE: FormattingTemplate = {
   scriptTypeGroup: 'TV',
   scriptTypeTagline: '1-hour single-camera drama (Breaking Bad, Stranger Things)',
   pageTimeSeconds: 60,
+  /* v7.11, Derek ("double check the formatting standards… they seem too close
+     to the film script template"): they are close ON PURPOSE — an hour drama
+     uses feature format. What was actually missing is the one structural rule
+     the form does have: every act begins on a fresh page. */
+  forceBreakBefore: ['newAct'],
   starterDocument: STARTER,
   rules: {
     sceneHeading: rule('sceneHeading', 'Scene Heading', true, {
       bold: true,
       textTransform: 'uppercase',
-      marginTop: 12,
+      /* v7.11: back on the standard's TWO blank lines (v6.30, measured against
+         Derek's reference page). An hour-long teleplay is written in ordinary
+         screenplay format — the geometry is SUPPOSED to match the feature
+         template; what makes it a teleplay is the act structure below. This
+         12 was drift, not a house style. */
+      marginTop: 24,
       nextOnEnter: 'action',
       nextOnTab: 'action',
       placeholder: 'INT./EXT. LOCATION - TIME',

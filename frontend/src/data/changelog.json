@@ -1,5 +1,20 @@
 [
  {
+  "version": "7.11",
+  "date": "2026-08-15",
+  "changes": [
+   "The title page prints the draft date in the format chosen in Settings ▸ Region. The field stores a real date; it was printing the stored form (2026-08-14) instead of your format. An imported script keeps whatever date string its file carried — that text belongs to the file, not to us.",
+   "The Settings sidebar is one flat list of tabs — no System / Page / Customize captions or dividers.",
+   "\"Keyboard Shortcuts\" is now just \"Keyboard\" in the Settings sidebar.",
+   "Presets is a section at the bottom of the Defaults tab instead of a tab of its own — a preset is a saved set of defaults.",
+   "Page Setup manages templates in the Shown and Hidden columns the Context Menu, Toolbar, Side Panels and Quick Access tabs use. Drag a template between them, or use the × / + on its row; Show All and Hide All sit in the column headers.",
+   "Settings… in the ScriptCraft menu carries the system preferences icon.",
+   "Checked the five non-feature templates against their real formats. Radio Play was the feature layout wearing different labels — the character cue sat at 3.5\" with the speech in the narrow screenplay column. Audio drama puts the cue at the left margin, the speech beneath it at nearly full width, double-spaced for markup. Fixed.",
+   "The 1-Hour TV Drama template is supposed to look like a feature script — hour-long teleplays are written in ordinary screenplay format — so its indents are unchanged. What it was missing is the structure that makes it a teleplay: every act now starts on a new page. Its scene-heading spacing had also drifted to one blank line and is back to the standard two.",
+   "Multicam Sitcom, Stage Play and A/V Script were already correct: capitalised action and double-spaced dialogue with an act per page; centred character cues and full-width dialogue; and the two-column video/audio layout."
+  ]
+ },
+ {
   "version": "7.10",
   "date": "2026-08-15",
   "changes": [

@@ -119,13 +119,20 @@ try {
     captions: [...document.querySelectorAll('.prefs-tab-caption')].map((c) => c.textContent.trim()),
     labels: [...document.querySelectorAll('.prefs-tab')].map((t) => t.textContent.trim()),
   }));
-  ok(rail.captions.join(',') === 'System,Page,Customize', `the sidebar is categorized (${rail.captions.join(' / ')})`);
+  /* v7.11, Derek: "remove the section names for the tabs in the settings
+     window." One flat list — captions and dividers gone. */
+  ok(rail.captions.length === 0, `the sidebar is one flat list, no section captions (${rail.captions.length})`);
   ok(!rail.labels.includes('System')
       && rail.labels.indexOf('Downloads') === rail.labels.indexOf('Save Options') + 1
       /* v7.06, Derek: the Languages tab is RENAMED Region (it owns units and
          date/time now too), and Editor moved under the Page group. */
       && rail.labels.includes('Region')
       && !rail.labels.includes('Languages')
+      /* v7.11: the tab is just "Keyboard", and Presets is a section of
+         Defaults rather than a tab of its own. */
+      && rail.labels.includes('Keyboard')
+      && !rail.labels.includes('Keyboard Shortcuts')
+      && !rail.labels.includes('Presets')
       && rail.labels.indexOf('Editor') === rail.labels.indexOf('Page Setup') + 1,
     `System tab gone; Downloads under Save Options; Region replaces Languages; Editor sits under Page Setup (${rail.labels.slice(0, 8).join(' | ')})`);
   await page.evaluate(() => {
@@ -163,27 +170,28 @@ try {
   });
   await settle(page);
   const pst = await page.evaluate(() => ({
-    heads: [...document.querySelectorAll('.pst-listhead')].map((h) => h.textContent.trim()),
-    cards: document.querySelectorAll('.pst-row').length,
+    heads: [...document.querySelectorAll('.fs-dnd-col-head')].map((h) => h.textContent.trim()),
+    cards: document.querySelectorAll('.fs-dnd-col .fs-dnd-row').length,
     defaults: document.querySelectorAll('.pst-default-badge').length,
     newBtn: [...document.querySelectorAll('.prefs-window button')].some((b) => b.textContent.trim() === 'New Template…'),
-    deletableDefaults: [...document.querySelectorAll('.pst-row')].filter((r) =>
+    deletableDefaults: [...document.querySelectorAll('.fs-dnd-col .fs-dnd-row')].filter((r) =>
       r.querySelector('.pst-default-badge') && [...r.querySelectorAll('button')].some((b) => b.textContent === 'Delete')).length,
   }));
-  ok(pst.heads.some((h) => h.includes('Shown in the New Script picker')) && pst.heads.includes('Hidden'),
-    `Page Setup manages templates as Shown/Hidden lists (${pst.heads.join(' | ')})`);
+  /* v7.11, Derek: "change the page setup tab so that it uses the Shown and
+     Hidden windows like the screenshot" — the shared DndColumns, same as the
+     Context Menu / Toolbar / Side Panels tabs. */
+  ok(pst.heads.some((h) => /Shown/.test(h)) && pst.heads.some((h) => /Hidden/.test(h)),
+    `Page Setup uses the Shown/Hidden columns (${pst.heads.join(' | ')})`);
   ok(pst.cards >= 6 && pst.defaults >= 6 && pst.deletableDefaults === 0 && pst.newBtn,
     `six Default templates, none deletable, plus New Template… (${pst.cards} cards)`);
-  // v7.00 (Derek): the page-geometry block LEFT the tab — every row has
-  // View, which opens that template's page-size window
   ok(await page.evaluate(() => {
-    const rows = [...document.querySelectorAll('.pst-row')];
+    const rows = [...document.querySelectorAll('.fs-dnd-col .fs-dnd-row')];
     return rows.length > 0
       && rows.every((r) => [...r.querySelectorAll('button')].some((b) => b.textContent === 'View'))
       && ![...document.querySelectorAll('.prefs-content button')].some((b) => b.textContent.trim() === 'Apply');
   }), 'every template row has View; the geometry block (and its Apply) left the tab');
   await page.evaluate(() => {
-    [...document.querySelectorAll('.pst-row')[0].querySelectorAll('button')].find((b) => b.textContent === 'View')?.click();
+    [...document.querySelectorAll('.fs-dnd-col .fs-dnd-row')[0].querySelectorAll('button')].find((b) => b.textContent === 'View')?.click();
   });
   await settle(page);
   /* v7.10, Derek ("make equivalents for the other templates", built-ins
@@ -203,8 +211,8 @@ try {
     return useSettingsStore.getState().enabledScriptFormats.slice();
   });
   await page.evaluate(() => {
-    const row = [...document.querySelectorAll('.pst-row')][1];
-    [...row.querySelectorAll('button')].find((b) => b.textContent === 'Hide')?.click();
+    const row = [...document.querySelectorAll('.fs-dnd-col .fs-dnd-row')][1];
+    [...row.querySelectorAll('.fs-dnd-rowbtn')].find((b) => b.textContent === '×')?.click();
   });
   await settle(page);
   const afterHide = await page.evaluate(async () => {

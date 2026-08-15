@@ -32,6 +32,9 @@ export const RADIO_PLAY_TEMPLATE: FormattingTemplate = {
   scriptTypeGroup: 'Audio',
   scriptTypeTagline: 'Radio drama / audio play (BBC, podcast fiction)',
   pageTimeSeconds: 60,
+  /* Speeches are double-spaced in a recording script — the same mechanism the
+     multicam template uses for its double-spaced dialogue. */
+  lineHeightMultiplier: { dialogue: 2.0 },
   starterDocument: STARTER,
   rules: {
     sceneHeading: rule('sceneHeading', 'Scene', true, {
@@ -47,26 +50,33 @@ export const RADIO_PLAY_TEMPLATE: FormattingTemplate = {
       nextOnEnter: 'character',
       placeholder: 'Action description...',
     }),
+    /* v7.11, Derek ("double check the formatting standards… they seem too
+       close to the film script template"): this one WAS the film template
+       wearing different flags — a centred-ish cue at 3.50" with dialogue in
+       the narrow 2.50–6.00 screenplay column. Audio drama (the BBC layout
+       this template names) puts the CUE AT THE LEFT MARGIN with the speech
+       indented under it and running near the full measure, and speeches are
+       double-spaced so a performer can mark up the script. */
     character: rule('character', 'Character', true, {
       bold: true,
       textTransform: 'uppercase',
       marginTop: 12,
-      leftIndent: 3.50,
+      leftIndent: 1.50,
       nextOnEnter: 'dialogue',
       nextOnTab: 'parenthetical',
       placeholder: 'CHARACTER NAME',
     }),
     dialogue: rule('dialogue', 'Dialogue', true, {
-      leftIndent: 2.50,
-      rightIndent: 6.00,
+      leftIndent: 2.00,
+      rightIndent: 7.50,
       nextOnEnter: 'character',
       nextOnTab: 'parenthetical',
       placeholder: 'Dialogue...',
     }),
     parenthetical: rule('parenthetical', 'Parenthetical', true, {
       italic: true,
-      leftIndent: 3.00,
-      rightIndent: 5.50,
+      leftIndent: 2.50,
+      rightIndent: 7.00,
       nextOnEnter: 'dialogue',
       placeholder: '(beat / off-mic)',
     }),

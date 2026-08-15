@@ -13,6 +13,7 @@
  */
 import type { CSSProperties } from 'react';
 import { titlePageBlockLines } from '../editor/pagination';
+import { formatAppDate, parseISODate, type DateFormatId } from './dateFormat';
 
 export interface TitlePageData {
   tpTitle: string;
@@ -44,15 +45,26 @@ export const EMPTY_TITLE_PAGE: TitlePageData = {
   tpTitleFontSize: 12,
 };
 
-/** Derive the rendered credit lines from the structured fields. */
-export function deriveTitleFields(data: TitlePageData) {
+/** Derive the rendered credit lines from the structured fields.
+ *
+ *  v7.11, Derek: "the date format on the title page should match the format
+ *  chosen in the settings. but it doesn't." The Draft Date field is an
+ *  `<input type="date">`, so it STORES `YYYY-MM-DD` — correct, that is the
+ *  data — but the page was printing that raw string. `dateFormat` is the
+ *  Settings choice; the app's own surfaces pass it and the stored value is
+ *  rendered through the same formatAppDate every other date in the app uses.
+ *  Omitted (the importers), the string is left exactly as the imported file
+ *  wrote it — an .fdx date is not necessarily ISO and is not ours to reformat. */
+export function deriveTitleFields(data: TitlePageData, dateFormat?: DateFormatId) {
   // Each credit part stands on its own: a lone "based on" (no "written by")
   // still reaches the page — it used to be dropped entirely.
   const byParts: string[] = [];
   if (data.tpWrittenBy) byParts.push(`Written by ${data.tpWrittenBy}`);
   if (data.tpBasedOn) byParts.push(data.tpBasedOn);
   const byLine = byParts.join('\n');
-  const draftLine = (data.tpDraft || data.tpDraftDate) ? [data.tpDraft, data.tpDraftDate].filter(Boolean).join(' - ') : '';
+  const iso = dateFormat ? parseISODate(data.tpDraftDate) : null;
+  const shownDate = iso ? formatAppDate(iso, dateFormat!) : data.tpDraftDate;
+  const draftLine = (data.tpDraft || shownDate) ? [data.tpDraft, shownDate].filter(Boolean).join(' - ') : '';
   const copyrightLine = (data.tpCopyright || data.tpWgaRegistration) ? [data.tpCopyright, data.tpWgaRegistration].filter(Boolean).join('\n') : '';
   return { byLine, draftLine, copyrightLine };
 }
@@ -69,8 +81,10 @@ export interface TitleBlockSpec {
  * `aboveLines` / `belowLines` are the line heights of any title-page images
  * the caller will place before/after these blocks (0 when there are none).
  */
-export function titlePageBlockSpecs(data: TitlePageData, aboveLines = 0, belowLines = 0): TitleBlockSpec[] {
-  const { byLine, draftLine, copyrightLine } = deriveTitleFields(data);
+export function titlePageBlockSpecs(
+  data: TitlePageData, aboveLines = 0, belowLines = 0, dateFormat?: DateFormatId,
+): TitleBlockSpec[] {
+  const { byLine, draftLine, copyrightLine } = deriveTitleFields(data, dateFormat);
   const blank = (): TitleBlockSpec => ({ field: 'blank', text: '', attrs: { field: 'blank' } });
   const text = (field: string, t: string): TitleBlockSpec => ({
     field,
@@ -168,8 +182,8 @@ export function stackTitlePageBlocks(
 }
 
 /** The specs as TipTap JSON nodes — what the importers splice into the doc. */
-export function titlePageJsonNodes(data: TitlePageData): Array<{ type: string; attrs: Record<string, unknown>; content?: Array<{ type: string; text: string }> }> {
-  return titlePageBlockSpecs(data).map((s) => ({
+export function titlePageJsonNodes(data: TitlePageData, dateFormat?: DateFormatId): Array<{ type: string; attrs: Record<string, unknown>; content?: Array<{ type: string; text: string }> }> {
+  return titlePageBlockSpecs(data, 0, 0, dateFormat).map((s) => ({
     type: 'titlePage',
     attrs: s.attrs,
     ...(s.text ? { content: [{ type: 'text', text: s.text }] } : {}),

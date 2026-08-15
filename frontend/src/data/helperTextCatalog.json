@@ -1704,6 +1704,16 @@
   "label": "Hide All"
  },
  {
+  "text": "Hide every template except Industry Standard",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "Hide All"
+ },
+ {
   "text": "Hide every toolbar item (re-add items from the palette)",
   "kind": "tooltip",
   "sites": 1,
@@ -1730,8 +1740,7 @@
   "area": "Everything Else",
   "where": [
    "components/PageSetupTab.tsx"
-  ],
-  "label": "Page Templates"
+  ]
  },
  {
   "text": "Hide occurrences",
@@ -3018,6 +3027,16 @@
   "label": "Show All"
  },
  {
+  "text": "Show every template in the New Script picker",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "Show All"
+ },
+ {
   "text": "Show in its default panel",
   "kind": "tooltip",
   "sites": 1,
@@ -3033,8 +3052,7 @@
   "area": "Everything Else",
   "where": [
    "components/PageSetupTab.tsx"
-  ],
-  "label": "Page Templates"
+  ]
  },
  {
   "text": "Show occurrences",

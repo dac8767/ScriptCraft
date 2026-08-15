@@ -103,7 +103,7 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
   if (installed && sig === lastSignature) return;
   lastSignature = sig;
 
-  const { Menu, Submenu, MenuItem, CheckMenuItem, PredefinedMenuItem } = await import('@tauri-apps/api/menu');
+  const { Menu, Submenu, MenuItem, CheckMenuItem, PredefinedMenuItem, IconMenuItem, NativeIcon } = await import('@tauri-apps/api/menu');
 
   const buildItem = async (it: NativeItemData, path: number[], inEdit: boolean): Promise<unknown> => {
     if (it.separator) return PredefinedMenuItem.new({ item: 'Separator' });
@@ -179,6 +179,28 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
       ]) as never[],
     })));
 
+  /* v7.11, Derek: "Add an icon for Settings in the ScriptCraft menu."
+     macOS menu items take a NATIVE icon — `Advanced` is the system's own
+     preferences-gear, so it matches whatever the OS draws elsewhere rather
+     than shipping a bitmap that ages. NativeIcon is macOS-only (Windows and
+     Linux are documented as unsupported), and a throw here would take the
+     WHOLE menu bar down with it — so any failure falls back to the plain
+     item this replaced. A menu that loses its icon is a blemish; a menu that
+     fails to build is the app without menus. */
+  const settingsItem = async () => {
+    const opts = {
+      text: 'Settings…',
+      accelerator: 'CmdOrCtrl+Comma',
+      action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'settings' })); },
+    };
+    try {
+      return await IconMenuItem.new({ ...opts, icon: NativeIcon.Advanced });
+    } catch (err) {
+      console.warn('[nativeMenu] Settings icon unavailable — plain item:', err);
+      return await MenuItem.new(opts);
+    }
+  };
+
   // The application menu (first slot on macOS): the standard block.
   // v3.15, Derek: About opens the APP's About dialog (version, credits,
   // compatibility, donate) — not macOS's stock panel. It rides the command
@@ -201,11 +223,7 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
       // ScriptCraft menu" — directly above Quit. (v6.43 briefly moved it to
       // File on a misread; the ⌘, combo also lives in the shortcut registry
       // so it shows in Keyboard Shortcuts.)
-      await MenuItem.new({
-        text: 'Settings…',
-        accelerator: 'CmdOrCtrl+Comma',
-        action: () => { window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'settings' })); },
-      }),
+      await settingsItem(),
       await PredefinedMenuItem.new({ text: 'Quit ScriptCraft', item: 'Quit' }),
     ] as never[],
   });

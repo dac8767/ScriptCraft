@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 import React, { useState } from 'react';
-import { FaWrench, FaColumns, FaRulerCombined, FaCloudUploadAlt, FaDownload, FaLanguage, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaBoxOpen, FaMarker } from 'react-icons/fa';
+import { FaWrench, FaColumns, FaRulerCombined, FaCloudUploadAlt, FaDownload, FaLanguage, FaKeyboard, FaEdit, FaGripHorizontal, FaBolt, FaMousePointer, FaPalette, FaUndo, FaMarker } from 'react-icons/fa';
 import PresetsPanel from './PresetsPanel';
 import { CUSTOMIZE_RESETS, ResetAllButton, runCustomizeReset, type CustomizeTabId } from './customizeResets';
 import { useEditorStore } from '../stores/editorStore';
@@ -39,7 +39,7 @@ import FloatingWindow from './FloatingWindow';
    ───────────────────────────────────────────────────────────────────────── */
 
 type CustomizeCat = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'markups' | 'themes';
-type PrefTab = 'general' | 'saveloc' | 'downloads' | 'languages' | 'keys' | 'page' | 'presets' | 'defaults' | `cz-${CustomizeCat}`;
+type PrefTab = 'general' | 'saveloc' | 'downloads' | 'languages' | 'keys' | 'page' | 'defaults' | `cz-${CustomizeCat}`;
 
 /* v7.00, Derek (via the feedback form): the sidebar is CATEGORIZED —
    System (app behavior), Page (script setup), then Customize. The old
@@ -55,7 +55,7 @@ const SYSTEM_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> 
   { id: 'languages', label: 'Region', icon: <FaLanguage /> },
   /* v4.30 batch-v7 #3, Derek: hotkeys are behavior, not workspace layout —
      moved here from Customize. */
-  { id: 'keys', label: 'Keyboard Shortcuts', icon: <FaKeyboard /> },
+  { id: 'keys', label: 'Keyboard', icon: <FaKeyboard /> },
   /* v7.05, Derek: add-ons install here. An add-on contributes nothing to the
      app until installed, so this tab is where it first becomes visible. */
 ];
@@ -67,9 +67,6 @@ const PAGE_TABS: Array<{ id: PrefTab; label: string; icon: React.ReactNode }> = 
      to that category and the Defaults tab still finds its resets — only the
      sidebar grouping changed, and only here. */
   { id: 'cz-elements', label: 'Editor', icon: <FaEdit /> },
-  /* v4.79, Derek: every preset-type export AND import — the same panel the
-     File ▸ Import/Export ▸ Presets… window shows. */
-  { id: 'presets', label: 'Presets', icon: <FaBoxOpen /> },
   /* v4.65, Derek: every reset in one place — plus Reset All. */
   { id: 'defaults', label: 'Defaults', icon: <FaUndo /> },
 ];
@@ -146,6 +143,17 @@ function DefaultsTab() {
           </div>
           <ResetAllButton />
         </div>
+      </section>
+      {/* v7.11, Derek: "presets shouldn't be it's own tab. make is a section
+          within the defaults tab." Same PresetsPanel, one level shallower —
+          and it belongs here: a preset is a saved set of defaults. */}
+      <section>
+        <h3>Presets</h3>
+        <p className="prefs-hint">
+          Export any of these to a file, or import one — the file type is
+          spelled out at the end of every filename.
+        </p>
+        <PresetsPanel />
       </section>
     </div>
   );
@@ -834,8 +842,12 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
       title={<span className="tool-window-title">Settings</span>}
     >
         <div className="prefs-layout">
+          {/* v7.11, Derek: "remove the section names for the tabs in the
+              settings window. they do not need to be separated into
+              sections." One flat list — the three arrays still exist because
+              they say what belongs where (and Defaults reads CUSTOMIZE_TABS),
+              but the rail renders them end to end with no captions. */}
           <div className="prefs-tabs">
-            <div className="prefs-tab-caption">System</div>
             {SYSTEM_TABS.map((t) => (
               <button
                 key={t.id}
@@ -846,8 +858,6 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
                 <span>{t.label}</span>
               </button>
             ))}
-            <div className="prefs-tab-divider" aria-hidden />
-            <div className="prefs-tab-caption">Page</div>
             {PAGE_TABS.map((t) => (
               <button
                 key={t.id}
@@ -858,9 +868,6 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
                 <span>{t.label}</span>
               </button>
             ))}
-            {/* v4.64, Derek: the Customize tabs sit right here, one level up. */}
-            <div className="prefs-tab-divider" aria-hidden />
-            <div className="prefs-tab-caption">Customize</div>
             {CUSTOMIZE_TABS.map((t) => (
               <button
                 key={t.id}
@@ -888,16 +895,6 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
             {tab === 'downloads' && <DownloadsTab />}
             {tab === 'languages' && (
 <RegionTab />
-            )}
-            {tab === 'presets' && (
-              <div className="prefs-section">
-                <h3>Presets</h3>
-                <p className="prefs-hint">
-                  Export any of these to a file, or import one — the file type
-                  is spelled out at the end of every filename.
-                </p>
-                <PresetsPanel />
-              </div>
             )}
             {tab === 'defaults' && <DefaultsTab />}
           </div>

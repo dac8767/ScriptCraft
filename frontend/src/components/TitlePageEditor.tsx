@@ -8,6 +8,7 @@ import type { Editor } from '@tiptap/react';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { TitlePageAttrs } from '../editor/extensions/TitlePage';
 import { useEditorStore } from '../stores/editorStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { useAssetStore } from '../stores/assetStore';
@@ -195,7 +196,13 @@ function buildTitlePageBlocks(
   // Top images fill the space ABOVE the title; they only push the title down
   // when they're taller than that space. Bottom images ride below the bottom
   // block, whose gap already budgeted their height.
-  const specs = titlePageBlockSpecs(data, aboveLines, belowLines);
+  /* v7.11, Derek: the Draft Date is stored ISO (it is an <input type="date">)
+     and RENDERED in the Settings format — the same formatAppDate every other
+     date in the app goes through. Read at build time, so Apply and the live
+     preview below always agree. */
+  const specs = titlePageBlockSpecs(
+    data, aboveLines, belowLines, useSettingsStore.getState().dateFormat,
+  );
   const blocks: PMNode[] = [];
   for (const a of imagesAbove) blocks.push(imageType.create(a));
   for (const s of specs) blocks.push(titlePageType.create(s.attrs, s.text ? schema.text(s.text) : undefined));
@@ -205,6 +212,9 @@ function buildTitlePageBlocks(
 
 const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
   const [data, setData] = useState<Omit<TitlePageAttrs, 'field'>>({ ...EMPTY_ATTRS });
+  // v7.11: the Settings date format, subscribed — change it and the preview
+  // below re-renders the draft date immediately.
+  const dateFormat = useSettingsStore((s) => s.dateFormat);
   // v5.74: the preview renders the REAL page — its paper size, margins and
   // paper-centering shift, the same three the editor's page uses.
   const pageLayout = useEditorStore((s) => s.pageLayout);
@@ -343,6 +353,7 @@ const TitlePageEditor: React.FC<Props> = ({ editor, onClose }) => {
     data,
     imagesAbove.reduce((s, a) => s + previewImgLines(a), 0),
     imagesBelow.reduce((s, a) => s + previewImgLines(a), 0),
+    dateFormat,
   );
   const [tpZoom, setTpZoom] = useState<number | 'fit'>('fit');
   const previewBoxRef = useRef<HTMLDivElement>(null);
