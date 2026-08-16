@@ -55,7 +55,9 @@ const backup = await page.evaluate(() => ({
   hasPresets: !!document.querySelector('.prefs-content .fs-presets'),
 }));
 ok('Backup & Restore holds the settings file', backup.heads.some((h) => /Backup/.test(h)), JSON.stringify(backup.heads));
-ok('…and the Presets section', backup.heads.includes('Presets') && backup.hasPresets, JSON.stringify(backup));
+/* v7.31 renamed it: the tab is Backup (this checklist) + Restore (the one
+   import door). The panel is the same panel. */
+ok('…and the preset checklist', backup.heads.includes('Backup') && backup.hasPresets, JSON.stringify(backup));
 
 await page.evaluate(() => window.__scStore.getState().openPreferences('general'));
 await settle(page);

@@ -35,7 +35,7 @@ const jobsArg = args.find((a) => a.startsWith('--jobs='));
 const picks = args.filter((a) => !a.startsWith('--'));
 
 let files = readdirSync(new URL('.', import.meta.url))
-  .filter((f) => /^check-.*\.mjs$/.test(f) && f !== 'check-all.mjs' && f !== 'check-lanes.mjs')
+  .filter((f) => /^check-.*\.mjs$/.test(f) && f !== 'check-all.mjs' && f !== 'check-lanes.mjs' && f !== 'check-fresh.mjs')
   .filter((f) => picks.length === 0 || picks.some((p) => f.includes(p)))
   .sort();
 

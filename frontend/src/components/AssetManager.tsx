@@ -331,13 +331,13 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
                 </span>
               ))}
             </div>
-            <div className="asset-tag-input-row">
-              <label htmlFor="asset-stage-tags">
+            {/* v7.31, Derek: "shorten the tags field so it can be on the
+                same row as cancel and Upload 1 file". One row — the label,
+                the field taking what is left, then the two buttons. */}
+            <div className="asset-staged-actions">
+              <label htmlFor="asset-stage-tags" className="asset-stage-tags-label">
                 Tags for {staged.length === 1 ? 'this file' : `these ${staged.length} files`}:
               </label>
-              {/* placeholder as an EXPRESSION: an escape sequence in a plain
-                  JSX attribute is literal text, so "\u2026" rendered on screen
-                  as the six characters backslash-u-2-0-2-6. */}
               <input
                 id="asset-stage-tags"
                 type="text"
@@ -348,8 +348,6 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
                 className="asset-tag-input"
                 disabled={uploading}
               />
-            </div>
-            <div className="asset-staged-actions">
               <button className="dialog-btn" onClick={() => clearStaged(staged)} disabled={uploading}>
                 Cancel
               </button>

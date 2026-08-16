@@ -767,25 +767,42 @@ function BackupRestoreTab() {
 
   return (
     <div className="prefs-general">
+      {/* v7.31, Derek: "remove the old 'backup and restore' section… rename
+          the sections currently named 'Presets' to 'Backup'… move the import
+          preset button to a new section called 'Restore'."
+
+          The old section was the tail of v7.28: its Export was routed into the
+          one preset window, leaving a heading whose only remaining control was
+          an Import. Backup is what you WRITE, Restore is what you READ — and
+          the checklist is the backup, so there is nothing else for a separate
+          settings-only section to be. */}
       <section>
-        <h3>Backup &amp; Restore</h3>
+        <h3>Backup</h3>
+        {/* PresetsPanel's own line already explains the checklist — this one
+            says only what it does not: WHY you would want the file. */}
         <p className="prefs-hint">
           Settings and customizations live in this app's local storage, which
-          isn't shared between separate installs (for example the development app
-          and a release build load from different origins). Export them to a file
-          here, then import that file in the other app to carry everything over —
-          design tweaks, toolbar and ribbon layout, themes, elements,
-          transitions, shortcuts, the menu system and more.
+          isn't shared between installs — a backup is how you carry them to
+          another one.
+        </p>
+        <PresetsPanel showImports={false} />
+        <p className="prefs-hint">
+          Sign-in, cloud tokens and this device's identity are left out of the
+          file for safety — sign in once on the other app.
+        </p>
+      </section>
+      <section>
+        <h3>Restore</h3>
+        <p className="prefs-hint">
+          Load a file saved above. It overrides what you have for whatever the
+          file carries, then reloads. Your scripts are not affected.
         </p>
         <div className="prefs-check-row">
-          {/* v7.28: every export door leads to the one preset window, with
-              its own category ticked. downloadBackup's whole-app file is what
-              the window's "Select all" now produces. */}
-          <button className="swn-add-btn" onClick={() => useEditorStore.getState().openPresetExport(['settings'])}>
-            Export Settings…
-          </button>
+          {/* ONE import door, and it reads both shapes — the preset files the
+              Backup section writes and the whole-app settings files written
+              before v7.28. Which one it is, is read off the file. */}
           <button className="swn-add-btn" onClick={() => fileRef.current?.click()}>
-            Import Settings…
+            Restore from a file…
           </button>
           <input
             ref={fileRef}
@@ -795,18 +812,6 @@ function BackupRestoreTab() {
             onChange={handleImportFile}
           />
         </div>
-        <p className="prefs-hint">
-          Sign-in, cloud tokens and this device's identity are left out of the
-          file for safety — sign in once on the other app.
-        </p>
-      </section>
-      <section>
-        <h3>Presets</h3>
-        <p className="prefs-hint">
-          Export any of these to a file, or import one — the file type is
-          spelled out at the end of every filename.
-        </p>
-        <PresetsPanel />
       </section>
     </div>
   );

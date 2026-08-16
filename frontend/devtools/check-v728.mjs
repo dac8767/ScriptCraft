@@ -27,7 +27,6 @@ await settle(page);
 console.log('\n1. every door opens the window, and none exports on its own');
 const DOORS = [
   ['components/CustomizePanelsDialog.tsx', 'customize', 'the Customize footer'],
-  ['components/PreferencesDialog.tsx', 'settings', 'Settings ▸ Backup & Restore'],
   ['components/ThemesTab.tsx', 'themes', 'Export All Themes'],
   ['components/BeatBoard.tsx', 'outline', 'the outline presets menu'],
 ];
@@ -42,6 +41,12 @@ ok('the Customize footer no longer runs its own export flow',
   !/exportCustomizationsFlow\(\)/.test(src('components/CustomizePanelsDialog.tsx')), '');
 ok('Settings no longer writes its own backup file',
   !/downloadBackup\(/.test(src('components/PreferencesDialog.tsx')), '');
+/* v7.31 went further than routing that door: Derek removed the section
+   outright ("remove the old 'backup and restore' section"), because once
+   Export left it there was nothing under the heading but an Import. The
+   checklist IS the settings export now. */
+ok('…and the settings-only section is gone entirely',
+  !/Export Settings/.test(src('components/PreferencesDialog.tsx')), '');
 ok('…and downloadBackup is gone rather than left lying around',
   !/export function downloadBackup/.test(src('utils/settingsBackup.ts')), '');
 ok('the outline menu no longer saves its own file',

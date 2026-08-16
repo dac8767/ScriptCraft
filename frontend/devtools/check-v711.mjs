@@ -84,7 +84,10 @@ const defaults = await page.evaluate(() => ({
   heads: [...document.querySelectorAll('.prefs-content h3')].map((e) => e.textContent.trim()),
   hasPanel: !!document.querySelector('.prefs-content .presets-panel, .prefs-content .preset-row, .prefs-content [class*="preset"]'),
 }));
-ok('Backup & Restore carries a Presets section', defaults.heads.includes('Presets'), JSON.stringify(defaults.heads));
+/* v7.31, Derek: the tab is Backup + Restore now — "rename the sections
+   currently named 'Presets' to 'Backup'". The checklist is still what lives
+   under the first heading; only its name changed. */
+ok('Backup & Restore carries the preset checklist', defaults.heads.includes('Backup'), JSON.stringify(defaults.heads));
 ok('…and the presets panel renders in it', defaults.hasPanel, '');
 
 // ── 3. Page Setup uses the shared Shown/Hidden columns ───────────────

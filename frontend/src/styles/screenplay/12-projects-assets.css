@@ -380,20 +380,24 @@
   color: var(--fd-text-muted); cursor: pointer;
 }
 .asset-staged-x:hover { background: var(--fd-hover-bg); color: var(--fd-danger); }
-.asset-staged-actions { display: flex; justify-content: flex-end; gap: 6px; }
+/* v7.31, Derek: the tags field shares the row with Cancel and Upload — it
+   was a full-width row of its own above them. The label holds its natural
+   width, the field takes what is left, the buttons keep theirs. */
+.asset-staged-actions {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+}
+.asset-stage-tags-label {
+  flex: none; font-size: 12px; color: var(--fd-text-muted); white-space: nowrap;
+}
+.asset-staged-actions .asset-tag-input { flex: 1 1 90px; min-width: 90px; }
+.asset-staged-actions .dialog-btn { flex: none; }
 .asset-upload-icon {
   font-size: 24px;
   margin-bottom: 8px;
 }
 .asset-upload-text {
   font-size: 13px;
-  color: var(--fd-text-muted);
-}
-.asset-tag-input-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
   color: var(--fd-text-muted);
 }
 .asset-tag-input {

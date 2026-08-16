@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.31",
+  "date": "2026-08-16",
+  "changes": [
+   "Asset Manager: the tags field shares a row with Cancel and Upload instead of taking a line of its own.",
+   "Settings ▸ Backup & Restore is now two sections that say what they do: Backup (tick what to include, save one file) and Restore (load one back). The old settings-only section is gone — it was left behind when Export moved into the preset window, with nothing under it but an Import button.",
+   "Restore reads both the new preset files and the settings files made before v7.28, deciding by what the file is rather than which button wrote it."
+  ]
+ },
+ {
   "version": "7.30",
   "date": "2026-08-16",
   "changes": [

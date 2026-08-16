@@ -55,9 +55,13 @@ try {
   const checks = await page.evaluate((p) => document.querySelectorAll(`${p} .fs-presets-check`).length, P);
   ok(checks === list.length, `every row carries a checkbox (${checks}/${list.length})`);
   const buttons = await page.evaluate((p) => [...document.querySelectorAll(`${p} .fs-presets-btn`)].map((b) => b.textContent.trim()), P);
-  ok(buttons.length === 2 && /Export Preset/.test(buttons[0]),
+  /* v7.31: in SETTINGS the panel renders export-only — Derek split the tab
+     into Backup (this checklist) and Restore (the one import door), so the
+     import half moved out. The Presets WINDOW still carries both. */
+  ok(buttons.length >= 1 && /Export Preset/.test(buttons[0]),
     `ONE export button, not one per row (${buttons.join(' / ')})`);
-  ok(buttons.filter((b) => /Import/.test(b)).length === 1, 'and one import button');
+  ok(buttons.filter((b) => /Import/.test(b)).length === 0,
+    'and no import button here — Restore owns that door now');
 
   /* ── 3: an item with nothing in it ── */
   const empties = list.filter((r) => r.disabled).map((r) => r.label);
