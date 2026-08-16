@@ -64,8 +64,27 @@ const code = [...walk(SRC, '.tsx'), ...walk(SRC, '.ts')]
   .map((f) => readFileSync(f, 'utf8'))
   .join('\n');
 
+/* v7.30: classes BUILT from a prefix. `title-page-${field}`,
+   `fs-edge-${z}`, `diff-el-${b.elementType}` — a text search can never find
+   the result, so every such class looked dead and 223 of them sat in the
+   backlog as work to do. Deleting them would have blanked the title page.
+   The prefixes are harvested from the code itself rather than hand-listed,
+   so the next one is covered the day it is written. */
+/* No quote anchor: the prefix is usually mid-string, after a space —
+   `screenplay-element title-page title-page-${field}`. The `${` is the
+   signal, and requiring a quote in front of it is why the first cut of this
+   matched nothing at all. */
+const composedPrefixes = [...code.matchAll(/([a-zA-Z][a-zA-Z0-9_-]*-)\$\{/g)]
+  .map((m) => m[1]);
+/* Also `'prefix-' + expr`, the other way it is written. */
+composedPrefixes.push(...[...code.matchAll(/['"]([a-zA-Z][a-zA-Z0-9_-]*-)['"]\s*\+/g)].map((m) => m[1]));
+const COMPOSED = [...new Set(composedPrefixes)].filter((p) => p.length >= 4);
+
+const isComposed = (c) => COMPOSED.some((p) => c.startsWith(p) && c.length > p.length);
+
 const dead = [...defined]
   .filter((c) => !ALLOW.some(([re]) => re.test(c)))
+  .filter((c) => !isComposed(c))
   .filter((c) => !code.includes(c))
   .sort();
 

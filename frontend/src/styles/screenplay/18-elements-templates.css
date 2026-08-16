@@ -310,43 +310,9 @@
   background: var(--fd-page-bg, #fff);
 }
 
-/* ============ TEMPLATE LIST (SETTINGS) ============ */
-.template-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-.template-list-empty {
-  padding: 12px;
-  color: var(--fd-text-dim);
-  font-size: 13px;
-  text-align: center;
-}
-.template-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--fd-toolbar-bg, #2a2a2a);
-  border: 1px solid var(--fd-border);
-  border-radius: 6px;
-}
-.template-list-info { display: flex; align-items: center; gap: 8px; }
-.template-list-name { font-size: 14px; color: var(--fd-text); }
-.template-list-mode {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
 .template-mode-enforce { background: #333; color: #aaa; }
 .template-mode-override { background: #1a3a5c; color: #6cb4ff; }
-.template-list-mode-toggle { display: flex; gap: 0; }
 .template-mode-btn-sm { padding: 3px 10px !important; font-size: 11px !important; height: auto !important; }
-.template-list-actions { display: flex; gap: 4px; }
-.template-list-footer { display: flex; gap: 8px; margin-top: 4px; }
 
 /* v7.01 (style audit F133): this set font and padding but NOT height, so the
    "small" button still stood 34px tall with 12px text — Settings ▸ Page Setup

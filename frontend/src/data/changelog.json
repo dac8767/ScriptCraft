@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.30",
+  "date": "2026-08-16",
+  "changes": [
+   "Housekeeping: 105 lines of styling for features that no longer exist are gone, and the tool that finds them stopped reporting 47 live ones as dead — it could not see class names the app builds as it runs, which is how the title page's styling ended up on a list of things to delete."
+  ]
+ },
+ {
   "version": "7.29",
   "date": "2026-08-16",
   "changes": [
