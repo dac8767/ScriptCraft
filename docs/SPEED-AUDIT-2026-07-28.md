@@ -1,4 +1,5 @@
 # Speed audit — 2026-07-28 ("the last few small updates took 11 minutes")
+> Followed up 2026-08-16 ("updates are getting very slow again") — see §6-§9 at the end.
 
 Derek's complaint is about **delivery latency**: the wall-clock time from his
 message to "restart the app". This audit reconstructs where those minutes
@@ -119,3 +120,115 @@ removed most of it, and the suite stays honest rather than fast-but-flaky.
 - `environmentMatchGlobs` is deprecated in vitest 4 (warns on every run);
   migrating to `projects` is a mechanical follow-up, skipped here to keep
   this commit small.
+
+---
+
+# Follow-up — 2026-08-16 ("updates are getting very slow again")
+
+Same complaint, ~100 versions later. §4 above predicted **~1.5 min of tool
+time** for a small update; a v7.24-sized delivery now costs **5–8 min**. This
+section is the re-measurement, what was fixed, and the one finding that caps
+how much further this can go.
+
+## 6. Where it goes now (measured on v7.24, 4-core box)
+
+| Gate | Cost | Note |
+|---|---|---|
+| `check-all --jobs=4` (91 checks) | **219s wall / 853s work** | didn't exist in July |
+| `vitest run` (141 files, 1256 tests) | **48s** | of which **7.5s is tests** |
+| `npm run build` | 15s | vite itself 3.4s |
+| `tsc -b` incremental | ~6s | |
+
+**The regression is check-all.** July's §4 shape assumed "the driver for this
+version, ~5s, twice". The suite has since grown to 91 checks — one per version,
+none ever retired — and running all of them became the routine gate. That
+single change accounts for most of 1.5 min → 5–8 min.
+
+Three things were measured and found NOT to be the problem, so nobody spends a
+day on them again:
+
+- **Scheduling is finished.** 853s of work / 4 jobs = 213s; actual wall 219s.
+  That is ~97% parallel efficiency. There is nothing left in the scheduler.
+- **Startup is small.** Instrumented: browser launch 221ms, boot (goto +
+  `.ProseMirror` + DEV handle) 2.1s, settle 27ms. ~2.3s × 91 = 209s, 24% of
+  the work. Pooling browsers across checks would reclaim a fraction of that,
+  for real cross-contamination risk.
+- **Sleeps are small.** Every hardcoded `setTimeout`/`waitForTimeout` in all
+  91 checks totals **31s** — 3.6% of the work. §3's "never sleep on a guess"
+  rule held.
+
+So the suite is slow because it does 853 seconds of honest work, and that
+number grows by ~8s per version. The only lever is running fewer of them in
+the loop.
+
+## 7. What changed
+
+**`devtools/check-map.json` + `--changed`.** `build-check-map.mjs` derives,
+per check, the `frontend/src` files it covers — from the commit that ADDED it
+(these are written one per version, in the feature's own commit) plus every
+`src/` path the check `readFileSync`s. `check-all --changed` then runs only
+the checks whose files the diff touches. `--changed=<ref>` compares against a
+ref instead.
+
+Nobody annotates 91 files and nobody maintains an annotation, so the map is
+derived and disposable — regenerate it any time. **A check with no map entry
+is always run**: unmapped means unknown, and unknown must not mean skipped.
+The failure mode is spent time, never lost coverage, and the full suite is
+still the gate of record before a push.
+
+One trap worth recording, because the first build was useless: `changelog.json`
+and `changelog.ts` appeared in **90 of 91** maps — every version commit bumps
+them — so every change matched everything and the filter selected 90/91. Files
+appearing in more than 60% of the introducing commits are now dropped from the
+commit-derived signal as *ceremony, not coverage* (a check that genuinely
+reads one still picks it up from the readFileSync signal).
+
+Measured selection, and what it costs at 4 jobs:
+
+| Diff | Checks | Wall |
+|---|---|---|
+| one util (`titlePageDraftLine.ts`) | 1 / 91 | ~2s |
+| one dialog (`FeedbackTool.tsx`) | 2 / 91 | ~5s |
+| the PDF exporter | 4 / 91 | ~10s |
+| one CSS file (`22-tools-extra.css`) | 18 / 91 | ~43s |
+| `editorStore.ts` alone | 28 / 91 | ~67s |
+| **v7.24 as shipped** (3 hub files) | **54 / 91** | **137s** (vs 219s, both green) |
+
+## 8. The finding that caps it — the hub files
+
+`--changed` gives a v7.24-sized delivery 137s instead of 219s. It gives a
+one-file change 2s. The gap between those two numbers is the whole story:
+
+```
+checks whose coverage includes …
+   28   stores/editorStore.ts
+   23   components/SceneNavigator.tsx
+   22   components/MenuBar.tsx
+   21   components/ScreenplayEditor.tsx
+   19   components/ToolDock.tsx
+```
+
+Touch `editorStore.ts` and a third of the suite is in scope — correctly, since
+a third of the app's behaviour is in that file. **The monoliths are why change-
+based selection can only go so far, and they are the same reason a change costs
+so much to even write:** ScreenplayEditor.tsx is 3,972 lines, MenuBar.tsx 2,484,
+editorStore.ts 2,393, Toolbar.tsx 2,203. Every edit starts by grepping through
+them, and every edit puts a third of the suite back in scope.
+
+The stalled refactor backlog — slicing the chrome domain out of editorStore,
+splitting ScreenplayEditor into hooks, splitting MenuBar/Toolbar — is therefore
+not housekeeping. **It is the remaining speed work**, and it pays twice: less
+to read per change, fewer checks per change.
+
+## 9. Working rules (amending §3)
+
+7. **`check-all` is not a per-delivery gate — run it once.** Iterate with
+   `--changed` (and the one new check directly); the full 91 runs once, before
+   the push. Same rule §3.3 already gave for vitest, applied to the suite that
+   grew after it was written.
+8. **`vitest related <files> --run` for iteration** still stands, and matters
+   more now: 40 of the suite's 48s is per-file jsdom setup and module import,
+   not tests. `isolate: false` fixes that and was **tried, measured and
+   reverted** in §2 — do not retry it without reading why.
+9. **Regenerate the map when checks are added**: `node devtools/build-check-map.mjs`.
+   It is cheap, and a stale map only ever runs too much.

@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.23 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.24 — READ docs/SPEED-AUDIT-2026-07-28.md §3 AND §9 before verifying anything; NOTE the isolate:false revert in §2, and that check-all is NOT a per-delivery gate — `--changed` in the loop, the full 91 once before the push)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:

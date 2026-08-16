@@ -7,23 +7,68 @@
  * suite took as long as the sum of its parts when it only needs to take as
  * long as the slowest one.
  *
- *   node devtools/check-all.mjs            # every check-*.mjs
+ *   node devtools/check-all.mjs            # every check-*.mjs — the GATE
+ *   node devtools/check-all.mjs --changed  # only what the diff can break
  *   node devtools/check-all.mjs v581 v582  # only those
  *   node devtools/check-all.mjs --serial   # the old way, for comparison
+ *
+ * --changed is the ITERATION loop, not the gate. It reads check-map.json
+ * (devtools/build-check-map.mjs) and runs the checks whose covered files the
+ * working diff touches, plus any check with no map entry — unmapped means
+ * unknown, and unknown must never mean skipped. Measured spread: 1-4 checks
+ * for a one-file change, ~28 for editorStore, ~54 for a broad one. The full
+ * suite still runs once before a push; this is what stops a 219s suite from
+ * being the cost of every intermediate re-run.
  */
-import { readdirSync } from 'fs';
-import { spawn } from 'child_process';
+import { readdirSync, readFileSync } from 'fs';
+import { spawn, execFileSync } from 'child_process';
 import { cpus } from 'os';
 
 const args = process.argv.slice(2);
 const serial = args.includes('--serial');
+/* --changed = uncommitted + unpushed. --changed=<ref> = everything since ref
+   (e.g. --changed=HEAD~1 to re-verify the commit just made). */
+const changedArg = args.find((a) => a === '--changed' || a.startsWith('--changed='));
+const changedOnly = Boolean(changedArg);
+const changedRef = changedArg?.includes('=') ? changedArg.split('=')[1] : null;
 const jobsArg = args.find((a) => a.startsWith('--jobs='));
 const picks = args.filter((a) => !a.startsWith('--'));
 
-const files = readdirSync(new URL('.', import.meta.url))
+let files = readdirSync(new URL('.', import.meta.url))
   .filter((f) => /^check-.*\.mjs$/.test(f) && f !== 'check-all.mjs' && f !== 'check-lanes.mjs')
   .filter((f) => picks.length === 0 || picks.some((p) => f.includes(p)))
   .sort();
+
+if (changedOnly) {
+  const repo = new URL('../../', import.meta.url).pathname.replace(/\/$/, '');
+  const git = (...a) => {
+    try { return execFileSync('git', ['-C', repo, ...a], { encoding: 'utf8' }); } catch { return ''; }
+  };
+  /* Uncommitted work AND anything committed but not yet pushed — a delivery
+     is usually several commits, and only comparing to HEAD would miss the
+     earlier ones. */
+  const base = changedRef || git('rev-parse', '--abbrev-ref', '@{u}').trim();
+  const changed = new Set([
+    ...git('diff', '--name-only', 'HEAD').split('\n'),
+    ...(base ? git('diff', '--name-only', `${base}...HEAD`).split('\n') : []),
+  ].map((s) => s.trim()).filter(Boolean));
+
+  let map = null;
+  try {
+    map = JSON.parse(readFileSync(new URL('check-map.json', import.meta.url), 'utf8')).checks;
+  } catch { /* no map — fall through and run everything */ }
+  if (!map) {
+    console.log('(no check-map.json — run devtools/build-check-map.mjs; running everything)');
+  } else {
+    const before = files.length;
+    files = files.filter((f) => {
+      const covers = map[f]?.covers;
+      return !covers?.length || covers.some((c) => changed.has(c));
+    });
+    console.log(`(--changed: ${files.length} of ${before} checks, from ${changed.size} changed files)`);
+    if (!files.length) { console.log('nothing to run'); process.exit(0); }
+  }
+}
 
 /* A check spends most of its life WAITING — for the page to settle, for a
    selector, for an animation — not burning CPU. So the useful concurrency is
