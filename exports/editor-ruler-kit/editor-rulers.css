@@ -1,0 +1,44 @@
+/* EditorRulers — the complete stylesheet. Four rules; there is no more.
+ *
+ * The pin is a ZERO-SIZE position:sticky box. That is the whole trick: a
+ * sticky element with no size cannot push the content around, and it stays at
+ * the scroll container's visible corner while the pages scroll under it. The
+ * canvases hang off it absolutely.
+ *
+ * Two things the host must provide, or the rulers will look almost-right and
+ * be subtly wrong — see the README:
+ *   1. the scroll container is position: relative
+ *   2. the pin is the FIRST child of the scroll container, before the pages
+ */
+
+.fs-rulers-pin {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 45;
+}
+
+/* `color` is read by the canvas at paint time — CSS custom properties cannot
+ * be read from inside a canvas, so the component pulls getComputedStyle().color
+ * and derives every tick, number and rule line from it. Restyle the ruler by
+ * changing THIS, not the component. */
+.fs-ruler {
+  position: absolute;
+  color: var(--fd-text-muted, #999);
+  background: var(--fd-bg, #2a2a2a);
+}
+
+/* 20px === RULER_THICKNESS in the component. If you change one, change both. */
+.fs-ruler-h { top: 0; left: 0; }
+.fs-ruler-v { top: 20px; left: 0; }
+
+.fs-ruler-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  background: var(--fd-bg, #2a2a2a);
+}
