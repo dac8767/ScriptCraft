@@ -115,11 +115,16 @@ describe('no writer serializes script content by hand', () => {
     expect(code).not.toMatch(/JSON\.stringify\(\s*args\.content\s*\)/);
   });
 
-  it('every script copy is named .odraft, never .json', () => {
-    // filename templates: `…${…}.EXT` inside a path or name literal
+  it('no copy hard-codes its extension — every name comes from scriptFileName', () => {
+    /* v7.21: the extension moved to ONE module (utils/scriptFileExt), so the
+       old scan for `…${…}.EXT` templates now finds nothing — which is the
+       point, and which its own "found some" guard caught the moment the
+       rename landed. What matters here is that no writer spells an extension
+       itself: that is how you get five writers and four extensions. */
     const exts = [...code.matchAll(/\$\{[^}]*\}\.(\w+)`/g)].map((m) => m[1]);
-    expect(exts.length).toBeGreaterThan(0);
-    expect(exts.filter((e) => e === 'json')).toEqual([]);
+    expect(exts).toEqual([]);
+    // 6 writers: save x3 (local/gdrive/onedrive) + snapshot x3
+    expect((code.match(/scriptFileName\(/g) ?? []).length).toBeGreaterThanOrEqual(6);
   });
 
   it('the serializer is used by every destination — local, Drive, OneDrive', () => {

@@ -58,11 +58,11 @@ describe('what the user sees is the SCRIPT\'s name', () => {
 describe('the file on disk is named after the script', () => {
   /* v7.18: the REAL builder. This block used to carry its own copy of the
      naming rule, which is why it never noticed that the name it asserted —
-     `.odraft.json` — was one the app could not open. */
+     `.script.json` — was one the app could not open. */
   const fileNameFor = (title: string) => mirrorPathFor('', title).replace(/^\//, '');
 
-  it('"Blackwater" saves as Blackwater.odraft', () => {
-    expect(fileNameFor('Blackwater')).toBe('Blackwater.odraft');
+  it('"Blackwater" saves as Blackwater.script', () => {
+    expect(fileNameFor('Blackwater')).toBe('Blackwater.script');
   });
 
   it('not "<container> — <draft>", which is what it used to produce', () => {

@@ -375,7 +375,7 @@ function SaveLocationsTab() {
           <span className="prefs-unit-label">minute(s)</span>
         </div>
         {/* v2.83, Derek: a chosen folder on this device gets a timestamped
-            .odraft on every auto save. Checking with no folder yet opens the
+            .script on every auto save. Checking with no folder yet opens the
             picker; the path shows beside the row. */}
         <label className="prefs-check-row">
           <input

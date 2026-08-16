@@ -84,10 +84,17 @@
       },
       {
         "ext": [
-          "odraft"
+          "script"
         ],
         "mimeType": "application/json",
         "description": "ScriptCraft Script"
+      },
+      {
+        "ext": [
+          "odraft"
+        ],
+        "mimeType": "application/json",
+        "description": "ScriptCraft Script (legacy .odraft)"
       },
       {
         "ext": [

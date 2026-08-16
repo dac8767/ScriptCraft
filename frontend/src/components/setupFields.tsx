@@ -6,6 +6,7 @@
  * copy of it.
  */
 import { useState } from 'react';
+import { SCRIPT_EXTS } from '../utils/scriptFileExt';
 import { FaBoxOpen, FaFolderOpen } from 'react-icons/fa';
 import { useSettingsStore } from '../stores/settingsStore';
 import { isTauri } from '../services/platform';
@@ -155,7 +156,7 @@ export function CustomizeFromFileField() {
   const [applied, setApplied] = useState<string | null>(null);
   const run = async () => {
     const file = await openTextFile([
-      { name: 'ScriptCraft Preset or Script', extensions: ['json', 'odraft'] },
+      { name: 'ScriptCraft Preset or Script', extensions: ['json', ...SCRIPT_EXTS] },
     ]);
     if (!file) return;
     // Which kind is it? Ask the file, not the extension — a preset saved with

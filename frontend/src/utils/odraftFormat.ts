@@ -6,6 +6,7 @@
  */
 
 import type { ScriptMeta } from '../services/api';
+import { SCRIPT_EXT, scriptFileName } from './scriptFileExt';
 
 interface OdraftFile {
   odraft_version: number;
@@ -56,9 +57,9 @@ export async function downloadOdraft(
 ): Promise<void> {
   const blob = exportOdraft(meta, content, themes);
   const text = await blob.text();
-  const filename = `${meta.title || 'Untitled'}.odraft`;
+  const filename = scriptFileName(meta.title || 'Untitled');
   const { saveFile } = await import('./fileOps');
-  await saveFile(text, filename, [{ name: 'ScriptCraft', extensions: ['odraft'] }]);
+  await saveFile(text, filename, [{ name: 'ScriptCraft', extensions: [SCRIPT_EXT] }]);
 }
 
 /** The newest .odraft format revision this build understands. */

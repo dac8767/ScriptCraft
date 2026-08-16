@@ -593,7 +593,10 @@ struct PendingFile(Mutex<Option<String>>);
 // so "Open With ▸ ScriptCraft" was refused on the very files the feature
 // created. A .json that is not a script gets a friendly parse error, not a
 // crash. New copies are written as .odraft.
-const OPENABLE_EXTENSIONS: &[&str] = &["fdx", "fountain", "odraft", "txt", "json"];
+// v7.21: "script" is the current name; "odraft" is what the app wrote
+// through v7.20 and "json" the v1.16-v7.17 folder copies. A file this app
+// wrote is a file this app opens — none of these ever expire.
+const OPENABLE_EXTENSIONS: &[&str] = &["fdx", "fountain", "script", "odraft", "txt", "json"];
 
 fn is_openable_file(path: &str) -> bool {
     let ext = path.rsplit('.').next().unwrap_or("");

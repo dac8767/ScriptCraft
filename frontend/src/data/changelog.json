@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.21",
+  "date": "2026-08-16",
+  "changes": [
+   "Scripts are saved as .script now. Everything ScriptCraft writes — the copy in your chosen folder, auto saves, snapshots, Google Drive, OneDrive, and File ▸ Export — uses the new name.",
+   "Your existing .odraft files still open, and always will. So do the older .odraft.json copies. A file this app wrote is a file this app opens; the new name applies to new files, and nothing on your disk is rewritten or left behind.",
+   "What did NOT change is anything inside the file, or the identity macOS has recorded against every script you have already saved. Renaming those is what turns a rename into lost work."
+  ]
+ },
+ {
   "version": "7.20",
   "date": "2026-08-16",
   "changes": [

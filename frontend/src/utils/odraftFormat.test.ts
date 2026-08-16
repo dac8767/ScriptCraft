@@ -257,17 +257,17 @@ describe('parseOdraft on malformed / legacy input', () => {
 });
 
 describe('downloadOdraft', () => {
-  it('saves the export text as "<title>.odraft" with the ScriptCraft filter', async () => {
+  it('saves the export text as "<title>.script" with the ScriptCraft filter', async () => {
     await downloadOdraft(meta(), CONTENT);
     expect(saveFile).toHaveBeenCalledTimes(1);
     const [text, filename, filters] = vi.mocked(saveFile).mock.calls[0];
-    expect(filename).toBe('Cold Open.odraft');
-    expect(filters).toEqual([{ name: 'ScriptCraft', extensions: ['odraft'] }]);
+    expect(filename).toBe('Cold Open.script');
+    expect(filters).toEqual([{ name: 'ScriptCraft', extensions: ['script'] }]);
     expect(JSON.parse(text as string).meta.title).toBe('Cold Open');
   });
 
-  it('falls back to Untitled.odraft when the title is empty', async () => {
+  it('falls back to Untitled.script when the title is empty', async () => {
     await downloadOdraft(meta({ title: '' }), CONTENT);
-    expect(vi.mocked(saveFile).mock.calls[0][1]).toBe('Untitled.odraft');
+    expect(vi.mocked(saveFile).mock.calls[0][1]).toBe('Untitled.script');
   });
 });

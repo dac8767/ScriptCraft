@@ -19,6 +19,7 @@ import { useEditorStore } from '../stores/editorStore';
 // statically, so a dynamic import here could never split a chunk — it only
 // produced a build warning on every run (v4.62 audit).
 import { exportOdraft } from '../utils/odraftFormat';
+import { scriptFileName } from '../utils/scriptFileExt';
 import { reportSaveError } from '../stores/saveErrorStore';
 import { errText } from '../utils/errText';
 import {
@@ -134,7 +135,7 @@ async function saveToGDrive(args: SavePayload): Promise<void> {
      fetched back out of Drive would not open either. Updating an existing
      file also renames it (driveUpload sends `name` on PATCH), so the copies
      already up there are corrected on the next save rather than stranded. */
-  const fileName = `${safeName(args.title)}.odraft`;
+  const fileName = scriptFileName(safeName(args.title));
   const text = await odraftTextFor(args.title, args.content);
   const map = mapGet(GDRIVE_MAP);
   const key = `${args.projectId}/${args.scriptId}`;
@@ -162,7 +163,7 @@ async function snapshotToGDrive(label: string, text: string): Promise<void> {
   const token = await getAccessToken(gdriveConfig());
   const root = await driveEnsureFolder(token, 'ScriptCraft');
   const snaps = await driveEnsureFolder(token, 'Snapshots', root);
-  await driveUpload(token, `${safeName(label)}.odraft`, text, snaps);
+  await driveUpload(token, scriptFileName(safeName(label)), text, snaps);
 }
 
 /* ── OneDrive (Microsoft Graph, path addressing) ───────────────────────── */
@@ -184,13 +185,13 @@ async function saveToOneDrive(args: SavePayload): Promise<void> {
   const token = await getAccessToken(onedriveConfig());
   /* v7.18: see saveToGDrive — same bug, same fix. Path addressing means the
      new name is a new file; the old `.odraft.json` stays put and still opens. */
-  const path = `ScriptCraft/${safeName(args.title)}.odraft`;
+  const path = `ScriptCraft/${scriptFileName(safeName(args.title))}`;
   await onedrivePut(token, path, await odraftTextFor(args.title, args.content));
 }
 
 async function snapshotToOneDrive(label: string, text: string): Promise<void> {
   const token = await getAccessToken(onedriveConfig());
-  await onedrivePut(token, `ScriptCraft/Snapshots/${safeName(label)}.odraft`, text);
+  await onedrivePut(token, `ScriptCraft/Snapshots/${scriptFileName(safeName(label))}`, text);
 }
 
 /* ── Orchestration ─────────────────────────────────────────────────────── */
@@ -245,7 +246,7 @@ export async function odraftTextFor(title: string, content: Record<string, unkno
  *  with itself. */
 export function mirrorPathFor(folder: string, title: string): string {
   const sep = folder.endsWith('/') ? '' : '/';
-  return `${folder}${sep}${safeName(title)}.odraft`;
+  return `${folder}${sep}${scriptFileName(safeName(title))}`;
 }
 
 async function saveToLocalFolder(args: SavePayload, folder: string): Promise<void> {
@@ -364,7 +365,7 @@ export async function mirrorSnapshot(args: {
            what it is: <title> — <message> — <stamp>. */
         const folder = useSettingsStore.getState().snapLocalFolder.replace(/[/\\]$/, '');
         const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('save_text_to_path', { path: `${folder}/Auto Saves/${safe}.odraft`, contents: text });
+        await invoke('save_text_to_path', { path: `${folder}/Auto Saves/${scriptFileName(safe)}`, contents: text });
       }
     } catch (err) {
       console.error(`Snapshot copy to ${loc} failed:`, err);

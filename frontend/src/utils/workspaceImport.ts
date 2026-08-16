@@ -7,13 +7,14 @@
  * without overwriting existing names (the store suffixes duplicates).
  */
 import { openTextFile } from './fileOps';
+import { SCRIPT_EXTS } from './scriptFileExt';
 import { showToast } from '../components/Toast';
 import { useEditorStore, type WorkspaceSnapshot } from '../stores/editorStore';
 
 export async function importWorkspacesFromFile(): Promise<void> {
   try {
     const result = await openTextFile([
-      { name: 'ScriptCraft Project or Workspaces', extensions: ['odraft', 'json'] },
+      { name: 'ScriptCraft Project or Workspaces', extensions: [...SCRIPT_EXTS] },
     ]);
     if (!result) return;
     let parsed: unknown;

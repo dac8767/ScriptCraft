@@ -85,7 +85,7 @@ function Knowledge() {
       toolbar, or the Tool Panels on either side of the page.</P>
 
       <H>File</H>
-      <P><b>Save</b> writes to the app's library; <b>Save As</b> saves a local .odraft file.
+      <P><b>Save</b> writes to the app's library; <b>Save As</b> saves a local .script file.
       <b> Snapshots</b> (File ▸ Script History) holds every snapshot you've taken — compare
       or restore any of them.
       Import and export cover Final Draft (.fdx), Fountain, Word, and PDF.</P>

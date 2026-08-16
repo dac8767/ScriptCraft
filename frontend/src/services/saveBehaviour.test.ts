@@ -39,23 +39,23 @@ describe('Save', () => {
 describe('the chosen folder receives a real file', () => {
   /* v7.18: the REAL path builder, imported. This block used to define its own
      `pathFor` and assert against that — so it went on passing while the app
-     wrote `.odraft.json`, a name the app itself could not open. The comment
+     wrote `.script.json`, a name the app itself could not open. The comment
      above ("writes into the void is the worst kind of bug") was exactly right
      about the risk and exactly wrong about being protected from it. */
   const pathFor = mirrorPathFor;
 
-  it('writes <folder>/<script name>.odraft', () => {
+  it('writes <folder>/<script name>.script', () => {
     expect(pathFor('/Users/dcarl/Scripts', 'Blackwater'))
-      .toBe('/Users/dcarl/Scripts/Blackwater.odraft');
+      .toBe('/Users/dcarl/Scripts/Blackwater.script');
   });
 
   it('tolerates a trailing slash rather than producing a double one', () => {
     expect(pathFor('/Users/dcarl/Scripts/', 'Blackwater'))
-      .toBe('/Users/dcarl/Scripts/Blackwater.odraft');
+      .toBe('/Users/dcarl/Scripts/Blackwater.script');
   });
 
   it('a name with a slash in it cannot escape the folder', () => {
-    expect(pathFor('/Users/dcarl/Scripts', 'Act 1/2')).toBe('/Users/dcarl/Scripts/Act 1-2.odraft');
+    expect(pathFor('/Users/dcarl/Scripts', 'Act 1/2')).toBe('/Users/dcarl/Scripts/Act 1-2.script');
   });
 
   it('no folder set = no file written (the app keeps it internally)', () => {
@@ -91,6 +91,6 @@ describe('the folder writability probe', () => {
   });
 
   it('a real script in the same folder was always allowed', () => {
-    expect(scopeAllows('/Users/dcarl/Downloads/Blackwater.odraft')).toBe(true);
+    expect(scopeAllows('/Users/dcarl/Downloads/Blackwater.script')).toBe(true);
   });
 });

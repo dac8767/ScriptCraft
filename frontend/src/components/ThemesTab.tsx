@@ -7,6 +7,7 @@
  * stays legible instead of looking broken).
  */
 import React from 'react';
+import { SCRIPT_EXTS } from '../utils/scriptFileExt';
 import AddMenu from './AddMenu';
 import ColorPicker from './ColorPicker';
 import { DndColumns } from './CustomizePanelsDialog';
@@ -398,7 +399,7 @@ export default function ThemesTab() {
   async function importFromProject() {
     const { openTextFile } = await import('../utils/fileOps');
     const result = await openTextFile([
-      { name: 'ScriptCraft Project', extensions: ['odraft', 'json'] },
+      { name: 'ScriptCraft Project', extensions: [...SCRIPT_EXTS] },
     ]);
     if (!result) return;
     try {
@@ -416,7 +417,7 @@ export default function ThemesTab() {
   function importThemes() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json,.txt,.odraft,application/json,text/plain';
+    input.accept = '.json,.txt,.script,.odraft,application/json,text/plain';
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;

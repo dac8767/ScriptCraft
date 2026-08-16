@@ -10,6 +10,7 @@
  * type must be readable off the filename).
  */
 import { useState } from 'react';
+import { SCRIPT_EXTS } from '../utils/scriptFileExt';
 import { FaFileExport, FaFileImport } from 'react-icons/fa';
 import { useThemeStore } from '../stores/themeStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
@@ -106,7 +107,7 @@ export default function PresetsPanel({ showImports = true }: { showImports?: boo
   };
 
   const importBundle = async () => {
-    const file = await openTextFile([{ name: 'ScriptCraft Preset', extensions: ['json', 'odraft'] }]);
+    const file = await openTextFile([{ name: 'ScriptCraft Preset', extensions: ['json', ...SCRIPT_EXTS] }]);
     if (!file) return;
     let ids: PresetPartId[];
     try {

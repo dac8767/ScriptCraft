@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.20 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.21 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:
@@ -356,6 +356,33 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.21 — the extension is .script
+
+Derek: "make the extension .script". Asked first whether it was even allowed —
+it is, and the distinction is worth keeping straight:
+
+- **A file extension is not a persisted identifier.** Storage keys and bundle
+  ids are untouchable because renaming them orphans data INVISIBLY. Files are
+  visible, and an app can read two names forever. So this was a yes.
+- **`utils/scriptFileExt.ts` is the one source**: `SCRIPT_EXT = 'script'`,
+  `LEGACY_SCRIPT_EXTS = ['odraft', 'json']`, `isScriptExt`, `scriptFileName`.
+  Every writer and every reader goes through it — after three versions of
+  finding the same bug in six writers, the extension was not going to be
+  spelled in twelve places.
+- **What did NOT change, and must not:** `format: 'opendraft-script'` and
+  `odraft_version` inside the file (read from every file already on disk), the
+  bundle id `com.freedraft.app`, and the UTI `com.proteus.opendraft.document`
+  that the release workflow injects. `scriptFileExt.test.ts` asserts all four
+  are still there — the test exists to stop a future tidy-up finishing the
+  rename into the parts that would orphan data.
+- **`.odraft` opens forever**, and so does `.odraft.json`. Both extensions are
+  registered with the OS (tauri.conf fileAssociations) and accepted by
+  `OPENABLE_EXTENSIONS`, the Open dialog, and every import filter.
+- NEEDS THE MAC: the file association only takes effect after a rebuild, and
+  double-click routing for `.script` is not testable here.
+- Gates: cargo check clean, tsc 0, vitest 1237/141 (+8), build ok,
+  check-all 1202/0.
 
 ### v7.20 — the copy filename, and the last two writers
 

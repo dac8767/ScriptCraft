@@ -49,6 +49,7 @@ import { exportPDF } from '../utils/pdfExporter';
 import { downloadDocx } from '../utils/docxExporter';
 import { parseDocx } from '../utils/docxImporter';
 import { downloadOdraft, parseOdraft } from '../utils/odraftFormat';
+import { SCRIPT_EXT, SCRIPT_EXTS, isScriptExt, SCRIPT_FORMAT_LABEL } from '../utils/scriptFileExt';
 import { trackChangesPluginKey } from '../editor/trackChanges';
 import PageSetupDialog from './PageSetupDialog';
 import TemplateSelectDialog from './TemplateSelectDialog';
@@ -673,12 +674,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
   const handleImport = useCallback(async () => {
     if (!editor) return;
     try {
-      /* v7.18: `json` is offered so the LEGACY `<title>.odraft.json` copies —
-         everything the Save As mirror wrote between v1.16 and v7.17 — can be
-         picked at all. Their last extension is `json`, so the old filter hid
-         them and the dispatch below sent them to the Fountain parser. */
+      /* v7.21: SCRIPT_EXTS is .script plus everything the app used to write —
+         `odraft` (through v7.20) and `json` (the v1.16–v7.17 folder copies,
+         whose last extension is what a dialog matches on). A file this app
+         wrote is a file this app opens; none of these ever expire. */
       const result = await openTextFile([
-        { name: 'Script', extensions: ['fountain', 'fdx', 'odraft', 'txt', 'json'] },
+        { name: 'Script', extensions: ['fountain', 'fdx', 'txt', ...SCRIPT_EXTS] },
       ]);
       if (!result) return;
 
@@ -735,7 +736,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             store.upsertCharacterProfile(hl.name, { color: hl.color, highlighted: hl.highlighted });
           }
         }
-      } else if (ext === 'odraft' || ext === 'json') {
+      } else if (isScriptExt(ext)) {
         try {
           const parsed = parseOdraft(text);
           doc = parsed.content;
@@ -753,7 +754,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       clearEditorHistory(editor);
 
       // Open as unsaved document — user can save later via Cmd+S
-      const scriptTitle = (ext === 'odraft' || ext === 'json') ? (store.documentTitle || name.replace(/\.\w+$/, '') || 'Untitled') : (name.replace(/\.\w+$/, '') || 'Untitled');
+      const scriptTitle = isScriptExt(ext) ? (store.documentTitle || name.replace(/\.\w+$/, '') || 'Untitled') : (name.replace(/\.\w+$/, '') || 'Untitled');
       store.setDocumentTitle(scriptTitle);
       setCurrentProject(null);
       setCurrentScriptId(null);
@@ -762,7 +763,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       // that the save goes to ScriptCraft's library, not back to the source file.
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : (ext === 'odraft' || ext === 'json') ? 'ScriptCraft (.odraft)'
+        : isScriptExt(ext) ? SCRIPT_FORMAT_LABEL
         : ext ? `.${ext}` : 'imported file';
       store.setImportedSource({ name, format: fmtLabel });
     } catch (err) {
@@ -1348,7 +1349,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             { icon: <FaFileAlt />, label: 'Fountain (.fountain)…', action: handleExportFountain },
             { icon: <FaFilePdf />, label: 'PDF…', action: handleExportPDF },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleExportDocx },
-            { icon: <FaFile />, label: 'ScriptCraft (.odraft)…', action: handleExportOdraft },
+            { icon: <FaFile />, label: `ScriptCraft (.${SCRIPT_EXT})…`, action: handleExportOdraft },
             { icon: <FaBoxOpen />, label: 'Presets…', action: () => setPresetsOpen(true) },
           ],
         },

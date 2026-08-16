@@ -64,6 +64,7 @@ import BeatBoard from './BeatBoard';
 import ScriptStatistics from './ScriptStatistics';
 import { captureSelectionSnippet } from './StickyNotes';
 import { ht } from '../utils/helperText';
+import { isScriptExt, scriptFileName, SCRIPT_FORMAT_LABEL } from '../utils/scriptFileExt';
 import LocationDatabase, { parseLocationFromHeading } from './LocationDatabase';
 import FormatPanel from './FormatPanel';
 import StatusBar from './StatusBar';
@@ -3115,7 +3116,7 @@ const ScreenplayEditor: React.FC = () => {
             store.upsertCharacterProfile(hl.name, { color: hl.color, highlighted: hl.highlighted });
           }
         }
-      } else if (ext === 'odraft') {
+      } else if (isScriptExt(ext)) {
         const parsed = parseOdraft(text);
         doc = parsed.content;
         if (parsed.meta.title) {
@@ -3142,7 +3143,7 @@ const ScreenplayEditor: React.FC = () => {
       // Mark as imported so Save As shows the "saved to ScriptCraft library" notice.
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'ScriptCraft (.odraft)'
+        : isScriptExt(ext) ? SCRIPT_FORMAT_LABEL
         : ext ? `.${ext}` : 'imported file';
       useEditorStore.getState().setImportedSource({ name: filename, format: fmtLabel });
     } catch (err) {
@@ -3520,7 +3521,7 @@ const ScreenplayEditor: React.FC = () => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${useEditorStore.getState().documentTitle || 'backup'}_backup.odraft`;
+            a.download = scriptFileName(`${useEditorStore.getState().documentTitle || 'backup'}_backup`);
             a.click();
             URL.revokeObjectURL(url);
             showToast('Backup exported', 'success');
