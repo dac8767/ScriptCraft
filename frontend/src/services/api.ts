@@ -370,6 +370,18 @@ export const api = {
     });
   },
 
+  /* v7.27, Derek: "add a button to rename items in the asset manager".
+     Renames the DISPLAY name (original_name) only. The stored `filename` is
+     what getAssetUrl builds a path from and what every reference in a script
+     resolves through — renaming that would orphan the file on disk and break
+     images already placed on a page. */
+  renameAsset: async (projectId: string, assetId: string, name: string): Promise<void> => {
+    await request<any>(`/projects/${projectId}/assets/${assetId}/name`, {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    });
+  },
+
   getAssetUrl: (projectId: string, assetId: string, _filename?: string): string => {
     return `${API_BASE.replace(/\/api$/, '')}/api/projects/${projectId}/assets/${assetId}`;
   },

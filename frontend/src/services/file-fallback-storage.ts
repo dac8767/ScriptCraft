@@ -561,6 +561,19 @@ export async function createFileFallbackStorage() {
       saveIndex(idx);
     },
 
+    /* v7.27: the DISPLAY name only — `filename` is the path on disk. */
+    renameAsset: async (
+      _projectId: string,
+      assetId: string,
+      name: string,
+    ): Promise<void> => {
+      const idx = loadIndex();
+      const a = idx.assets[assetId];
+      if (!a) throw new Error(`Asset not found: ${assetId}`);
+      a.original_name = name;
+      saveIndex(idx);
+    },
+
     getAssetUrl: (projectId: string, assetId: string, filename?: string): string => {
       const idx = loadIndex();
       const meta = idx.assets[assetId];

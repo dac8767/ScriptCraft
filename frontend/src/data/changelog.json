@@ -1,5 +1,15 @@
 [
  {
+  "version": "7.27",
+  "date": "2026-08-16",
+  "changes": [
+   "Asset Manager: picking or dropping a file no longer files it straight into the list. The file is shown first, the tags box appears at that point, and an Upload button adds it with those tags. The tags field used to sit above the picker asking a question about nothing — and the answer applied to the next file rather than the one you had just added.",
+   "The Add and Library halves are separate, labelled sections, and the drop area has a border you can actually see.",
+   "Deleting an asset asks first, and says what is lost — a script using that file loses it, and there is no undo.",
+   "Assets can be renamed. The name on screen changes; the file on disk keeps its own name, so pictures already placed in a script keep working."
+  ]
+ },
+ {
   "version": "7.26",
   "date": "2026-08-16",
   "changes": [

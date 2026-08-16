@@ -190,6 +190,15 @@
   ]
  },
  {
+  "text": "Add these files to the list with the tags above",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/AssetManager.tsx"
+  ]
+ },
+ {
   "text": "Add this combo to the presets",
   "kind": "tooltip",
   "sites": 1,
@@ -2540,6 +2549,16 @@
   ]
  },
  {
+  "text": "Remove from this upload",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/AssetManager.tsx"
+  ],
+  "icon": "FaTimes"
+ },
+ {
   "text": "Remove image",
   "kind": "tooltip",
   "sites": 2,
@@ -2687,13 +2706,14 @@
  {
   "text": "Rename",
   "kind": "tooltip",
-  "sites": 2,
-  "area": "Workspaces",
+  "sites": 3,
+  "area": "Everything Else",
   "where": [
+   "components/AssetManager.tsx",
    "components/WorkspaceDialogs.tsx",
    "components/WorkspacesTool.tsx"
   ],
-  "icon": "FaEdit"
+  "icon": "FaPen"
  },
  {
   "text": "Rename this field",
@@ -4274,7 +4294,7 @@
   ]
  },
  {
-  "text": "tag1, tag2, ...",
+  "text": "tag1, tag2, \\u2026",
   "kind": "placeholder",
   "sites": 1,
   "area": "Everything Else",

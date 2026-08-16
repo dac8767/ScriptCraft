@@ -756,6 +756,15 @@ export async function createLocalStorage() {
       );
     },
 
+    /* v7.27: the DISPLAY name only. `filename` is the path getAssetUrl builds
+       and what a placed image resolves through — renaming it orphans the file. */
+    async renameAsset(projectId: string, assetId: string, name: string): Promise<void> {
+      await db.execute(
+        'UPDATE assets SET original_name = $1 WHERE id = $2 AND project_id = $3',
+        [name, assetId, projectId],
+      );
+    },
+
     getAssetUrl: (projectId: string, assetId: string, filename?: string): string => {
       const fn = filename || assetFilenameCache[assetId] || assetId;
       const filePath = `${baseDir}/assets/${projectId}/${fn}`;

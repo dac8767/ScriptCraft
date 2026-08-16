@@ -311,20 +311,76 @@
   flex: 1;
 }
 
+/* ── Add / Library, the two halves (v7.27) ────────────────────────────
+   Derek: "separate the upload section and the list section", and "make the
+   upload drop area more clear by adding a border around the drop area". The
+   section owns a border so the halves read as halves, and the drop zone's own
+   dashed edge is drawn in a colour you can actually see — it was --fd-border,
+   which is the same near-invisible hairline the rest of the chrome uses to
+   separate things nobody is meant to notice. */
+.asset-add {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--fd-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--fd-text) 3%, transparent);
+}
+.asset-section-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--fd-text-muted);
+}
+.asset-section-title-list { margin-top: 2px; }
+
 /* Upload zone */
 .asset-upload-zone {
-  border: 2px dashed var(--fd-border);
+  border: 2px dashed color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border));
   border-radius: 8px;
   padding: 24px;
   text-align: center;
   cursor: pointer;
+  background: color-mix(in srgb, var(--fd-accent) 4%, transparent);
   transition: all 0.15s;
 }
 .asset-upload-zone:hover,
 .asset-upload-zone.drag-over {
   border-color: var(--fd-accent);
-  background: rgba(74, 158, 255, 0.05);
+  background: color-mix(in srgb, var(--fd-accent) 10%, transparent);
 }
+
+/* The files waiting for the Upload button. */
+.asset-staged {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.asset-staged-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.asset-staged-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  max-width: 100%;
+  padding: 3px 6px 3px 3px;
+  border: 1px solid var(--fd-border); border-radius: 6px;
+  background: var(--fd-input-bg);
+  font-size: 11.5px;
+}
+.asset-staged-thumb {
+  width: 28px; height: 28px; object-fit: cover; border-radius: 4px; display: block;
+}
+.asset-staged-icon {
+  width: 28px; height: 28px; display: grid; place-items: center;
+  color: var(--fd-text-muted);
+}
+.asset-staged-name {
+  min-width: 0; max-width: 190px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--fd-text);
+}
+.asset-staged-size { color: var(--fd-text-muted); font-size: 10.5px; }
+.asset-staged-x {
+  display: grid; place-items: center;
+  width: 18px; height: 18px; padding: 0;
+  border: none; border-radius: 4px; background: transparent;
+  color: var(--fd-text-muted); cursor: pointer;
+}
+.asset-staged-x:hover { background: var(--fd-hover-bg); color: var(--fd-danger); }
+.asset-staged-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .asset-upload-icon {
   font-size: 24px;
   margin-bottom: 8px;

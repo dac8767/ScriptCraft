@@ -257,6 +257,7 @@ export function createFallbackStorage() {
     uploadAsset: async (): Promise<any> => { throw new Error('Asset uploads are not available in fallback storage mode'); },
     deleteAsset: async (): Promise<void> => {},
     updateAssetTags: async (): Promise<void> => {},
+    renameAsset: async (): Promise<void> => {},
     getAssetUrl: (): string => '',
     getAssetBytes: async (): Promise<Uint8Array> => { throw new Error('Assets are not available in fallback storage mode'); },
     fetchLinkPreview: async (): Promise<LinkPreview> => ({ url: '', title: '', description: '', image: '', site_name: '' }),

@@ -1,19 +1,24 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   FaRegImage, FaMusic, FaFilm, FaRegFileAlt, FaRegFile, FaRegFolder,
-  FaUpload, FaDownload, FaRegTrashAlt,
+  FaUpload, FaDownload, FaRegTrashAlt, FaPen, FaTimes,
 } from 'react-icons/fa';
 import { useAssetStore } from '../stores/assetStore';
 import type { Asset } from '../stores/assetStore';
 import AssetViewer from './AssetViewer';
 import { api } from '../services/api';
 import { showToast } from './Toast';
+import { confirmDialog, promptDialog } from './ConfirmDialog';
 import { useAssetDisplayUrl } from '../utils/useAssetDisplayUrl';
 
 interface AssetManagerProps {
   projectId: string;
   embedded?: boolean;
 }
+
+/** A file waiting for the Upload button. `preview` is an object URL for
+ *  images and '' for everything else. */
+interface StagedFile { file: File; preview: string }
 
 const getMimeIcon = (mime: string): React.ReactNode => {
   if (mime.startsWith('image/')) return <FaRegImage />;
@@ -61,7 +66,10 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
   const [editingTagsId, setEditingTagsId] = useState<string | null>(null);
   const [editTagsValue, setEditTagsValue] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
   const [savingTagsId, setSavingTagsId] = useState<string | null>(null);
+  // v7.27: picked/dropped files wait HERE until Upload is pressed.
+  const [staged, setStaged] = useState<StagedFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAssets = useCallback(async () => {
@@ -91,7 +99,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
            is $APPDATA now. read_binary_file returns a byte array over IPC. */
         const { invoke } = await import('@tauri-apps/api/core');
         setUploading(true);
-        let failed = 0;
+        const read: File[] = [];
         for (const filePath of paths) {
           const filename = filePath.replace(/^.*[\\/]/, '') || 'file';
           try {
@@ -103,63 +111,127 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
               mp3: 'audio/mpeg', wav: 'audio/wav', mp4: 'video/mp4', webm: 'video/webm',
               txt: 'text/plain',
             };
-            const mime = mimeMap[ext] || 'application/octet-stream';
-            const file = new File([data], filename, { type: mime });
-            const tags = tagInput.trim() ? tagInput.trim().split(',').map((t) => t.trim()).filter(Boolean) : [];
-            await api.uploadAsset(projectId, file, tags);
+            read.push(new File([data], filename, { type: mimeMap[ext] || 'application/octet-stream' }));
           } catch {
-            failed++;
-            showToast(`Failed to upload "${filename}"`, 'error');
+            showToast(`Could not read "${filename}"`, 'error');
           }
         }
-        setTagInput('');
-        await fetchAssets();
         setUploading(false);
-        const succeeded = paths.length - failed;
-        if (succeeded > 0) {
-          showToast(`Uploaded ${succeeded} file${succeeded !== 1 ? 's' : ''} successfully`, 'success');
-        }
+        /* v7.27: a NATIVE drop stages exactly like a picked or dropped file.
+           It used to upload on the spot, which would have left two different
+           answers to "what happens when I drop a file" depending on whether
+           the drop came from the OS or the webview. */
+        stageFiles(read);
       } catch {
         setUploading(false);
       }
     };
     window.addEventListener('tauri-asset-drop', handler);
     return () => window.removeEventListener('tauri-asset-drop', handler);
-  }, [embedded, assetManagerOpen, projectId, tagInput, fetchAssets]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedded, assetManagerOpen, projectId, fetchAssets]);
 
-  const handleUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  /* v7.27, Derek: "When an item is picked in the browser or dropped in the
+     upload field, it shouldn't immediately be added to the list. show the
+     item, and at this point, the tags field appears. add a button 'Upload'
+     which actually adds the item with the tags to the list."
+
+     So picking STAGES. Nothing reaches the library until Upload is pressed,
+     which also means the tags field is never a question asked before you have
+     anything to answer it about — the "Tags for upload:" box sitting above an
+     empty picker is what made it confusing. */
+  const stageFiles = (files: FileList | File[] | null) => {
+    const list = Array.from(files ?? []);
+    if (!list.length) return;
+    setStaged((prev) => [
+      ...prev,
+      ...list.map((file) => ({
+        file,
+        // revoked in clearStaged / removeStaged — never on unmount, because
+        // the window remounts on a move and the previews must survive it
+        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
+      })),
+    ]);
+  };
+
+  const removeStaged = (i: number) => {
+    setStaged((prev) => {
+      const gone = prev[i];
+      if (gone?.preview) URL.revokeObjectURL(gone.preview);
+      return prev.filter((_, k) => k !== i);
+    });
+  };
+
+  const clearStaged = (list: StagedFile[]) => {
+    list.forEach((s) => { if (s.preview) URL.revokeObjectURL(s.preview); });
+    setStaged([]);
+    setTagInput('');
+  };
+
+  /** The Upload button — this is the only path that adds to the library. */
+  const commitStaged = async () => {
+    if (!staged.length) return;
+    const sending = staged;
+    const tags = tagInput.trim() ? tagInput.trim().split(',').map((t) => t.trim()).filter(Boolean) : [];
     setUploading(true);
     let failed = 0;
-    const fileArray = Array.from(files);
-    for (const file of fileArray) {
-      const tags = tagInput.trim() ? tagInput.trim().split(',').map((t) => t.trim()).filter(Boolean) : [];
+    for (const s of sending) {
       try {
-        await api.uploadAsset(projectId, file, tags);
+        await api.uploadAsset(projectId, s.file, tags);
       } catch (err) {
         failed++;
-        showToast(`Failed to upload "${file.name}": ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
+        showToast(`Failed to upload "${s.file.name}": ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
       }
     }
-    setTagInput('');
     await fetchAssets();
     setUploading(false);
-    const succeeded = fileArray.length - failed;
+    const succeeded = sending.length - failed;
+    // Only the ones that made it leave the staging area; a failure stays put
+    // with its tags so Upload can be pressed again.
+    if (!failed) clearStaged(sending);
     if (succeeded > 0) {
       showToast(`Uploaded ${succeeded} file${succeeded !== 1 ? 's' : ''} successfully`, 'success');
     }
   };
 
-  const handleDelete = async (assetId: string) => {
-    setDeletingId(assetId);
+  const handleDelete = async (asset: Asset) => {
+    /* v7.27, Derek: "add a warning window when deleting assets". Deleting an
+       asset removes the file, and a script that placed it shows a broken
+       image afterwards — there is no undo for this. confirmDialog is the
+       app's one confirm primitive (never window.confirm — see its header). */
+    const ok = await confirmDialog(
+      `Delete “${asset.original_name}”? Any script using this file will lose it. This cannot be undone.`,
+      { title: 'Delete asset', confirmLabel: 'Delete', danger: true },
+    );
+    if (!ok) return;
+    setDeletingId(asset.id);
     try {
-      await api.deleteAsset(projectId, assetId);
+      await api.deleteAsset(projectId, asset.id);
       await fetchAssets();
       showToast('Asset deleted', 'success');
     } catch (err) {
       showToast(`Failed to delete asset: ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  /* v7.27, Derek: "add a button to rename items". The DISPLAY name — the file
+     on disk keeps its name, because that is what a placed image resolves
+     through. promptDialog is the app's one prompt primitive. */
+  const handleRename = async (asset: Asset) => {
+    const next = await promptDialog('Rename asset', asset.original_name, { title: 'Rename asset' });
+    const name = next?.trim();
+    if (!name || name === asset.original_name) return;
+    setRenamingId(asset.id);
+    try {
+      await api.renameAsset(projectId, asset.id, name);
+      await fetchAssets();
+      showToast('Asset renamed', 'success');
+    } catch (err) {
+      showToast(`Failed to rename asset: ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
+    } finally {
+      setRenamingId(null);
     }
   };
 
@@ -189,7 +261,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    handleUpload(e.dataTransfer.files);
+    stageFiles(e.dataTransfer.files);
   };
 
   // Collect all unique tags
@@ -210,39 +282,89 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
 
   const content = (
     <div className="asset-manager-content">
-      {/* Upload section */}
-      <div
-        className={`asset-upload-zone ${dragOver ? 'drag-over' : ''}`}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          style={{ display: 'none' }}
-          onChange={(e) => handleUpload(e.target.files)}
-        />
-        {/* while uploading, the text line below says so \u2014 the icon slot
-            keeps the (dimmed) glyph rather than repeating the word */}
-        <div className="asset-upload-icon" style={uploading ? { opacity: 0.5 } : undefined}><FaUpload /></div>
-        <div className="asset-upload-text">
-          {uploading ? 'Uploading...' : 'Drop files here or click to upload'}
+      {/* \u2500\u2500 ADD (v7.27) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+          Derek: separate the upload section from the list section, and make
+          picking a file stage it rather than file it. The section is its own
+          bordered box so the two halves read as two halves. */}
+      <section className="asset-add" aria-label="Add assets">
+        <div className="asset-section-title">Add</div>
+        <div
+          className={`asset-upload-zone ${dragOver ? 'drag-over' : ''}`}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            style={{ display: 'none' }}
+            onChange={(e) => { stageFiles(e.target.files); e.target.value = ''; }}
+          />
+          <div className="asset-upload-icon" style={uploading ? { opacity: 0.5 } : undefined}><FaUpload /></div>
+          <div className="asset-upload-text">
+            {uploading ? 'Uploading\u2026' : 'Drop files here or click to choose'}
+          </div>
         </div>
-      </div>
 
-      <div className="asset-tag-input-row">
-        <label>Tags for upload:</label>
-        <input
-          type="text"
-          placeholder="tag1, tag2, ..."
-          value={tagInput}
-          onChange={(e) => setTagInput(e.target.value)}
-          className="asset-tag-input"
-        />
-      </div>
+        {/* The staged files, the tags for them, and the button that commits
+            them. All three appear together and only once there is something
+            to commit \u2014 the tags field asked its question before there was
+            anything to answer it about, which is what made it confusing. */}
+        {staged.length > 0 && (
+          <div className="asset-staged">
+            <div className="asset-staged-list">
+              {staged.map((s, i) => (
+                <span className="asset-staged-chip" key={`${s.file.name}-${i}`}>
+                  {s.preview
+                    ? <img className="asset-staged-thumb" src={s.preview} alt="" />
+                    : <span className="asset-staged-icon">{getMimeIcon(s.file.type)}</span>}
+                  <span className="asset-staged-name" title={s.file.name}>{s.file.name}</span>
+                  <span className="asset-staged-size">{formatSize(s.file.size)}</span>
+                  <button
+                    className="asset-staged-x"
+                    title="Remove from this upload"
+                    onClick={() => removeStaged(i)}
+                    disabled={uploading}
+                  ><FaTimes /></button>
+                </span>
+              ))}
+            </div>
+            <div className="asset-tag-input-row">
+              <label htmlFor="asset-stage-tags">
+                Tags for {staged.length === 1 ? 'this file' : `these ${staged.length} files`}:
+              </label>
+              {/* placeholder as an EXPRESSION: an escape sequence in a plain
+                  JSX attribute is literal text, so "\u2026" rendered on screen
+                  as the six characters backslash-u-2-0-2-6. */}
+              <input
+                id="asset-stage-tags"
+                type="text"
+                placeholder={'tag1, tag2, \u2026'}
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') void commitStaged(); }}
+                className="asset-tag-input"
+                disabled={uploading}
+              />
+            </div>
+            <div className="asset-staged-actions">
+              <button className="dialog-btn" onClick={() => clearStaged(staged)} disabled={uploading}>
+                Cancel
+              </button>
+              <button
+                className="dialog-btn dialog-btn-primary asset-upload-btn"
+                onClick={() => { void commitStaged(); }}
+                disabled={uploading}
+                title="Add these files to the list with the tags above"
+              >
+                {uploading ? 'Uploading\u2026' : `Upload ${staged.length} file${staged.length !== 1 ? 's' : ''}`}
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Filter bar */}
       <div className="asset-filter-bar">
@@ -265,7 +387,8 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
         </select>
       </div>
 
-      {/* Asset list */}
+      {/* ── LIBRARY — the other half (v7.27) ─────────────────────────── */}
+      <div className="asset-section-title asset-section-title-list">Library</div>
       <div className="asset-list">
         {filtered.length === 0 ? (
           <div className="asset-list-empty">
@@ -358,8 +481,16 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
                       <FaDownload />
                     </button>
                     <button
+                      className="asset-action-btn"
+                      onClick={() => { void handleRename(asset); }}
+                      title="Rename"
+                      disabled={deletingId === asset.id || renamingId === asset.id}
+                    >
+                      <FaPen />
+                    </button>
+                    <button
                       className="asset-action-btn asset-action-delete"
-                      onClick={() => handleDelete(asset.id)}
+                      onClick={() => { void handleDelete(asset); }}
                       title="Delete"
                       disabled={deletingId === asset.id}
                     >
