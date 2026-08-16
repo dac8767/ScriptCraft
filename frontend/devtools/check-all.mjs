@@ -118,6 +118,36 @@ try {
   if (+warm > 1) console.log(`(warmed the dev server in ${warm}s)`);
 } catch { console.log('(no dev server on :5199 — checks will start it cold)'); }
 
+/* …and warm what the checks REACH, not just the page they land on. Vite
+   compiles on demand, so a window nothing has opened yet is still SOURCE when
+   the first check clicks its way into it. Three ribbon checks wait 8s for the
+   Design window's .dz-group after clicking its dock row, and a cold compile
+   under a four-way fan-out does not fit in 8s: they failed as a fleet and
+   passed one at a time, which is exactly what a real bug in the Design window
+   would look like. (It cost a session's tail to tell those apart.)
+   Raising that timeout was the other option and is worse — fail-fast on
+   selectors is why a wrong guess while writing a check costs 8s instead of 30.
+   This removes the cold cost rather than tolerating it. */
+try {
+  const t0 = Date.now();
+  const { launch } = await import('./driver.mjs');
+  const { browser, page } = await launch();
+  /* NOT boot() — its storage-clearing reload destroys the execution context
+     out from under the evaluate below, which is how the first cut of this
+     "warmed" nothing at all while printing that it had. Plain navigation is
+     all a compile needs. */
+  await page.goto('http://localhost:5199/', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => Boolean(window.__scStore), { timeout: 30000 });
+  await page.evaluate(async () => {
+    window.__scStore.getState().openTool('design');
+    await new Promise((r) => setTimeout(r, 800));
+  });
+  const warmed = await page.evaluate(() => document.querySelectorAll('.dz-group').length);
+  await browser.close();
+  if (!warmed) throw new Error('the Design window never rendered');
+  console.log(`(compiled the lazily-reached windows in ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+} catch (e) { console.log(`(could not pre-compile: ${String(e.message).slice(0, 60)})`); }
+
 const started = Date.now();
 const queue = [...files];
 const results = [];
