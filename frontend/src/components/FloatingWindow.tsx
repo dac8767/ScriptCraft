@@ -10,6 +10,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { loadViewState, saveViewState } from '../stores/viewState';
 import { FullscreenIcon, RestoreIcon, CloseIcon } from './uiIcons';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 
@@ -29,7 +30,27 @@ function measureAppBody(): { top: number; height: number } {
   return { top, height: Math.max(200, bottom - top) };
 }
 
-export default function FloatingWindow({ title, onClose, className, initial, startFullscreen, min, children }: {
+/* v7.29, queue #7 — window-mode memory incl. FULLSCREEN. `toolMode` already
+   remembers a TOOL's shape and openTool honours it. These windows are not
+   tools: their shape lived in useState, so shrinking Settings out of
+   fullscreen and closing it reopened fullscreen every time, and a window you
+   had sized and placed came back centred at its default size.
+   Keyed by `id`, stored beside toolMode in the same viewState. */
+function loadShape(id?: string) {
+  if (!id) return null;
+  const all = loadViewState().windowShape ?? {};
+  const s = all[id];
+  return s && typeof s.w === 'number' && typeof s.h === 'number' ? s : null;
+}
+function saveShape(id: string | undefined, shape: { full: boolean; x: number; y: number; w: number; h: number }) {
+  if (!id) return;
+  saveViewState({ windowShape: { ...(loadViewState().windowShape ?? {}), [id]: shape } });
+}
+
+export default function FloatingWindow({ id, title, onClose, className, initial, startFullscreen, min, children }: {
+  /** Stable key for the remembered shape. Omit and the window forgets, which
+   *  is the old behaviour — nothing silently half-remembers. */
+  id?: string;
   title: React.ReactNode;
   onClose: () => void;
   /** Extra classes on the panel (for per-window sizing/body CSS). */
@@ -42,12 +63,19 @@ export default function FloatingWindow({ title, onClose, className, initial, sta
   min?: { w: number; h: number };
   children: React.ReactNode;
 }) {
-  const [pos, setPos] = useState<{ x: number; y: number }>(() => ({
-    x: Math.max(8, Math.round((window.innerWidth - initial.w) / 2)),
-    y: Math.max(8, Math.round((window.innerHeight - initial.h) / 2) - 16),
-  }));
-  const [size, setSize] = useState<{ w: number; h: number }>({ w: initial.w, h: initial.h });
-  const [fullscreen, setFullscreen] = useState(Boolean(startFullscreen));
+  const saved = useRef(loadShape(id)).current;
+  const [pos, setPos] = useState<{ x: number; y: number }>(() => (saved
+    ? { x: saved.x, y: saved.y }
+    : {
+      x: Math.max(8, Math.round((window.innerWidth - initial.w) / 2)),
+      y: Math.max(8, Math.round((window.innerHeight - initial.h) / 2) - 16),
+    }));
+  const [size, setSize] = useState<{ w: number; h: number }>(saved
+    ? { w: saved.w, h: saved.h }
+    : { w: initial.w, h: initial.h });
+  // `startFullscreen` decides how it opens the FIRST time; after that the
+  // shape it was left in wins.
+  const [fullscreen, setFullscreen] = useState(saved ? saved.full : Boolean(startFullscreen));
   const drag = useRef<{ dx: number; dy: number } | null>(null);
 
   const startDrag = (e: React.PointerEvent) => {
@@ -69,6 +97,12 @@ export default function FloatingWindow({ title, onClose, className, initial, sta
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
   };
+  /* Written from the SETTLED values — pos/size only change when a drag or a
+     resize applies, so this is one write per gesture, not one per frame. */
+  useEffect(() => {
+    saveShape(id, { full: fullscreen, x: pos.x, y: pos.y, w: size.w, h: size.h });
+  }, [id, fullscreen, pos.x, pos.y, size.w, size.h]);
+
   const beginEdge = (zone: EdgeZone, e: React.PointerEvent) => startEdgeResize(e, zone, {
     rect: () => ({ left: pos.x, top: pos.y, w: size.w, h: size.h }),
     min: min ?? { w: 320, h: 280 },

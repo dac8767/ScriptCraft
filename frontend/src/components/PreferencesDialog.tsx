@@ -906,6 +906,10 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
 
   return (
     <FloatingWindow
+      /* v7.29: remembers the shape it was left in — shrink it out of
+         fullscreen and it reopens floating, at the size and place you left
+         it. startFullscreen below is now only how it opens the FIRST time. */
+      id="settings"
       className="prefs-window"
       /* v7.06, Derek: Settings OPENS full screen over the side panels and the
          editing area; the header's shrink button gives a floating window. */

@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.29",
+  "date": "2026-08-16",
+  "changes": [
+   "The Settings window reopens in the shape you left it — shrink it out of full screen and it comes back floating, at the size and place you put it. It reopened full screen every time before, whatever you did to it.",
+   "Tools already reopened in their last shape, full screen included, and now have checks holding that in place."
+  ]
+ },
+ {
   "version": "7.28",
   "date": "2026-08-16",
   "changes": [

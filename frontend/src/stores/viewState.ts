@@ -136,6 +136,11 @@ export interface ViewState {
   /** v4.52: EXPLICIT docked/floating per tool — replaces the width<=dock rule. */
   /** v4.81: 'fullscreen' joined — a tool reopens in its last-used shape. */
   toolMode?: Record<string, 'docked' | 'floating' | 'fullscreen'>;
+  /** v7.29: the shape a FloatingWindow (Settings, Helper Text) was left in.
+   *  toolMode already remembers a TOOL's shape and honours it on reopen; these
+   *  windows are not tools and had no memory at all — shrink Settings out of
+   *  fullscreen, close it, and it reopened fullscreen every time. */
+  windowShape?: Record<string, { full: boolean; x: number; y: number; w: number; h: number }>;
   /** v5.47: one-time strip of a pre-v5.46 toolMode.design='docked' (see
    *  migrateDesignToolMode) — set after it has run once. */
   designModeReset?: boolean;
