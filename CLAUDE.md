@@ -123,6 +123,16 @@ it actually produced — not by staring at the source and reasoning.
   fails the suite when the committed catalog drifts — and since v6.51 the
   builder harvests string literals out of dynamic `title={…}` expressions
   too, so ternary tooltips are covered, not just literal attributes.
+- **The queue always includes the open feedback** (v7.26, Derek's standing
+  rule): *"anytime I ask to see the queue, include incomplete items from the
+  feedback list. if the feedback items are from me, still show the item in the
+  queue list."* Asked for the queue / "what's next" / "what's in the queue",
+  read the `feedback_report` view (default filter `status=neq.Complete`) and
+  fold every open row into the list — **his own rows included**. He files most
+  of them himself and still expects to see them there; a queue that omits them
+  is not the queue. Rows are marked Complete only when the work ships.
+  Credentials: `$SUPABASE_SECRET_KEY`, never printed. Read the
+  `feedback_report` view, PATCH the `feedback` table.
 - **Icons are always monotone** (react-icons line style, currentColor). Never emoji
   in UI chrome — v2.08 swept the Scrapbook's 📄🗂🗑 for exactly this.
 - **The size scales** (v7.02, from the style audit — conform, don't invent):
