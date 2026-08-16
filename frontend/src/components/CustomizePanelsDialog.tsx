@@ -29,7 +29,7 @@ import { showToast } from './Toast';
 import ThemesTab from './ThemesTab';
 import MarkupsCustomizeTab from './MarkupsCustomizeTab';
 import ContextMenuTab from './ContextMenuTab';
-import { exportCustomizationsFlow, importCustomizationsFlow } from './PresetsPanel';
+import { importCustomizationsFlow } from './PresetsPanel';
 import { QAT_OPTIONS, QAT_BY_ID, isQatDivider, isQatSpacer } from './TitleBar';
 
 interface Props {
@@ -758,9 +758,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         run the shared preset flows (PresetsPanel), so the Customize footer,
         the Presets window and Settings ▸ Presets can never drift. Import
         confirms first — it overrides everything here. */}
+    {/* v7.28, Derek's ONE PRESET EXPORT WINDOW: this ran its own single-
+        category flow. It opens the one window now with `customize` already
+        ticked — every other category is one tick away, which is the point of
+        there being one window. */}
     <button className="dialog-btn"
-      title="Save every customization choice to a file"
-      onClick={() => { void exportCustomizationsFlow(); }}
+      title="Save customizations — opens the preset window with them ticked"
+      onClick={() => useEditorStore.getState().openPresetExport(['customize'])}
     >Export…</button>
     <button className="dialog-btn"
       title="Load customization choices from a file — this replaces your current ones"

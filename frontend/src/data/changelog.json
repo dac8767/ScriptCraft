@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.28",
+  "date": "2026-08-16",
+  "changes": [
+   "Every export door in the app now leads to the one preset window, with its own category already ticked and the rest one tick away. The Customize footer, Settings ▸ Backup & Restore, Export All Themes and the outline presets menu each ran their own separate export before.",
+   "Settings ▸ Import reads both the new preset files and the backup files made before this version, so nothing you exported earlier stops working.",
+   "Exporting a single theme still gives you a single theme file — a preset has no way to mean “just this one”."
+  ]
+ },
+ {
   "version": "7.27",
   "date": "2026-08-16",
   "changes": [

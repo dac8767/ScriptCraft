@@ -1315,6 +1315,15 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   preferencesRequest: { open: boolean; tab?: 'saveloc' | 'keys' };
   openPreferences: (tab?: 'saveloc' | 'keys') => void;
   closePreferences: () => void;
+  /* v7.28, Derek's ONE PRESET EXPORT WINDOW: "anywhere in the app, if you
+     click export theme preset, export settings preset, export workspace…
+     whatever you choose, they all lead to the same preset export window."
+     A door may PRE-CHECK its own category; it does not run its own flow.
+     Typed as string[] rather than PresetPartId[] so the store keeps no
+     import edge to utils/presets (which reads the stores). */
+  presetExportRequest: { open: boolean; parts?: string[] };
+  openPresetExport: (parts?: string[]) => void;
+  closePresetExport: () => void;
   /** Toolbar customization: hidden built-in buttons + pinned tool shortcuts */
   toolbarHiddenItems: string[];  toolbarPinnedTools: ToolId[];  /** Active writing goal (words / pages / time), persisted across reloads */
   goal: WritingGoal | null;
@@ -1868,6 +1877,9 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   preferencesRequest: { open: false },
   openPreferences: (tab) => set({ preferencesRequest: { open: true, tab } }),
   closePreferences: () => set({ preferencesRequest: { open: false } }),
+  presetExportRequest: { open: false },
+  openPresetExport: (parts) => set({ presetExportRequest: { open: true, parts } }),
+  closePresetExport: () => set({ presetExportRequest: { open: false } }),
   openTool: (tool) => set((s) => {
     if (tool === 'scriptnotes') {
       // Legacy id — remapped to the Notes window (v0.15; sub-tabs gone v4.33).

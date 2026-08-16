@@ -7,6 +7,7 @@ import EditElementsDialog from './EditElementsDialog';
 import { SaveWorkspaceDialog, EditWorkspacesDialog } from './WorkspaceDialogs';
 import PreferencesDialog from './PreferencesDialog';
 import { PresetsDialog } from './PresetsPanel';
+import type { PresetPartId } from '../utils/presets';
 import SetDraftDialog from './SetDraftDialog';
 import NewScriptDialog, { type NewScriptMeta } from './NewScriptDialog';
 import NewScriptLauncher from './NewScriptLauncher';
@@ -385,7 +386,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
   const [addPageOpen, setAddPageOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   // v4.79: the Presets window (File ▸ Import/Export ▸ Presets…).
-  const [presetsOpen, setPresetsOpen] = useState(false);
+  /* v7.28: the preset window's open state is the STORE's request bus, not a
+     local flag — every export door in the app opens this one window, and a
+     door in another component cannot reach a useState in here. (Same lesson
+     as v7.24's prefsOpen: two sources meant nothing outside could close it.) */
+  const presetExportRequest = useEditorStore((s) => s.presetExportRequest);
   // v6.02, Derek: no tab passed = the window opens on its remembered last
   // tab. Only the targeted doors (Customize Themes…, …Elements…, the
   // context-menu door) still steer it.
@@ -1349,7 +1354,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             { icon: <FaFileCode />, label: 'Final Draft / Fountain / ScriptCraft…', action: () => confirmOrRun(handleImport) },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleImportDocx },
             { icon: <FaFilePdf />, label: 'PDF (.pdf)…', action: handleImportPdf },
-            { icon: <FaBoxOpen />, label: 'Presets…', action: () => setPresetsOpen(true) },
+            { icon: <FaBoxOpen />, label: 'Presets…', action: () => useEditorStore.getState().openPresetExport() },
           ],
         },
         {
@@ -1360,7 +1365,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             { icon: <FaFilePdf />, label: 'PDF…', action: handleExportPDF },
             { icon: <FaFileWord />, label: 'Microsoft Word (.docx)…', action: handleExportDocx },
             { icon: <FaFile />, label: `ScriptCraft (.${SCRIPT_EXT})…`, action: handleExportOdraft },
-            { icon: <FaBoxOpen />, label: 'Presets…', action: () => setPresetsOpen(true) },
+            { icon: <FaBoxOpen />, label: 'Presets…', action: () => useEditorStore.getState().openPresetExport() },
           ],
         },
         { icon: <FaPrint />, label: 'Print…', shortcut: sc('print'), action: () => { void handlePrint(); } },
@@ -2339,7 +2344,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     )}
     <CustomizePanelsDialog open={customizeOpen} category={customizeTab ?? undefined} onClose={() => setCustomizeOpen(false)} />
     {addPageOpen && editor && <AddCustomPageDialog editor={editor} onClose={() => setAddPageOpen(false)} />}
-    <PresetsDialog open={presetsOpen} onClose={() => setPresetsOpen(false)} />
+    <PresetsDialog
+      open={presetExportRequest.open}
+      preCheck={presetExportRequest.parts as PresetPartId[] | undefined}
+      onClose={() => useEditorStore.getState().closePresetExport()}
+    />
     <SaveWorkspaceDialog open={saveWorkspaceOpen} onClose={() => setSaveWorkspaceOpen(false)} />
     <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />
     <PreferencesDialog

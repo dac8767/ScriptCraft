@@ -10,7 +10,8 @@ import PageSetupTab from './PageSetupTab';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
 import { showToast } from './Toast';
 import KeyboardShortcutsTab from './KeyboardShortcutsTab';
-import { downloadBackup, applyBackup, readFileText } from '../utils/settingsBackup';
+import { applyBackup, readFileText } from '../utils/settingsBackup';
+import { applyPresetFile, readPresetFile } from '../utils/presets';
 import { useWindowTabMemory } from '../utils/windowTabMemory';
 import { snapshotSettings, restoreSettings } from '../utils/settingsSnapshot';
 import { confirmDialog } from './ConfirmDialog';
@@ -737,13 +738,27 @@ function BackupRestoreTab() {
     if (!file) return;
     try {
       const text = await readFileText(file);
+      /* v7.28: Export beside this button opens the PRESET window now, so
+         this must read what that writes — a preset bundle — as well as the
+         backup files written before it. An export/import pair where the
+         export's own file will not load is the silent no-op this project
+         treats as the cardinal sin. */
+      let bundleIds: string[] | null = null;
+      try { bundleIds = readPresetFile(text).ids; } catch { bundleIds = null; }
       const ok = await confirmDialog(
-        'This replaces this app\'s current settings and customizations with the ones in the file, then reloads. Your scripts are not affected.',
-        { title: 'Import settings?', confirmLabel: 'Import & Reload', danger: true },
+        bundleIds
+          ? `This preset contains: ${bundleIds.join(', ')}. Importing overrides what you have for each, then reloads. Your scripts are not affected.`
+          : 'This replaces this app\'s current settings and customizations with the ones in the file, then reloads. Your scripts are not affected.',
+        { title: bundleIds ? 'Import preset?' : 'Import settings?', confirmLabel: 'Import & Reload', danger: true },
       );
       if (!ok) return;
-      const { imported } = applyBackup(text);
-      showToast(`Imported ${imported} settings — reloading…`);
+      if (bundleIds) {
+        const { applied } = applyPresetFile(text);
+        showToast(`Imported ${applied.join(', ')} — reloading…`);
+      } else {
+        const { imported } = applyBackup(text);
+        showToast(`Imported ${imported} settings — reloading…`);
+      }
       setTimeout(() => window.location.reload(), 500);
     } catch (err) {
       showToast((err as Error).message || 'Could not import that file.');
@@ -763,7 +778,10 @@ function BackupRestoreTab() {
           transitions, shortcuts, the menu system and more.
         </p>
         <div className="prefs-check-row">
-          <button className="swn-add-btn" onClick={() => { downloadBackup(); showToast('Settings exported'); }}>
+          {/* v7.28: every export door leads to the one preset window, with
+              its own category ticked. downloadBackup's whole-app file is what
+              the window's "Select all" now produces. */}
+          <button className="swn-add-btn" onClick={() => useEditorStore.getState().openPresetExport(['settings'])}>
             Export Settings…
           </button>
           <button className="swn-add-btn" onClick={() => fileRef.current?.click()}>

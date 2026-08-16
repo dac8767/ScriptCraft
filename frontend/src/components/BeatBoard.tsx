@@ -34,7 +34,7 @@ import { confirmDialog, promptDialog } from './ConfirmDialog';
 import { ht } from '../utils/helperText';
 import { ControlDropdown, ControlSearch, type ToolChromeTab } from './ToolControls';
 import { showToast } from './Toast';
-import { saveFile, openTextFile } from '../utils/fileOps';
+import { openTextFile } from '../utils/fileOps';
 import { api } from '../services/api';
 
 /* v2.31: exported — the Outline Bar's right-click menu offers the SAME
@@ -1348,13 +1348,10 @@ export function OutlineTabActions() {
       return;
     }
     if (value === '__export') {
-      try {
-        // v4.79, Derek: the export type rides the END of the filename.
-        const ok = await saveFile(store.exportJson(), 'scriptcraft_outline-presets.json', [{ name: 'Outline Presets', extensions: ['json'] }]);
-        if (ok) showToast(`Exported ${store.presets.length} preset${store.presets.length === 1 ? '' : 's'}.`, 'success');
-      } catch (err) {
-        showToast(`Export failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
-      }
+      /* v7.28, Derek's ONE PRESET EXPORT WINDOW: outline presets are the
+         `outline` category. This ran its own saveFile before — the fourth
+         and last door that did. */
+      useEditorStore.getState().openPresetExport(['outline']);
       return;
     }
     if (value === '__import') {

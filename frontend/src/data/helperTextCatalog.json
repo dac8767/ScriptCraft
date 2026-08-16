@@ -2889,7 +2889,7 @@
   ]
  },
  {
-  "text": "Save every customization choice to a file",
+  "text": "Save customizations — opens the preset window with them ticked",
   "kind": "tooltip",
   "sites": 1,
   "area": "Customize Window",

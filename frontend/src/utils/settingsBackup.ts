@@ -91,23 +91,13 @@ export function applyBackup(json: string, s?: Storage): ApplyResult {
   return { imported, skipped };
 }
 
-/** Trigger a download of the current settings as a JSON file. */
-export function downloadBackup(): void {
-  const json = buildBackup(new Date().toISOString());
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const stamp = new Date().toISOString().slice(0, 10);
-  // v4.79, Derek: the export TYPE must be readable off the filename — every
-  // preset-type export ends in _<type>.json (see utils/presets).
-  a.download = `scriptcraft-${stamp}_settings.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  // Revoke on the next tick so the click has consumed the URL.
-  setTimeout(() => URL.revokeObjectURL(url), 0);
-}
+/* downloadBackup lived here and wrote the whole-app settings file. REMOVED in
+   v7.28: every export door in the app opens the one preset window now, so its
+   only caller (Settings ▸ Backup & Restore) is gone, and a "Select all" in
+   that window produces the same coverage from the same collectors.
+   `buildBackup` and `applyBackup` STAY — applyBackup still reads the files
+   this used to write, which is how a backup made before v7.28 keeps
+   importing. */
 
 /** Read a picked file as text (import flow). */
 export function readFileText(file: File): Promise<string> {

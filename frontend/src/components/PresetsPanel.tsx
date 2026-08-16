@@ -3,8 +3,9 @@
  * surface. Rendered in three hosts:
  *   • File ▸ Export ▸ Presets… / File ▸ Import ▸ Presets… → PresetsDialog
  *   • Settings ▸ Presets (the tab)
- * The Customize footer's Import/Export buttons run the SAME customization
- * flows (exported here), so no host can drift from another.
+ * v7.28: the Customize footer's EXPORT opens this window instead of running
+ * its own flow (Derek's one-preset-window rule); its Import still runs the
+ * shared customization flow below.
  *
  * Every export lands as `…_<type>.json` (typedExportName — Derek's rule: the
  * type must be readable off the filename).
@@ -16,7 +17,7 @@ import { useThemeStore } from '../stores/themeStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { useEditorStore } from '../stores/editorStore';
 import {
-  buildCustomizeExport, applyCustomizeExport,
+  applyCustomizeExport,
   buildPresetBundle, readPresetFile, applyPresetFile, presetPart,
   PRESET_PARTS, type PresetPartId,
   typedExportName, stampedBase,
@@ -28,14 +29,13 @@ import { Modal } from './Modal';
 
 const JSON_FILTER = [{ name: 'ScriptCraft Preset', extensions: ['json'] }];
 
-/** Export the current customizations to a file. Shared with the Customize
- *  footer. Returns true when a file was written. */
-export async function exportCustomizationsFlow(): Promise<boolean> {
-  const now = new Date().toISOString();
-  const ok = await saveFile(buildCustomizeExport(now), typedExportName(stampedBase(now), 'customize'), JSON_FILTER);
-  if (ok) showToast('Customizations exported.', 'success');
-  return ok;
-}
+/* exportCustomizationsFlow lived here and wrote a customize-only file for
+   the Customize footer. REMOVED in v7.28: that door opens the one preset
+   window now, so nothing called it. The `customize` collector it used is
+   still the one PRESET_PARTS uses — the file the window writes carries the
+   same data, alongside whatever else is ticked.
+   importCustomizationsFlow STAYS: the import side is unchanged until Derek
+   decides whether import becomes the mirror-image checklist. */
 
 /** Pick + confirm + apply a customization export. Shared with the Customize
  *  footer. Returns true when applied. */
@@ -78,7 +78,14 @@ const PART_DESC: Record<PresetPartId, (n: number | null) => string> = {
   helpertext: (n) => (n ? `Your ${n} helper text change${n === 1 ? '' : 's'} — tooltips you have rewritten or hidden.` : 'Tooltips you have rewritten or hidden. None changed yet — edit one in the Helper Text window.'),
 };
 
-export default function PresetsPanel({ showImports = true }: { showImports?: boolean }) {
+export default function PresetsPanel({ showImports = true, preCheck }: {
+  showImports?: boolean;
+  /** v7.28: the door that opened this window pre-ticks its own category.
+   *  Everything else starts unticked, so "Export Themes…" lands on a window
+   *  offering exactly what was asked for — and the other rows are right
+   *  there if more is wanted, which is the point of the one window. */
+  preCheck?: PresetPartId[];
+}) {
   // Store reads so the counts (and therefore which rows are available)
   // re-render as the writer adds themes / workspaces / outline presets.
   useThemeStore((s) => s.customThemes);
@@ -90,7 +97,9 @@ export default function PresetsPanel({ showImports = true }: { showImports?: boo
   const available = PRESET_PARTS.filter((p) => counts[p.id] !== 0).map((p) => p.id);
   // Everything the app actually has is checked to begin with — the common
   // case is "save all of it", and the old Full Preset was one click.
-  const [checked, setChecked] = useState<PresetPartId[]>(available);
+  const [checked, setChecked] = useState<PresetPartId[]>(
+    preCheck?.length ? preCheck.filter((id) => counts[id] !== 0) : available,
+  );
   const on = (id: PresetPartId) => checked.includes(id) && counts[id] !== 0;
   const live = checked.filter((id) => counts[id] !== 0);
   const allOn = available.length > 0 && available.every((id) => checked.includes(id));
@@ -185,16 +194,21 @@ export default function PresetsPanel({ showImports = true }: { showImports?: boo
 
 /** The File ▸ Export / File ▸ Import "Presets…" window — the same panel in a
  *  standard dialog shell. */
-export function PresetsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function PresetsDialog({ open, onClose, preCheck }: {
+  open: boolean; onClose: () => void; preCheck?: PresetPartId[];
+}) {
   if (!open) return null;
   return (
+    /* keyed on the pre-check so a second door opening the window re-seeds the
+       checklist — without it, PresetsPanel's useState would keep the FIRST
+       door's ticks and the second door would silently export the wrong thing */
     <Modal onClose={onClose} boxClassName="fs-presets-dialog">
         <div className="dialog-header">
           Presets
           <button className="fs-dialog-x" onClick={onClose} title="Close">&times;</button>
         </div>
         <div className="dialog-body">
-          <PresetsPanel />
+          <PresetsPanel key={(preCheck ?? []).join(',')} preCheck={preCheck} />
         </div>
     </Modal>
   );

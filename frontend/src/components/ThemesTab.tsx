@@ -333,16 +333,23 @@ export default function ThemesTab() {
           title="Save your custom themes to a file"
           onPick={(v) => {
             setImportNote('');
-            void exportThemes(v === 'all' ? customThemes.map((c) => c.id) : [v]);
+            /* v7.28, the ONE PRESET EXPORT WINDOW: "export every theme" IS
+               the `themes` preset category, so it opens the one window with
+               that ticked. A SINGLE theme is deliberately not routed there —
+               the bundle has no way to say "just this one", so sending it to
+               the window would quietly export all of them, which is a wrong
+               answer wearing the right button's label. */
+            if (v === 'all') useEditorStore.getState().openPresetExport(['themes']);
+            else void exportThemes([v]);
           }}
           groups={[{
             label: '',
             options: customThemes.length === 0
               ? []
               : [
-                  ...(customThemes.length > 1
-                    ? [{ value: 'all', label: `Export All Themes (${customThemes.length})` }]
-                    : []),
+                  // v7.28: offered even for ONE theme, so the preset window is
+                  // always reachable from this door
+                  { value: 'all', label: `Export All Themes (${customThemes.length}) — as a preset` },
                   ...customThemes.map((t) => ({ value: t.id, label: `Export “${t.label}”` })),
                 ],
           }]}
