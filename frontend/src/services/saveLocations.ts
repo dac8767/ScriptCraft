@@ -128,17 +128,24 @@ async function saveToGDrive(args: SavePayload): Promise<void> {
   // "<container> — <draft>.odraft.json", from when a project was the script —
   // which produced files called "Test — Draft 1 - 07-12-26.odraft.json" and, worse,
   // named a brand-new script after whatever container it landed in.
-  const fileName = `${safeName(args.title)}.odraft.json`;
+  /* v7.18: the same file every other copy writes — a real .odraft envelope,
+     from the one serializer. This wrote the BARE document under a
+     `.odraft.json` name, exactly like the local mirror did, so a script
+     fetched back out of Drive would not open either. Updating an existing
+     file also renames it (driveUpload sends `name` on PATCH), so the copies
+     already up there are corrected on the next save rather than stranded. */
+  const fileName = `${safeName(args.title)}.odraft`;
+  const text = await odraftTextFor(args.title, args.content);
   const map = mapGet(GDRIVE_MAP);
   const key = `${args.projectId}/${args.scriptId}`;
   let fileId = map[key];
   try {
-    fileId = await driveUpload(token, fileName, JSON.stringify(args.content), root, fileId || undefined);
+    fileId = await driveUpload(token, fileName, text, root, fileId || undefined);
   } catch (err) {
     // Stale file id (deleted in Drive) → create fresh once.
     const msg = err instanceof Error ? err.message : String(err);
     if (map[key] && msg.includes('404')) {
-      fileId = await driveUpload(token, fileName, JSON.stringify(args.content), root);
+      fileId = await driveUpload(token, fileName, text, root);
     } else throw err;
   }
   map[key] = fileId;
@@ -169,8 +176,10 @@ async function onedrivePut(token: string, path: string, json: string): Promise<v
 
 async function saveToOneDrive(args: SavePayload): Promise<void> {
   const token = await getAccessToken(onedriveConfig());
-  const path = `ScriptCraft/${safeName(args.title)}.odraft.json`;
-  await onedrivePut(token, path, JSON.stringify(args.content));
+  /* v7.18: see saveToGDrive — same bug, same fix. Path addressing means the
+     new name is a new file; the old `.odraft.json` stays put and still opens. */
+  const path = `ScriptCraft/${safeName(args.title)}.odraft`;
+  await onedrivePut(token, path, await odraftTextFor(args.title, args.content));
 }
 
 async function snapshotToOneDrive(projectName: string, label: string, json: string): Promise<void> {

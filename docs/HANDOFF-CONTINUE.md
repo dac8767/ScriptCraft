@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.18 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.19 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:
@@ -356,6 +356,26 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.19 — the same bug in the two cloud writers
+
+Found while chasing v7.18's report (which turned out to be a stale running
+app — Derek: "somehow an older version of the app was opened. when i restarted
+scriptcraft it worked fine"). The grep that hunt required turned up two MORE
+writers of the same broken file, in the same module:
+
+- `saveToGDrive` and `saveToOneDrive` each wrote `JSON.stringify(args.content)`
+  — the bare document — under a `<title>.odraft.json` name. A script fetched
+  back out of Drive would not have opened either. Both now use
+  `odraftTextFor`, so there are four copy writers and ONE serializer.
+- Drive PATCHes send `name`, so an existing copy is renamed and corrected on
+  its next save. OneDrive addresses by path, so the new name is a new file and
+  the old one stays put — still openable, per v7.18's legacy tolerance.
+- **The lesson is the count.** v7.18 fixed "the mirror" believing it was one
+  writer; it was one of four, and the module was open in front of me the whole
+  time. When a bug is "this feature writes the wrong file", grep for every
+  writer of that file BEFORE fixing the one you were shown.
+- Gates: tsc 0, vitest 1220/138, build ok, check-all 1202/0.
 
 ### v7.18 — the folder copy was never openable (found by v7.17's test list)
 

@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.19",
+  "date": "2026-08-16",
+  "changes": [
+   "The Google Drive and OneDrive copies had the same fault v7.18 fixed on this device: they were written as \"<script>.odraft.json\", holding only the raw text of your script without the wrapper the app reads. A script pulled back out of Drive would not have opened either.",
+   "Both now write the same real .odraft file everything else does. A Drive copy that already exists is renamed and corrected on its next save rather than left behind; a OneDrive copy is written under the new name beside the old one, and the old one still opens."
+  ]
+ },
+ {
   "version": "7.18",
   "date": "2026-08-16",
   "changes": [
