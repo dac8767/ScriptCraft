@@ -135,9 +135,16 @@ export async function saveScreenshotCanvas(canvas: HTMLCanvasElement): Promise<v
     const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, 'image/png'));
     if (!blob) throw new Error('Could not encode the image.');
     const bytes = new Uint8Array(await blob.arrayBuffer());
-    const { writeFile } = await import('@tauri-apps/plugin-fs');
+    /* v7.17: the Rust command, not the fs plugin — the screenshot folder is
+       one the user chose and the plugin's scope is $APPDATA now. It also
+       creates the folder if it has since been deleted, which the plugin
+       write did not. */
+    const { invoke } = await import('@tauri-apps/api/core');
     const sep = folder.endsWith('/') || folder.endsWith('\\') ? '' : '/';
-    await writeFile(`${folder}${sep}${filename}`, bytes);
+    await invoke('save_binary_to_path', {
+      path: `${folder}${sep}${filename}`,
+      contents: Array.from(bytes),
+    });
     showToast(`Screenshot saved to ${folder}.`, 'success');
     return;
   }

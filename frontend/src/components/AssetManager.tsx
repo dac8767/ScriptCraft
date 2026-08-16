@@ -86,13 +86,16 @@ const AssetManager: React.FC<AssetManagerProps> = ({ projectId, embedded = false
       const paths = (e as CustomEvent).detail?.paths as string[] | undefined;
       if (!paths || paths.length === 0) return;
       try {
-        const { readFile } = await import('@tauri-apps/plugin-fs');
+        /* v7.17: read through the Rust command. These paths come from a
+           native drag-and-drop — anywhere on disk — and the fs plugin's scope
+           is $APPDATA now. read_binary_file returns a byte array over IPC. */
+        const { invoke } = await import('@tauri-apps/api/core');
         setUploading(true);
         let failed = 0;
         for (const filePath of paths) {
           const filename = filePath.replace(/^.*[\\/]/, '') || 'file';
           try {
-            const data = await readFile(filePath);
+            const data = new Uint8Array(await invoke<number[]>('read_binary_file', { path: filePath }));
             const ext = filename.split('.').pop()?.toLowerCase() || '';
             const mimeMap: Record<string, string> = {
               png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',

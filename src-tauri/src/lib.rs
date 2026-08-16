@@ -617,7 +617,42 @@ fn save_text_to_path(path: String, contents: String) -> Result<(), String> {
 
 #[tauri::command]
 fn save_binary_to_path(path: String, contents: Vec<u8>) -> Result<(), String> {
+    // v7.17: same parent-creating behaviour as save_text_to_path. Screenshots
+    // and mirrored copies pick a folder that may not exist yet, and a binary
+    // write that failed only because the folder was missing was the one
+    // difference between these two commands.
+    if let Some(parent) = std::path::Path::new(&path).parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create {}: {}", parent.display(), e))?;
+    }
     std::fs::write(&path, contents).map_err(|e| format!("Failed to write {}: {}", path, e))
+}
+
+/// v7.17 — PROVE a chosen folder is writable, now, while the user is looking
+/// at it (v1.18's reason, unchanged: the failure used to surface later, at
+/// save time, as a frightening "could not save your changes").
+///
+/// It lives in Rust because the probe is the ONLY thing Save As needed the
+/// plugin's `remove` permission for, and the fs capability is now narrowed to
+/// $APPDATA — a folder the user picked is, by definition, outside it. Writing
+/// and deleting the probe here keeps the check honest without handing the
+/// webview a delete-anything permission.
+///
+/// v1.20's lesson is kept: the probe is NOT a dotfile. Under the plugin, glob
+/// scopes did not match leading-dot names, so the writability check was the
+/// one thing that could not be written and it reported that as the folder
+/// being unwritable — the check invented the failure it was looking for.
+#[tauri::command]
+fn check_folder_writable(folder: String) -> Result<(), String> {
+    let dir = std::path::Path::new(&folder);
+    std::fs::create_dir_all(dir)
+        .map_err(|e| format!("Failed to create {}: {}", dir.display(), e))?;
+    let probe = dir.join("scriptcraft-write-test.tmp");
+    std::fs::write(&probe, b"")
+        .map_err(|e| format!("Failed to write {}: {}", probe.display(), e))?;
+    // The write is what mattered; a leftover probe is untidy, not a failure.
+    let _ = std::fs::remove_file(&probe);
+    Ok(())
 }
 
 #[tauri::command]
@@ -1194,6 +1229,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             save_text_to_path,
             save_binary_to_path,
+            check_folder_writable,
             read_text_file,
             read_binary_file,
             http_fetch,

@@ -163,22 +163,17 @@ const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
        * save time, as a frightening "could not save your changes". Whatever the
        * reason (permissions, a read-only volume, an unmounted drive), you should find
        * out when you pick the folder, not when you're trying to save your work.
-       */
-      const { writeTextFile, remove } = await import('@tauri-apps/plugin-fs');
-      /*
-       * v1.20: NOT a dotfile.
        *
-       * The probe was ".scriptcraft-write-test", and Tauri's scope check is glob-based:
-       * glob patterns do not match leading-dot files unless told to. So "$DOWNLOAD/**"
-       * matched Blackwater.odraft.json perfectly well and refused the probe — my
-       * WRITABILITY CHECK was the only thing that couldn't be written, and it reported
-       * that as the folder being unwritable. The check invented the failure it was
-       * looking for.
+       * v7.17: the probe runs in RUST (check_folder_writable). It was the only
+       * thing here that needed the fs plugin's write + remove permissions, and
+       * the capability is now $APPDATA-only — a folder you picked is by
+       * definition outside that. v1.20's lesson travelled with it: the probe
+       * is not a dotfile, because the plugin's glob scopes did not match
+       * leading-dot names and the check invented the failure it looked for.
        */
-      const probe = `${picked}${picked.endsWith('/') ? '' : '/'}scriptcraft-write-test.tmp`;
+      const { invoke } = await import('@tauri-apps/api/core');
       try {
-        await writeTextFile(probe, '');
-        await remove(probe).catch(() => { /* the write is what mattered */ });
+        await invoke('check_folder_writable', { folder: picked });
       } catch (err) {
         // Tauri rejects with a STRING, so (err as Error).message was undefined and the
         // real reason — which permission, which path — was lost. errText keeps it.

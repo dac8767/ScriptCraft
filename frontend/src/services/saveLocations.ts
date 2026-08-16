@@ -198,10 +198,13 @@ export interface SavePayload {
  * script is also written there as a real file you can find, back up and open.
  */
 async function saveToLocalFolder(args: SavePayload, folder: string): Promise<void> {
-  const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+  /* v7.17: through the Rust command, like the auto-save mirror eighty lines
+     below already did. The fs plugin's scope is $APPDATA now, and this writes
+     to a folder the user picked — which is the whole point of the feature. */
+  const { invoke } = await import('@tauri-apps/api/core');
   const sep = folder.endsWith('/') ? '' : '/';
   const path = `${folder}${sep}${safeName(args.title)}.odraft.json`;
-  await writeTextFile(path, JSON.stringify(args.content, null, 2));
+  await invoke('save_text_to_path', { path, contents: JSON.stringify(args.content, null, 2) });
 }
 
 export async function mirrorSave(payload: SavePayload): Promise<void> {
