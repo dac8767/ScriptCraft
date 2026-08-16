@@ -400,6 +400,8 @@ with Tauri fs scope."
   sandbox. `docs/AUDIT-2026-07-26.md` §3 carries the six-step test list for
   Derek's Mac; until those pass, treat this as shipped-but-unconfirmed.
 - Gates: cargo check clean, tsc 0, vitest 1213, build ok, check-all 1202/0.
+  The six-step Mac list, with what each step proves and how to revert just
+  this change, is a table in `docs/AUDIT-2026-07-26.md` §3.
 
 ### v7.16 — the two queued formatting items, and two bugs found next door
 
