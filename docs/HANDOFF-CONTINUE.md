@@ -166,10 +166,15 @@
 > QUEUE — WAITING on Derek: the ribbon default preset (he will send a Full
 > Preset export to bake in as the shipped defaults). Otherwise clear; the
 > standing what's-left:
-> 1. **Tauri fs scope** — the one audit item deliberately NOT shipped.
->    Full plan + Derek's 6-step desktop test list in
->    docs/AUDIT-2026-07-26.md §3 (v4.82 follow-up). It rewrites the save
->    path and cannot be tested in this sandbox — give it its own session.
+> 1. **Tauri fs scope — SHIPPED v7.17-v7.23.** One test step is still
+>    OUTSTANDING and can only be run on Derek's Mac (added to the general
+>    queue at his request, 2026-08-16):
+>    **Step 6 — a fresh store.** Quit, move
+>    `~/Library/Application Support/com.freedraft.app` aside, relaunch, save.
+>    PASSES when the app rebuilds its store and saves normally. This proves
+>    `$APPDATA` still covers a store that does not exist yet.
+>    (Steps 1-4 passed on his Mac. Step 5 — the read from outside AppData —
+>    also still needs him. Full list: docs/AUDIT-2026-07-26.md §3.)
 > 2. Derek's unanswered question (asked v4.78): which EXTRA Guided Setup
 >    steps he wants — page layout, autosave/backup, theme-with-preview,
 >    template preview, start-from-an-existing-script.

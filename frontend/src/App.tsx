@@ -12,6 +12,7 @@ import OneDriveWarningDialog from './components/OneDriveWarningDialog';
 import OAuthCallback from './components/OAuthCallback';
 import { pluginRegistry } from './plugins/registry';
 import { installHelperTextDom } from './utils/helperText';
+import { installDropGuard } from './utils/dropGuard';
 import './styles/screenplay.css';
 import './styles/avScript.css';
 
@@ -21,6 +22,11 @@ function App() {
   // attributes app-wide (incl. TipTap node views and portals); HoverTooltip
   // reads the same attributes, so custom tooltips pick the overrides up too.
   useEffect(() => installHelperTextDom(), []);
+  /* v7.26: a file dropped anywhere the app does not handle would make WebKit
+     navigate to it — the whole app replaced by the browser's view of that
+     file, unsaved work included. Here because it must cover EVERY pixel, not
+     the zones someone remembered. */
+  useEffect(() => installDropGuard(), []);
 
   return (
     <>

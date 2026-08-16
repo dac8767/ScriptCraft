@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.26",
+  "date": "2026-08-16",
+  "changes": [
+   "Dropping an image on the Asset Manager no longer takes the app down. It was not a glitch — a file dropped anywhere the app did not handle made the webview navigate to that file, so ScriptCraft was replaced by a plain page showing your image, and anything unsaved went with it. Dropped files are now caught everywhere; the Asset Manager's own drop zone works exactly as before."
+  ]
+ },
+ {
   "version": "7.25",
   "date": "2026-08-16",
   "changes": [

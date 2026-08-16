@@ -1,6 +1,6 @@
 {
  "_comment": "DERIVED by devtools/build-check-map.mjs — do not hand-edit. Maps each browser check to the frontend/src files it covers, so check-all --changed can run the relevant ones in the iteration loop. A check with no entry is always run (unmapped means unknown, and unknown must not mean skipped).",
- "_generated_from": "01a51eb",
+ "_generated_from": "15fe3b8",
  "_ritual": [
   "frontend/src/data/changelog.json",
   "frontend/src/data/changelog.ts"
@@ -1096,6 +1096,7 @@
     "frontend/src/components/CustomizePanelsDialog.tsx",
     "frontend/src/components/MenuBar.tsx",
     "frontend/src/components/PreferencesDialog.tsx",
+    "frontend/src/components/ScreenplayEditor.tsx",
     "frontend/src/components/TitleBar.tsx",
     "frontend/src/components/uiIcons.tsx",
     "frontend/src/menu/nativeMenuSync.ts",
@@ -1154,11 +1155,20 @@
    ]
   },
   "check-v725.mjs": {
-   "sha": "",
+   "sha": "15fe3b8",
    "covers": [
+    "frontend/src/components/SavedFlash.tsx",
+    "frontend/src/components/ScreenplayEditor.tsx",
     "frontend/src/components/TitleBar.tsx",
     "frontend/src/design/designTokens.ts",
     "frontend/src/styles/screenplay/25-confirm-outline-tabs.css"
+   ]
+  },
+  "check-v726.mjs": {
+   "sha": "",
+   "covers": [
+    "frontend/src/App.tsx",
+    "frontend/src/utils/dropGuard.ts"
    ]
   }
  }
