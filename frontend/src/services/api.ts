@@ -183,6 +183,13 @@ export interface ScriptMeta {
   pinned: boolean;
   sort_order: number;
   preview: string;
+  /** v7.23, Derek: "show the draft number next to the script name in the Open
+   *  Recent window". The draft lives INSIDE the document (`_draftLabel` — see
+   *  utils/screenplaySaveContent), so it is not a column anywhere; a backend
+   *  that can cheaply read it out fills this in, and one that cannot leaves it
+   *  undefined and the list simply shows the name. Never a reason to fetch a
+   *  whole screenplay to render a row. */
+  draft_label?: string;
 }
 
 export interface ScriptResponse {

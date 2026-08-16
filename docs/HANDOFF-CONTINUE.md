@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.22 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.23 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:
@@ -356,6 +356,40 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.23 — five from a feedback row, and the gear was never his
+
+Derek's row against v7.22. Item 1 was "the settings gear icon is slightly too
+big" — and the icon he was looking at was **macOS's own preferences gear**.
+
+- **THE TRAP, and it is a general one.** In the Vite DEV SERVER — which is what
+  `tauri dev` runs, so it is what Derek has — requesting
+  `/src/assets/settings-gear.png` returns the JS MODULE (`export default
+  "/src/…"`, content-type `text/javascript`). So `img.decode()` threw
+  EncodingError, `rasterizeGear` returned null, and `settingsItem` fell back to
+  `NativeIcon.PreferencesGeneral`. The menu looked completely fine; the icon
+  was simply someone else's. **`import x from './y.png'` gives you a URL that
+  only serves BYTES in a production build. For anything that must decode at
+  runtime, use `?inline` — a data URI, no server round trip.**
+  The CSS mask was never affected (Vite serves the real bytes to a CSS `url()`),
+  which is why the in-app icon was right while the native one was not — and why
+  "it works in the app" was not evidence.
+- **The size was then MEASURED, not guessed.** His screenshot, decoded: the
+  system glyphs' ink is 24–28px wide, 19–23px tall in the 32px (16pt @2x)
+  slot. His art fills its own canvas edge to edge, so INSET is exactly "what
+  fraction of the slot the ink covers" — 0.88→28px, 0.72→24px, 0.66→22px, all
+  three verified against the produced buffer. Shipped 0.72.
+- **File ▸ Open is the file explorer**; **Open Recent…** below it opens the
+  window that used to be Open, without its now-duplicate "Browse This
+  Computer…" button, capped at `RECENT_LIMIT = 10` — after the sort AND the
+  search, so typing still reaches an older script.
+- **The draft beside the name.** `_draftLabel` lives INSIDE the document, not
+  in `ScriptMeta`, so the list had no access to it. Fetching ten screenplays to
+  draw ten lines of text was not acceptable; `json_extract` pulls it in SQLite
+  and the row stays small. JSON1 is compiled into modern SQLite, but the query
+  is wrapped: **a list window that fails to open is far worse than one without
+  draft labels**, so it falls back to the plain query and logs.
+- check-v723 (22). Gates: tsc 0, vitest 1237/141, build ok, check-all 1233/0.
 
 ### v7.22 — the Settings gear is Derek's file, not a redrawing of it
 

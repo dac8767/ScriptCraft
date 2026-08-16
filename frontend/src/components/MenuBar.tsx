@@ -133,6 +133,7 @@ import {
   FaRulerHorizontal,
   FaPencilAlt, FaCoffee, FaBoxOpen,
   FaRegFileAlt,
+  FaClock,
 } from 'react-icons/fa';
 
 /** v2.98: the Help-menu form links, shared by the menu items and the
@@ -1305,11 +1306,17 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
           action: handleNewScreenplay,
         },
         { separator: true, label: '' },
-        /* v4.79, Derek: Open has NO submenu — it opens the Open window
-           directly, and that window carries "Browse This Computer…" for a
-           file on disk (the old Local File child). */
+        /* v7.23, Derek: "clicking Open in the File menu should take you
+           straight to the file explorer" — so Open IS the native file dialog
+           now, the same importer Browse This Computer… used to run. The
+           window that lists your own scripts moved down one line and became
+           Open Recent…, which is what it always was. */
         {
           icon: <FaFolderOpen />, label: 'Open…', shortcut: sc('openFile'),
+          action: () => confirmOrRun(handleImport),
+        },
+        {
+          icon: <FaClock />, label: 'Open Recent…',
           action: () => confirmOrRun(() => setOpenFileOpen(true)),
         },
         { separator: true, label: '' },

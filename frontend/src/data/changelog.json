@@ -1,5 +1,16 @@
 [
  {
+  "version": "7.23",
+  "date": "2026-08-16",
+  "changes": [
+   "The gear in the macOS menu was never the icon you drew — it was macOS's own preferences gear. The app asked the dev server for your PNG and got a JavaScript file back, so the image failed to decode and the menu quietly fell back to the system icon. That is why scaling it did nothing. Your gear is in now, sized against the glyphs beside it.",
+   "File ▸ Open goes straight to the file explorer.",
+   "File ▸ Open Recent… sits below it and opens the list of your own scripts — the window that used to be Open. Its \"Browse This Computer…\" button is gone, since Open does that job now.",
+   "Open Recent shows your ten most recent scripts. Searching still reaches past the ten.",
+   "Each row shows its draft beside the name, so five scripts called the same thing are finally telling apart."
+  ]
+ },
+ {
   "version": "7.22",
   "date": "2026-08-16",
   "changes": [

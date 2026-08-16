@@ -19,7 +19,16 @@
  * ProseMirror history.
  */
 import { isTauri } from '../services/platform';
-import gearUrl from '../assets/settings-gear.png';
+/* `?inline` — a data: URI, NOT a URL. v7.23: this is the whole reason the
+   icon never reached Derek's menu. In the Vite DEV SERVER (which is what
+   `tauri dev` runs, so it is what he has), requesting
+   /src/assets/settings-gear.png returns the JS MODULE — `export default
+   "/src/assets/..."`, content-type text/javascript — so `img.decode()` threw
+   EncodingError, rasterizeGear returned null, and the item fell back to the
+   system gear. He was looking at macOS's own icon and reporting it as mine
+   being the wrong size. A data URI needs no server round trip and decodes in
+   dev and in a build alike. */
+import gearUrl from '../assets/settings-gear.png?inline';
 
 export interface NativeItemData {
   label: string;
@@ -132,12 +141,14 @@ async function rasterizeGear(size: number): Promise<{ data: Uint8Array; size: nu
     const img = new Image();
     img.src = gearUrl;
     await img.decode();
-    /* INSET: the system glyphs beside this one do not fill their box, and
-       Derek's art runs edge to edge (measured: ink at x=0 and x=511), so
-       drawing it at the full 16pt box makes it read a size larger than
-       "Hide Others" next to it. 0.88 is the same optical inset the drawn
-       gear used. This is the knob to turn if it still looks off. */
-    const INSET = 0.88;
+    /* MEASURED, not guessed. Derek's screenshot of the real menu, decoded:
+       the system glyphs beside this one have ink 24-28px wide and 19-23px
+       tall in the 32px (16pt @2x) slot. His art fills its own canvas edge to
+       edge, so INSET is exactly "what fraction of the slot the ink covers":
+       0.88 -> 28px, 0.72 -> 24px, 0.66 -> 22px (all three verified against
+       the produced buffer). 0.72 lands the circle at 24px, level with Hide
+       ScriptCraft and Quit. This is the knob if it still reads off. */
+    const INSET = 0.72;
     const off = (size * (1 - INSET)) / 2;
     ctx.drawImage(img, off, off, size * INSET, size * INSET);
     const { data } = ctx.getImageData(0, 0, size, size);

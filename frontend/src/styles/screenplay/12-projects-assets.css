@@ -717,6 +717,11 @@
 .open-project-item:hover { background: var(--fd-accent); color: #fff; }
 .open-project-item:hover .open-project-date { color: rgba(255,255,255,.6); }
 .open-project-name { font-size: 13px; }
+/* v7.23: the draft rides beside the name, muted — the name is what you scan
+   the list for, the draft is what you check once you have found it. Same
+   weight would make ten rows of "Episode X — First Draft" read as ten equally
+   important strings. */
+.open-project-draft { color: var(--fd-text-muted); }
 .open-project-date { font-size: 11px; color: var(--fd-text-muted); }
 
 /* ============ WELCOME DIALOG ============ */

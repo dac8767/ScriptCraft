@@ -17,7 +17,6 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaFolderOpen } from 'react-icons/fa';
 import { LuSearch } from 'react-icons/lu';
 import { api } from '../services/api';
 import { cloudApi } from '../services/cloudApi';
@@ -45,7 +44,6 @@ interface OpenFileProps {
   /** v4.79, Derek: File ▸ Open has no submenu any more — it opens THIS window,
    *  so browsing the computer for a file has to live here. Runs the same
    *  importer File ▸ Import ▸ Local File used to. */
-  onBrowseLocal?: () => void;
 }
 
 type SortKey =
@@ -82,7 +80,15 @@ function compareScripts(a: ScriptMeta, b: ScriptMeta, sort: SortKey): number {
 /** Web is always cloud. Desktop/mobile apps let the user pick. */
 const WEB_ONLY_CLOUD = isWeb();
 
-const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose, onBrowseLocal }) => {
+/** v7.23, Derek: "limit the items in Open recent to 10 files". RECENT is the
+ *  point of the window — a list that grows without bound is the script
+ *  library, which is a different thing. The cap applies AFTER the sort, so it
+ *  is the ten most recent by whatever order is chosen, and AFTER the search,
+ *  so typing still reaches an older script rather than hiding it behind a
+ *  limit the writer cannot see. */
+const RECENT_LIMIT = 10;
+
+const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
   // Only treat the user as signed in once the token has been verified against
   // the server this session. A stale localStorage token shouldn't let us hit
   // the cloud API — the request would fail anyway.
@@ -159,7 +165,8 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose, onBrowseLocal }) =
     return groups
       .flatMap((g) => g.scripts.map((s) => ({ script: s, project: g.project })))
       .filter(({ script }) => !q || script.title.toLowerCase().includes(q))
-      .sort((a, b) => compareScripts(a.script, b.script, sort));
+      .sort((a, b) => compareScripts(a.script, b.script, sort))
+      .slice(0, RECENT_LIMIT);
   }, [groups, query, sort]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -173,7 +180,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose, onBrowseLocal }) =
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
-        <div className="dialog-header">Open</div>
+        <div className="dialog-header">Open Recent</div>
 
         <div className="open-file-controls">
           {/* v6.42: the This device / ScriptCraft Cloud source tabs are gone
@@ -242,6 +249,15 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose, onBrowseLocal }) =
                   {project.name === LIBRARY_NAME
                     ? script.title
                     : `${project.name} — ${script.title}`}
+                  {/* v7.23, Derek: "show the draft number next to the script
+                      name". His own list was five rows of "Episode X" with
+                      nothing to tell them apart. Quiet — the name is what you
+                      scan for, the draft is what you check once you've found
+                      it — and absent entirely on a script that has no draft
+                      set, rather than reading "First Draft" at everything. */}
+                  {script.draft_label && (
+                    <span className="open-project-draft"> — {script.draft_label}</span>
+                  )}
                 </span>
                 <span className="open-project-date">
                   {new Date(script.updated_at).toLocaleDateString()}
@@ -251,18 +267,10 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose, onBrowseLocal }) =
           )}
         </div>
 
+        {/* v7.23, Derek: no "Browse This Computer…" here any more. File ▸ Open
+            IS the file explorer now, so the button duplicated the menu item
+            directly above the one that opens this window. */}
         <div className="dialog-actions">
-          {/* v4.79, Derek: browsing the computer lives IN this window now —
-              left, opposite Cancel, the way Delete sits on the Title Page. */}
-          {onBrowseLocal && (
-            <button
-              style={{ marginRight: 'auto' }}
-              onClick={() => { onClose(); onBrowseLocal(); }}
-            >
-              <FaFolderOpen aria-hidden style={{ marginRight: 6, verticalAlign: '-1px' }} />
-              Browse This Computer…
-            </button>
-          )}
           <button onClick={onClose}>Cancel</button>
         </div>
       </div>

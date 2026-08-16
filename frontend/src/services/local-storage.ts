@@ -177,13 +177,31 @@ export async function createLocalStorage() {
     // ── Scripts ────────────────────────────────────────────────────────────
 
     async listScripts(projectId: string): Promise<ScriptMeta[]> {
-      const rows = await db.select<any[]>(
-        `SELECT id, project_id, title, page_count, size_bytes, created_at, updated_at,
-                color, pinned, sort_order
-         FROM scripts WHERE project_id = $1 ORDER BY created_at`,
-        [projectId],
-      );
-      return rows.map(rowToScriptMeta);
+      const COLS = `s.id, s.project_id, s.title, s.page_count, s.size_bytes,
+                    s.created_at, s.updated_at, s.color, s.pinned, s.sort_order`;
+      /* v7.23: the draft label comes out of the CONTENT, which lives in its
+         own table — so json_extract does it in SQLite and the row stays
+         small. Fetching each script's document to render a list would mean
+         moving whole screenplays to draw ten lines of text.
+         JSON1 is compiled into modern SQLite, but if this build lacks it the
+         query throws, and a list window that fails to open is far worse than
+         one without draft labels — so it falls back to the plain query. */
+      try {
+        const rows = await db.select<any[]>(
+          `SELECT ${COLS}, json_extract(sc.content, '$._draftLabel') AS draft_label
+           FROM scripts s LEFT JOIN script_content sc ON sc.script_id = s.id
+           WHERE s.project_id = $1 ORDER BY s.created_at`,
+          [projectId],
+        );
+        return rows.map(rowToScriptMeta);
+      } catch (err) {
+        console.warn('[local-storage] draft labels unavailable, listing without them:', err);
+        const rows = await db.select<any[]>(
+          `SELECT ${COLS} FROM scripts s WHERE s.project_id = $1 ORDER BY s.created_at`,
+          [projectId],
+        );
+        return rows.map(rowToScriptMeta);
+      }
     },
 
     async createScript(
@@ -881,5 +899,6 @@ function rowToScriptMeta(r: any): ScriptMeta {
     pinned: !!r.pinned,
     sort_order: r.sort_order ?? 0,
     preview: '',
+    ...(r.draft_label ? { draft_label: String(r.draft_label) } : {}),
   };
 }

@@ -3881,13 +3881,11 @@ const ScreenplayEditor: React.FC = () => {
       )}
       {!isHistoryMode && currentProject && <AssetManager projectId={currentProject.id} />}
       {!isHistoryMode && openFileOpen && (
+        /* v7.23: no onBrowseLocal — File ▸ Open is the file explorer now, so
+           the button this fed is gone from the window. */
         <OpenFile
           onOpen={handleOpenFile}
           onClose={() => setOpenFileOpen(false)}
-          /* v4.79: "Browse This Computer…" runs the SAME importer the menu's
-             Local File item used to — through the command bus MenuBar owns,
-             so there's one import path, not a copy. */
-          onBrowseLocal={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'importLocal' }))}
         />
       )}
       {!isHistoryMode && showWelcome && <WelcomeDialog onChoice={handleWelcomeChoice} />}
