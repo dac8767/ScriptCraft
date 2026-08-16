@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.20",
+  "date": "2026-08-16",
+  "changes": [
+   "Auto-saved files are named EpisodeX_autosave_08-15-26_23-15.odraft — no spaces anywhere, underscores between the parts, hyphens inside the date and the time. Spaces in a filename survive fine in Finder and then bite in a terminal, a URL, or a script.",
+   "The name no longer says what it is twice. It read \"Auto Save — Episode X — Auto save — 08-15-26 23.15\": the kind once from a prefix and once from the name itself. That prefix was also wrong for snapshots you take yourself — File ▸ Take Snapshot writes to the same place, so a snapshot you named came out labelled \"Auto Save — …\". It now carries the name you gave it.",
+   "Snapshots copied to Google Drive or OneDrive are real script files too. They were written as raw text under a .json name, the same fault the other copies had, so a snapshot fetched back from the cloud would not have opened. Every copy ScriptCraft writes anywhere now goes through one piece of code, and a test fails if a new one appears that doesn't."
+  ]
+ },
+ {
   "version": "7.19",
   "date": "2026-08-16",
   "changes": [

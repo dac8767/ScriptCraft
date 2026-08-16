@@ -252,9 +252,14 @@ try {
   await settle(page);
   ok(await page.$('.markup-filter-pop') !== null, 'clicking it still opens the visibility popover');
 
-  // ── 3: the local auto save path carries /Auto Saves/ (source-level) ──
+  /* ── 3: the local auto save path carries /Auto Saves/ (source-level) ──
+     v7.20: the FOLDER is the assertion; the filename is not. It used to pin
+     "/Auto Saves/Auto Save — ", which welded this check to a name that said
+     the kind twice and called a hand-made snapshot an auto save. The shape of
+     the name is pinned properly in saveLocations.mirror.test.ts, against the
+     function that builds it. */
   const src = await page.evaluate(async () => (await fetch('/src/services/saveLocations.ts')).text());
-  ok(src.includes("/Auto Saves/Auto Save — "), 'mirrorSnapshot writes into the "Auto Saves" folder');
+  ok(src.includes('/Auto Saves/${'), 'mirrorSnapshot writes into the "Auto Saves" folder');
   ok(!src.includes("snapToCloud"), 'mirrorSnapshot has no Cloud destination left');
 
   // ── v6.43→v6.95 (Derek, via the feedback form): Settings LEFT File for

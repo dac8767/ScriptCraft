@@ -152,11 +152,17 @@ async function saveToGDrive(args: SavePayload): Promise<void> {
   mapSet(GDRIVE_MAP, map);
 }
 
-async function snapshotToGDrive(projectName: string, label: string, json: string): Promise<void> {
+/* v7.20: a snapshot in the cloud is a SCRIPT — it opens, like every other
+   copy. These two wrote the bare document as `.json`, the same fault v7.18
+   fixed locally and v7.19 fixed for the cloud SAVES; the snapshot pair was
+   missed both times because their name never contained "odraft" to grep for.
+   Six writers, one serializer. The label already opens with the script title,
+   so the projectName prefix went with it — it only repeated the folder. */
+async function snapshotToGDrive(label: string, text: string): Promise<void> {
   const token = await getAccessToken(gdriveConfig());
   const root = await driveEnsureFolder(token, 'ScriptCraft');
   const snaps = await driveEnsureFolder(token, 'Snapshots', root);
-  await driveUpload(token, `${safeName(projectName)} — ${safeName(label)}.json`, json, snaps);
+  await driveUpload(token, `${safeName(label)}.odraft`, text, snaps);
 }
 
 /* ── OneDrive (Microsoft Graph, path addressing) ───────────────────────── */
@@ -182,9 +188,9 @@ async function saveToOneDrive(args: SavePayload): Promise<void> {
   await onedrivePut(token, path, await odraftTextFor(args.title, args.content));
 }
 
-async function snapshotToOneDrive(projectName: string, label: string, json: string): Promise<void> {
+async function snapshotToOneDrive(label: string, text: string): Promise<void> {
   const token = await getAccessToken(onedriveConfig());
-  await onedrivePut(token, `ScriptCraft/Snapshots/${safeName(projectName)} — ${safeName(label)}.json`, json);
+  await onedrivePut(token, `ScriptCraft/Snapshots/${safeName(label)}.odraft`, text);
 }
 
 /* ── Orchestration ─────────────────────────────────────────────────────── */
@@ -290,6 +296,33 @@ export async function mirrorSave(payload: SavePayload): Promise<void> {
   }
 }
 
+/**
+ * The name a copy gets, for every destination.
+ *
+ * v7.20, Derek, looking at what auto save produced — "Auto Save — Episode X —
+ * Auto save — 08-15-26 23.15.odraft": "the filename shouldnt have spaces
+ * either. make autosave filenames in this format:
+ * EpisodeX_autosave_08-15-26_23-15.odraft"
+ *
+ * So: no spaces anywhere, underscores between the parts, hyphens inside the
+ * date and the time. Spaces in a name are the kind of thing that survives
+ * fine in Finder and then bites in a terminal, a URL or a script.
+ *
+ * The kind is no longer hard-coded per destination — it comes from the
+ * caller's `message`, which is 'autosave' on a tick and whatever the writer
+ * typed for File ▸ Take Snapshot. That is why the old local name said it
+ * twice AND called a hand-made snapshot an auto save.
+ */
+export function copyFileBase(title: string, message: string, now: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  const date = `${p(now.getMonth() + 1)}-${p(now.getDate())}-${String(now.getFullYear()).slice(-2)}`;
+  const time = `${p(now.getHours())}-${p(now.getMinutes())}`;
+  /* safeName's "Untitled" fallback belongs to the TITLE only — applied to the
+     kind it turned an empty message into `EpisodeX_Untitled_…`. */
+  const part = (v: string) => v.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '').slice(0, 120);
+  return [part(title) || 'Untitled', part(message), date, time].filter(Boolean).join('_');
+}
+
 /** Copy a snapshot to every checked snapshot destination (Settings). */
 export async function mirrorSnapshot(args: {
   projectId: string; projectName: string; title: string;
@@ -303,17 +336,15 @@ export async function mirrorSnapshot(args: {
   if (s.snapToLocalFolder && s.snapLocalFolder) dests.push('localfolder');
   if (dests.length === 0) return; // local git checkpoint already covers it
 
-  const now = new Date();
-  const stamp = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getFullYear()).slice(-2)} ${String(now.getHours()).padStart(2, '0')}.${String(now.getMinutes()).padStart(2, '0')}`;
-  const label = `${args.title} — ${args.message} — ${stamp}`;
+  const label = copyFileBase(args.title, args.message, new Date());
   const failures: string[] = [];
 
   await Promise.all(dests.map(async (loc) => {
     try {
       if (loc === 'gdrive') {
-        await snapshotToGDrive(args.projectName, label, JSON.stringify(args.content));
+        await snapshotToGDrive(label, await odraftTextFor(args.title, args.content));
       } else if (loc === 'onedrive') {
-        await snapshotToOneDrive(args.projectName, label, JSON.stringify(args.content));
+        await snapshotToOneDrive(label, await odraftTextFor(args.title, args.content));
       } else {
         // v2.83: write an .odraft into the chosen folder (desktop only —
         // the folder path only exists where a native dialog picked it).
@@ -324,9 +355,16 @@ export async function mirrorSnapshot(args: {
         // v6.42, Derek: auto saves land in an "Auto Saves" FOLDER at the
         // chosen location, not loose beside his real files.
         // (save_text_to_path creates the folder if it's missing.)
+        /* v7.20, Derek's file: "Auto Save — Episode X — Auto save — 08-15-26
+           23.15.odraft". The kind was in the name TWICE — once from this
+           prefix and once from `message`, which the label already carries.
+           And the prefix was a lie for the other caller: File ▸ Take Snapshot
+           goes through mirrorSnapshot too, so a snapshot the writer named
+           himself came out labelled "Auto Save — …". The label alone says
+           what it is: <title> — <message> — <stamp>. */
         const folder = useSettingsStore.getState().snapLocalFolder.replace(/[/\\]$/, '');
         const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('save_text_to_path', { path: `${folder}/Auto Saves/Auto Save — ${safe}.odraft`, contents: text });
+        await invoke('save_text_to_path', { path: `${folder}/Auto Saves/${safe}.odraft`, contents: text });
       }
     } catch (err) {
       console.error(`Snapshot copy to ${loc} failed:`, err);

@@ -1977,7 +1977,9 @@ const ScreenplayEditor: React.FC = () => {
         projectName: currentProject.name,
         title: useEditorStore.getState().documentTitle || 'Untitled',
         content: snapContent,
-        message: 'Auto save',
+        // v7.20: lowercase, one word — it becomes the filename part
+        // (EpisodeX_autosave_08-15-26_23-15.odraft).
+        message: 'autosave',
       }).catch((err) => {
         // Silent by design — a failed auto save shouldn't interrupt writing.
         console.warn('Auto save failed:', err);

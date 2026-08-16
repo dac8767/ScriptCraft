@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.19 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.20 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:
@@ -356,6 +356,35 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.20 — the copy filename, and the last two writers
+
+Derek, reading what auto save produced — `Auto Save — Episode X — Auto save —
+08-15-26 23.15.odraft`: "the filename shouldnt have spaces either. make
+autosave filenames in this format: EpisodeX_autosave_08-15-26_23-15.odraft"
+
+- **`copyFileBase(title, message, now)`** is the one name builder: no spaces
+  anywhere, `_` between parts, `-` inside the date and the time. Note
+  `safeName`'s "Untitled" fallback belongs to the TITLE only — applied to the
+  kind it produced `EpisodeX_Untitled_…`, which a test caught.
+- **The kind was in the name twice** — once from a hard-coded `Auto Save — `
+  prefix, once from `message`. Worse, the prefix LIED for the other caller:
+  File ▸ Take Snapshot goes through `mirrorSnapshot` too, so a snapshot the
+  writer named himself came out labelled "Auto Save — …". The kind now comes
+  only from `message` ('autosave' on a tick, the typed name otherwise).
+- **The last two writers.** `snapshotToGDrive`/`snapshotToOneDrive` still
+  wrote the bare document as `.json` — the v7.18 bug, missed by v7.19 because
+  their filenames never contained "odraft" to grep for. Six writers, one
+  serializer, found three at a time over three versions.
+- **The guard that should have existed at v7.18** is now in
+  `saveLocations.mirror.test.ts`: assertions over the MODULE, not a call —
+  no `JSON.stringify(args.content)` anywhere, no copy named `.json`, and
+  `odraftTextFor` used at least seven times (six writers + the definition).
+  Negative-tested by regressing a writer; two assertions fired.
+- **check-v642 had welded itself to the old name** (`"/Auto Saves/Auto Save
+  — "`). It now asserts the FOLDER, which is what that check is about; the
+  name's shape is pinned against the function that builds it.
+- Gates: tsc 0, vitest 1229/139 (+9), build ok, check-all 1202/0.
 
 ### v7.19 — the same bug in the two cloud writers
 
