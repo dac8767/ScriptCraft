@@ -673,8 +673,12 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
   const handleImport = useCallback(async () => {
     if (!editor) return;
     try {
+      /* v7.18: `json` is offered so the LEGACY `<title>.odraft.json` copies —
+         everything the Save As mirror wrote between v1.16 and v7.17 — can be
+         picked at all. Their last extension is `json`, so the old filter hid
+         them and the dispatch below sent them to the Fountain parser. */
       const result = await openTextFile([
-        { name: 'Script', extensions: ['fountain', 'fdx', 'odraft', 'txt'] },
+        { name: 'Script', extensions: ['fountain', 'fdx', 'odraft', 'txt', 'json'] },
       ]);
       if (!result) return;
 
@@ -731,7 +735,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             store.upsertCharacterProfile(hl.name, { color: hl.color, highlighted: hl.highlighted });
           }
         }
-      } else if (ext === 'odraft') {
+      } else if (ext === 'odraft' || ext === 'json') {
         try {
           const parsed = parseOdraft(text);
           doc = parsed.content;
@@ -739,7 +743,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             store.setDocumentTitle(parsed.meta.title);
           }
         } catch (parseErr) {
-          showToast(`Invalid .odraft file: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`, 'error');
+          showToast(`Invalid ScriptCraft file: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`, 'error');
           return;
         }
       } else {
@@ -749,7 +753,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       clearEditorHistory(editor);
 
       // Open as unsaved document — user can save later via Cmd+S
-      const scriptTitle = ext === 'odraft' ? (store.documentTitle || name.replace(/\.\w+$/, '') || 'Untitled') : (name.replace(/\.\w+$/, '') || 'Untitled');
+      const scriptTitle = (ext === 'odraft' || ext === 'json') ? (store.documentTitle || name.replace(/\.\w+$/, '') || 'Untitled') : (name.replace(/\.\w+$/, '') || 'Untitled');
       store.setDocumentTitle(scriptTitle);
       setCurrentProject(null);
       setCurrentScriptId(null);
@@ -758,7 +762,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
       // that the save goes to ScriptCraft's library, not back to the source file.
       const fmtLabel = ext === 'fdx' ? 'Final Draft (.fdx)'
         : ext === 'fountain' ? 'Fountain (.fountain)'
-        : ext === 'odraft' ? 'ScriptCraft (.odraft)'
+        : (ext === 'odraft' || ext === 'json') ? 'ScriptCraft (.odraft)'
         : ext ? `.${ext}` : 'imported file';
       store.setImportedSource({ name, format: fmtLabel });
     } catch (err) {

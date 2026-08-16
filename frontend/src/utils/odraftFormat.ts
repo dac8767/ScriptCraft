@@ -80,6 +80,15 @@ export function parseOdraft(
   if (data === null || typeof data !== 'object' || Array.isArray(data)) {
     throw new Error('Invalid .odraft file: unrecognized format');
   }
+  /* v7.18: the LEGACY mirror copy. From v1.16 to v7.17 the Save As
+     copy-in-a-folder wrote the bare TipTap document as `<title>.odraft.json`
+     — no envelope. Every one of those files is a real script Derek may still
+     have in the folder he chose, so they open: a doc node is unmistakable
+     (`type: 'doc'` with a content array) and there is nothing else it could
+     be. New saves write the envelope; this is for what is already on disk. */
+  if (data.format === undefined && data.type === 'doc' && Array.isArray(data.content)) {
+    return { meta: { title: '', author: '', color: '', page_count: 0 }, content: data };
+  }
   if (data.format !== 'opendraft-script') {
     throw new Error('Invalid .odraft file: unrecognized format');
   }

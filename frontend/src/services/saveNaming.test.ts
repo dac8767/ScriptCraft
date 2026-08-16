@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { getLibraryId, LIBRARY_NAME } from './scriptLibrary';
 import type { ProjectInfo } from './api';
+import { mirrorPathFor } from './saveLocations';
 
 const proj = (id: string, name: string) => ({ id, name, updated_at: '', created_at: '' } as ProjectInfo);
 
@@ -54,11 +56,13 @@ describe('what the user sees is the SCRIPT\'s name', () => {
 });
 
 describe('the file on disk is named after the script', () => {
-  const safeName = (s: string) => (s || 'Untitled').replace(/[\\/:*?"<>|]/g, '-').slice(0, 120);
-  const fileNameFor = (title: string) => `${safeName(title)}.odraft.json`;
+  /* v7.18: the REAL builder. This block used to carry its own copy of the
+     naming rule, which is why it never noticed that the name it asserted —
+     `.odraft.json` — was one the app could not open. */
+  const fileNameFor = (title: string) => mirrorPathFor('', title).replace(/^\//, '');
 
-  it('"Blackwater" saves as Blackwater.odraft.json', () => {
-    expect(fileNameFor('Blackwater')).toBe('Blackwater.odraft.json');
+  it('"Blackwater" saves as Blackwater.odraft', () => {
+    expect(fileNameFor('Blackwater')).toBe('Blackwater.odraft');
   });
 
   it('not "<container> — <draft>", which is what it used to produce', () => {

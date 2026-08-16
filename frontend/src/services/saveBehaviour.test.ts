@@ -1,4 +1,6 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
+import { mirrorPathFor } from './saveLocations';
 
 /**
  * Save must behave the way Save behaves in every other app.
@@ -35,24 +37,25 @@ describe('Save', () => {
  * like it does something and writes into the void is the worst kind of bug.
  */
 describe('the chosen folder receives a real file', () => {
-  const pathFor = (folder: string, title: string) => {
-    const safe = (s: string) => (s || 'Untitled').replace(/[\\/:*?"<>|]/g, '-').slice(0, 120);
-    const sep = folder.endsWith('/') ? '' : '/';
-    return `${folder}${sep}${safe(title)}.odraft.json`;
-  };
+  /* v7.18: the REAL path builder, imported. This block used to define its own
+     `pathFor` and assert against that — so it went on passing while the app
+     wrote `.odraft.json`, a name the app itself could not open. The comment
+     above ("writes into the void is the worst kind of bug") was exactly right
+     about the risk and exactly wrong about being protected from it. */
+  const pathFor = mirrorPathFor;
 
-  it('writes <folder>/<script name>.odraft.json', () => {
+  it('writes <folder>/<script name>.odraft', () => {
     expect(pathFor('/Users/dcarl/Scripts', 'Blackwater'))
-      .toBe('/Users/dcarl/Scripts/Blackwater.odraft.json');
+      .toBe('/Users/dcarl/Scripts/Blackwater.odraft');
   });
 
   it('tolerates a trailing slash rather than producing a double one', () => {
     expect(pathFor('/Users/dcarl/Scripts/', 'Blackwater'))
-      .toBe('/Users/dcarl/Scripts/Blackwater.odraft.json');
+      .toBe('/Users/dcarl/Scripts/Blackwater.odraft');
   });
 
   it('a name with a slash in it cannot escape the folder', () => {
-    expect(pathFor('/Users/dcarl/Scripts', 'Act 1/2')).toBe('/Users/dcarl/Scripts/Act 1-2.odraft.json');
+    expect(pathFor('/Users/dcarl/Scripts', 'Act 1/2')).toBe('/Users/dcarl/Scripts/Act 1-2.odraft');
   });
 
   it('no folder set = no file written (the app keeps it internally)', () => {
@@ -88,6 +91,6 @@ describe('the folder writability probe', () => {
   });
 
   it('a real script in the same folder was always allowed', () => {
-    expect(scopeAllows('/Users/dcarl/Downloads/Blackwater.odraft.json')).toBe(true);
+    expect(scopeAllows('/Users/dcarl/Downloads/Blackwater.odraft')).toBe(true);
   });
 });

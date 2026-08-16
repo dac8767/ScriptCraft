@@ -175,6 +175,34 @@ describe('parseOdraft on malformed / legacy input', () => {
     }
   });
 
+  /* v7.18, Derek testing v7.17: "saved on desktop. it saved as Episode
+     X.odraft.json / it will not open in the app." From v1.16 to v7.17 the
+     Save As mirror wrote the BARE document, not the envelope — so every copy
+     that feature made was unopenable, by the parser and by the file dialog
+     alike. New copies are proper .odraft; these keep the old ones working. */
+  it('accepts a LEGACY bare TipTap doc — the v1.16–v7.17 mirror copy', () => {
+    const bare = { type: 'doc', content: [{ type: 'action', content: [{ type: 'text', text: 'She waits.' }] }] };
+    const parsed = parseOdraft(JSON.stringify(bare, null, 2));
+    expect(parsed.content).toEqual(bare);
+    expect(parsed.meta).toEqual({ title: '', author: '', color: '', page_count: 0 });
+  });
+
+  it('…but only a real doc node — a bare object with no format is still rejected', () => {
+    for (const text of [
+      '{"type":"doc"}',                       // no content array
+      '{"type":"paragraph","content":[]}',    // not the doc root
+      '{"content":[]}',                       // no type
+    ]) {
+      expect(() => parseOdraft(text), `should reject ${text}`).toThrow('Invalid .odraft file: unrecognized format');
+    }
+  });
+
+  it('a legacy doc that also carries a format tag is NOT treated as legacy', () => {
+    // the envelope check still owns anything claiming to be a format
+    expect(() => parseOdraft('{"format":"something-else","type":"doc","content":[]}'))
+      .toThrow('Invalid .odraft file: unrecognized format');
+  });
+
   it('rejects a missing or non-numeric version, but tolerates a hand-quoted "1"', () => {
     expect(() => parseOdraft('{"format":"opendraft-script"}')).toThrow('Invalid .odraft file: missing version');
     // A hand-edited file with a quoted integer version is coerced, not rejected.

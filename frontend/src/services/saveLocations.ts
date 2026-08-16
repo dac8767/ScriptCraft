@@ -197,14 +197,51 @@ export interface SavePayload {
  * Application Support where you will never look for it. If you pick a folder, the
  * script is also written there as a real file you can find, back up and open.
  */
+/**
+ * THE copy-in-a-folder serializer. Both mirrors use it — the Save As copy
+ * here and the auto-save copy below.
+ *
+ * v7.18, Derek, testing v7.17: "saved on desktop. it saved as Episode
+ * X.odraft.json / it will not open in the app." It could not: this mirror
+ * wrote the BARE TipTap document, while a real .odraft is an envelope
+ * (`format: 'opendraft-script'`, a version, meta, then content). So
+ * parseOdraft rejected it as "unrecognized format" — and it never got that
+ * far anyway, because the name ends `.json`, which File ▸ Open does not
+ * offer and the desktop open-handler does not accept.
+ *
+ * The auto-save mirror had been doing it correctly since v6.42 — same
+ * feature, same folder, two writers, and only one of them right. That is the
+ * drift CLAUDE.md warns about, and the v1.16 comment above states the
+ * intention this failed: "a real file you can find, back up and open."
+ */
+export async function odraftTextFor(title: string, content: Record<string, unknown>): Promise<string> {
+  const blob = exportOdraft({
+    id: '', title, author: '', format: 'json',
+    created_at: '', updated_at: '', page_count: 0,
+    size_bytes: 0, color: '', pinned: false, sort_order: 0, preview: '',
+  }, content);
+  return blob.text();
+}
+
+/** Where the copy lands. Exported because two test files had each written
+ *  their OWN copy of this rule and asserted against that — so both kept
+ *  passing while the app wrote a file nobody could open (v7.18). A test that
+ *  reimplements the thing it tests proves only that the copy is consistent
+ *  with itself. */
+export function mirrorPathFor(folder: string, title: string): string {
+  const sep = folder.endsWith('/') ? '' : '/';
+  return `${folder}${sep}${safeName(title)}.odraft`;
+}
+
 async function saveToLocalFolder(args: SavePayload, folder: string): Promise<void> {
   /* v7.17: through the Rust command, like the auto-save mirror eighty lines
      below already did. The fs plugin's scope is $APPDATA now, and this writes
      to a folder the user picked — which is the whole point of the feature. */
   const { invoke } = await import('@tauri-apps/api/core');
-  const sep = folder.endsWith('/') ? '' : '/';
-  const path = `${folder}${sep}${safeName(args.title)}.odraft.json`;
-  await invoke('save_text_to_path', { path, contents: JSON.stringify(args.content, null, 2) });
+  await invoke('save_text_to_path', {
+    path: mirrorPathFor(folder, args.title),
+    contents: await odraftTextFor(args.title, args.content),
+  });
 }
 
 export async function mirrorSave(payload: SavePayload): Promise<void> {
@@ -273,12 +310,7 @@ export async function mirrorSnapshot(args: {
         // the folder path only exists where a native dialog picked it).
         const { isTauri } = await import('./platform');
         if (!isTauri()) throw new Error('Local folder auto saves need the desktop app.');
-        const blob = exportOdraft({
-          id: '', title: args.title, author: '', format: 'json',
-          created_at: '', updated_at: '', page_count: 0,
-          size_bytes: 0, color: '', pinned: false, sort_order: 0, preview: '',
-        }, args.content);
-        const text = await blob.text();
+        const text = await odraftTextFor(args.title, args.content);
         const safe = label.replace(/[/\\:*?"<>|]/g, '-');
         // v6.42, Derek: auto saves land in an "Auto Saves" FOLDER at the
         // chosen location, not loose beside his real files.

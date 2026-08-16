@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.18",
+  "date": "2026-08-16",
+  "changes": [
+   "The copy ScriptCraft leaves in the folder you choose is a real script file again — and it opens. It was written as \"Episode X.odraft.json\": a name that looks like a ScriptCraft file but holds only the raw text of your script, without the wrapper the app reads — and File ▸ Open would not even offer it to you. The one thing that copy exists for, finding it later and opening it, was the one thing it could not do. It had been that way since the feature shipped.",
+   "Copies are now named \"<script>.odraft\" and written by the same code that writes the automatic backups, which had been doing it correctly all along. One feature, one folder, two pieces of code writing the file, and only one of them right.",
+   "The .odraft.json copies you already have still open — they may be the only record of what that folder held, so ScriptCraft reads them, and File ▸ Open now offers them."
+  ]
+ },
+ {
   "version": "7.17",
   "date": "2026-08-16",
   "changes": [

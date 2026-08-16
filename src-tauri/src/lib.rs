@@ -588,7 +588,12 @@ fn ios_save_and_share_binary(filename: String, contents: Vec<u8>) -> Result<(), 
 struct PendingFile(Mutex<Option<String>>);
 
 /// Extensions that ScriptCraft can open via file association.
-const OPENABLE_EXTENSIONS: &[&str] = &["fdx", "fountain", "odraft", "txt"];
+// v7.18: `json` is here for the LEGACY `<title>.odraft.json` copies the Save
+// As mirror wrote between v1.16 and v7.17 — their last extension is `json`,
+// so "Open With ▸ ScriptCraft" was refused on the very files the feature
+// created. A .json that is not a script gets a friendly parse error, not a
+// crash. New copies are written as .odraft.
+const OPENABLE_EXTENSIONS: &[&str] = &["fdx", "fountain", "odraft", "txt", "json"];
 
 fn is_openable_file(path: &str) -> bool {
     let ext = path.rsplit('.').next().unwrap_or("");
