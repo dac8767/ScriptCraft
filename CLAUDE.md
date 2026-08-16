@@ -51,6 +51,51 @@ Derek's Mac. Therefore:
 
 ---
 
+## 0.5 If the code you are reading is not the code you wrote
+
+**The container's disk gets restored from a stale snapshot, mid-session.** It
+has landed on the same one every time: HEAD at `87e94b8` (v6.67,
+2026-08-10 04:27) with five files dirty — MarkupPickers, MarkupsPanel,
+Toolbar, toolbarBuiltins + its test. The repo, `.git` and all come back with
+it.
+
+**Nothing is ever lost.** Every pushed commit survived every occurrence; the
+remote is the truth. The damage is subtler and worse: *working on a stale
+tree without noticing*. It nearly shipped twice — once a whole feature
+(`check-all --changed`) was simply absent from a file being edited, spotted
+only because the code on screen did not match the code remembered.
+
+**It is not git, and no git command will show you.** A `git reset` APPENDS to
+the reflog and cannot erase what came before. After the last restore the
+reflog jumped from 2026-08-10 straight to the recovery — six days and a dozen
+commits missing — while every one of those commits was still on the remote.
+`.git/HEAD`, which git rewrites on every checkout, was three weeks old. That
+is a filesystem restore. It is the platform's container, and its stated
+contract is "commit and push or lose it" — which is honoured.
+
+**So the fix is detection, and it is wired up:**
+
+```bash
+node frontend/devtools/check-fresh.mjs     # fetches, compares, explains
+```
+
+- runs at **SessionStart** (`.claude/settings.json`),
+- runs first inside **`check-all`**, which ABORTS rather than spend five
+  minutes testing a tree that is not yours.
+
+**Recover, then verify BY CONTENT — never by commit id.** A restored tree has
+once read as the right sha with the wrong blobs:
+
+```bash
+git fetch origin claude/v0_32 && git reset --hard origin/claude/v0_32
+grep APP_VERSION frontend/src/data/changelog.ts
+```
+
+**And push every version the moment it is green.** That is what has made every
+one of these a nuisance instead of a loss.
+
+---
+
 ## 1. What this is
 
 A professional screenwriting desktop app, forked from Proteus's OpenDraft.

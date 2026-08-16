@@ -107,6 +107,19 @@ const run = (file) => new Promise((resolve) => {
   });
 });
 
+/* FRESHNESS FIRST. This container's disk gets restored from a stale snapshot
+   (see devtools/check-fresh.mjs for the evidence); a restored tree is
+   perfectly self-consistent and looks fine from the inside. Running a
+   five-minute suite against it — and believing the result — is the failure
+   this prevents. One fetch, before anything else. */
+try {
+  const { execFileSync } = await import('node:child_process');
+  execFileSync('node', [new URL('check-fresh.mjs', import.meta.url).pathname, '--quiet'], { stdio: 'inherit' });
+} catch {
+  console.log('check-all: ABORTED — the working tree is stale (above). Recover, then re-run.');
+  process.exit(1);
+}
+
 /* Warm the dev server FIRST. Vite compiles on demand, so the first page load
    after a restart costs ~10-20s — and launching the checks together meant
    several of them paying that same cold cost at once. One request up front

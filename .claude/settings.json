@@ -29,5 +29,18 @@
       "Read(**/*.min.js)",
       "Read(**/*.min.css)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node frontend/devtools/check-fresh.mjs || true",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }
