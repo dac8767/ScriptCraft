@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.16 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.17 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:
@@ -356,6 +356,50 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.17 — the Tauri fs scope, narrowed to $APPDATA (audit item 3)
+
+The one audit item that had been deliberately deferred since v4.82, because it
+rewrites the save path and cannot be exercised in this sandbox. Derek: "continue
+with Tauri fs scope."
+
+- **What it was.** The capability granted `$HOME/**` — plus `$DOCUMENT`,
+  `$DESKTOP`, `$DOWNLOAD` and `/Volumes` — for read, write, mkdir, remove and
+  exists. The breadth existed for FOUR call sites that write to folders the
+  USER picked, because Tauri v2's dialog plugin does not extend the fs scope
+  to a picked path. The whole home directory, to serve four sites.
+- **What it is now.** Those four go through Rust commands, which bypass the
+  plugin scope by design; the capability is `$APPDATA/*` + `$APPDATA/**`.
+  `SaveAsDialog`'s writability probe → `check_folder_writable` (new — it was
+  the only thing that needed the plugin's `remove`); `saveLocations`' mirror
+  copy → `save_text_to_path` (which the auto-save mirror eighty lines below
+  already used); `screenshot` → `save_binary_to_path`; `AssetManager`'s
+  drag-and-drop read → `read_binary_file`. Everything still on the plugin was
+  AppData-based already.
+- **THE SANDBOX HAS A RUST TOOLCHAIN.** `cd src-tauri && cargo check` runs and
+  the crate compiles clean. Earlier sessions assumed the Rust half of a change
+  could not be verified here at all — it can, and it should be from now on.
+  Caveat, stated because it matters: it compiles for LINUX, so
+  `#[cfg(target_os = "macos")]` paths are not covered. The new command has no
+  cfg gates.
+- **check-fs-scope (22)** holds the static invariants — the capability shape,
+  who may import the plugin, that every remaining fs call names
+  `BaseDirectory.AppData` (a call without it resolves against the CWD and
+  fails at runtime only), and that every invoked Rust command exists AND is
+  registered in `generate_handler!` (an unregistered command is a runtime-only
+  "command not found" — exactly how this would break silently).
+  - Its first cut passed `pdfExporter` **vacuously**: the import parser only
+    understood `import {…} from` and `= await import(…)`, and pdfExporter
+    destructures the plugin out of a `Promise.all` array, so it matched zero
+    functions and reported "every fs call is AppData-based (0 fns)". It now
+    matches bare calls (`(?<![.\w])name\(`, which excludes `el.remove()`) and
+    **fails a file where it finds none**. Both negative tests — a `$HOME/**`
+    put back in the capability, and one `BaseDirectory.AppData` swapped for
+    `.Home` — were run and both failed the check as they should.
+- **What is NOT verified, and cannot be here: the runtime.** No Tauri in the
+  sandbox. `docs/AUDIT-2026-07-26.md` §3 carries the six-step test list for
+  Derek's Mac; until those pass, treat this as shipped-but-unconfirmed.
+- Gates: cargo check clean, tsc 0, vitest 1213, build ok, check-all 1202/0.
 
 ### v7.16 — the two queued formatting items, and two bugs found next door
 

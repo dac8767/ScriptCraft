@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.17",
+  "date": "2026-08-16",
+  "changes": [
+   "ScriptCraft no longer asks your Mac for the run of your home folder. It had permission to read, write and delete anywhere under it — every file you own, not just screenplays — because a few features write to folders YOU pick and the file dialog doesn't grant access to a picked folder on its own. The permission is now the app's own support folder and nothing else; the writes to folders you pick go through ScriptCraft's own code instead.",
+   "Nothing about saving changes. Save As still proves a folder is writable while you're looking at it rather than failing later, the mirrored copy still lands in the folder you chose, screenshots still go to your screenshot folder, and dragging a file into the Asset Manager still reads it.",
+   "Two small repairs found on the way: a screenshot or a mirrored copy now recreates its folder if the folder has been deleted since you chose it, and the writability probe no longer depends on a permission that the narrowing removed."
+  ]
+ },
+ {
   "version": "7.16",
   "date": "2026-08-15",
   "changes": [

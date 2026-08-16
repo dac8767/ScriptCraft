@@ -27,42 +27,6 @@
         },
         {
           "path": "$APPDATA/**"
-        },
-        {
-          "path": "$RESOURCE/*"
-        },
-        {
-          "path": "$RESOURCE/**"
-        },
-        {
-          "path": "$HOME/*"
-        },
-        {
-          "path": "$HOME/**"
-        },
-        {
-          "path": "$DOCUMENT/*"
-        },
-        {
-          "path": "$DOCUMENT/**"
-        },
-        {
-          "path": "$DESKTOP/*"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$DOWNLOAD/*"
-        },
-        {
-          "path": "$DOWNLOAD/**"
-        },
-        {
-          "path": "/Volumes/*"
-        },
-        {
-          "path": "/Volumes/**"
         }
       ]
     },
@@ -74,42 +38,6 @@
         },
         {
           "path": "$APPDATA/**"
-        },
-        {
-          "path": "$RESOURCE/*"
-        },
-        {
-          "path": "$RESOURCE/**"
-        },
-        {
-          "path": "$HOME/*"
-        },
-        {
-          "path": "$HOME/**"
-        },
-        {
-          "path": "$DOCUMENT/*"
-        },
-        {
-          "path": "$DOCUMENT/**"
-        },
-        {
-          "path": "$DESKTOP/*"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$DOWNLOAD/*"
-        },
-        {
-          "path": "$DOWNLOAD/**"
-        },
-        {
-          "path": "/Volumes/*"
-        },
-        {
-          "path": "/Volumes/**"
         }
       ]
     },
@@ -121,42 +49,6 @@
         },
         {
           "path": "$APPDATA/**"
-        },
-        {
-          "path": "$RESOURCE/*"
-        },
-        {
-          "path": "$RESOURCE/**"
-        },
-        {
-          "path": "$HOME/*"
-        },
-        {
-          "path": "$HOME/**"
-        },
-        {
-          "path": "$DOCUMENT/*"
-        },
-        {
-          "path": "$DOCUMENT/**"
-        },
-        {
-          "path": "$DESKTOP/*"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$DOWNLOAD/*"
-        },
-        {
-          "path": "$DOWNLOAD/**"
-        },
-        {
-          "path": "/Volumes/*"
-        },
-        {
-          "path": "/Volumes/**"
         }
       ]
     },
@@ -168,42 +60,6 @@
         },
         {
           "path": "$APPDATA/**"
-        },
-        {
-          "path": "$RESOURCE/*"
-        },
-        {
-          "path": "$RESOURCE/**"
-        },
-        {
-          "path": "$HOME/*"
-        },
-        {
-          "path": "$HOME/**"
-        },
-        {
-          "path": "$DOCUMENT/*"
-        },
-        {
-          "path": "$DOCUMENT/**"
-        },
-        {
-          "path": "$DESKTOP/*"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$DOWNLOAD/*"
-        },
-        {
-          "path": "$DOWNLOAD/**"
-        },
-        {
-          "path": "/Volumes/*"
-        },
-        {
-          "path": "/Volumes/**"
         }
       ]
     },
@@ -215,42 +71,6 @@
         },
         {
           "path": "$APPDATA/**"
-        },
-        {
-          "path": "$RESOURCE/*"
-        },
-        {
-          "path": "$RESOURCE/**"
-        },
-        {
-          "path": "$HOME/*"
-        },
-        {
-          "path": "$HOME/**"
-        },
-        {
-          "path": "$DOCUMENT/*"
-        },
-        {
-          "path": "$DOCUMENT/**"
-        },
-        {
-          "path": "$DESKTOP/*"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$DOWNLOAD/*"
-        },
-        {
-          "path": "$DOWNLOAD/**"
-        },
-        {
-          "path": "/Volumes/*"
-        },
-        {
-          "path": "/Volumes/**"
         }
       ]
     },
@@ -262,42 +82,6 @@
         },
         {
           "path": "$APPDATA/**"
-        },
-        {
-          "path": "$RESOURCE/*"
-        },
-        {
-          "path": "$RESOURCE/**"
-        },
-        {
-          "path": "$HOME/*"
-        },
-        {
-          "path": "$HOME/**"
-        },
-        {
-          "path": "$DOCUMENT/*"
-        },
-        {
-          "path": "$DOCUMENT/**"
-        },
-        {
-          "path": "$DESKTOP/*"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$DOWNLOAD/*"
-        },
-        {
-          "path": "$DOWNLOAD/**"
-        },
-        {
-          "path": "/Volumes/*"
-        },
-        {
-          "path": "/Volumes/**"
         }
       ]
     },
@@ -309,42 +93,6 @@
         },
         {
           "path": "$APPDATA/**"
-        },
-        {
-          "path": "$RESOURCE/*"
-        },
-        {
-          "path": "$RESOURCE/**"
-        },
-        {
-          "path": "$HOME/*"
-        },
-        {
-          "path": "$HOME/**"
-        },
-        {
-          "path": "$DOCUMENT/*"
-        },
-        {
-          "path": "$DOCUMENT/**"
-        },
-        {
-          "path": "$DESKTOP/*"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$DOWNLOAD/*"
-        },
-        {
-          "path": "$DOWNLOAD/**"
-        },
-        {
-          "path": "/Volumes/*"
-        },
-        {
-          "path": "/Volumes/**"
         }
       ]
     },
@@ -356,42 +104,6 @@
         },
         {
           "path": "$APPDATA/**"
-        },
-        {
-          "path": "$RESOURCE/*"
-        },
-        {
-          "path": "$RESOURCE/**"
-        },
-        {
-          "path": "$HOME/*"
-        },
-        {
-          "path": "$HOME/**"
-        },
-        {
-          "path": "$DOCUMENT/*"
-        },
-        {
-          "path": "$DOCUMENT/**"
-        },
-        {
-          "path": "$DESKTOP/*"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$DOWNLOAD/*"
-        },
-        {
-          "path": "$DOWNLOAD/**"
-        },
-        {
-          "path": "/Volumes/*"
-        },
-        {
-          "path": "/Volumes/**"
         }
       ]
     },
