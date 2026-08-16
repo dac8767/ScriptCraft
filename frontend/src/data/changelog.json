@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.25",
+  "date": "2026-08-16",
+  "changes": [
+   "The “Saved” indicator is on the page now — centred, about an inch below the ruler, and considerably larger. It is placed against the page itself rather than the window, so it stays centred when a side panel opens and its inch stays an inch when you zoom. Its size is a Design knob.",
+   "Verification: the checks a change can actually break now run on their own (`check-all --changed`), instead of all 91 every time."
+  ]
+ },
+ {
   "version": "7.24",
   "date": "2026-08-16",
   "changes": [

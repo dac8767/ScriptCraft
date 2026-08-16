@@ -71,6 +71,7 @@ import StatusBar from './StatusBar';
 import SearchReplace, { createSearchPlugin } from './SearchReplace';
 import GoToPage from './GoToPage';
 import EditorRulers from './EditorRulers';
+import SavedFlash from './SavedFlash';
 import { chromePx, chromeMin, chromeMax } from './chromeSizes';
 import ElementPicker from './ElementPicker';
 import CharacterAutocomplete from './CharacterAutocomplete';
@@ -3666,6 +3667,10 @@ const ScreenplayEditor: React.FC = () => {
               {!isHistoryMode && <MarkupIconLayer editor={editor} container={editorMainEl} />}
               {/* v2.95, Derek: Word-style rulers, toggled in View > Show Rulers */}
               {rulersVisible && <EditorRulers container={editorMainRef} continuous={viewStyle === 'continuous' && !previewMode} />}
+              {/* v7.25, Derek: the "Saved" flash sits on the page, an inch
+                  under the ruler. Mounted here so it can measure the page it
+                  centres on; it portals itself out to the body. */}
+              <SavedFlash pageWidthIn={pageLayout.pageWidth} />
               <div
                 className="page-sizer"
                 style={{

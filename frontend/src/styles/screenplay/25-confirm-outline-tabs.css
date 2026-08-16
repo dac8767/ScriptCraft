@@ -472,17 +472,29 @@
   background: var(--fd-border);
 }
 .fs-titlebar-spacer { flex: none; width: 16px; }
-/* v7.14, Derek: the "Saved" flash lives in the Quick Access bar now, not the
-   bottom-right toast corner. It fades in, holds, and leaves — and takes no
-   space when it is not up, so the bar never shifts under the pointer. */
-.fs-titlebar-saved {
-  flex: none; align-self: center;
-  margin-left: 6px; padding: 1px 7px;
-  border-radius: 9px;
-  font-size: 10.5px; font-weight: 600; letter-spacing: .02em;
+/* v7.14 put the "Saved" flash in the Quick Access bar, out of the bottom-right
+   toast corner. v7.25, Derek: "move the 'Saved' indicator so it is on the
+   white page, centered and about an inch down from the ruler. make the
+   indicator larger."
+
+   Fixed, and placed by measured top/left from SavedFlash.tsx — the page's
+   centre moves when a side panel opens, and an inch is the PAGE's inch, which
+   changes with zoom. translateX(-50%) does the centring so the measurement
+   only has to find the middle, not the width. The drop below the ruler is not
+   settable here: the anchor it counts from is not something CSS can see. */
+.fs-page-saved {
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 46;                     /* over the page, under the rulers' 45+1 */
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-size: var(--dz-saved-font, 17px); font-weight: 600; letter-spacing: .02em;
   color: var(--fd-success);
-  background: color-mix(in srgb, var(--fd-success) 15%, transparent);
+  background: color-mix(in srgb, var(--fd-success) 15%, var(--fd-page-bg));
+  border: 1px solid color-mix(in srgb, var(--fd-success) 40%, transparent);
+  box-shadow: 0 2px 10px rgba(0,0,0,.18);
   pointer-events: none;
+  white-space: nowrap;
   animation: fs-saved-flash 1.8s ease-in-out forwards;
 }
 @keyframes fs-saved-flash {

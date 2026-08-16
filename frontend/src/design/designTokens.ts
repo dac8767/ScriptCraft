@@ -74,6 +74,12 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       // so it belongs to that dialog, not a free design slider. Only chrome-ish
       // surface knobs live here.
       { id: 'editorMainPadTop', label: 'Space above first page', cssVar: '--dz-editor-main-pad-top', unit: 'px', min: 0, max: 120, step: 2, def: 30 },
+      /* v7.25: the "Saved" flash on the page. Its SIZE is a knob; its drop
+         below the ruler is not — that one is measured in the page's own inch
+         (SavedFlash.tsx, so it holds at any zoom) and a css-var knob nothing
+         in the stylesheet reads is a slider that does nothing, which the
+         no-dead-knobs test below rightly refuses. */
+      { id: 'savedFont', label: 'Saved flash — text size', cssVar: '--dz-saved-font', unit: 'px', min: 10, max: 32, step: 1, def: 17 },
     ],
   },
   {

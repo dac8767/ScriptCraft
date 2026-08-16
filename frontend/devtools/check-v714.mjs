@@ -119,9 +119,13 @@ ok('…and holds long enough to read', flash.ms >= 1200, String(flash.ms));
 const menuSrc = readFileSync(new URL('../src/components/MenuBar.tsx', import.meta.url), 'utf8');
 ok('a successful save no longer toasts',
   !/showToast\('Saved'/.test(menuSrc) && /flashSaved\(\)/.test(menuSrc), '');
-const barSrc = readFileSync(new URL('../src/components/TitleBar.tsx', import.meta.url), 'utf8');
-ok('the flash renders inside the Quick Access row',
-  /fs-titlebar-qat[\s\S]{0,900}<SavedFlash \/>/.test(barSrc), '');
+/* v7.14 put the flash in the Quick Access row; v7.25 moved it onto the page
+   ("centered and about an inch down from the ruler"), which is check-v725's
+   subject. What survives from v7.14 is the part Derek asked for BOTH times —
+   it is not a toast, and there is exactly one of it. */
+const edSrc = readFileSync(new URL('../src/components/ScreenplayEditor.tsx', import.meta.url), 'utf8');
+ok('the flash renders once, now beside the editor (v7.25 moved it there)',
+  /<SavedFlash /.test(edSrc), '');
 
 // ── the Settings gear, where he can actually see it ──────────────────
 console.log('\n6. the native Settings gear');
