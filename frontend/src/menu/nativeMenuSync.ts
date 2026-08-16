@@ -19,7 +19,7 @@
  * ProseMirror history.
  */
 import { isTauri } from '../services/platform';
-import { GEAR_PATH } from '../components/uiIcons';
+import gearUrl from '../assets/settings-gear.png';
 
 export interface NativeItemData {
   label: string;
@@ -109,18 +109,18 @@ if (typeof window !== 'undefined') {
   (window as unknown as { __scSettingsIcon?: () => string }).__scSettingsIcon = settingsIconKind;
 }
 
-/** The gear, drawn to a square RGBA buffer.
+/** Derek's gear, scaled into a square RGBA buffer.
  *
- *  v7.15, Derek: "match the size and color of the gear icon to the icons in
- *  the screenshot." Two corrections to the first cut, both visible beside the
- *  system glyphs in his screenshot:
- *   · WEIGHT — macOS menu icons are hairline. 34/512 read as bold next to
- *     Hide Others and Quit; 16 matches them.
- *   · SIZE — those glyphs do not fill their box. Drawing the art into 88% of
- *     the canvas gives the same optical size rather than a gear that looms.
- *  White, because the label beside it is white; macOS auto-tints its own
- *  template images and cannot be asked to tint a supplied one, so the drawn
- *  gear matches the state Derek is looking at rather than every state.
+ *  v7.22: the art is now HIS FILE (src/assets/settings-gear.png), not a path
+ *  this app draws. He supplied it already white — "i've already make it
+ *  white, so all you need to do is scale it to match the other icons" — so
+ *  the only job here is size, and there is no longer a second gear to keep
+ *  in step with it. The in-app icon masks the same file, so both renderers
+ *  read one asset; replace that file and both change.
+ *
+ *  Still white rather than tinted: macOS auto-tints its own template images
+ *  and cannot be asked to tint a supplied one, so this matches the dark menu
+ *  Derek is looking at rather than every appearance.
  */
 async function rasterizeGear(size: number): Promise<{ data: Uint8Array; size: number } | null> {
   try {
@@ -129,17 +129,17 @@ async function rasterizeGear(size: number): Promise<{ data: Uint8Array; size: nu
     canvas.height = size;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
+    const img = new Image();
+    img.src = gearUrl;
+    await img.decode();
+    /* INSET: the system glyphs beside this one do not fill their box, and
+       Derek's art runs edge to edge (measured: ink at x=0 and x=511), so
+       drawing it at the full 16pt box makes it read a size larger than
+       "Hide Others" next to it. 0.88 is the same optical inset the drawn
+       gear used. This is the knob to turn if it still looks off. */
     const INSET = 0.88;
-    const scale = (size / 512) * INSET;
-    ctx.translate((size * (1 - INSET)) / 2, (size * (1 - INSET)) / 2);
-    ctx.scale(scale, scale);
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 16;
-    ctx.lineJoin = 'round';
-    ctx.stroke(new Path2D(GEAR_PATH));
-    ctx.beginPath();
-    ctx.arc(256, 256, 128, 0, Math.PI * 2);
-    ctx.stroke();
+    const off = (size * (1 - INSET)) / 2;
+    ctx.drawImage(img, off, off, size * INSET, size * INSET);
     const { data } = ctx.getImageData(0, 0, size, size);
     return { data: new Uint8Array(data.buffer.slice(0)), size };
   } catch {
@@ -239,8 +239,9 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
      where the macOS app menu owns it), so the React <GearIcon /> never
      renders for him. Painting it there and stopping was the mistake.
 
-     So this item carries HIS gear as a real image: the same path the React
-     icon draws (uiIcons.GEAR_PATH) rasterized to RGBA at 2× menu size. The
+     So this item carries HIS gear as a real image: v7.22, literally his file
+     (assets/settings-gear.png), rasterized to RGBA at 2× menu size — the
+     same file the in-app icon masks, so there is one gear and not two. The
      fallbacks descend — image → the system preferences gear → a plain item —
      and `lastSettingsIcon` records which one landed, because a silent
      fallback is how "the icon hasn't changed" happens with every test

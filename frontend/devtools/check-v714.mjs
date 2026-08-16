@@ -126,12 +126,16 @@ ok('the flash renders inside the Quick Access row',
 // ── the Settings gear, where he can actually see it ──────────────────
 console.log('\n6. the native Settings gear');
 const nat = readFileSync(new URL('../src/menu/nativeMenuSync.ts', import.meta.url), 'utf8');
-ok('the macOS item rasterizes the DRAWN gear', /rasterizeGear\(/.test(nat) && /Image\.new\(/.test(nat), '');
-// v7.15: sized and weighted against the system glyphs beside it.
+ok('the macOS item rasterizes the gear ASSET', /rasterizeGear\(/.test(nat) && /Image\.new\(/.test(nat), '');
+// v7.15: sized against the system glyphs beside it. v7.22: the art is Derek's
+// own file, so weight is his — only the scale is ours.
 ok('…at the menu\'s own 16pt box, inset like the system glyphs',
   /rasterizeGear\(32\)/.test(nat) && /INSET/.test(nat), '');
-ok('…hairline, matching them', /ctx\.lineWidth = 16/.test(nat), '');
-ok('…from the same path the React icon draws', /GEAR_PATH/.test(nat), '');
+ok('…from Derek\'s file, drawn not stroked',
+  /assets\/settings-gear\.png/.test(nat) && /drawImage\(/.test(nat), '');
+ok('…and the React icon MASKS that same file, so there is one gear',
+  /icon-gear-mask/.test(readFileSync(new URL('../src/components/uiIcons.tsx', import.meta.url), 'utf8'))
+  && /settings-gear\.png/.test(readFileSync(new URL('../src/styles/screenplay/02-menubar.css', import.meta.url), 'utf8')), '');
 ok('…falling back to the system gear, then a plain item',
   /NativeIcon\.PreferencesGeneral/.test(nat) && /MenuItem\.new\(opts\)/.test(nat), '');
 ok('which icon landed is reported, not swallowed',

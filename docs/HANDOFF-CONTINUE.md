@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.21 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.22 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:
@@ -356,6 +356,44 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.22 — the Settings gear is Derek's file, not a redrawing of it
+
+"replace the settings icon with this. i've already make it white, so all you
+need to do is scale it to match the other icons in the ScriptCraft menu."
+
+- **The image arrived invisible.** White art on a transparent background
+  renders as a blank square in chat — twice. What worked: he committed it, and
+  I read the PNG's ALPHA CHANNEL directly (a 60-line pure-python decoder in the
+  scratchpad, since there is no PIL here) and printed it as ASCII. Measured:
+  512×512, pure white (one distinct RGB), 8-tooth outline gear, ~14px ring,
+  ink at x=0 and x=511 so the art runs edge to edge with no padding.
+  **If an image looks blank again, decode it rather than asking twice.**
+- **One asset, two renderers.** `src/assets/settings-gear.png` — the macOS menu
+  item rasterizes it (`drawImage`, INSET 0.88 because his art bleeds to the
+  edge and the system glyphs do not fill their box), and the in-app icon MASKS
+  it. The drawn `GEAR_PATH`/`GEAR_D` are gone; there is no second gear left to
+  drift.
+- **A mask, not an `<img>` — and that is not decoration.** His file is white,
+  which is invisible on the light themes, and an `<img>` cannot be recoloured.
+  `-webkit-mask` takes the file's alpha as the shape and paints it with
+  `currentColor`, so one white asset serves every theme through the existing
+  `--fd-icon-strong` rule.
+- **The asset lives in `frontend/src/assets/`, not `images/`.** He uploaded it
+  to `images/` (brand art); it was moved so the app has ONE copy that Vite
+  fingerprints. A future replacement goes to the assets path.
+- **check-v712's gear block was rewritten, not deleted.** It asserted the old
+  mechanism (stroke, twelve teeth, hollow centre) — all meaningless now. Two of
+  its assertions were requirements though, and they carried over: full-strength
+  colour against muted neighbours, and *a light theme paints it dark*. That
+  second one was free with `currentColor` on an SVG; with a raster it is true
+  only because of the mask, so it is now the assertion that protects the
+  design decision. check-v722 (10) covers the rest, including that the mask URL
+  actually 200s — a mask that 404s paints nothing, and an empty span looks
+  exactly like a menu item with no icon.
+- NEEDS THE MAC: the macOS menu item's optical size. INSET in
+  `nativeMenuSync.rasterizeGear` is the knob.
+- Gates: tsc 0, vitest 1237/141, build ok, check-all 1211/0.
 
 ### v7.21 — the extension is .script
 

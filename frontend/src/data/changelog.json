@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.22",
+  "date": "2026-08-16",
+  "changes": [
+   "The Settings gear is the icon Derek drew — his actual file, not a redrawing of it. Both places it appears read the same image: the macOS menu item and the Settings entry inside the app.",
+   "In the app it is worn as a mask rather than placed as a picture, so it takes the colour of whatever theme is on. The file is white, which would have been invisible on the light themes."
+  ]
+ },
+ {
   "version": "7.21",
   "date": "2026-08-16",
   "changes": [

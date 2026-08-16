@@ -192,32 +192,29 @@ export const PanelRightIcon: React.FC<{ size?: number }> = ({ size = 13 }) => (
 );
 
 /**
- * v7.13/v7.15, Derek — he sent the gear he wants for Settings, then a
- * THIN-LINE version of it: "use the attached icon if the thin line matches
- * the icons in the ScriptCraft menu better." It does — macOS menu glyphs are
- * hairline, and the first cut sat among them looking bold. Twelve teeth,
- * hollow centre, uniform thin stroke. react-icons has no gear in this shape
- * (FaCog is solid; the line sets are six-tooth), so it is drawn here, in the
- * one icon registry, rather than a component keeping its own.
+ * The Settings gear — DEREK'S FILE, not art this app draws.
  *
- * `.icon-gear-strong` is what makes the lines white: menu-dropdown icons are
- * painted --fd-text-muted, and Derek wants this one at full strength.
- * currentColor as always — the class sets the colour, the icon inherits it.
+ * v7.22: "replace the settings icon with this. i've already make it white, so
+ * all you need to do is scale it to match the other icons in the ScriptCraft
+ * menu." So the drawn 12-tooth path is gone and both renderers read
+ * `assets/settings-gear.png`: the macOS menu item rasterizes it
+ * (menu/nativeMenuSync), and this one MASKS it.
+ *
+ * A mask, not an <img>, for one reason: his file is white, and white is
+ * invisible on the light themes. `-webkit-mask` takes the file's alpha as the
+ * shape and paints it with `background-color: currentColor`, so the same
+ * asset renders white on dark and dark on light without a second copy of the
+ * art. (The file's colour is therefore irrelevant — only its alpha is read.)
+ *
+ * `.icon-gear-strong` still carries the colour rule, so restyling stays in
+ * the stylesheet.
  */
-/** The gear outline, shared: the React icon below AND the macOS menu
- *  item, which rasterizes this exact path (menu/nativeMenuSync). */
-const GEAR_D = 'M221.1 73.3L223.7 20.2L288.3 20.2L290.9 73.3A186 186 0 0 1 317.2 80.3L317.2 80.3L345.9 35.6L401.9 67.9L377.5 115.2A186 186 0 0 1 396.8 134.5L396.8 134.5L444.1 110.1L476.4 166.1L431.7 194.8A186 186 0 0 1 438.7 221.1L438.7 221.1L491.8 223.7L491.8 288.3L438.7 290.9A186 186 0 0 1 431.7 317.2L431.7 317.2L476.4 345.9L444.1 401.9L396.8 377.5A186 186 0 0 1 377.5 396.8L377.5 396.8L401.9 444.1L345.9 476.4L317.2 431.7A186 186 0 0 1 290.9 438.7L290.9 438.7L288.3 491.8L223.7 491.8L221.1 438.7A186 186 0 0 1 194.8 431.7L194.8 431.7L166.1 476.4L110.1 444.1L134.5 396.8A186 186 0 0 1 115.2 377.5L115.2 377.5L67.9 401.9L35.6 345.9L80.3 317.2A186 186 0 0 1 73.3 290.9L73.3 290.9L20.2 288.3L20.2 223.7L73.3 221.1A186 186 0 0 1 80.3 194.8L80.3 194.8L35.6 166.1L67.9 110.1L115.2 134.5A186 186 0 0 1 134.5 115.2L134.5 115.2L110.1 67.9L166.1 35.6L194.8 80.3A186 186 0 0 1 221.1 73.3Z';
-export const GEAR_PATH = GEAR_D;
 export const GearIcon: React.FC<{ size?: number | string }> = ({ size = '1em' }) => (
-  <svg
-    className="icon-gear-strong"
-    width={size} height={size} viewBox="0 0 512 512"
-    fill="none" stroke="currentColor" strokeWidth={16} strokeLinejoin="round"
+  <span
+    className="icon-gear-strong icon-gear-mask"
+    style={{ width: size, height: size }}
     aria-hidden="true"
-  >
-    <path d={GEAR_D} />
-    <circle cx="256" cy="256" r="128" />
-  </svg>
+  />
 );
 
 /* (v4.39: chevronTowards is gone with the pop-in/pop-out buttons — windows

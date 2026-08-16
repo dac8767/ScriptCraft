@@ -114,6 +114,20 @@
    distinction so no rule here has to know which theme is on. */
 .menu-dropdown-icon .icon-gear-strong,
 .toolbar-btn .icon-gear-strong { color: var(--fd-icon-strong); }
+
+/* v7.22: the gear is Derek's own PNG, worn as a MASK rather than drawn or
+   placed as an <img>. His file is pure white (measured), which is invisible
+   on the light themes, and an <img> cannot be recoloured. A mask reads the
+   file's ALPHA as the shape and paints it with `currentColor` — so the one
+   asset serves every theme, resolves its colour through the rule above, and
+   the macOS menu item rasterizes the very same file. */
+.icon-gear-mask {
+  display: inline-block;
+  flex: none;
+  background-color: currentColor;
+  -webkit-mask: url('../../assets/settings-gear.png') center / contain no-repeat;
+  mask: url('../../assets/settings-gear.png') center / contain no-repeat;
+}
 /* v3.05, Derek: checkable items get a dedicated left column (macOS style) —
    reserved for EVERY row of a list that contains one, so labels align and
    toggling never shifts them sideways. */

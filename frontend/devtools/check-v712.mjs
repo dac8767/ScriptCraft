@@ -133,31 +133,42 @@ await page.waitForSelector('.template-editor-overlay, .prefs-window', { state: '
 const help = await page.$('.menu-item:has-text("Help")');
 await help.click();
 await settle(page);
+/* v7.22: the gear is Derek's FILE, masked — not an SVG this app draws. The
+   shape assertions (stroke, twelve teeth, hollow centre) described the
+   drawing and are gone with it; what they were protecting is not. These are
+   the same requirements against the new mechanism:
+     · the item wears a gear at all
+     · it reads HIS asset, so replacing that file replaces the icon
+     · it is full-strength, brighter than its muted neighbours
+     · a light theme paints it DARK — his file is white, and white on a light
+       dropdown is an icon you cannot see. That was true of the drawn gear by
+       way of `currentColor`; with a raster it is true only because the icon
+       is a MASK, which is the whole reason for the mask. */
 const gear = await page.evaluate(() => {
   const item = [...document.querySelectorAll('.menu-dropdown-item')].find((e) => /Settings/.test(e.textContent));
-  const svg = item?.querySelector('svg');
+  const el = item?.querySelector('.icon-gear-mask');
   const other = [...document.querySelectorAll('.menu-dropdown-item')]
     .find((e) => !/Settings/.test(e.textContent) && e.querySelector('.menu-dropdown-icon svg'));
-  const g = svg ? getComputedStyle(svg) : null;
+  const g = el ? getComputedStyle(el) : null;
   const o = other ? getComputedStyle(other.querySelector('.menu-dropdown-icon svg')) : null;
+  const r = el?.getBoundingClientRect();
   return {
-    cls: svg?.getAttribute('class') ?? null,
-    stroke: svg?.getAttribute('stroke') ?? null,
-    fill: svg?.getAttribute('fill') ?? null,
-    teeth: (svg?.querySelector('path')?.getAttribute('d')?.match(/A186/g) || []).length,
-    stroke_w: svg?.getAttribute('stroke-width') ?? null,
-    hollow: !!svg?.querySelector('circle'),
+    present: !!el,
+    strong: el?.classList.contains('icon-gear-strong') ?? false,
+    mask: g ? (g.webkitMaskImage || g.maskImage) : null,
+    paint: g?.backgroundColor ?? null,
     color: g?.color ?? null,
     otherColor: o?.color ?? null,
+    size: r ? [Math.round(r.width), Math.round(r.height)] : null,
   };
 });
-ok('Settings wears the drawn gear', gear.cls === 'icon-gear-strong', JSON.stringify(gear));
-ok('…as an OUTLINE — stroked, not filled', gear.stroke === 'currentColor' && gear.fill === 'none', JSON.stringify(gear));
-/* v7.15, Derek sent a THIN-LINE version — twelve teeth, hairline stroke —
-   because the first cut read bold beside the macOS menu glyphs. */
-ok('…with twelve teeth and a hollow centre', gear.teeth === 12 && gear.hollow, JSON.stringify(gear));
-ok('…drawn hairline, not bold', Number(gear.stroke_w) <= 18, String(gear.stroke_w));
-ok('…and WHITE lines', gear.color === 'rgb(255, 255, 255)', gear.color);
+ok('Settings wears the gear', gear.present && gear.strong, JSON.stringify(gear));
+ok('…which is DEREK\'S FILE, masked — replace the file, replace the icon',
+  /settings-gear/.test(gear.mask || ''), String(gear.mask).slice(0, 70));
+ok('…painted with the icon colour, not left transparent',
+  gear.paint && gear.paint !== 'rgba(0, 0, 0, 0)', String(gear.paint));
+ok('…at the same size as the other icons in that menu', 
+  !!gear.size && gear.size[0] >= 8 && gear.size[0] <= 20, JSON.stringify(gear.size));
 ok('…brighter than the other icons in that menu, which stay muted',
   gear.otherColor && gear.otherColor !== gear.color, JSON.stringify({ gear: gear.color, other: gear.otherColor }));
 
@@ -165,9 +176,9 @@ ok('…brighter than the other icons in that menu, which stay muted',
 const onLight = await page.evaluate(async () => {
   document.documentElement.setAttribute('data-theme', 'light');
   await new Promise((r) => setTimeout(r, 80));
-  const svg = [...document.querySelectorAll('.menu-dropdown-item')]
-    .find((e) => /Settings/.test(e.textContent))?.querySelector('svg');
-  const c = svg ? getComputedStyle(svg).color : null;
+  const el = [...document.querySelectorAll('.menu-dropdown-item')]
+    .find((e) => /Settings/.test(e.textContent))?.querySelector('.icon-gear-mask');
+  const c = el ? getComputedStyle(el).backgroundColor : null;
   document.documentElement.setAttribute('data-theme', 'dark');
   return c;
 });
@@ -182,7 +193,7 @@ ok('…still with the fallback that keeps the menu alive',
 /* Read the SOURCE, not the served module: Vite compiles JSX away, so
    `<FaCog />` never appears in what the browser is given. */
 const menuSrc = readFileSync(new URL('../src/components/MenuBar.tsx', import.meta.url), 'utf8');
-ok('the in-app Settings… item uses the drawn gear', /<GearIcon \/>, label: 'Settings…'/.test(menuSrc), '');
+ok('the in-app Settings… item uses the gear', /<GearIcon \/>, label: 'Settings…'/.test(menuSrc), '');
 
 console.log(`\ncheck-v712: ${pass} passed, ${fail} failed`);
 await browser.close();
