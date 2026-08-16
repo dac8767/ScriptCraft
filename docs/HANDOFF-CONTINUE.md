@@ -1,4 +1,4 @@
-# ScriptCraft — continuation brief (current as of v7.17 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
+# ScriptCraft — continuation brief (current as of v7.18 — READ docs/SPEED-AUDIT-2026-07-28.md §3 before verifying anything; NOTE the isolate:false revert in §2)
 
 > DELIVERED v7.05 — the ADD-ON track (all four items). Kept here as the record
 > of what was asked and what was built:
@@ -356,6 +356,44 @@ Durable bits kept live here:
 > `docs/HANDOFF-ARCHIVE.md` and add its one-liner to the index below. This
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
+
+### v7.18 — the folder copy was never openable (found by v7.17's test list)
+
+Derek, running step 1 on his Mac: "saved on desktop. it saved as Episode
+X.odraft.json / it will not open in the app."
+
+- **The bug, and it is not v7.17's.** Since v1.16 the Save As
+  copy-in-a-folder wrote the BARE TipTap document under a `.odraft.json`
+  name. A real `.odraft` is an envelope (`format: 'opendraft-script'`, a
+  version, meta, then content), so `parseOdraft` rejected it — and it never
+  got that far, because the name's last extension is `json`, which File ▸
+  Open did not offer and `is_openable_file` refused. v7.17 changed only which
+  mechanism did the writing. The v1.16 comment states the intention it never
+  met: "a real file you can find, back up **and open**."
+- **The auto-save mirror had been right since v6.42.** Same feature, same
+  folder, two writers, one correct. `odraftTextFor` is now the one
+  serializer and `mirrorPathFor` the one path rule; the copy is
+  `<title>.odraft`.
+- **The old files still open.** `parseOdraft` takes a bare doc node as legacy
+  (`format === undefined && type === 'doc' && Array.isArray(content)`), and
+  `json` joined the Open filter and `OPENABLE_EXTENSIONS`. Those copies may be
+  the only record of what a folder held; orphaning them to tidy a format
+  would be the same class of harm as renaming a storage key.
+- **WHY NO TEST CAUGHT IT — the transferable part.** Two tests covered this
+  naming (`saveBehaviour`, `saveNaming`) and both **reimplemented the rule**
+  and asserted against their own copy, so they passed while the app wrote a
+  file it could not read. saveBehaviour's own header says "a setting that
+  looks like it does something and writes into the void is the worst kind of
+  bug" — right about the risk, wrong about being protected from it. **A test
+  that reimplements the thing it tests proves only that the copy agrees with
+  itself.** Both now import `mirrorPathFor`, and
+  `saveLocations.mirror.test.ts` asserts the round trip: write it, parse it,
+  get the script back.
+- The audit's step 1 is corrected as well — it said "reopen the file", which
+  the app could not do even before v7.17, so the step made a pre-existing bug
+  read as a regression.
+- Gates: cargo check clean, tsc 0, vitest 1220/138 (+7), build ok,
+  check-all 1202/0.
 
 ### v7.17 — the Tauri fs scope, narrowed to $APPDATA (audit item 3)
 
