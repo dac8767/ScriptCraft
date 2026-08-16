@@ -24,7 +24,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import FontFamily from '@tiptap/extension-font-family';
 import { Extension } from '@tiptap/core';
-import { TextSelection } from '@tiptap/pm/state';
+import { TextSelection, type Transaction } from '@tiptap/pm/state';
 
 import {
   SceneHeading, Action, Character, Dialogue, Parenthetical,
@@ -113,6 +113,7 @@ import { useIsTouchDevice, useSwipeEdge, usePinchZoom } from '../hooks/useTouch'
 import { usePanelResize } from '../hooks/usePanelResize';
 import { useFileAssociation } from '../hooks/useFileAssociation';
 import { useSettingsStore } from '../stores/settingsStore';
+import { refreshTitlePageDraftDate, DISPLAY_REFRESH_META } from '../utils/titlePageDraftLine';
 import { setLogoutEditorReset } from '../services/collabAuth';
 import { isTauri } from '../services/platform';
 import { reportSaveError } from '../stores/saveErrorStore';
@@ -2058,7 +2059,11 @@ const ScreenplayEditor: React.FC = () => {
   // --- Track unsaved changes for status bar ---
   useEffect(() => {
     if (!editor || !currentProject || !currentScriptId) return;
-    const markUnsaved = () => {
+    const markUnsaved = ({ transaction }: { transaction: Transaction }) => {
+      // v7.24: a stored value re-rendered in the current display format is
+      // not an edit the writer made. Marking a script dirty the moment it
+      // opens would be a worse bug than the date format it corrects.
+      if (transaction.getMeta(DISPLAY_REFRESH_META)) return;
       const { saveStatus } = useEditorStore.getState();
       // Only mark unsaved if we're in idle or saved state (not during saving or error)
       if (saveStatus === 'idle' || saveStatus === 'saved') {
@@ -2068,6 +2073,32 @@ const ScreenplayEditor: React.FC = () => {
     editor.on('update', markUnsaved);
     return () => { editor.off('update', markUnsaved); };
   }, [editor, currentProject, currentScriptId]);
+
+  /* --- The title page's draft date follows Settings ▸ Dates & Times (v7.24)
+     Derek: "the date format on the title page is still not matching the date
+     format I picked". v7.11 taught the BUILDERS to format it, but the line
+     lives in the document as text, so pages built before — or by an importer,
+     which passes no format — kept whatever they were built with.
+
+     Two triggers, one writer. The effect body catches a format CHANGE; the
+     transaction listener catches a content LOAD, which is the single choke
+     point every open/import/template path goes through (setContent always
+     stamps `preventUpdate`, true or false). Deferred out of the transaction
+     so the dispatch never lands inside another dispatch. */
+  const dateFormat = useSettingsStore((s) => s.dateFormat);
+  useEffect(() => {
+    if (!editor) return;
+    const refresh = () => {
+      if (!editor.isDestroyed) refreshTitlePageDraftDate(editor, useSettingsStore.getState().dateFormat);
+    };
+    refresh();
+    const onTx = ({ transaction }: { transaction: Transaction }) => {
+      if (transaction.getMeta('preventUpdate') === undefined) return;
+      queueMicrotask(refresh);
+    };
+    editor.on('transaction', onTx);
+    return () => { editor.off('transaction', onTx); };
+  }, [editor, dateFormat]);
 
   // --- Flush metadata-only changes to backend ---
   // Store metadata (profiles, relationships, notes, etc.) can change without an

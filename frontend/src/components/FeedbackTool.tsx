@@ -17,7 +17,7 @@
  * visible local queue with a Retry button.
  */
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { FaCamera, FaCrop, FaFolderOpen, FaPaperclip, FaTimes } from 'react-icons/fa';
+import { FaCamera, FaCrop, FaFolderOpen, FaTimes } from 'react-icons/fa';
 import {
   type FeedbackProfile,
   loadFeedbackProfile, saveFeedbackProfile,
@@ -275,8 +275,9 @@ export default function FeedbackTool() {
 
       <div className="fb-attach">
         <div className="fb-attach-head">
-          <FaPaperclip aria-hidden />
-          <span className="fb-attach-title">Attach a Screenshot</span>
+          {/* v7.24, Derek: no paperclip, and the label reads as the instruction
+              it is — the three buttons beside it are the answer to it. */}
+          <span className="fb-attach-title">Add a Screenshot:</span>
           <div className="fb-attach-btns">
             <button className="dialog-btn" disabled={busy} title="Attach a screenshot of the whole window" onClick={() => capture('full')}>
               <FaCamera aria-hidden /> Full Screen

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorStore } from '../stores/editorStore';
 import { useProjectStore } from '../stores/projectStore';
+import { useSettingsStore } from '../stores/settingsStore';
+import { writeTitlePageDraftLine } from '../utils/titlePageDraftLine';
 import { api } from '../services/api';
 import { composeSaveContent } from '../utils/screenplaySaveContent';
 import { showToast } from './Toast';
@@ -12,15 +14,15 @@ import { Modal } from './Modal';
 
    Sets the document's draft label ("First Draft", "Second Draft", …). Feeds:
    - the Save As dialog's Draft autofill
-   - the Title Page draft line (updated in place when a title page exists,
-     keeping its date suffix)
+   - the Title Page draft line (rebuilt in place, date and all)
    The label is saved inside the document (_draftLabel).
    ───────────────────────────────────────────────────────────────────────── */
 
 /**
  * Set the draft label everywhere it lives: the editor store (persisted as
- * _draftLabel on save) and the Title Page draft line in place, preserving
- * its date suffix ("First Draft - 2026-07-10" → "Second Draft - 2026-07-10").
+ * _draftLabel on save) and the Title Page draft line, rebuilt in place by the
+ * one writer in utils/titlePageDraftLine ("First Draft - 2026-07-10" →
+ * "Second Draft - 8/16/2026", the date in the Settings format).
  * Shared by the Production dialog and the Settings mirror.
  */
 export function applyDraftNumber(
@@ -54,25 +56,14 @@ export function applyDraftNumber(
   }
   useEditorStore.getState().setDraftLabel(finalLabel);
   if (editor) {
-    let updated = false;
-    editor.state.doc.descendants((node, pos) => {
-      if (updated) return false;
-      if (node.type.name === 'titlePage' && node.attrs?.field === 'draft') {
-        const oldText = node.textContent || '';
-        const dateMatch = oldText.match(/\s*[-–—]\s*(.+)$/);
-        const suffix = dateMatch ? ` - ${dateMatch[1]}` : '';
-        const newText = `${finalLabel}${suffix}`;
-        if (newText !== oldText) {
-          const tr = editor.state.tr.replaceWith(
-            pos + 1, pos + node.nodeSize - 1,
-            newText ? editor.state.schema.text(newText) : [],
-          );
-          editor.view.dispatch(tr);
-        }
-        updated = true;
-        return false;
-      }
-      return true;
+    /* v7.24: the line is REBUILT from the structured fields — the label from
+       here, the date from the title node's tpDraftDate rendered in the
+       Settings format. Copying the old date suffix verbatim (what this did)
+       is what carried an ISO date forward through every draft change after
+       v7.11 taught the builders to format it. */
+    const updated = writeTitlePageDraftLine(editor, {
+      dateFormat: useSettingsStore.getState().dateFormat,
+      label: finalLabel,
     });
     if (opts?.toast !== false) {
       showToast(updated

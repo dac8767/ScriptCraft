@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.24",
+  "date": "2026-08-16",
+  "changes": [
+   "The title page's draft date follows Settings ▸ Dates & Times. The date was stored correctly but written into the page as plain text, so a page built before you changed the format kept the old one forever — and Set Draft Number carried it forward onto every new draft. The line is rebuilt from the stored date now, whenever the setting changes and whenever a script is opened or imported. It is a display change, so it never marks a clean script unsaved.",
+   "Feedback: the attachment icon is gone and the label reads “Add a Screenshot:”.",
+   "A window opening while Settings is open closes Settings. Tool windows, the fullscreen takeover and every dialog. Confirmations and Settings' own pages — Page Setup ▸ View, Save As ▸ Save Options — leave it up, since those are Settings talking rather than something opening over it."
+  ]
+ },
+ {
   "version": "7.23",
   "date": "2026-08-16",
   "changes": [

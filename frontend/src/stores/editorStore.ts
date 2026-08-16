@@ -646,7 +646,7 @@ export const DEFAULT_TOOL_ORDER: string[] = [
  *  open the target's window WHILE Helper Text stays up). */
 const FLOAT_EXEMPT: ToolId[] = ['design', 'helpertext'];
 
-function closeOtherFloats(s: Pick<EditorState, 'tempTool' | 'activeTool' | 'activeToolRight' | 'navigatorOpen' | 'shelfOpen' | 'toolMode' | 'fullscreenTool'>, keep: ToolId): Partial<EditorState> {
+function closeOtherFloats(s: Pick<EditorState, 'tempTool' | 'activeTool' | 'activeToolRight' | 'navigatorOpen' | 'shelfOpen' | 'toolMode' | 'fullscreenTool' | 'preferencesRequest'>, keep: ToolId): Partial<EditorState> {
   const patch: Partial<EditorState> = {};
   if (FLOAT_EXEMPT.includes(keep)) return patch;
   // v5.37, Derek: ONE popped-out OR fullscreen window at a time — a float
@@ -655,6 +655,10 @@ function closeOtherFloats(s: Pick<EditorState, 'tempTool' | 'activeTool' | 'acti
   // own fullscreenTool after it, so the field composes.)
   if (s.fullscreenTool) patch.fullscreenTool = null;
   if (useNotebookStore.getState().notebookOpen) useNotebookStore.getState().setNotebookOpen(false);
+  // v7.24, Derek: "if somehow a window opens while the settings window is
+  // open, then the settings window should close." Settings is a floating
+  // window like any other — it just wasn't a party to the one-window rule.
+  if (s.preferencesRequest.open) patch.preferencesRequest = { open: false };
   if (s.tempTool && s.tempTool !== keep && !FLOAT_EXEMPT.includes(s.tempTool)) patch.tempTool = null;
   if (s.activeTool && s.activeTool !== keep && !FLOAT_EXEMPT.includes(s.activeTool)
       && s.navigatorOpen && s.toolMode[s.activeTool] === 'floating') {
@@ -2213,6 +2217,8 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     if (s2.tempTool && s2.tempTool !== 'design') s2.setTempTool(null);
     if (s2.activeTool && s2.activeTool !== 'design' && s2.toolMode[s2.activeTool] === 'floating') s2.setActiveTool(null);
     if (s2.activeToolRight && s2.activeToolRight !== 'design' && s2.toolMode[s2.activeToolRight] === 'floating') s2.setActiveToolRight(null);
+    // v7.24: and Settings, which the takeover would otherwise cover.
+    if (s2.preferencesRequest.open) s2.closePreferences();
     set({ fullscreenTool: id });
   },
   charListCount: 0,

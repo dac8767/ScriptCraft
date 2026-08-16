@@ -150,7 +150,10 @@ describe('FeedbackTool — the attachment area (v6.87)', () => {
   it('offers Screenshot, Area and Browse… under a labeled Attachment area', async () => {
     savedProfile();
     mount();
-    expect(container.querySelector('.fb-attach-head')?.textContent).toContain('Attach a Screenshot');
+    // v7.24, Derek: "remove the attachment icon and change the text to
+    // 'Add a Screenshot:'" — the label is an instruction, the buttons answer it.
+    expect(container.querySelector('.fb-attach-title')?.textContent).toBe('Add a Screenshot:');
+    expect(container.querySelector('.fb-attach-head > svg')).toBeNull();
     const labels = [...container.querySelectorAll('.fb-attach-btns button')].map((b) => b.textContent?.trim());
     expect(labels).toEqual(['Full Screen', 'Area', 'Browse…']);
     expect(container.querySelector('.fb-attach input[type="file"]')).toBeTruthy();

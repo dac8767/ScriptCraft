@@ -407,7 +407,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     window.addEventListener('scriptcraft:open-customize', onOpenCustomize);
     return () => window.removeEventListener('scriptcraft:open-customize', onOpenCustomize);
   }, []);
-  const [prefsOpen, setPrefsOpen] = useState(false);
+  /* v7.24: the Settings window's open state is ONE thing — the store's
+     preferencesRequest. It used to be two (a local prefsOpen OR'd with the
+     request bus), which is why nothing outside this component could close
+     Settings: clearing the bus left the local flag holding it open. */
   const preferencesRequest = useEditorStore((s) => s.preferencesRequest);
   const closePreferences = useEditorStore((s) => s.closePreferences);
   // v1.34: unfinished features (Collaboration, Lock Pages) hide from the menus
@@ -1044,7 +1047,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     exportFountain: () => { void handleExportFountain(); },
     exportDocx: () => { void handleExportDocx(); },
     rename: () => setRenameOpen(true),
-    settings: () => setPrefsOpen(true),
+    settings: () => useEditorStore.getState().openPreferences(),
 
     find: () => setSearchOpen(true),
     goToPage: () => setGoToPageOpen(true),
@@ -1717,7 +1720,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
            Customize… item wear, so three different things read alike.
            v7.13: and it is the gear Derek drew for it (uiIcons.GearIcon),
            at full strength rather than the muted icon colour. */
-        { icon: <GearIcon />, label: 'Settings…', shortcut: sc('settings'), action: () => setPrefsOpen(true) },
+        { icon: <GearIcon />, label: 'Settings…', shortcut: sc('settings'), action: () => useEditorStore.getState().openPreferences() },
         { separator: true, label: '' },
       ]),
       {
@@ -2340,9 +2343,9 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     <SaveWorkspaceDialog open={saveWorkspaceOpen} onClose={() => setSaveWorkspaceOpen(false)} />
     <EditWorkspacesDialog open={editWorkspacesOpen} onClose={() => setEditWorkspacesOpen(false)} />
     <PreferencesDialog
-      open={prefsOpen || preferencesRequest.open}
+      open={preferencesRequest.open}
       openTab={preferencesRequest.tab}
-      onClose={() => { setPrefsOpen(false); closePreferences(); }}
+      onClose={closePreferences}
       editor={editor}
     />
     <SetDraftDialog open={draftDialogOpen} onClose={() => setDraftDialogOpen(false)} editor={editor} />

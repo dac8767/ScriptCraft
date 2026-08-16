@@ -845,6 +845,45 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
     if (open && openTab) setTab(openTab);
   }, [open, openTab]);
 
+  /* v7.24, Derek: "if somehow a window opens while the settings window is
+     open, then the settings window should close."
+     Watched at the DOM rather than wired into each opener. There are 38
+     dialogs — 24 through the Modal shell, 14 still hand-rolling their own
+     .dialog-overlay — so a rule inside Modal would have covered two thirds of
+     them and looked like it covered all. The overlay is the one thing every
+     dialog does have, and this is the WINDOW'S rule about itself, so it lives
+     with the window.
+     Three exemptions, and each is the same idea — a dialog SETTINGS ITSELF
+     raised is Settings talking, not a window opening over it:
+       · a confirm renders .fs-confirm-overlay, a different class, so closing
+         Settings under its own "are you sure?" cannot happen;
+       · an overlay rendered INSIDE this window (Page Setup ▸ View opens the
+         real page of fields there) is one of ours — it would otherwise take
+         Settings down and itself with it, since Settings renders it;
+       · an overlay already MOUNTED when Settings opens never added a node,
+         which is what keeps Save As ▸ Save Options working — that dialog
+         stays up, hidden, waiting for Settings to close.
+     Tool windows are not overlays at all; they close Settings through the
+     store's one-window rule (closeOtherFloats). */
+  const closeRef = React.useRef(onClose);
+  closeRef.current = onClose;
+  React.useEffect(() => {
+    if (!open) return;
+    const isOverlay = (n: Node) => n instanceof HTMLElement
+      && (n.classList.contains('dialog-overlay') || !!n.querySelector('.dialog-overlay'));
+    const obs = new MutationObserver((records) => {
+      const own = document.querySelector('.prefs-window');
+      for (const r of records) {
+        for (const n of r.addedNodes) {
+          if (own?.contains(n)) continue;               // one of ours
+          if (isOverlay(n)) { closeRef.current(); return; }
+        }
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    return () => obs.disconnect();
+  }, [open]);
+
   if (!open) return null;
 
   return (

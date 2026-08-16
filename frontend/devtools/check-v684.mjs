@@ -125,7 +125,8 @@ try {
       file: !!area?.querySelector('input[type="file"]'),
     };
   });
-  ok(/Attach a Screenshot/.test(attach.label), `the form has a labeled attachment area ("${attach.label}")`);
+  // v7.24, Derek: the paperclip went and the label became an instruction.
+  ok(/^Add a Screenshot:/.test(attach.label), `the form has a labeled attachment area ("${attach.label}")`);
   ok(attach.btns.join(',') === 'Full Screen,Area,Browse…' && attach.file,
     `with Full Screen / Area / Browse… and a real file input behind it (${attach.btns.join(' / ')})`);
   ok(await page.evaluate(() => {

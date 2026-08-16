@@ -21,6 +21,7 @@ import { isTauri } from '../services/platform';
 import { showToast } from './Toast';
 import { confirmDialog } from './ConfirmDialog';
 import { titlePageBlockSpecs, titleLineStyle, titlePaperShiftPx } from '../utils/titlePageLayout';
+import { findTitlePageNode } from '../utils/titlePageDraftLine';
 
 /** Small auth-aware image thumbnail for the title-page preview/list. Uses the
  *  same blob-fetch path as the editor NodeView so it loads reliably.
@@ -82,19 +83,9 @@ const TITLE_FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 96];
  *  is a shortcut back to the built-in size, not a sticky display state. */
 const DEFAULT_TITLE_SIZE = 12;
 
-/** Find the first titlePage node with field='title' and return its attributes + position. */
-function findTitlePageNode(editor: Editor): { pos: number; attrs: TitlePageAttrs } | null {
-  let found: { pos: number; attrs: TitlePageAttrs } | null = null;
-  editor.state.doc.descendants((node, pos) => {
-    if (found) return false;
-    if (node.type.name === 'titlePage' && node.attrs.field === 'title') {
-      found = { pos, attrs: node.attrs as TitlePageAttrs };
-      return false;
-    }
-    return true;
-  });
-  return found;
-}
+/* findTitlePageNode (the walker that locates the title block carrying the
+   structured data) moved to utils/titlePageDraftLine in v7.24, so the draft-
+   line writer and this editor read the same node the same way. */
 
 /** Read structured attrs, falling back to legacy child-text content if structured attrs are empty. */
 function readTitlePageData(editor: Editor): Omit<TitlePageAttrs, 'field'> {

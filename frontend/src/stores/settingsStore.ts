@@ -30,9 +30,9 @@ interface SettingsState {
   authVerified: boolean;
   setAuthVerified: (verified: boolean) => void;
 
-  // Settings dialog open state
-  settingsOpen: boolean;
-  setSettingsOpen: (open: boolean) => void;
+  /* v7.24: `settingsOpen` lived here and was read by nothing — the window's
+     real state is editorStore's preferencesRequest. A third copy of an open
+     flag is how the first two drift; removed rather than wired up. */
 
   // Script-format preferences — which system templates show up in the new-script picker.
   // Stored as template ids (e.g. INDUSTRY_STANDARD_ID, MULTICAM_SITCOM_ID, ...).
@@ -264,9 +264,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   authVerified: false,
   setAuthVerified: (verified) => set({ authVerified: verified }),
-
-  settingsOpen: false,
-  setSettingsOpen: (open) => set({ settingsOpen: open }),
 
   enabledScriptFormats: loadEnabledScriptFormats(),
   setEnabledScriptFormats: (ids) => {
