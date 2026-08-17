@@ -1,6 +1,6 @@
 {
  "_comment": "DERIVED by devtools/build-check-map.mjs — do not hand-edit. Maps each browser check to the frontend/src files it covers, so check-all --changed can run the relevant ones in the iteration loop. A check with no entry is always run (unmapped means unknown, and unknown must not mean skipped).",
- "_generated_from": "5881c00",
+ "_generated_from": "97812bb",
  "_ritual": [
   "frontend/src/data/changelog.json",
   "frontend/src/data/changelog.ts"
@@ -89,6 +89,10 @@
     "frontend/src/styles/screenplay/26-design-panel.css",
     "frontend/src/utils/helperText.ts"
    ]
+  },
+  "check-icons.mjs": {
+   "sha": "",
+   "covers": []
   },
   "check-readme.mjs": {
    "sha": "c501d7d",

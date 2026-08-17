@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.39",
+  "date": "2026-08-17",
+  "changes": [
+   "The app icon is yours — the SC mark. It's on the dock, the taskbar, the Windows tiles, the browser tab and the splash screen, generated from one source file so they can't drift apart. The last of the OpenDraft artwork is gone."
+  ]
+ },
+ {
   "version": "7.38",
   "date": "2026-08-17",
   "changes": [
