@@ -1,5 +1,20 @@
 [
  {
+  "version": "7.37",
+  "date": "2026-08-17",
+  "changes": [
+   "Internal: the last of the editorStore split. Everything that describes the app's furniture — the ribbon's zones, the menu bar's order, the side panels' sizing and dividers, the chrome gaps and the right-click menu's arrangement — now lives in one file with the migrations that keep old layouts working. No behaviour changed; the store is 300 lines lighter."
+  ]
+ },
+ {
+  "version": "7.36",
+  "date": "2026-08-17",
+  "changes": [
+   "The README describes this fork rather than upstream's: no more claims of real-time collaboration (removed in v6.40), no mobile apps this repo doesn't build, no download links to builds that were never published, and the setup instructions now cd into the directory the clone actually makes.",
+   "Odia dictionaries download from this project's own repository instead of upstream's."
+  ]
+ },
+ {
   "version": "7.35",
   "date": "2026-08-17",
   "changes": [

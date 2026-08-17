@@ -40,6 +40,11 @@ const KEEP_FILES = [
   'README.md',
   'devtools/brand-sweep.mjs',           // this file names what it protects
   'frontend/devtools/check-brand.mjs',  // and so does its guard
+  /* v7.37: check-readme.mjs explains WHY the README needed rewriting, and
+     the reason is that it was upstream OpenDraft's marketing copy. Naming
+     the upstream is the content of that comment — sweeping it would leave
+     a check whose stated purpose no longer says what it guards against. */
+  'frontend/devtools/check-readme.mjs',
   '.github/FUNDING.yml',                // ko-fi / buy-me-a-coffee HANDLES —
                                         // upstream's accounts, not ours to rename
   /* The changelog is a RECORD. "replacing the old OpenDraft art" becomes a
