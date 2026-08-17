@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.34",
+  "date": "2026-08-17",
+  "changes": [
+   "Spelling & Grammar can live in a side panel now — it shows in the tool rail and in Customize ▸ Panels like any other tool, and still opens as a window if you'd rather. Nothing in the panel needed rebuilding: it was already built to fit a panel and was simply fenced out of the list."
+  ]
+ },
+ {
   "version": "7.33",
   "date": "2026-08-17",
   "changes": [

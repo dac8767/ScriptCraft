@@ -12,7 +12,9 @@
    the dock refuses to render — invisible, and the stale slot turned the
    next click into a toggle-close. PANEL_EXCLUDED_IDS lives in editorStore
    now (ONE list for the dock, Customize and openTool) and excluded tools
-   open as windows. */
+   open as windows. v7.34: spelling LEFT that list at Derek's request; the
+   contract this guards is unchanged, so its half now asserts the panel seat
+   instead of the window. */
 import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
@@ -75,15 +77,29 @@ try {
   ok(a.title === 'Asset Manager' && a.temp === 'assets', 'File ▸ Asset Manager opens the window');
   ok(a.active === null, 'and the stale invisible panel slot is cleared');
 
-  // spelling shares the exclusion — same path
+  /* v7.34: spelling USED to share that exclusion, and this asserted it opened
+     as a window for the same reason Asset Manager does. Derek asked for it in
+     the side panels, so it left the list — and the assertion follows the
+     behaviour rather than being deleted, because the thing worth guarding is
+     unchanged: openTool must never seat a tool in a slot the dock refuses to
+     render. Excluded → a window (above). Not excluded → a real panel seat.
+     (check-v734 covers the new side-panel path in full.) */
   await page.evaluate(() => {
     const s = window.__scStore.getState();
     s.closeTool('assets');
     s.openTool('spelling');
   });
-  await settle(page);
-  const spTitle = await page.evaluate(() => document.querySelector('.tool-window .tool-window-title')?.textContent ?? null);
-  ok(spTitle === 'Spelling & Grammar', 'Spell Check Panel opens as a window too');
+  await settle(page); await settle(page);
+  const sp = await page.evaluate(() => {
+    const s = window.__scStore.getState();
+    return {
+      seated: s.activeTool === 'spelling' || s.activeToolRight === 'spelling',
+      mode: s.toolMode.spelling ?? 'docked',
+      rendered: !!document.querySelector('.spell-modal'),
+    };
+  });
+  ok(sp.seated && sp.mode === 'docked', 'Spell Check Panel takes a panel seat now');
+  ok(sp.rendered, 'and that seat actually renders it (not the invisible-slot bug)');
 } catch (e) {
   console.log('PROBE ERROR:', e.message);
   await page.screenshot({ path: '/tmp/v627-err.png' }).catch(() => {});

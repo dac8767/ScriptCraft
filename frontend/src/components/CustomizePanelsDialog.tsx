@@ -285,8 +285,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
 
   const PANEL_PRODUCTION_IDS: ToolId[] = ['tags'];
-  // PANEL_EXCLUDED_IDS (Asset Manager, Spell Check) lives in ToolDock now — one
-  // list, so the dock and this dialog agree on what can be a side-panel tool.
+  // PANEL_EXCLUDED_IDS (Asset Manager) lives in ToolDock now — one list, so the
+  // dock and this dialog agree on what can be a side-panel tool. (v7.34: Spell
+  // Check left that list at Derek's request and is a panel tool like any other.)
   // One combined Panels tab (v0.48): every panel item in one list — the
   // Left / Right buttons on each row already choose the side, so separate
   // Left Panel and Right Panel tabs were redundant.

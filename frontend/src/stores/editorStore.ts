@@ -566,7 +566,15 @@ export const ALWAYS_FLOAT: ToolId[] = ['analytics'];
  *  dock refuses to render: File > Asset Manager was a silent no-op, and the
  *  invisible slot made the NEXT click a toggle-closed no-op too). Read by
  *  the dock, Customize > Side Panels, and openTool. */
-export const PANEL_EXCLUDED_IDS: ToolId[] = ['assets', 'spelling'];
+/*  v7.34, Derek: "add spelling & grammar tool as something that can be in the
+ *  side panels." Removed from this list, which is the whole change — the dock,
+ *  Customize ▸ Side Panels and openTool all read it, so one deletion opens the
+ *  tool to all three at once. Nothing in the panel needed doing: v1.35 already
+ *  moved the 490px fixed width off .spell-modal onto .spell-modal-floating,
+ *  precisely because "the docked panel clipped a third of the UI", and
+ *  SpellCheckPanel has rendered its modals with `embedded` ever since. The
+ *  ability was built and then fenced off. */
+export const PANEL_EXCLUDED_IDS: ToolId[] = ['assets'];
 
 /** v4.35: tools with NO fullscreen button — the Scrapbook (its surface IS a
  *  forced takeover). v4.81: moved here from ToolDock so openTool's
