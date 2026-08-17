@@ -479,6 +479,45 @@ export function formatTokenValue(t: DesignToken, val: number): string {
 }
 
 /**
+ * A stored value held to the range its own control can express.
+ *
+ * v7.32: the panel clamped on COMMIT and nowhere else, so a number that never
+ * came from the panel was painted verbatim. designVars is a persisted map — it
+ * rides in Design presets (presets.ts collects it whole), in settings backups
+ * (any `opendraft:*` key is written back verbatim), and in hand-edited JSON.
+ * An imported `editorMainPadTop: 400` therefore painted a 400px void above the
+ * first page, while the slider that owns it stops at 120: a value with no
+ * control that can reach it, which is the silent no-op in reverse — the writer
+ * can see the damage and has nothing to drag to undo it.
+ *
+ * Clamping to min/max (not snapping to `def`) is deliberate: it preserves
+ * whatever intent the number had, and it is exactly what the slider would have
+ * done with the same input. A token whose max is LOWERED in a later version
+ * lands on the new max rather than losing the customization entirely.
+ * Choice tokens are bounded the same way — min/max still bound the stored
+ * number, and formatTokenValue already falls back to the default's keyword.
+ */
+export function clampTokenValue(t: DesignToken, val: number): number {
+  return Math.min(t.max, Math.max(t.min, val));
+}
+
+/** Every KNOWN token's value held to its range. Unknown ids pass through
+ *  untouched — they may belong to a migration key (migrateDesignVars) or a
+ *  token this build doesn't have, and applyDesignVars ignores them anyway. */
+export function clampDesignVars(vars: Record<string, number>): Record<string, number> {
+  let out = vars;
+  for (const [id, v] of Object.entries(vars)) {
+    const t = BY_ID[id];
+    if (!t || typeof v !== 'number' || Number.isNaN(v)) continue;
+    const c = clampTokenValue(t, v);
+    if (c === v) continue;
+    if (out === vars) out = { ...vars };  // copy only once, and only if needed
+    out[id] = c;
+  }
+  return out;
+}
+
+/**
  * Mirror the current overrides onto :root. For every KNOWN token: an override
  * sets its property, and absence removes it (so the CSS fallback — the built-in
  * default — takes over). Unknown keys are ignored so a stale persisted value
@@ -492,7 +531,7 @@ export function applyDesignVars(vars: Record<string, number>): void {
     if (v === undefined || v === null || Number.isNaN(v)) {
       root.style.removeProperty(t.cssVar);
     } else {
-      root.style.setProperty(t.cssVar, formatTokenValue(t, v));
+      root.style.setProperty(t.cssVar, formatTokenValue(t, clampTokenValue(t, v)));
     }
   }
 }
@@ -505,7 +544,9 @@ export function applyDesignVars(vars: Record<string, number>): void {
 export function buildOverrideCss(vars: Record<string, number>): string {
   const lines = DESIGN_TOKENS
     .filter((t) => t.cssVar && vars[t.id] !== undefined && vars[t.id] !== t.def)
-    .map((t) => `  ${t.cssVar}: ${formatTokenValue(t, vars[t.id])};`);
+    // v7.32: the same clamp the DOM gets — Copy CSS must dump what the app is
+    // actually painting, not the raw number a preset happened to carry in.
+    .map((t) => `  ${t.cssVar}: ${formatTokenValue(t, clampTokenValue(t, vars[t.id]))};`);
   if (!lines.length) return '';
   return `:root {\n${lines.join('\n')}\n}`;
 }

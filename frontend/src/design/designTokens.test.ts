@@ -7,6 +7,8 @@ import {
   DESIGN_TOKENS,
   applyDesignVars,
   buildOverrideCss,
+  clampDesignVars,
+  clampTokenValue,
   designToken,
 } from './designTokens';
 import { useEditorStore } from '../stores/editorStore';
@@ -125,6 +127,63 @@ describe('applyDesignVars', () => {
   it('ignores unknown keys', () => {
     applyDesignVars({ notAToken: 5 } as unknown as Record<string, number>);
     expect(document.documentElement.getAttribute('style') || '').not.toContain('notAToken');
+  });
+
+  /* v7.32 — THE 400px VOID. Derek: "there is a giant gap above the top page",
+     on every saved file, unchanged by resizing the window. Measured in the
+     browser: `editorMainPadTop: 400` paints exactly that, and the slider that
+     owns the value stops at 120 — so nothing on screen could undo it. The
+     panel clamped on commit and nowhere else, and designVars is a PERSISTED
+     map that rides in presets and settings backups. It is not a
+     paranoia guard: it is the one door a number that never came from the
+     panel walks through. */
+  it('holds an out-of-range stored value to the range its slider can reach', () => {
+    applyDesignVars({ editorMainPadTop: 400 });
+    expect(document.documentElement.style.getPropertyValue('--dz-editor-main-pad-top')).toBe('120px');
+    applyDesignVars({ editorMainPadTop: -50 });
+    expect(document.documentElement.style.getPropertyValue('--dz-editor-main-pad-top')).toBe('0px');
+  });
+
+  it('leaves an in-range value exactly as stored', () => {
+    applyDesignVars({ editorMainPadTop: 48 });
+    expect(document.documentElement.style.getPropertyValue('--dz-editor-main-pad-top')).toBe('48px');
+  });
+});
+
+describe('clampDesignVars', () => {
+  it('clamps every known token to its own min/max', () => {
+    const out = clampDesignVars({ editorMainPadTop: 400, dialogRadius: -9 });
+    expect(out.editorMainPadTop).toBe(designToken('editorMainPadTop')!.max);
+    expect(out.dialogRadius).toBe(designToken('dialogRadius')!.min);
+  });
+
+  it('passes unknown ids through untouched — migration keys must survive', () => {
+    // toolWinHeaderPad is a RETIRED key migrateDesignVars still splits; clamping
+    // must not eat it before the migration runs.
+    const out = clampDesignVars({ toolWinHeaderPad: 9, notAToken: 5 });
+    expect(out.toolWinHeaderPad).toBe(9);
+    expect(out.notAToken).toBe(5);
+  });
+
+  it('returns the SAME object when nothing was out of range', () => {
+    // identity, not just equality — an in-range map must not churn a new
+    // reference through the store on every read.
+    const input = { editorMainPadTop: 48 };
+    expect(clampDesignVars(input)).toBe(input);
+  });
+
+  it('does not mutate its input', () => {
+    const input = { editorMainPadTop: 400 };
+    clampDesignVars(input);
+    expect(input.editorMainPadTop).toBe(400);
+  });
+
+  it('every token clamps within its own declared bounds', () => {
+    for (const t of DESIGN_TOKENS) {
+      expect(clampTokenValue(t, t.max + 1000)).toBe(t.max);
+      expect(clampTokenValue(t, t.min - 1000)).toBe(t.min);
+      expect(clampTokenValue(t, t.def)).toBe(t.def);
+    }
   });
 });
 

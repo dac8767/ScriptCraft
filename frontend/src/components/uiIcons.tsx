@@ -200,6 +200,17 @@ export const PanelRightIcon: React.FC<{ size?: number }> = ({ size = 13 }) => (
  * `assets/settings-gear.png`: the macOS menu item rasterizes it
  * (menu/nativeMenuSync), and this one MASKS it.
  *
+ * v7.32: a new gear from him — `images/gear3.png` on main, a SOLID body with a
+ * round hole where v7.22's was a thin outline ring. Same two renderers, same
+ * edge-to-edge bleed, so no sizing changed: this is an ASSET swap, which is
+ * the whole point of there being one asset.
+ *
+ * His file is BLACK art on transparency and he asked for white. The in-app
+ * icon would not have cared (a mask reads alpha, never colour) but the macOS
+ * menu item RASTERIZES the same file, and black on a dark menu is the v7.22
+ * invisible-icon bug with the colours swapped. So the stored asset is his
+ * alpha channel byte-for-byte — antialiased edges included — repainted white.
+ *
  * A mask, not an <img>, for one reason: his file is white, and white is
  * invisible on the light themes. `-webkit-mask` takes the file's alpha as the
  * shape and paints it with `background-color: currentColor`, so the same

@@ -14,7 +14,18 @@ export interface DesignSlice {
   /** v4.8: the Design panel. `designVars` holds only OVERRIDDEN tokens (keyed
    *  by token id from src/design/designTokens.ts); absent keys use the CSS
    *  default. An effect mirrors this map onto :root --dz-* / page vars, so this
-   *  store is the one source the panel writes, the DOM reads, and Copy CSS dumps. */
+   *  store is the one source the panel writes, the DOM reads, and Copy CSS dumps.
+   *
+   *  v7.32: this map holds what was PERSISTED, which is not the same as what
+   *  is in range — it rides in Design presets and settings backups, so a value
+   *  no slider could produce can land here. It is held to range by
+   *  clampTokenValue at every READ (applyDesignVars, buildOverrideCss, the
+   *  panel's own display), never here. The clamp cannot live in this file: it
+   *  belongs to designTokens.ts, designTokens imports editorStore for the
+   *  store-bound tokens' setters, and editorStore imports this slice — so
+   *  importing it here closes a runtime cycle and createDesignSlice is
+   *  undefined by the time editorStore spreads it. (Tried in v7.32; the store
+   *  threw on the first test that touched it.) */
   designVars: Record<string, number>;
   setDesignVar: (id: string, val: number) => void;
   resetDesignVar: (id: string) => void;

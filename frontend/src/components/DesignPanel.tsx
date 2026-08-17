@@ -16,7 +16,7 @@ import { FaCopy, FaCheck, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { runMajorChange } from '../utils/majorChange';
 import { pushWindowAction } from '../stores/windowUndoStore';
-import { DESIGN_GROUPS, buildOverrideCss, type DesignToken } from '../design/designTokens';
+import { DESIGN_GROUPS, buildOverrideCss, clampTokenValue, type DesignToken } from '../design/designTokens';
 import { EdgeResizeZones, startEdgeResize, type EdgeZone } from './EdgeResize';
 
 // Round to the token's step so the number input doesn't show float noise.
@@ -41,7 +41,11 @@ function TokenRow({ t }: { t: DesignToken }) {
   const cssOverride = useEditorStore((s) => (isStore ? undefined : s.designVars[t.id]));
   const storeVal = useEditorStore((s) => (t.store ? t.store.get(s) : 0));
   const setDesignVar = useEditorStore((s) => s.setDesignVar);
-  const value = isStore ? storeVal : (cssOverride ?? t.def);
+  /* v7.32: the DISPLAYED value is clamped, same as the painted one. A preset
+     can persist a number outside the slider's range; showing it raw would put
+     the readout and the page out of step and leave the writer dragging a
+     control that already reads what they want. */
+  const value = isStore ? storeVal : clampTokenValue(t, cssOverride ?? t.def);
   const isOverridden = isStore ? storeVal !== t.def : cssOverride !== undefined && cssOverride !== t.def;
 
   /* v6.78: every committed change is undoable (window-undo lane). A range
@@ -56,7 +60,7 @@ function TokenRow({ t }: { t: DesignToken }) {
   };
   const commit = (raw: number) => {
     if (Number.isNaN(raw)) return;
-    const clamped = Math.min(t.max, Math.max(t.min, snap(raw, t.step)));
+    const clamped = clampTokenValue(t, snap(raw, t.step));
     if (clamped === value) return;
     const prev = isStore ? storeVal : cssOverride;
     apply(clamped);

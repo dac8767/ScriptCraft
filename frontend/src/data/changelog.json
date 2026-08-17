@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.32",
+  "date": "2026-08-17",
+  "changes": [
+   "The Settings gear is the solid one you sent (gear3.png), converted to white. Same size, same places — the menu bar item and the macOS app menu read the one file.",
+   "Fixed the giant gap above the first page: a Design value stored outside its slider's range was painted as-is, so a number no control could reach put an empty band above the script and nothing on screen could undo it. Every stored design value is now held to its own range wherever it is read — on the page, in the Design window's readout, and in Copy CSS.",
+   "If the gap is still there after this update, open Design ▸ Editor Surface and reset \"Space above first page\" — the slider can reach it now."
+  ]
+ },
+ {
   "version": "7.31",
   "date": "2026-08-16",
   "changes": [
