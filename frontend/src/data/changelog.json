@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.40",
+  "date": "2026-08-17",
+  "changes": [
+   "The app icon is rebuilt from the full-resolution logo, so nothing is upscaled at any size — including the largest macOS slot."
+  ]
+ },
+ {
   "version": "7.39",
   "date": "2026-08-17",
   "changes": [

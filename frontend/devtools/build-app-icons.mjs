@@ -2,7 +2,7 @@
  * build-app-icons — one source PNG becomes the whole platform icon set.
  *
  * v7.39, Derek: "replace the opendraft brand art with the art I gave you as
- * the dock icon" (images/ScriptCraft_Logo2_v4.png).
+ * the dock icon" (images/logo_FINAL.png).
  *
  * WHY A SCRIPT AND NOT FIFTEEN HAND EXPORTS. Fifteen files that must all be
  * the same picture is fifteen chances for one of them to drift, and the one
@@ -16,10 +16,10 @@
  *     blindly would sit the art off-centre in its box, so the ALPHA BOUNDING
  *     BOX is measured and the square is centred on the art itself, not on the
  *     canvas it happened to be exported in.
- *   · IT IS SMALLER THAN 1024, which macOS wants for the largest .icns slot.
- *     Everything at or below the source size is a genuine downscale; the 1024
- *     slot is an upscale and is reported as such, because a build that quietly
- *     upsamples is how a soft dock icon ships.
+ *   · IT MUST BE AT LEAST 1024 for the largest .icns slot. Anything smaller
+ *     still builds, but every size above the source is an upscale and the run
+ *     SAYS SO — a build that quietly upsamples is how a soft dock icon ships.
+ *     (v7.40: logo_FINAL.png is 1024x1024, so nothing is upscaled any more.)
  *
  * Chromium does the resampling (no PIL / ImageMagick / rsvg in this
  * container). .icns and .ico are written by hand — both are simple containers
@@ -32,7 +32,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
 const ROOT = join(import.meta.dirname, '..', '..');
-const SRC = process.argv[2] || join(ROOT, 'images', 'ScriptCraft_Logo2_v4.png');
+const SRC = process.argv[2] || join(ROOT, 'images', 'logo_FINAL.png');
 const ICONS = join(ROOT, 'src-tauri', 'icons');
 
 /** Flat PNGs Tauri and the Windows/Store bundles expect, by edge length. */

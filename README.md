@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/ScriptCraft_Logo2_v4.png" alt="ScriptCraft Logo" width="120">
+  <img src="images/logo_FINAL.png" alt="ScriptCraft Logo" width="120">
 </p>
 
 <h1 align="center">ScriptCraft</h1>

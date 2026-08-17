@@ -121,7 +121,7 @@ console.log('\nthe other places the logo appears');
 
 console.log('\nthe source is in the repo');
 {
-  const src = join(ROOT, 'images', 'ScriptCraft_Logo2_v4.png');
+  const src = join(ROOT, 'images', 'logo_FINAL.png');
   ok('the icon source is committed (regenerating needs it)', existsSync(src));
   if (existsSync(src)) {
     const s = pngSize(src);
