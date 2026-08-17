@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.38",
+  "date": "2026-08-17",
+  "changes": [
+   "Internal: the cast reader — the code that works out who is in your script — moved out of the main editor file into its own hook. No behaviour changed."
+  ]
+ },
+ {
   "version": "7.37",
   "date": "2026-08-17",
   "changes": [
