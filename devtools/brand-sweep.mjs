@@ -32,6 +32,12 @@ const KEEP_FILES = [
   'docs/HANDOFF-CONTINUE.md',
   'docs/HANDOFF-ARCHIVE.md',
   'frontend/src/components/AboutDialog.tsx',  // credits OpenDraft as upstream
+  /* v7.31: the repo is PUBLIC, so the README names the upstream twice on
+     purpose — the fork attribution, and an honest note that the apps in
+     the stores are OpenDraft's rather than this fork's. Sweeping either
+     would turn a true statement into a false one, which is the same
+     reason the changelog and the About window are here. */
+  'README.md',
   'devtools/brand-sweep.mjs',           // this file names what it protects
   'frontend/devtools/check-brand.mjs',  // and so does its guard
   '.github/FUNDING.yml',                // ko-fi / buy-me-a-coffee HANDLES —

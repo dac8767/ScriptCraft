@@ -9,15 +9,8 @@
   No subscription. No cloud lock-in. Own your scripts forever.
 </p>
 
-<p align="center">
-  <a href="https://open-draft.com">
-    <img src="https://img.shields.io/badge/%E2%96%B6_Try_ScriptCraft_Now-c455ce?style=for-the-badge&labelColor=4a154b" alt="Try ScriptCraft Now">
-  </a>
-</p>
-<p align="center"><em>No account needed. Opens in your browser in seconds.</em></p>
 
 <p align="center">
-  <a href="https://proteus-technologies-private-limited.github.io/OpenDraft/">Website</a> &bull;
   <a href="#download">Download</a> &bull;
   <a href="#screenshots">Screenshots</a> &bull;
   <a href="#features">Features</a> &bull;
@@ -37,11 +30,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest">
-    <img src="https://img.shields.io/github/v/release/Proteus-Technologies-Private-Limited/OpenDraft?label=Download&style=flat-square&color=blue&cacheSeconds=300&v=0174" alt="Download">
+  <a href="https://github.com/dac8767/ScriptCraft/releases/latest">
+    <img src="https://img.shields.io/github/v/release/dac8767/ScriptCraft?label=Download&style=flat-square&color=blue&cacheSeconds=300&v=0174" alt="Download">
   </a>
-  <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/stargazers">
-    <img src="https://img.shields.io/github/stars/Proteus-Technologies-Private-Limited/OpenDraft?style=flat-square&cacheSeconds=600" alt="GitHub Stars">
+  <a href="https://github.com/dac8767/ScriptCraft/stargazers">
+    <img src="https://img.shields.io/github/stars/dac8767/ScriptCraft?style=flat-square&cacheSeconds=600" alt="GitHub Stars">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License: MIT">
@@ -137,7 +130,7 @@ How does ScriptCraft stack up against commercial screenwriting software?
 | **Web Browser Access** | Yes | No | Yes | Limited |
 | **Plugin Architecture** | Yes | No | No | No |
 
-<sub>Comparison based on publicly available product information as of April 2026. If you spot an inaccuracy, please <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/issues/new/choose">open an issue</a>.</sub>
+<sub>Comparison based on publicly available product information as of April 2026. If you spot an inaccuracy, please <a href="https://github.com/dac8767/ScriptCraft/issues/new/choose">open an issue</a>.</sub>
 
 ---
 
@@ -147,31 +140,25 @@ Get the latest version — no account required, just install and start writing. 
 
 ### Desktop
 
+> **Builds are not published yet.** The links below point at this repo's
+> Releases, which is where they will appear — signing and notarization are
+> still outstanding. Until then, build from source (see Development).
+
 | Platform | Download |
 |----------|----------|
-| **macOS** (Apple Silicon) | [Download .dmg](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_aarch64.dmg) |
-| **macOS** (Intel) | [Download .dmg](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_x64.dmg) |
-| **Windows** (64-bit) | [Download .exe](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_x64-setup.exe) |
-| **Windows** (MSI) | [Download .msi](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_x64_en-US.msi) |
-| **Linux** (Debian/Ubuntu) | [Download .deb](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_amd64.deb) |
-| **Linux** (AppImage) | [Download .AppImage](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft_0.19.0_amd64.AppImage) |
-| **Linux** (RPM/Fedora) | [Download .rpm](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases/latest/download/ScriptCraft-0.19.0-1.x86_64.rpm) |
+| **macOS** (Apple Silicon) | [Download .dmg](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_aarch64.dmg) |
+| **macOS** (Intel) | [Download .dmg](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_x64.dmg) |
+| **Windows** (64-bit) | [Download .exe](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_x64-setup.exe) |
+| **Windows** (MSI) | [Download .msi](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_x64_en-US.msi) |
+| **Linux** (Debian/Ubuntu) | [Download .deb](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_amd64.deb) |
+| **Linux** (AppImage) | [Download .AppImage](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_amd64.AppImage) |
+| **Linux** (RPM/Fedora) | [Download .rpm](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft-0.19.0-1.x86_64.rpm) |
 
 ### Mobile
 
-<p>
-  <a href="https://apps.apple.com/us/app/open-draft-screenwriting/id6761807809">
-    <img src="images/badges/app-store-badge.png" alt="Download on the App Store" height="48">
-  </a>
-  &nbsp;&nbsp;
-  <a href="https://play.google.com/store/apps/details?id=com.proteus.opendraft">
-    <img src="images/badges/google-play-badge.png" alt="Get it on Google Play" height="48">
-  </a>
-</p>
-
-> The app is fully standalone — everything you need is bundled inside. No account, no setup.
-
-For all versions and platforms, visit the [Releases](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/releases) page.
+> The iOS and Android apps in the stores are upstream OpenDraft's, not
+> this fork's. Their links were removed rather than send you to someone
+> else's build under this project's name.
 
 ---
 
@@ -179,11 +166,9 @@ For all versions and platforms, visit the [Releases](https://github.com/Proteus-
 
 New to ScriptCraft? Here's everything you need:
 
-- **Just want to try it?** [Open the demo](https://open-draft.com) — no account, no install, opens in seconds.
 - **Ready to install?** Grab the [latest download](#download) for your platform.
-- **Need a walkthrough?** Read the [User Manual](https://proteus-technologies-private-limited.github.io/OpenDraft/user-manual/).
-- **Want to learn more?** Visit the [ScriptCraft website](https://proteus-technologies-private-limited.github.io/OpenDraft/).
-- **Have a question?** Start a [Discussion](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/discussions) — the community is happy to help.
+- **Need a walkthrough?** Read the [User Manual](user-manual/index.html).
+- **Have a question?** Start a [Discussion](https://github.com/dac8767/ScriptCraft/discussions) — the community is happy to help.
 
 ---
 
@@ -191,9 +176,9 @@ New to ScriptCraft? Here's everything you need:
 
 We welcome contributions from everyone! Whether you're fixing a typo, reporting a bug, or building a new feature — every contribution matters.
 
-- **New here?** Check out issues labeled [`good first issue`](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/labels/good%20first%20issue).
-- **Have a question?** Start a [Discussion](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/discussions).
-- **Found a bug?** [Open an issue](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/issues/new/choose).
+- **New here?** Check out issues labeled [`good first issue`](https://github.com/dac8767/ScriptCraft/labels/good%20first%20issue).
+- **Have a question?** Start a [Discussion](https://github.com/dac8767/ScriptCraft/discussions).
+- **Found a bug?** [Open an issue](https://github.com/dac8767/ScriptCraft/issues/new/choose).
 - **Want to contribute code?** See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ---
@@ -233,7 +218,7 @@ OpenDraft/
 
 ```bash
 # Clone and install
-git clone https://github.com/Proteus-Technologies-Private-Limited/OpenDraft.git
+git clone https://github.com/dac8767/ScriptCraft.git
 cd OpenDraft
 
 # Backend
@@ -263,7 +248,7 @@ See [docs/DESKTOP-RELEASE.md](docs/DESKTOP-RELEASE.md) for detailed desktop buil
 To run your own instance of ScriptCraft in a browser:
 
 ```bash
-git clone https://github.com/Proteus-Technologies-Private-Limited/OpenDraft.git
+git clone https://github.com/dac8767/ScriptCraft.git
 cd OpenDraft
 ./setup.sh
 ```
@@ -272,7 +257,7 @@ Installs dependencies, builds the app, and opens it at **http://localhost:8000**
 
 Requires Python 3.12+, Node.js 18+, and Git. See [docs/INSTALLATION.md](docs/INSTALLATION.md) for details.
 
-> **Note:** This is for developers who want to self-host or contribute. If you just want to use ScriptCraft, [download the desktop app](#download) or [try the demo](https://open-draft.com).
+> **Note:** This is for developers who want to self-host or contribute. If you just want to use ScriptCraft, [download the desktop app](#download).
 
 </details>
 
@@ -285,10 +270,12 @@ ScriptCraft is open-source software licensed under the [MIT License](LICENSE). F
 ---
 
 <p align="center">
-  Built by screenwriters and engineers at <a href="https://github.com/Proteus-Technologies-Private-Limited">Proteus Technologies</a>
+  Forked from <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft">OpenDraft</a>,
+  built by screenwriters and engineers at
+  <a href="https://github.com/Proteus-Technologies-Private-Limited">Proteus Technologies</a>.
 </p>
 
 <p align="center">
   <em>Write screenplays, not subscriptions.</em><br>
-  If ScriptCraft helps your writing, a <a href="https://github.com/Proteus-Technologies-Private-Limited/OpenDraft">star on GitHub</a> helps others discover it.
+  If ScriptCraft helps your writing, a <a href="https://github.com/dac8767/ScriptCraft">star on GitHub</a> helps others discover it.
 </p>

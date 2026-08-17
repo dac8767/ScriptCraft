@@ -74,7 +74,7 @@ Run the backend and frontend dev servers in separate terminals:
 
 ## Reporting Bugs
 
-Open a [GitHub Issue](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/issues/new) with:
+Open a [GitHub Issue](https://github.com/dac8767/ScriptCraft/issues/new) with:
 
 - Steps to reproduce
 - Expected vs. actual behavior
@@ -83,7 +83,7 @@ Open a [GitHub Issue](https://github.com/Proteus-Technologies-Private-Limited/Op
 
 ## Feature Requests
 
-Open a [GitHub Issue](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/issues/new) describing:
+Open a [GitHub Issue](https://github.com/dac8767/ScriptCraft/issues/new) describing:
 
 - The problem you're trying to solve
 - Your proposed solution
@@ -91,4 +91,4 @@ Open a [GitHub Issue](https://github.com/Proteus-Technologies-Private-Limited/Op
 
 ## Questions?
 
-Open a [Discussion](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft/discussions) on GitHub.
+Open a [Discussion](https://github.com/dac8767/ScriptCraft/discussions) on GitHub.
