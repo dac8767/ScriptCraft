@@ -1,4 +1,5 @@
 import React from 'react';
+import { Modal } from './Modal';
 
 export type WelcomeChoice = 'blank' | 'sample' | 'import' | 'open';
 
@@ -8,8 +9,10 @@ interface WelcomeDialogProps {
 
 const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onChoice }) => {
   return (
-    <div className="dialog-overlay">
-      <div className="welcome-card" onClick={(e) => e.stopPropagation()}>
+    /* A forced choice: it has no onClose, and never had a dismiss. Both
+       escapes are OFF so adopting the shell cannot invent one. */
+    <Modal onClose={() => {}} boxClass="welcome-card"
+      closeOnBackdrop={false} closeOnEscape={false}>
         <div className="welcome-hero">
           <div className="welcome-logo">SC</div>
           <h1 className="welcome-title">ScriptCraft</h1>
@@ -67,8 +70,7 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onChoice }) => {
         <p className="welcome-footer">
           Explore features in the menus above
         </p>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

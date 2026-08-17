@@ -216,13 +216,18 @@ await page.evaluate(async () => {
   await new Promise((r) => setTimeout(r, 200));
 });
 ok('Settings reopens again', await openSettings(), '');
-/* Open Recent HAND-ROLLS its overlay — it is one of the fourteen dialogs that
-   never adopted the Modal shell. Picked deliberately: a rule living inside
-   Modal would have covered two thirds of the app's dialogs and looked like it
-   covered all of them. */
-const openFileSrc = readFileSync(new URL('../src/components/OpenFile.tsx', import.meta.url), 'utf8');
-ok('the dialog under test is one Modal does NOT wrap',
-  !/<Modal/.test(openFileSrc) && /className="dialog-overlay"/.test(openFileSrc), '');
+/* THE POINT OF THIS PAIR: the close-Settings rule must live at the OVERLAY,
+   not inside Modal — a rule inside the shell would cover two thirds of the
+   app's dialogs and look like it covered all of them.
+
+   v7.42: Open Recent used to be the witness for that, because it hand-rolled
+   its own overlay. It adopted the shell in v7.42, so the witness moved to a
+   dialog that still hand-rolls one. The interaction below stays on Open
+   Recent — what it proves is that the rule fires for a real dialog; what the
+   witness proves is that non-Modal dialogs still exist for it to cover. */
+const handRolled = readFileSync(new URL('../src/components/TitlePageEditor.tsx', import.meta.url), 'utf8');
+ok('dialogs Modal does NOT wrap still exist, so the rule cannot live inside it',
+  !/<Modal/.test(handRolled) && /className="dialog-overlay"/.test(handRolled), '');
 const dialogClosed = await page.evaluate(async () => {
   window.__scStore.getState().setOpenFileOpen(true);
   await new Promise((r) => setTimeout(r, 400));

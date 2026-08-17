@@ -12,6 +12,7 @@
  */
 import React, { useEffect } from 'react';
 import { FaBoxOpen, FaFileImport, FaFolderOpen, FaMagic, FaRegFileAlt } from 'react-icons/fa';
+import { Modal } from './Modal';
 
 export type LauncherChoice = 'manual' | 'guided' | 'open' | 'import';
 
@@ -66,11 +67,15 @@ export default function NewScriptLauncher({ open, onChoose, onClose }: {
 
   if (!open) return null;
   return (
-    <div
-      className="dialog-overlay fs-overlay-center"
-      onMouseDown={(e) => { if (onClose && e.target === e.currentTarget) onClose(); }}
+    <Modal
+      onClose={() => onClose?.()}
+      /* onClose is optional here — with no way to cancel, the backdrop and
+         Escape must not pretend there is one. */
+      closeOnBackdrop={Boolean(onClose)}
+      closeOnEscape={Boolean(onClose)}
+      overlayClassName="fs-overlay-center"
+      boxClass="welcome-card fs-launcher-card"
     >
-      <div className="welcome-card fs-launcher-card" onClick={(e) => e.stopPropagation()}>
         <div className="welcome-hero">
           <div className="welcome-logo">SC</div>
           <h1 className="welcome-title">Start a Script</h1>
@@ -100,7 +105,6 @@ export default function NewScriptLauncher({ open, onChoose, onClose }: {
           </span>
           {onClose && <button onClick={onClose}>Cancel</button>}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

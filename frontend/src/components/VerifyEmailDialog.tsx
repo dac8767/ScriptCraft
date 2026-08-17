@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { collabAuthApi, handleAuthResponse } from '../services/collabAuth';
 import { useSettingsStore } from '../stores/settingsStore';
 import { showToast } from './Toast';
+import { Modal } from './Modal';
 
 interface VerifyEmailDialogProps {
   onClose: () => void;
@@ -67,16 +68,13 @@ const VerifyEmailDialog: React.FC<VerifyEmailDialogProps> = ({ onClose, onSucces
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div
-        className="dialog-box"
-        style={{ maxWidth: 420 }}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') handleVerify();
-          else if (e.key === 'Escape') onClose();
-        }}
-      >
+    <Modal
+      onClose={onClose}
+      boxStyle={{ maxWidth: 420 }}
+      /* Escape is the shell's job now — and it only reaches the TOP dialog,
+         which the local handler could not know. */
+      onBoxKeyDown={(e) => { if (e.key === 'Enter') handleVerify(); }}
+    >
         <div className="dialog-header">Verify your email</div>
         <div className="dialog-body">
           <p style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--fd-text-muted)' }}>
@@ -117,8 +115,7 @@ const VerifyEmailDialog: React.FC<VerifyEmailDialogProps> = ({ onClose, onSucces
           <div style={{ flex: 1 }} />
           <button className="dialog-btn" onClick={onClose}>Cancel</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

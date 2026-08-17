@@ -1,5 +1,13 @@
 [
  {
+  "version": "7.42",
+  "date": "2026-08-17",
+  "changes": [
+   "Seven dialogs — Go to Page, Open Recent, New Script, the launcher, the welcome screen, Choose script format and email verification — no longer lose your work if you select text inside them and let go of the mouse outside. They all now close on Escape too, which three of them never did.",
+   "The welcome screen and the launcher still can't be dismissed when there's no way out of them — adopting the shared behaviour didn't invent an exit they never had."
+  ]
+ },
+ {
   "version": "7.41",
   "date": "2026-08-17",
   "changes": [

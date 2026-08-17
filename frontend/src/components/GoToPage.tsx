@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useEditorStore } from '../stores/editorStore';
+import { Modal } from './Modal';
 
 interface GoToPageProps {
   onGoToPage: (page: number) => void;
@@ -42,8 +43,7 @@ const GoToPage: React.FC<GoToPageProps> = ({ onGoToPage }) => {
   if (!goToPageOpen) return null;
 
   return (
-    <div className="dialog-overlay" onClick={() => setGoToPageOpen(false)}>
-      <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={() => setGoToPageOpen(false)}>
         <div className="dialog-header">Go to Page</div>
         <div className="dialog-body">
           <div className="dialog-row">
@@ -67,8 +67,7 @@ const GoToPage: React.FC<GoToPageProps> = ({ onGoToPage }) => {
             Go
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

@@ -3,6 +3,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { SYSTEM_TEMPLATE_LIST, useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { formatAppDate } from '../utils/dateFormat';
 import { SaveLocationsField, CustomizeFromFileField } from './setupFields';
+import { Modal } from './Modal';
 
 /*
  * NewScriptDialog (v1.50) — File > New Script…
@@ -90,13 +91,13 @@ export default function NewScriptDialog({ open, onClose, onCreate, onBack }: {
   };
 
   return (
-    <div
+    <Modal
       /* fs-overlay-center (v3.25, Derek): this hero card centers on the
          screen instead of the overlay's usual upper anchor. */
-      className="dialog-overlay fs-overlay-center"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClose={onClose}
+      overlayClassName="fs-overlay-center"
+      boxClass="welcome-card fs-newscript-card"
     >
-      <div className="welcome-card fs-newscript-card" onClick={(e) => e.stopPropagation()}>
         <div className="welcome-hero">
           <div className="welcome-logo">SC</div>
           <h1 className="welcome-title">New Script</h1>
@@ -161,7 +162,6 @@ export default function NewScriptDialog({ open, onClose, onCreate, onBack }: {
           <button onClick={onClose}>Cancel</button>
           <button className="dialog-btn dialog-btn-primary" onClick={create}>Create</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

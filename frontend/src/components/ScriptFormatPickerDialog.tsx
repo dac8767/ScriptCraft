@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { SYSTEM_TEMPLATES, useFormattingTemplateStore } from '../stores/formattingTemplateStore';
+import { Modal } from './Modal';
 
 interface Props {
   enabledIds: string[];
@@ -26,8 +27,7 @@ const ScriptFormatPickerDialog: React.FC<Props> = ({ enabledIds, onPick, onCance
     .filter((t): t is NonNullable<typeof t> => Boolean(t));
 
   return (
-    <div className="dialog-overlay" onClick={onCancel}>
-      <div className="fmt-dialog fmt-dialog-narrow" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onCancel} boxClass="fmt-dialog fmt-dialog-narrow">
         <div className="dialog-header">Choose script format</div>
         <div className="fmt-dialog-body">
           {options.length === 0 ? (
@@ -62,8 +62,7 @@ const ScriptFormatPickerDialog: React.FC<Props> = ({ enabledIds, onPick, onCance
         <div className="dialog-actions">
           <button className="dialog-btn" onClick={onCancel}>Cancel</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

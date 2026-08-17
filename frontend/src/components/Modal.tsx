@@ -43,12 +43,26 @@ export interface ModalProps {
   boxClass?: string;
   /** Inline style on the box — a couple of dialogs pin a max-width. */
   boxStyle?: React.CSSProperties;
+  /* v7.42: the four things the remaining hand-rolled dialogs needed. Each was
+     a reason one of them could NOT adopt this shell, so each one left a
+     dialog behind on its own overlay — with the backdrop bug this file was
+     written to fix. Absorbing them is what lets the last of them move. */
+  /** Extra class on the OVERLAY (e.g. `fs-overlay-center`). */
+  overlayClassName?: string;
+  /** Inline style on the overlay — SaveAsDialog hides itself while its own
+   *  Settings window is up rather than unmounting and losing its state. */
+  overlayStyle?: React.CSSProperties;
+  /** Key handler on the box (Enter to confirm, arrows through a list). */
+  onBoxKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
+  /** A ref to the box — dialogs that measure themselves or drag by the header. */
+  boxRef?: React.Ref<HTMLDivElement>;
   children: React.ReactNode;
 }
 
 export const Modal: React.FC<ModalProps> = ({
   onClose, boxClassName = '', closeOnEscape = true, closeOnBackdrop = true,
-  boxClass, boxStyle, children,
+  boxClass, boxStyle, overlayClassName = '', overlayStyle, onBoxKeyDown, boxRef,
+  children,
 }) => {
   const idRef = useRef<symbol>(Symbol('modal'));
   // The latest onClose, so the Escape listener never calls a stale one.
@@ -74,7 +88,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="dialog-overlay"
+      className={`dialog-overlay ${overlayClassName}`.trim()}
+      style={overlayStyle}
       onMouseDown={(e) => {
         // Only when the press STARTS on the backdrop: a text-selection drag
         // that begins inside the box and ends out here must not dismiss it.
@@ -82,11 +97,13 @@ export const Modal: React.FC<ModalProps> = ({
       }}
     >
       <div
+        ref={boxRef}
         className={boxClass ?? `dialog-box ${boxClassName}`.trim()}
         style={boxStyle}
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={onBoxKeyDown}
       >
         {children}
       </div>

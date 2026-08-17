@@ -24,6 +24,7 @@ import { isWeb } from '../services/platform';
 import { useSettingsStore } from '../stores/settingsStore';
 import type { ProjectInfo, ScriptMeta } from '../services/api';
 import { LIBRARY_NAME } from '../services/scriptLibrary';
+import { Modal } from './Modal';
 
 export type OpenSource = 'local' | 'cloud';
 
@@ -174,12 +175,11 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div
-        className="dialog-box open-from-project-dialog"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={handleKeyDown}
-      >
+    <Modal
+      onClose={onClose}
+      boxClassName="open-from-project-dialog"
+      onBoxKeyDown={handleKeyDown}
+    >
         <div className="dialog-header">Open Recent</div>
 
         <div className="open-file-controls">
@@ -273,8 +273,7 @@ const OpenFile: React.FC<OpenFileProps> = ({ onOpen, onClose }) => {
         <div className="dialog-actions">
           <button onClick={onClose}>Cancel</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 
