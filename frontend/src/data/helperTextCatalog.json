@@ -642,9 +642,9 @@
   "text": "Click to type an exact zoom",
   "kind": "tooltip",
   "sites": 1,
-  "area": "Ribbon Toolbar",
+  "area": "Everything Else",
   "where": [
-   "components/Toolbar.tsx"
+   "components/ZoomControl.tsx"
   ]
  },
  {
@@ -3541,7 +3541,7 @@
   "area": "Editor & Preview",
   "where": [
    "components/TitlePageEditor.tsx",
-   "components/Toolbar.tsx"
+   "components/ZoomControl.tsx"
   ],
   "icon": "LuZoomIn"
  },
@@ -3549,9 +3549,9 @@
   "text": "Zoom options",
   "kind": "tooltip",
   "sites": 1,
-  "area": "Ribbon Toolbar",
+  "area": "Everything Else",
   "where": [
-   "components/Toolbar.tsx"
+   "components/ZoomControl.tsx"
   ],
   "icon": "FaChevronDown"
  },
@@ -3562,7 +3562,7 @@
   "area": "Editor & Preview",
   "where": [
    "components/TitlePageEditor.tsx",
-   "components/Toolbar.tsx"
+   "components/ZoomControl.tsx"
   ],
   "icon": "LuZoomOut",
   "label": "Fit"

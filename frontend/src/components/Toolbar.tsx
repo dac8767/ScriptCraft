@@ -20,12 +20,11 @@ import {
   FaEllipsisV,
   FaHashtag,
   FaFileAlt, FaRegFileAlt,
-  FaExchangeAlt, FaChevronDown,
-  FaMarker,
+  FaExchangeAlt, FaMarker,
 } from 'react-icons/fa';
 import { LuSearch } from 'react-icons/lu';
 import { ALL_TOOLS } from './ToolDock';
-import { CircleMinusIcon, CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
+import { CirclePlusIcon, TOOLBAR_ICONS } from './uiIcons';
 import {
   startRibbonDrag, ribCloseSection, ribRemoveToken, ribRemoveBreak,
   ribToggleBreakLine, ribRemoveSplit, ribAddSectionAtBoundary, ribAddInlineAtBoundary,
@@ -67,12 +66,9 @@ import {
 import type { LockedFormatting } from '../utils/effectiveFormatting';
 import FontPicker from './FontPicker';
 import ColorPicker from './ColorPicker';
+import ZoomControl from './ZoomControl';
 import { FONT_REGISTRY, loadFont } from '../utils/fonts';
 
-/** Zoom bounds. The editable input previously advertised max 200 while the
- *  buttons allowed 300 — unified here (v0.75). */
-const ZOOM_MIN = 50;
-const ZOOM_MAX = 300;
 
 interface ToolbarProps {
   editor: Editor | null;
@@ -119,9 +115,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const {
     activeElement,
     setActiveElement,
-    zoomLevel,
     viewStyle, setViewStyle,
-    setZoomLevel,
     zoomPanelOpen,
     setZoomPanelOpen,
     fontFamily,
@@ -163,7 +157,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   // applied over the active template (system templates are immutable).
 
-  const pageLayout = useEditorStore((st) => st.pageLayout);
   const pickableElements = useFormattingTemplateStore((st) => st.getPickableElements)();
   useFormattingTemplateStore((st) => st.elementHidden);
   useFormattingTemplateStore((st) => st.elementOrder);
@@ -459,118 +452,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (miniEd) return miniEd.isActive(format);
     if (!editor) return false;
     return editor.isActive(format);
-  };
-
-  // ── Zoom dropdown (v0.75) ──
-  const [zoomInput, setZoomInput] = useState(String(zoomLevel));
-  const [zoomEditing, setZoomEditing] = useState(false);
-  const [zoomMenuOpen, setZoomMenuOpen] = useState(false);
-  const zoomInputRef = useRef<HTMLInputElement>(null);
-  const zoomMenuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (!zoomEditing) setZoomInput(String(zoomLevel)); }, [zoomLevel, zoomEditing]);
-
-  const commitZoom = () => {
-    const val = parseInt(zoomInput, 10);
-    if (!isNaN(val) && val >= ZOOM_MIN && val <= ZOOM_MAX) setZoomLevel(val);
-    else setZoomInput(String(zoomLevel));
-    setZoomEditing(false);
-  };
-
-  // Fit Page to Screen is also a rebindable shortcut (v0.77); the MenuBar's key
-  // handler dispatches it here because the measurement lives in this component.
-  useEffect(() => {
-    const onCmd = (e: Event) => {
-      if ((e as CustomEvent).detail === 'fitPage') fitPageToScreen();
-      if ((e as CustomEvent).detail === 'fitWidth') fitPageToWidth();
-    };
-    window.addEventListener('scriptcraft:command', onCmd);
-    return () => window.removeEventListener('scriptcraft:command', onCmd);
-  });
-
-  // Close the zoom menu on an outside click.
-  useEffect(() => {
-    if (!zoomMenuOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (!zoomMenuRef.current?.contains(e.target as Node)) {
-        setZoomMenuOpen(false);
-        setZoomEditing(false);
-      }
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [zoomMenuOpen]);
-
-  /** Scale so one whole page fits the visible editor area.
-   *  Measured from the DOM: the page's UNSCALED height (its rendered height
-   *  divided by the zoom currently applied) against the scroll container's
-   *  height, minus the page's vertical margins. Deriving it from real geometry
-   *  keeps it correct for any paper size or margin setting. */
-  const fitPageToScreen = () => {
-    const page = document.querySelector('.page') as HTMLElement | null;
-    const scroller = document.querySelector('.editor-main') as HTMLElement | null;
-    if (!page || !scroller) return;
-
-    // ROOT CAUSE, take two (v0.87). There is only ONE .page element and it holds
-    // the WHOLE script — page breaks are decorations, not separate elements. So
-    // measuring the element measured the entire document, and "fit" shrank the
-    // script until EVERY page fitted.
-    //
-    // v0.85 tried to fix that by reading min-height, on the reasoning that the
-    // stylesheet sets it to one page (11in). It doesn't, at runtime: the element
-    // carries an INLINE min-height of `lastPageEnd + bottomMargin` — the end of
-    // the LAST page — which overrides the stylesheet. So it was still measuring
-    // the whole document, just via a different property. That's why it still
-    // showed two pages.
-    //
-    // The page height is not something to infer from the DOM at all: pageLayout
-    // states it (US Letter = 11in). Take it from there. CSS treats 1in as 96px
-    // regardless of the actual display, so this is exact.
-    const CSS_PX_PER_IN = 96;
-    const pc = getComputedStyle(page);
-
-    const onePageH = pageLayout.pageHeight * CSS_PX_PER_IN;
-    const pageW = pageLayout.pageWidth * CSS_PX_PER_IN;
-
-    // v0.89: only the page's TOP margin sits between the top of the view and the
-    // first page. Its bottom margin falls BELOW page one — counting it shrank
-    // the page by that much and let the next page peek in.
-    const marginTop = parseFloat(pc.marginTop) || 0;
-    const blockH = onePageH + marginTop;
-    if (!blockH || !pageW) return;
-
-    // .editor-main pads 30px top / 60px bottom. Only the TOP padding pushes page
-    // one down the screen; the bottom padding sits after the WHOLE document, not
-    // after page one. Subtracting both (as v0.87 did) made the page ~60px
-    // shorter than the space available — and that leftover strip is exactly the
-    // sliver of page two Derek could see.
-    const sc = getComputedStyle(scroller);
-    const padTop = parseFloat(sc.paddingTop) || 0;
-    const padX = (parseFloat(sc.paddingLeft) || 0) + (parseFloat(sc.paddingRight) || 0);
-    const availH = scroller.clientHeight - padTop;
-    const availW = scroller.clientWidth - padX;
-    if (availH <= 0 || availW <= 0) return;
-
-    // Whichever axis runs out first decides the zoom — fitting height alone
-    // would clip the sides on a narrow window.
-    const pct = Math.floor(Math.min(availH / blockH, availW / pageW) * 100);
-    setZoomLevel(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct)));
-  };
-
-  /** v2.57, Derek: scale so the page fills the editor's WIDTH — as big as it
-   *  can get in the current window; the height scrolls. How much width there
-   *  is depends on the sidebars, which is the point: same measured-geometry
-   *  approach as fitPageToScreen, width axis only. */
-  const fitPageToWidth = () => {
-    const scroller = document.querySelector('.editor-main') as HTMLElement | null;
-    if (!scroller) return;
-    const CSS_PX_PER_IN = 96;
-    const pageW = pageLayout.pageWidth * CSS_PX_PER_IN;
-    const sc = getComputedStyle(scroller);
-    const padX = (parseFloat(sc.paddingLeft) || 0) + (parseFloat(sc.paddingRight) || 0);
-    const availW = scroller.clientWidth - padX;
-    if (availW <= 0 || !pageW) return;
-    const pct = Math.floor((availW / pageW) * 100);
-    setZoomLevel(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct)));
   };
 
   // ── Responsive overflow ──────────────────────────────────────────────
@@ -1299,73 +1180,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <FaTags />
         </button>
       );
-      case 'zoom': return (
-        <div className="zoom-menu-wrap" ref={zoomMenuRef}>
-          {/* v3.04, Derek: step zoom straight from the toolbar. v3.48: the %
-              is edited RIGHT HERE (click to type) — no popup that just repeats
-              the stepper. A small caret keeps Reset / Fit within reach. */}
-          <button
-            className="toolbar-btn zoom-tb-step"
-            title="Zoom out"
-            disabled={zoomLevel <= ZOOM_MIN}
-            onClick={() => setZoomLevel(Math.max(ZOOM_MIN, zoomLevel - 10))}
-          ><CircleMinusIcon /></button>
-          <span className="zoom-tb-mid">
-            <span className="zoom-tb-icon"><CirclePlusIcon /></span>
-            {zoomEditing ? (
-              <input
-                ref={zoomInputRef}
-                className="zoom-tb-input"
-                type="number"
-                min={ZOOM_MIN}
-                max={ZOOM_MAX}
-                step={10}
-                value={zoomInput}
-                onChange={(e) => setZoomInput(e.target.value)}
-                onBlur={commitZoom}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') { commitZoom(); }
-                  if (e.key === 'Escape') { setZoomInput(String(zoomLevel)); setZoomEditing(false); }
-                }}
-                autoFocus
-              />
-            ) : (
-              <span
-                className="toolbar-btn-text zoom-tb-value"
-                title="Click to type an exact zoom"
-                onClick={() => { setZoomEditing(true); setTimeout(() => zoomInputRef.current?.select(), 0); }}
-              >{zoomLevel}%</span>
-            )}
-            <button
-              className="zoom-tb-caret"
-              title="Zoom options"
-              onClick={() => setZoomMenuOpen((o) => !o)}
-            ><FaChevronDown /></button>
-          </span>
-          <button
-            className="toolbar-btn zoom-tb-step"
-            title="Zoom in"
-            disabled={zoomLevel >= ZOOM_MAX}
-            onClick={() => setZoomLevel(Math.min(ZOOM_MAX, zoomLevel + 10))}
-          ><CirclePlusIcon /></button>
-          {zoomMenuOpen && (
-            <div className="zoom-menu">
-              <button
-                className="zoom-menu-item"
-                onClick={() => { setZoomLevel(100); setZoomMenuOpen(false); }}
-              >Reset</button>
-              <button
-                className="zoom-menu-item"
-                onClick={() => { fitPageToScreen(); setZoomMenuOpen(false); }}
-              >Fit Page to Screen</button>
-              <button
-                className="zoom-menu-item"
-                onClick={() => { fitPageToWidth(); setZoomMenuOpen(false); }}
-              >Scale to Max Width</button>
-            </div>
-          )}
-        </div>
-      );
+      case 'zoom': return <ZoomControl />;
       /* v2.34, Derek: one-click surface toggle — lit while showing.
          (v3.25: the Left/Right Panel pair retired; chevrons cover them.) */
       case 'toggleOutlineBar': return (

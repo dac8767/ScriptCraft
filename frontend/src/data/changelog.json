@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.46",
+  "date": "2026-08-17",
+  "changes": [
+   "Internal: the zoom control — the stepper, the editable percentage, and Reset / Fit Page / Max Width behind the caret — is its own component now, taking its state with it out of the toolbar. Nineteen browser checks cover it, including that Fit Page still fits ONE page rather than the whole script."
+  ]
+ },
+ {
   "version": "7.45",
   "date": "2026-08-17",
   "changes": [
