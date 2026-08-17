@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.44",
+  "date": "2026-08-17",
+  "changes": [
+   "Internal: the four import doors — this app's own files, Fountain/Final Draft/text, Word and PDF — moved out of the menu bar into one place, with tests proving each still asks before it replaces your open script. No behaviour changed."
+  ]
+ },
+ {
   "version": "7.43",
   "date": "2026-08-17",
   "changes": [
