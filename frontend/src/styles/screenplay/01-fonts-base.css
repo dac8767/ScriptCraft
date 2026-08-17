@@ -62,8 +62,14 @@
   --fd-chrome-separator: rgba(255,255,255,0.06);
   --fd-chrome-shadow: 0 1px 3px rgba(0,0,0,0.2);
   --fd-text: #e0e0e0;
-  /* v7.13: full-strength icon ink — see .icon-gear-strong (02-menubar). */
-  --fd-icon-strong: #ffffff;
+  /* v7.13: full-strength icon ink — see .icon-gear-strong (02-menubar).
+     v7.33, Derek: "the menu icons are not pure white. they are dddddd. change
+     the gear icon color to match." Measured on the macOS menu he is looking
+     at, and pure white was the one thing in that menu brighter than its own
+     ink. This token is now the ONE definition of the gear's colour: the
+     in-app icon paints its mask with it, and nativeMenuSync READS it to tint
+     the rasterized copy, so the two cannot drift. */
+  --fd-icon-strong: #dddddd;
   --fd-text-muted: #999999;
   --fd-navigator-bg: #252525;
   --fd-status-bg: #1e1e1e;

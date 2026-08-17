@@ -10,7 +10,7 @@
 import type { StateCreator } from 'zustand';
 import { _vs, saveViewState } from '../viewState';
 import type { EditorState, WorkspaceSnapshot, ToolId } from '../editorStore';
-import { migrateToolConfig, migrateToolOrder, RETIRED_TOOL_IDS } from '../editorStore';
+import { migrateToolConfig, migrateToolOrder, migrateToolId } from '../editorStore';
 
 export interface WorkspacesSlice {
   /** Named saved layouts (View → Workspaces) */
@@ -80,16 +80,18 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     if (!raw) return;
     // v4.24 batch 7: snapshots saved before a tool retirement may still carry
     // the retired id — normalize once, then apply. v5.67: the active-slot
-    // fields read RETIRED_TOOL_IDS (the same map migrateToolOrder/Config use)
-    // instead of a hardcoded 'indexcards', so 'todo' and 'titlepage'
-    // snapshots heal too.
+    // fields read the retirement map (the same one migrateToolOrder/Config
+    // use) instead of a hardcoded 'indexcards', so 'todo' and 'titlepage'
+    // snapshots heal too. v7.33: through migrateToolId, so a DROPPED tool
+    // (null heir) empties the slot rather than being left in it — the old
+    // truthiness test skipped null and handed the dead id straight back.
     const snap: WorkspaceSnapshot = {
       ...raw,
       toolConfig: migrateToolConfig(raw.toolConfig),
       toolOrder: migrateToolOrder(raw.toolOrder),
       toolbarPinnedTools: migrateToolOrder((raw.toolbarPinnedTools as string[]) ?? []) as ToolId[],
-      ...(raw.activeTool && RETIRED_TOOL_IDS[raw.activeTool] ? { activeTool: RETIRED_TOOL_IDS[raw.activeTool] as ToolId } : {}),
-      ...(raw.activeToolRight && RETIRED_TOOL_IDS[raw.activeToolRight] ? { activeToolRight: RETIRED_TOOL_IDS[raw.activeToolRight] as ToolId } : {}),
+      ...(raw.activeTool ? { activeTool: migrateToolId(raw.activeTool) as ToolId | null } : {}),
+      ...(raw.activeToolRight ? { activeToolRight: migrateToolId(raw.activeToolRight) as ToolId | null } : {}),
     };
     // v0.12 fields are optional (older snapshots): only restore when captured.
     const extras: Partial<EditorState> = {};

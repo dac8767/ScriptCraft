@@ -1,5 +1,14 @@
 [
  {
+  "version": "7.33",
+  "date": "2026-08-17",
+  "changes": [
+   "Design… is in Help ▸ Developer. It's a developer tool, which means it's hidden from the tool rail and from Customize ▸ Panels — so until now nothing in the app could open it at all.",
+   "AI Writer is gone from the side panels. It wasn't Action Rewrite (that really was fully removed) — it was the joke panel from v1.69. Deleting a tool now also removes it from saved layouts, which is how this one kept coming back.",
+   "The Settings gear is #dddddd instead of pure white, matching the ink of the menu it sits in. The macOS menu item tints from the same value the in-app icon uses, so the two can't drift, and a theme change now repaints it."
+  ]
+ },
+ {
   "version": "7.32",
   "date": "2026-08-17",
   "changes": [

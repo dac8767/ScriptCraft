@@ -93,7 +93,15 @@ function signatureOf(sections: NativeSectionData[]): string {
     it.checked === undefined ? '' : (it.checked ? 'C1' : 'C0'),
     it.children ? it.children.map(item) : (it.render ? 'R' : 0),
   ];
-  return JSON.stringify(sections.map((s) => [s.label, s.items.map(item)]));
+  /* v7.33: the gear's ink is part of the built menu now (rasterizeGear tints
+     from --fd-icon-strong), so a theme that changes that token has to rebuild
+     it. Without this the menu keeps whichever gear it was born with — a
+     dark-theme gear surviving into a light appearance is exactly the
+     stale-icon bug the signature exists to prevent. */
+  const ink = typeof document !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--fd-icon-strong').trim()
+    : '';
+  return JSON.stringify([ink, sections.map((s) => [s.label, s.items.map(item)])]);
 }
 
 function actionAt(path: number[]): (() => void) | undefined {
@@ -127,9 +135,14 @@ if (typeof window !== 'undefined') {
  *  in step with it. The in-app icon masks the same file, so both renderers
  *  read one asset; replace that file and both change.
  *
- *  Still white rather than tinted: macOS auto-tints its own template images
- *  and cannot be asked to tint a supplied one, so this matches the dark menu
- *  Derek is looking at rather than every appearance.
+ *  v7.33, Derek: "the menu icons are not pure white. they are dddddd. change
+ *  the gear icon color to match." macOS auto-tints its own template images
+ *  and cannot be asked to tint a supplied one, so the tint happens HERE —
+ *  and it is read from `--fd-icon-strong`, the same token the in-app icon
+ *  paints its mask with. One definition of the gear's ink, two renderers, no
+ *  drift: change the token and both move. (v7.22 baked white into the file
+ *  instead and left a comment admitting it could not follow the appearance;
+ *  reading the token means the light themes get their dark gear for free.)
  */
 async function rasterizeGear(size: number): Promise<{ data: Uint8Array; size: number } | null> {
   try {
@@ -151,6 +164,17 @@ async function rasterizeGear(size: number): Promise<{ data: Uint8Array; size: nu
     const INSET = 0.72;
     const off = (size * (1 - INSET)) / 2;
     ctx.drawImage(img, off, off, size * INSET, size * INSET);
+    /* Tint to the token. `source-in` keeps the alpha it has just drawn —
+       his art, antialiased edges and all — and replaces only the colour, so
+       this recolours the gear without touching its shape. The fallback is
+       the old pure white: an empty token must not paint a transparent gear,
+       which is the invisible-icon failure with a new cause. */
+    const ink = getComputedStyle(document.documentElement)
+      .getPropertyValue('--fd-icon-strong').trim() || '#ffffff';
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = ink;
+    ctx.fillRect(0, 0, size, size);
+    ctx.globalCompositeOperation = 'source-over';
     const { data } = ctx.getImageData(0, 0, size, size);
     return { data: new Uint8Array(data.buffer.slice(0)), size };
   } catch {

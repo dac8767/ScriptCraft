@@ -406,7 +406,7 @@ export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
   | 'beatboard' | 'tags' | 'projects' | 'assets' | 'markups'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
-  | 'spelling' | 'history' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
+  | 'spelling' | 'history' | 'customize' | 'vomit' | 'typewriter'
   | 'notebook' | 'design' | 'workspaces' | 'feedback' | 'thesaurus'
   /** v6.52, Derek: the Helper Text editor is a real TOOL now — draggable
    *  into a side panel like any window. Opens from Help ▸ Developer; no
@@ -614,7 +614,6 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   beatboard: { side: 'right', enabled: true },
   goals: { side: 'right', enabled: true },
   typewriter: { side: 'right', enabled: true },
-  aiwriter: { side: 'right', enabled: true },
   // v5.53, Derek: the Thesaurus (local MyThes/WordNet data — no network)
   thesaurus: { side: 'right', enabled: true },
   notebook: { side: 'right', enabled: true },
@@ -628,7 +627,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'markups', 'fragments', 'beatboard', 'goals', 'typewriter', 'aiwriter', 'thesaurus', 'notebook', 'analytics',
+  'sticky', 'markups', 'fragments', 'beatboard', 'goals', 'typewriter', 'thesaurus', 'notebook', 'analytics',
   'tags',
 ];
 
@@ -698,12 +697,35 @@ export function migrateDesignToolMode(
 
 /** Exported (v5.67) so workspacesSlice normalizes snapshot activeTool fields
  *  from the SAME map — its applyWorkspace hardcoded 'indexcards' before. */
-export const RETIRED_TOOL_IDS: Record<string, string> = { indexcards: 'scenes', todo: 'sticky', titlepage: 'pages' };
+/** Exported (v5.67) so workspacesSlice normalizes snapshot activeTool fields
+ *  from the SAME map — its applyWorkspace hardcoded 'indexcards' before.
+ *
+ *  v7.33: a `null` heir means DROPPED, not merged — the tool is gone and
+ *  nothing inherits it. Every retirement before this one folded a tool into
+ *  a successor, so "retired" and "has an heir" were the same fact and the map
+ *  could not express a tool that simply stops existing. AI Writer is the
+ *  first, and without the null case a saved layout naming it kept it alive:
+ *  `RETIRED_TOOL_IDS[id] ?? id` hands back the dead id, which is how a
+ *  removed tool comes back from persisted state. */
+export const RETIRED_TOOL_IDS: Record<string, string | null> = {
+  indexcards: 'scenes', todo: 'sticky', titlepage: 'pages',
+  aiwriter: null,   // v7.33, Derek — removed, no successor
+};
+
+/** One id through the retirement map: its heir, itself, or null if dropped.
+ *  Every caller reads this rather than indexing the map, so "dropped" cannot
+ *  mean one thing to the tool order and another to a workspace snapshot. */
+export function migrateToolId(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  if (raw in RETIRED_TOOL_IDS) return RETIRED_TOOL_IDS[raw];
+  return raw;
+}
+
 export function migrateToolOrder(order: string[]): string[] {
   const out: string[] = [];
   for (const raw of order) {
-    const id = RETIRED_TOOL_IDS[raw] ?? raw;
-    if (!out.includes(id)) out.push(id);
+    const id = migrateToolId(raw);
+    if (id && !out.includes(id)) out.push(id);
   }
   return out;
 }
@@ -713,7 +735,8 @@ export function migrateToolConfig(cfg: Record<string, ToolConfig>): Record<strin
     if (!(retired in out)) continue;
     const { [retired]: old, ...rest } = out;
     // If the retired tool was the enabled one, the merged tool inherits that.
-    if (old?.enabled && rest[heir] && !rest[heir].enabled) {
+    // A dropped tool (null heir) has nobody to inherit it — it just goes.
+    if (heir && old?.enabled && rest[heir] && !rest[heir].enabled) {
       rest[heir] = { ...rest[heir], enabled: true };
     }
     out = rest;
@@ -1642,7 +1665,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   // gone — Notes holds only general notes now, so there is no Script sub-view
   // to route into. Callers open tools directly (openTool) and script-note
   // editing goes through the highlight popover (notePopoverId).
-  activeTool: (RETIRED_TOOL_IDS[_vs.activeTool as string] as ToolId ?? (_vs.activeTool as ToolId | null)) ?? null,
+  activeTool: migrateToolId(_vs.activeTool as string | null) as ToolId | null,
   setActiveTool: (tool) => {
     saveViewState({ activeTool: tool });
     // v4.37, Derek: a tool lives in exactly ONE place. Seating it in a slot
@@ -1675,7 +1698,7 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     // shrink-from-fullscreen) — the one-window rule closes any other float.
     return { toolMode, ...(effMode === 'floating' ? closeOtherFloats(s, tool) : {}) };
   }),
-  activeToolRight: (RETIRED_TOOL_IDS[_vs.activeToolRight as string] as ToolId ?? (_vs.activeToolRight as ToolId | null)) ?? null,
+  activeToolRight: migrateToolId(_vs.activeToolRight as string | null) as ToolId | null,
   setActiveToolRight: (tool) => {
     saveViewState({ activeToolRight: tool });
     // v4.37: same one-place invariant as setActiveTool.

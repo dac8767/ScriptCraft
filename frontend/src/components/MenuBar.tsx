@@ -120,6 +120,7 @@ import {
   FaInfoCircle,
   FaKeyboard,
   FaStethoscope,
+  FaSlidersH,   // v7.33: Help ▸ Developer ▸ Design… — the same icon the tool rail gives it
   FaUpload,
   FaHistory,
   FaExchangeAlt,
@@ -1770,6 +1771,18 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             icon: <FaRegEdit />,
             label: 'Helper Text…',
             action: () => useEditorStore.getState().openTool('helpertext'),
+          },
+          {
+            /* v7.33, Derek: "design tool is not in the dev menu like it
+               should be." It never was. Design is devOnly, and devOnly means
+               ToolDock filters it out of BOTH the tool rail and Customize ▸
+               Panels — so with no menu entry it had no door at all: a window
+               that exists, is reachable from nothing, and can only be opened
+               by a test. That is the same shape as a control that writes into
+               the void, just from the other side. */
+            icon: <FaSlidersH />,
+            label: 'Design…',
+            action: () => useEditorStore.getState().openTool('design'),
           },
           /* v1.34: the switch for features that exist but aren't finished
            * (Lock Pages; Collaboration until v6.40 removed it). One flag,

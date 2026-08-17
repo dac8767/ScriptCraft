@@ -22,7 +22,7 @@ import {
   FaRegCompass, FaFilm, FaRegClone, FaMapMarkerAlt, FaUserFriends,
   FaChartBar, FaBullseye, FaRegStickyNote, FaRegClipboard,
   FaStream, FaTags, FaBoxes, FaSpellCheck, FaHistory,
-  FaKeyboard, FaRobot, FaBook, FaBookOpen, FaSlidersH, FaColumns,
+  FaKeyboard, FaBook, FaBookOpen, FaSlidersH, FaColumns,
   FaCommentDots, FaChevronRight, FaChevronDown, FaMarker,
   FaRegEdit,
 } from 'react-icons/fa';
@@ -50,7 +50,6 @@ import ThesaurusTool from './ThesaurusTool';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls, useOutlineTabs, OutlineTabsExtra, OutlineBeatCount } from './BeatBoard';
 import TypewriterTool, { FocusHeaderControls } from './TypewriterTool';
-import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
 import HelperTextTool, { HelperTextTitleExtra } from './HelperTextWindow';
 
@@ -122,7 +121,6 @@ export const ALL_TOOLS: ToolDef[] = [
   // it's the persisted tool key and ribbon token).
   { id: 'typewriter', label: 'Focus', icon: <FaKeyboard />, defaultSize: { w: 340, h: 520 }, group: 3, keepOpenOnEditorClick: true },
   // v1.69: the joke. It ships enabled — that's the joke landing.
-  { id: 'aiwriter', label: 'AI Writer', icon: <FaRobot />, defaultSize: { w: 300, h: 150 }, group: 3 },
   // v5.53, Derek: the Thesaurus — MyThes en_US (WordNet-derived) bundled
   // locally under public/thesaurus/; follows the script caret, replaces
   // in place. No network involved (see utils/thesaurus.ts).
@@ -592,8 +590,6 @@ export function ToolContent({ id, editor, scrollContainer, inTakeover = false }:
       return <GoalsTool editor={editor} />;
     case 'typewriter':
       return <TypewriterTool editor={editor} />;
-    case 'aiwriter':
-      return <AiWriterTool />;
     case 'notebook':
       return <NotebookTool />;
     case 'sticky':
