@@ -86,9 +86,25 @@ export function findLanguage(code: string): CatalogLanguage | undefined {
 
 /** GitHub repo that hosts the `dictionaries-extra/` folder consumed by the
  *  `opendraft-extra` source kind. Pinned to `main` — jsDelivr caches a single
- *  ref aggressively, so users won't re-download on every release. */
+ *  ref aggressively, so users won't re-download on every release.
+ *
+ *  v7.36, Derek asked how to get off Proteus's CDN. The answer turned out to
+ *  be: change this line. The dictionary was never theirs to lend — the folder,
+ *  the filtered 320k-word list and its MPL-2.0 NOTICE.md are all committed in
+ *  THIS repo (dictionaries-extra/or_IN/, byte-identical to what that URL was
+ *  serving), and `main` carries them, which is the ref jsDelivr reads. Only
+ *  the constant still said Proteus.
+ *
+ *  Not switched to LibreOffice, which also publishes or_IN: theirs is 1,030
+ *  words against this list's 321,831, so "remove the dependency" that way
+ *  would have quietly gutted Odia spell-check to buy a URL change.
+ *
+ *  NOTE for whoever verifies this: jsDelivr is unreachable from the sandbox
+ *  these commits are written in, so the URL shape is checked against the
+ *  repo's tree rather than by fetching it. The ref must keep pointing at a
+ *  branch or tag that CONTAINS dictionaries-extra/ — `main` does today. */
 const OPENDRAFT_EXTRA_BASE =
-  'https://cdn.jsdelivr.net/gh/Proteus-Technologies-Private-Limited/OpenDraft@main/dictionaries-extra';
+  'https://cdn.jsdelivr.net/gh/dac8767/ScriptCraft@main/dictionaries-extra';
 
 /** Build .aff/.dic download URLs for a catalog entry. */
 export function urlsFor(lang: CatalogLanguage): { aff: string; dic: string } {

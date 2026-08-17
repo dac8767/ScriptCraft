@@ -11,7 +11,7 @@
 
 
 <p align="center">
-  <a href="#download">Download</a> &bull;
+  <a href="#status">Status</a> &bull;
   <a href="#screenshots">Screenshots</a> &bull;
   <a href="#features">Features</a> &bull;
   <a href="#comparison">Compare</a>
@@ -19,7 +19,7 @@
 
 <p align="center">
   <img src="images/opendraft-demo.gif" alt="ScriptCraft in action — writing a screenplay" width="80%"><br>
-  <em>Professional screenplay formatting, planning, collaboration, and version history — all in one app.</em>
+  <em>Professional screenplay formatting, story planning, and version history — all in one app.</em>
 </p>
 
 <p align="center">
@@ -30,9 +30,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/dac8767/ScriptCraft/releases/latest">
-    <img src="https://img.shields.io/github/v/release/dac8767/ScriptCraft?label=Download&style=flat-square&color=blue&cacheSeconds=300&v=0174" alt="Download">
-  </a>
   <a href="https://github.com/dac8767/ScriptCraft/stargazers">
     <img src="https://img.shields.io/github/stars/dac8767/ScriptCraft?style=flat-square&cacheSeconds=600" alt="GitHub Stars">
   </a>
@@ -43,14 +40,29 @@
 
 ---
 
+## Status
+
+**ScriptCraft is in active development and has not had its first release.**
+There are no published builds yet — signing and notarization are still
+outstanding — so the only way to run it today is to
+[build from source](#for-developers). When builds ship they will appear under
+[Releases](https://github.com/dac8767/ScriptCraft/releases).
+
+It is a fork of [OpenDraft](https://github.com/Proteus-Technologies-Private-Limited/OpenDraft)
+and has diverged substantially: features have been added, rebuilt and in some
+cases removed. Where this README and upstream's disagree, this one describes
+what is actually in this repository.
+
+---
+
 ## Why ScriptCraft?
 
 Your script is your intellectual property. Cloud-based screenwriting tools store your work on corporate servers — where it can be mined, leaked, or used to train AI. ScriptCraft keeps every word on your machine.
 
-- **Never pay for your own words** — Free forever under the MIT license. No trial, no subscription, no feature gating.
-- **Switch without starting over** — Import from Final Draft (.fdx), Fountain, or PDF. Export anytime. Your scripts are never locked in.
-- **Write anywhere, even offline** — Desktop apps for Mac, Windows, and Linux. Mobile apps for iOS and Android. No internet required.
-- **Collaborate when you want to** — Invite co-writers with a link. Real-time cursors and permissions. When the session ends, nothing stays on any server.
+- **Never pay for your own words** — Free under the MIT license. No trial, no subscription, no feature gating.
+- **Switch without starting over** — Import from Final Draft (.fdx), Fountain, Word (.docx) or PDF. Export to any of them. Your scripts are never locked in.
+- **Write offline** — A desktop app built on Tauri. No internet required, and no account to write.
+- **Nothing phones home** — No telemetry, no analytics, no tracking.
 
 ---
 
@@ -64,11 +76,6 @@ Your script is your intellectual property. Cloud-based screenwriting tools store
 <p align="center">
   <img src="images/macos/beatboard.png" alt="Beat Board" width="80%"><br>
   <em>Visual story planning with drag-and-drop index cards</em>
-</p>
-
-<p align="center">
-  <img src="images/macos/collaboration_1.png" alt="Real-time Collaboration" width="80%"><br>
-  <em>Real-time collaboration — multiple writers editing simultaneously</em>
 </p>
 
 <p align="center">
@@ -86,35 +93,45 @@ Industry-standard formatting with autocomplete for character names, scene headin
 **Beat Board**
 Plan your story visually with drag-and-drop index cards before you write a single page.
 
-**Real-Time Collaboration**
-Write with your partner simultaneously — live cursors, presence indicators, and edit/view permissions.
-
 **Version History**
 Check in drafts, compare versions side-by-side, and restore any previous draft instantly.
 
 **Character Profiles**
-Track characters with descriptions, role types, and color-coded highlighting in your script.
+Track characters with descriptions, role types, reference images, and color-coded highlighting in your script.
 
 **Import & Export**
-Move freely between Final Draft (.fdx), Fountain, and PDF — never locked into one tool.
+Move freely between Final Draft (.fdx), Fountain, Word (.docx) and PDF — never locked into one tool.
 
-**iOS & Android Apps**
-Full-featured mobile apps with 100% of the desktop functionality — write, edit, and manage scripts on the go.
+**Customizable Throughout**
+The ribbon toolbar, side panels, quick-access bar, context menu, keyboard shortcuts, themes and element formats are all editable, and every one of them resets.
 
-> See the [full feature list](docs/FEATURES.md) for scene navigator, spell check, search & replace, script notes, asset management, and more.
+> See the [full feature list](docs/FEATURES.md) for scene navigator, spell check
+> and grammar, thesaurus, search & replace, script notes, annotations,
+> production tags, goals, analytics, asset management, and more.
+
+### Not in this fork
+
+Being straight about what upstream has and this does not:
+
+- **Real-time collaboration** was removed in v6.40 — the menu, invite links, sync
+  machinery and settings are all gone. This is a single-writer app.
+- **iOS and Android apps** are not built from this repository. The mobile apps in
+  the app stores are upstream OpenDraft's, not this fork's.
 
 ---
 
 ## Comparison
 
-How does ScriptCraft stack up against commercial screenwriting software?
+How ScriptCraft compares to commercial screenwriting software. The ScriptCraft
+column describes this repository; the other columns are from those products'
+own published information.
 
 | Feature | ScriptCraft | Final Draft | WriterDuet | Fade In |
 |---------|:---------:|:-----------:|:----------:|:-------:|
 | **Price** | Free | $250 | Free / $12/mo | $80 |
 | **Open Source** | Yes (MIT) | No | No | No |
 | **Offline Desktop App** | Yes | Yes | Limited | Yes |
-| **Real-time Collaboration** | Yes | Yes | Yes | Yes |
+| **Real-time Collaboration** | No | Yes | Yes | Yes |
 | **Beat Board / Index Cards** | Yes | Yes | Yes | Yes |
 | **Version History with Diff** | Yes | Limited | Limited | Limited |
 | **Self-Hostable** | Yes | No | No | No |
@@ -123,62 +140,30 @@ How does ScriptCraft stack up against commercial screenwriting software?
 | **Privacy-First (No Tracking)** | Yes | No | No | No |
 | **Character Profiles** | Yes | Limited | No | No |
 | **Casting / Reference Images** | Yes | No | No | No |
-| **iOS App** | Yes | Yes | Yes | Yes |
-| **Android App** | Yes | No | Yes | Yes |
+| **Mobile Apps** | No | Yes | Yes | Yes |
 | **Production Tags** | Yes | Limited | Yes | Yes |
 | **Fountain Import/Export** | Yes | No | Yes | Yes |
-| **Web Browser Access** | Yes | No | Yes | Limited |
+| **Web Browser Access** | Yes (self-hosted) | No | Yes | Limited |
 | **Plugin Architecture** | Yes | No | No | No |
 
-<sub>Comparison based on publicly available product information as of April 2026. If you spot an inaccuracy, please <a href="https://github.com/dac8767/ScriptCraft/issues/new/choose">open an issue</a>.</sub>
-
----
-
-## Download
-
-Get the latest version — no account required, just install and start writing. Most users are writing in under 2 minutes.
-
-### Desktop
-
-> **Builds are not published yet.** The links below point at this repo's
-> Releases, which is where they will appear — signing and notarization are
-> still outstanding. Until then, build from source (see Development).
-
-| Platform | Download |
-|----------|----------|
-| **macOS** (Apple Silicon) | [Download .dmg](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_aarch64.dmg) |
-| **macOS** (Intel) | [Download .dmg](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_x64.dmg) |
-| **Windows** (64-bit) | [Download .exe](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_x64-setup.exe) |
-| **Windows** (MSI) | [Download .msi](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_x64_en-US.msi) |
-| **Linux** (Debian/Ubuntu) | [Download .deb](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_amd64.deb) |
-| **Linux** (AppImage) | [Download .AppImage](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft_0.19.0_amd64.AppImage) |
-| **Linux** (RPM/Fedora) | [Download .rpm](https://github.com/dac8767/ScriptCraft/releases/latest/download/ScriptCraft-0.19.0-1.x86_64.rpm) |
-
-### Mobile
-
-> The iOS and Android apps in the stores are upstream OpenDraft's, not
-> this fork's. Their links were removed rather than send you to someone
-> else's build under this project's name.
+<sub>Competitor information from publicly available product pages as of April 2026 and not re-verified since. If you spot an inaccuracy, please <a href="https://github.com/dac8767/ScriptCraft/issues/new/choose">open an issue</a>.</sub>
 
 ---
 
 ## Getting Started
 
-New to ScriptCraft? Here's everything you need:
-
-- **Ready to install?** Grab the [latest download](#download) for your platform.
+- **Want to run it?** Build from source — see [For Developers](#for-developers).
 - **Need a walkthrough?** Read the [User Manual](user-manual/index.html).
-- **Have a question?** Start a [Discussion](https://github.com/dac8767/ScriptCraft/discussions) — the community is happy to help.
+- **Have a question?** Start a [Discussion](https://github.com/dac8767/ScriptCraft/discussions).
 
 ---
 
 ## Contributing
 
-We welcome contributions from everyone! Whether you're fixing a typo, reporting a bug, or building a new feature — every contribution matters.
+Contributions are welcome — a typo fix, a bug report and a new feature all count.
 
-- **New here?** Check out issues labeled [`good first issue`](https://github.com/dac8767/ScriptCraft/labels/good%20first%20issue).
-- **Have a question?** Start a [Discussion](https://github.com/dac8767/ScriptCraft/discussions).
 - **Found a bug?** [Open an issue](https://github.com/dac8767/ScriptCraft/issues/new/choose).
+- **Have a question?** Start a [Discussion](https://github.com/dac8767/ScriptCraft/discussions).
 - **Want to contribute code?** See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ---
@@ -195,17 +180,15 @@ We welcome contributions from everyone! Whether you're fixing a typo, reporting 
 | Frontend | React 19, TypeScript, Vite, TipTap editor |
 | Backend | Python 3.12, FastAPI, Uvicorn |
 | Desktop | Tauri 2 (Rust) with bundled Python backend |
-| Collaboration | Hocuspocus WebSocket server, Yjs CRDT |
 | State Management | Zustand |
-| Version Control | Git (per-project, built-in) |
+| Version Control | Git (per-script, built-in, via dulwich) |
 
 ### Project Structure
 
 ```
-OpenDraft/
+ScriptCraft/
 ├── frontend/          # React + TypeScript web UI
 ├── backend/           # FastAPI Python API server
-├── collab-server/     # Real-time collaboration server (Node.js)
 ├── src-tauri/         # Tauri 2 desktop app shell (Rust)
 ├── docs/              # Documentation
 ├── images/            # Logos and assets
@@ -214,12 +197,14 @@ OpenDraft/
 └── build-desktop.sh   # Desktop app build script
 ```
 
+<sub>`collab-server/` is still in the tree but is not used — collaboration was removed from the app in v6.40.</sub>
+
 ### Development
 
 ```bash
 # Clone and install
 git clone https://github.com/dac8767/ScriptCraft.git
-cd OpenDraft
+cd ScriptCraft
 
 # Backend
 python3.12 -m venv venv
@@ -234,22 +219,35 @@ cd frontend && npm install && cd ..
 ./start_frontend.sh   # Dev server on http://localhost:5173
 ```
 
+### Verification gates
+
+Every change must pass all four before it ships:
+
+```bash
+cd frontend
+npx tsc -b                        # zero errors — this gates the release build
+npx vitest run                    # unit + component tests
+npm run build                     # tsc -b && vite build
+node devtools/check-all.mjs       # browser checks, driven by Playwright
+```
+
 ### Building Desktop App
 
 ```bash
-./build-desktop.sh
-# Output: src-tauri/target/release/bundle/
+./build-desktop.sh            # signed + notarized (needs an Apple Developer account)
+./build-desktop.sh --local    # unsigned local .app, no account needed
 ```
 
-See [docs/DESKTOP-RELEASE.md](docs/DESKTOP-RELEASE.md) for detailed desktop build instructions.
+Output lands in `src-tauri/target/release/bundle/`. See
+[docs/DESKTOP-RELEASE.md](docs/DESKTOP-RELEASE.md) for details.
 
-### Run in Browser (Self-Hosted) — For Developers / Advanced Users
+### Run in Browser (Self-Hosted)
 
 To run your own instance of ScriptCraft in a browser:
 
 ```bash
 git clone https://github.com/dac8767/ScriptCraft.git
-cd OpenDraft
+cd ScriptCraft
 ./setup.sh
 ```
 
@@ -257,15 +255,15 @@ Installs dependencies, builds the app, and opens it at **http://localhost:8000**
 
 Requires Python 3.12+, Node.js 18+, and Git. See [docs/INSTALLATION.md](docs/INSTALLATION.md) for details.
 
-> **Note:** This is for developers who want to self-host or contribute. If you just want to use ScriptCraft, [download the desktop app](#download).
-
 </details>
 
 ---
 
 ## License
 
-ScriptCraft is open-source software licensed under the [MIT License](LICENSE). Free to use, modify, and distribute.
+ScriptCraft is open-source software licensed under the [MIT License](LICENSE).
+Free to use, modify, and distribute. The MIT notice in `LICENSE` is upstream
+OpenDraft's and is retained as that license requires.
 
 ---
 
