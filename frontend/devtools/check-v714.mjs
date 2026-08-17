@@ -44,7 +44,8 @@ await settle(page);
 await page.waitForTimeout(300);
 const saveloc = await page.evaluate(() =>
   [...document.querySelectorAll('.prefs-content h3')].map((e) => e.textContent.trim()));
-ok('Save Options carries Downloads', saveloc.includes('Downloads'), JSON.stringify(saveloc));
+// v7.35: renamed to say what it seeds — Save As and every exporter, not downloads.
+ok('Save Options carries the save/export folder', saveloc.includes('Saving & Exporting'), JSON.stringify(saveloc));
 ok('…and Screenshots LAST', saveloc[saveloc.length - 1] === 'Screenshots', JSON.stringify(saveloc));
 
 await page.evaluate(() => window.__scStore.getState().openPreferences('backup'));

@@ -104,29 +104,6 @@
 }
 .ctx-has-sub:hover > .ctx-submenu { display: block; }
 .ctx-submenu .ctx-item { margin: 0 4px; }
-/* Revision color swatches */
-.ctx-color-swatch {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  margin-right: 8px;
-  border: 1px solid rgba(255,255,255,.15);
-  flex-shrink: 0;
-}
-.ctx-color-swatch[data-color="white"]     { background: #ffffff; }
-.ctx-color-swatch[data-color="blue"]      { background: #6fa8dc; }
-.ctx-color-swatch[data-color="pink"]      { background: #e06c9f; }
-.ctx-color-swatch[data-color="yellow"]    { background: #f4d35e; }
-.ctx-color-swatch[data-color="green"]     { background: #2d8a4e; }  /* a color CHOICE, not a state */
-.ctx-color-swatch[data-color="goldenrod"] { background: #daa520; }
-.ctx-color-swatch[data-color="buff"]      { background: #d2b48c; }
-.ctx-color-swatch[data-color="salmon"]    { background: #fa8072; }
-.ctx-color-swatch[data-color="cherry"]    { background: #cc3333; }
-.ctx-color-swatch[data-color="2nd-blue"]  { background: #4682b4; }
-.ctx-color-swatch[data-color="2nd-pink"]  { background: #c76193; }
-.ctx-color-swatch[data-color="2nd-yellow"]{ background: #e0c84e; }
-.ctx-color-swatch[data-color="2nd-green"] { background: #4ea64e; }
 /* Scrollbar for submenu */
 .ctx-submenu::-webkit-scrollbar { width: 6px; }
 .ctx-submenu::-webkit-scrollbar-track { background: transparent; }

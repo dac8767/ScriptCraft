@@ -146,8 +146,9 @@ try {
   await settle(page);
   ok(await page.evaluate(() => {
     const heads = [...document.querySelectorAll('.prefs-general section > h3')].map((h) => h.textContent);
-    return heads.includes('Downloads') && heads[heads.length - 1] === 'Screenshots';
-  }), 'Save Options holds the download folder + Screenshots, last');
+    // v7.35: 'Downloads' became 'Saving & Exporting' — nothing here downloads.
+    return heads.includes('Saving & Exporting') && heads[heads.length - 1] === 'Screenshots';
+  }), 'Save Options holds the save/export folder + Screenshots, last');
   await page.evaluate(() => {
     [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Defaults')?.click();
   });

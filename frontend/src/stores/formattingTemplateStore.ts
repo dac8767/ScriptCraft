@@ -60,7 +60,9 @@ function saveTemplatePageLayouts(v: Record<string, Partial<PageLayout>>) {
  *  so it never drifts from what the customizer shows. */
 export const DEFAULT_TRANSITIONS = [
   'CUT TO:', 'DISSOLVE TO:', 'FADE IN:', 'FADE OUT:', 'FADE TO:',
-  'INTERCUT:', 'CUT TO BLACK:', 'WIPE TO:',
+  'INTERCUT:', 'CUT TO BLACK.', 'WIPE TO:',   /* v7.35, Derek: a period, not a
+     colon — nothing follows it, the same reason FADE OUT. takes one. The PDF
+     classifier already read it both ways (pdfClassify TRANSITION_RE). */
 ];
 const TRANSITION_OVERRIDES_KEY = 'opendraft:transitionOverrides';
 function loadTransitionOverrides(): { custom: string[]; hidden: string[]; order: string[] } {

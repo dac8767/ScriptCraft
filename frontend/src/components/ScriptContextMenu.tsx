@@ -2,7 +2,6 @@ import { FaChevronRight } from 'react-icons/fa';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { Editor } from '@tiptap/react';
 import { ELEMENT_LABELS, type ElementType } from '../stores/editorStore';
-import { createScriptNoteAtSelection } from '../utils/scriptNoteActions';
 import { createMarkupAtSelection, removeMarkupFromDoc } from '../utils/markupActions';
 import { uuid } from '../utils/uuid';
 import { showToast } from './Toast';
@@ -40,21 +39,25 @@ export const CONTEXT_MENU_SECTIONS: { id: string; label: string; group: ContextM
   { id: 'font', label: 'Font…', group: 'Context Menu' },
   { id: 'sceneProperties', label: 'Scene Properties…', group: 'Context Menu' },
   { id: 'characterProfile', label: 'Character Profile…', group: 'Context Menu' },
-  { id: 'revisionMode', label: 'Revision Mode', group: 'Production' },
-  { id: 'revisionColor', label: 'Revision Color', group: 'Production' },
-  { id: 'addScriptNote', label: 'Add Note', group: 'Context Menu' },
   { id: 'copyToSnippets', label: 'Move to Snippets', group: 'Tools' },
-  { id: 'insertSection', label: 'Insert Section', group: 'Insert' },
-  { id: 'insertMarker', label: 'Insert Marker', group: 'Insert' },
   // v0.90/v0.92: 'Add as To-Do Item' removed — it duplicated this. A standalone
   // to-do doesn't live in the script, so it has no business in a script context
   // menu; a script to-do does, and that's what this inserts. The internal id
   // stays 'insertChecklist' so saved menu orders keep working.
-  { id: 'insertChecklist', label: 'Add To-Do List', group: 'Insert' },
   // v5.25: Annotations — on an existing one the item becomes Edit/Delete.
   // v5.26: label renamed with the tool (the id is a persisted menu-order key).
   { id: 'markupScript', label: 'Add Annotation', group: 'Insert' },
-  { id: 'tagAs', label: 'Tag as…', group: 'Context Menu' },
+  /* v7.35, Derek: "do a scan to see if there are items that should be options
+     in the context menu." Scanned TOOLBAR_COMMANDS against this list and kept
+     the test strict: a right-click acts on what is under the cursor, so only
+     commands scoped to the SELECTION or the CURRENT ELEMENT qualify. Save,
+     Export, Print, Settings, the zoom levels and the snapshot commands are
+     app-level and belong in menus. Two passed, and both dispatch the same
+     'scriptcraft:command' event the toolbar button does — one implementation,
+     two doors. (He also expected Annotations and it was already here: 'Add
+     Annotation', shown by default.) */
+  { id: 'dualDialogue', label: 'Dual Dialogue', group: 'Format' },
+  { id: 'insertImage', label: 'Insert Image', group: 'Insert' },
   { id: 'thesaurus', label: 'Thesaurus', group: 'Tools' },
   { id: 'spelling', label: 'Spelling Tools', group: 'Context Menu' },
 ];
@@ -82,12 +85,6 @@ const ELEMENT_MENU_ITEMS: { type: ElementType; shortcut: string }[] = [
 ];
 
 // Revision colors matching Final Draft production standard
-const REVISION_COLORS = [
-  'White', 'Blue', 'Pink', 'Yellow', 'Green',
-  'Goldenrod', 'Buff', 'Salmon', 'Cherry',
-  '2nd Blue', '2nd Pink', '2nd Yellow', '2nd Green',
-];
-
 interface SpellInfo {
   word: string;
   from: number;
@@ -128,15 +125,13 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const [elementSubOpen, setElementSubOpen] = useState(false);
   const [styleSubOpen, setStyleSubOpen] = useState(false);
-  const [revisionSubOpen, setRevisionSubOpen] = useState(false);
+  const [, setRevisionSubOpen] = useState(false);
   const [addDictSubOpen, setAddDictSubOpen] = useState(false);
   const appendWordToGlobalDictionary = useEditorStore((s) => s.appendWordToGlobalDictionary);
 
   const {
-    revisionMode, setRevisionMode, revisionColor, setRevisionColor,
-    setNotePopoverId, deleteNote, addShelfCard,
+    addShelfCard,
     toggleCharacterProfiles, characterProfilesOpen,
-    deleteTag, setPendingTagSelection, setEditingTagId,
   } = useEditorStore();
 
   // Per-attribute locking for the current element
@@ -211,21 +206,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   const showCharProfile = ['character', 'dialogue', 'parenthetical'].includes(currentNodeType);
 
   // Detect if cursor is on an existing script note
-  const existingNoteId = (() => {
-    const markType = editor.schema.marks.scriptNote;
-    if (!markType) return null;
-    const pos = editor.state.selection.$from;
-    const storedMarks = pos.marks();
-    let noteMark = storedMarks.find((m) => m.type === markType);
-    if (!noteMark) {
-      const node = pos.nodeAfter || pos.nodeBefore;
-      if (node?.marks) {
-        noteMark = node.marks.find((m) => m.type === markType);
-      }
-    }
-    return noteMark ? (noteMark.attrs.noteId as string) : null;
-  })();
-
   // v5.25/v5.26: is the caret on an existing annotation? Range annotations
   // are the scriptMarkup mark on the text; cursor-made ones are a block
   // attribute on the element itself.
@@ -245,23 +225,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   })();
 
   // Detect if cursor is on an existing production tag
-  const existingTagInfo = (() => {
-    const markType = editor.schema.marks.productionTag;
-    if (!markType) return null;
-    const pos = editor.state.selection.$from;
-    // Check storedMarks first, then marks on the text node at this position
-    const storedMarks = pos.marks();
-    let tagMark = storedMarks.find((m) => m.type === markType);
-    if (!tagMark) {
-      // Check the text node at this position directly
-      const node = pos.nodeAfter || pos.nodeBefore;
-      if (node?.marks) {
-        tagMark = node.marks.find((m) => m.type === markType);
-      }
-    }
-    return tagMark ? { tagId: tagMark.attrs.tagId as string, categoryId: tagMark.attrs.categoryId as string } : null;
-  })();
-
   // Close on click outside or Escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -411,20 +374,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   // v4.33: create-note logic lives in utils/scriptNoteActions (one copy,
   // shared with the toolbar Note button); the note is then edited in the
   // popover on its highlight — the Notes window is general-only now.
-  const handleAddScriptNote = () => {
-    const noteId = createScriptNoteAtSelection(
-      editor,
-      hasSelection ? savedSelection.current : undefined,
-    );
-    if (noteId) setNotePopoverId(noteId);
-    onClose();
-  };
-
-  const handleEditScriptNote = () => {
-    if (existingNoteId) setNotePopoverId(existingNoteId);
-    onClose();
-  };
-
   // v5.25: Markups.
   const handleMarkupScript = () => {
     createMarkupAtSelection(editor, hasSelection ? savedSelection.current : undefined);
@@ -441,30 +390,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
     }
     onClose();
   };
-
-  const handleDeleteScriptNote = () => {
-    if (!existingNoteId) return;
-    // Remove the mark from the editor
-    const { doc, schema } = editor.state;
-    const markType = schema.marks.scriptNote;
-    if (markType) {
-      editor.chain().focus().command(({ tr }) => {
-        doc.descendants((node, pos) => {
-          if (!node.isText) return;
-          const mark = node.marks.find(
-            (m) => m.type === markType && m.attrs.noteId === existingNoteId,
-          );
-          if (mark) {
-            tr.removeMark(pos, pos + node.nodeSize, mark);
-          }
-        });
-        return true;
-      }).run();
-    }
-    deleteNote(existingNoteId);
-    onClose();
-  };
-
   const handleSpellSuggestion = (suggestion: string) => {
     if (!spellInfo) return;
     editor.chain().focus().command(({ tr }) => {
@@ -554,67 +479,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
   };
 
   // ── Tag handlers ──
-  const handleTagAs = () => {
-    const { from, to, empty } = savedSelection.current;
-    const selFrom = empty ? $from.start() : from;
-    const selTo = empty ? $from.end() : to;
-    const text = editor.state.doc.textBetween(selFrom, selTo, ' ');
-
-    let sceneId: string | null = null;
-    let sceneIdx = 0;
-    editor.state.doc.nodesBetween(0, selFrom, (node) => {
-      if (node.type.name === 'sceneHeading') { sceneId = `scene-${sceneIdx}`; sceneIdx++; }
-      return true;
-    });
-
-    setPendingTagSelection({ from: selFrom, to: selTo, text: text.slice(0, 80), elementType: currentNodeType, sceneId });
-    useEditorStore.getState().openTool('tags');
-    onClose();
-  };
-
-
-
-  const handleRemoveTag = () => {
-    if (!existingTagInfo) return;
-    const { doc, schema } = editor.state;
-    const markType = schema.marks.productionTag;
-    if (!markType) { onClose(); return; }
-
-    // Find and remove only the mark at the cursor position
-    const cursorPos = editor.state.selection.$from.pos;
-    editor.chain().focus().command(({ tr }) => {
-      doc.descendants((node, pos) => {
-        if (!node.isText) return;
-        const mark = node.marks.find(
-          (m) => m.type === markType && m.attrs.tagId === existingTagInfo.tagId,
-        );
-        if (mark && pos <= cursorPos && pos + node.nodeSize >= cursorPos) {
-          tr.removeMark(pos, pos + node.nodeSize, mark);
-        }
-      });
-      return true;
-    }).run();
-
-    // Count remaining occurrences; if none left, delete the entity
-    let remaining = 0;
-    editor.state.doc.descendants((node) => {
-      if (!node.isText) return;
-      if (node.marks.some((m) => m.type === markType && m.attrs.tagId === existingTagInfo.tagId)) {
-        remaining++;
-      }
-    });
-    if (remaining === 0) {
-      deleteTag(existingTagInfo.tagId);
-    }
-    onClose();
-  };
-
-  const handleRevisionColor = (color: string) => {
-    setRevisionColor(color);
-    setRevisionSubOpen(false);
-    onClose();
-  };
-
   // v0.86: the right-click menu is rendered from an ORDERED map rather than a
   // fixed run of JSX. Customize > Context Menu can now reorder and add/remove
   // items, and that ordering has to reach the actual menu — which is impossible
@@ -708,52 +572,6 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
         }}>
           <span>Character Profile...</span>
         </div></>) : null,
-    revisionMode: (<><div className="ctx-item" onClick={() => { setRevisionMode(!revisionMode); onClose(); }}>
-        <span>{revisionMode ? '\u2713 ' : ''}Revision Mode</span>
-      </div></>),
-    revisionColor: (<><div
-        className="ctx-has-sub-wrap"
-        onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setRevisionSubOpen(true); setElementSubOpen(false); setStyleSubOpen(false); } }}
-        onPointerLeave={(e) => { if (e.pointerType === 'mouse') setRevisionSubOpen(false); }}
-      >
-        <div className="ctx-item ctx-has-sub" onClick={() => { setRevisionSubOpen(true); setElementSubOpen(false); setStyleSubOpen(false); }}>
-          <span>Revision Color</span>
-          <span className="ctx-arrow">&#9656;</span>
-        </div>
-        {revisionSubOpen && (
-          <div className="ctx-submenu ctx-submenu-colors">
-            {REVISION_COLORS.map((color) => (
-              <div
-                key={color}
-                className={`ctx-item${revisionColor === color ? ' ctx-active' : ''}`}
-                onClick={() => handleRevisionColor(color)}
-              >
-                <span className="ctx-color-swatch" data-color={color.toLowerCase().replace(/\s/g, '-')} />
-                <span>{color}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div></>),
-    addScriptNote: (<><>
-      {existingNoteId ? (
-        <>
-          <div className="ctx-item" onClick={handleEditScriptNote}>
-            <span>Edit Note</span>
-          </div>
-          <div className="ctx-item" onClick={handleDeleteScriptNote}>
-            <span>Delete Note</span>
-          </div>
-        </>
-      ) : (
-        <div className="ctx-item" onClick={handleAddScriptNote}>
-          <span>Add Note</span>
-          <span className="ctx-shortcut">{shift}{mod}N</span>
-        </div>
-      )}
-      <div className="ctx-separator" />
-
-      </></>),
     markupScript: (<><>
       {existingMarkupId ? (
         <>
@@ -791,54 +609,24 @@ const ScriptContextMenu: React.FC<ScriptContextMenuProps> = ({
     /* v6.19, Derek: open the Thesaurus over the current selection — the
        tool's mount sync looks the word up (caret-word counts too, same rule
        as its follow-the-script behavior). */
+    dualDialogue: (<><div className="ctx-item" onClick={() => {
+        window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'dualDialogue' }));
+        onClose();
+      }}>
+        <span>Dual Dialogue</span>
+      </div></>),
+    insertImage: (<><div className="ctx-item" onClick={() => {
+        window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'insertImage' }));
+        onClose();
+      }}>
+        <span>Insert Image</span>
+      </div></>),
     thesaurus: (<><div className="ctx-item" onClick={() => {
             useEditorStore.getState().openTool('thesaurus');
             onClose();
           }}>
             <span>Thesaurus</span>
           </div></>),
-    insertSection: (<><div className="ctx-item" onClick={() => {
-        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '# ' }] }).run();
-        onClose();
-      }}>
-        <span>Insert Section</span>
-      </div></>),
-    insertMarker: (<><div className="ctx-item" onClick={() => {
-        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '\u2691 ' }] }).run();
-        onClose();
-      }}>
-        <span>Insert Marker</span>
-      </div></>),
-    insertChecklist: (<><div className="ctx-item" onClick={() => {
-        editor.chain().focus().insertContent({ type: 'general', content: [{ type: 'text', text: '[ ] ' }] }).run();
-        onClose();
-      }}>
-        <span>Add To-Do List</span>
-      </div></>),
-    tagAs: (<><>
-      {existingTagInfo ? (
-        <>
-          <div className="ctx-item" onClick={() => {
-            if (existingTagInfo) {
-              setEditingTagId(existingTagInfo.tagId);
-            }
-            useEditorStore.getState().openTool('tags');
-            onClose();
-          }}>
-            <span>Edit Tag...</span>
-          </div>
-          <div className="ctx-item" onClick={handleRemoveTag}>
-            <span>Remove Tag</span>
-          </div>
-        </>
-      ) : (
-        <div className="ctx-item" onClick={handleTagAs}>
-          <span>Tag as...</span>
-        </div>
-      )}
-      <div className="ctx-separator" />
-
-      </></>),
     spelling: (<><>
       {spellInfo && (() => {
         const activeAddTargets = spellChecker.getActiveAddTargets();

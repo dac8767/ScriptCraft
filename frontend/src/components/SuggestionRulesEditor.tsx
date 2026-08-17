@@ -14,8 +14,17 @@ import { ELEMENT_LABELS, useEditorStore } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { DEFAULT_SUGGESTION_RULES, SUGGESTION_RULE_CANDIDATES } from './screenplayEditorConstants';
 
+/* v7.35, Derek: "in the element suggestion table, change 'Character' to
+   'Character Name'." Scoped to THIS table on purpose — the element is called
+   Character everywhere else in the app, and renaming it globally would
+   rewrite the Element menu, the toolbar picker and every saved template. Here
+   the rows and columns are both element names, so the extra word says which
+   Character is meant: the cue line, not the person in the Characters tool. */
+const TABLE_LABEL_OVERRIDES: Record<string, string> = { character: 'Character Name' };
+
 const label = (id: string): string =>
-  id === 'dualDialogue' ? 'Dual Dialogue' : (ELEMENT_LABELS[id] ?? id);
+  TABLE_LABEL_OVERRIDES[id]
+  ?? (id === 'dualDialogue' ? 'Dual Dialogue' : (ELEMENT_LABELS[id] ?? id));
 
 const ROWS = Object.keys(DEFAULT_SUGGESTION_RULES);
 

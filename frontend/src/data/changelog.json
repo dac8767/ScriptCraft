@@ -1,5 +1,18 @@
 [
  {
+  "version": "7.35",
+  "date": "2026-08-17",
+  "changes": [
+   "Status messages — \"Settings saved\" and every warning or notice — now appear on the page where the Saved indicator does, instead of the bottom-right corner. They read the same measured spot the Saved flash uses, and stack under it when both arrive at once. If there's no page on screen (Statistics, the Beat Board, a fullscreen tool) they still use the corner.",
+   "Settings ▸ Save Options: the \"Downloads\" section is now \"Saving & Exporting\" and reads \"Save and Export open in\". Nothing in the app downloads — that folder is where Save As and every exporter open, which is what it says now. Your chosen folder is unchanged.",
+   "The transition \"CUT TO BLACK:\" is now \"CUT TO BLACK.\" — a period, like FADE OUT.",
+   "The element suggestion table calls the row \"Character Name\", so it reads as the cue line rather than the person.",
+   "Removed from the context menu and from its Customize list: Insert Section, Insert Marker, Add To-Do List, Add Note, Revision Mode, Revision Color and Tag as…",
+   "Added to the context menu: Dual Dialogue and Insert Image — the two commands in the app that act on what you right-clicked and weren't offered there.",
+   "The \"Your feedback has been sent\" message sits half an inch lower."
+  ]
+ },
+ {
   "version": "7.34",
   "date": "2026-08-17",
   "changes": [

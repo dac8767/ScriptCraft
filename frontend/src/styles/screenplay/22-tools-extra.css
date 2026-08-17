@@ -1653,7 +1653,11 @@ input.fs-switch:checked::after { left: 15px; }
   -webkit-backdrop-filter: blur(6px);   /* WebKit wants the prefix */
   backdrop-filter: blur(6px);
 }
-.fb-sent-msg { font-size: 14.5px; font-weight: 600; color: var(--fd-success); margin-top: var(--dz-fb-sent-top, 32%); }
+/* v7.35, Derek: "move the 'feedback has been sent' text down 0.5 inches on
+   the screen." Added to the proportional drop rather than replacing it — the
+   32% is what keeps it favouring the top of whatever height the panel has
+   (v7.14), and 48px is his half inch at 96dpi. */
+.fb-sent-msg { font-size: 14.5px; font-weight: 600; color: var(--fd-success); margin-top: calc(var(--dz-fb-sent-top, 32%) + 48px); }
 .fb-queued {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 10px; border-radius: 5px;

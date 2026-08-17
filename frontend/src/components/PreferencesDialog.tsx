@@ -474,18 +474,30 @@ function SaveLocationsTab() {
           settings". The download-folder option came with it — deleting the tab
           must not delete the setting, and both of these are "where files land",
           which is what this tab is. Screenshots sits last, as he asked. */}
+      {/* v7.35, Derek: "is the download folder option actually doing anything?
+          i dont think you can actually 'download' a script. you can export it,
+          or save it, but not download."
+
+          It IS doing something — fileOps.saveFileTauri seeds the save dialog's
+          defaultPath with it — and he is right that "download" is the wrong
+          word for it. Nothing in this app downloads: that folder is where Save
+          As and every exporter (PDF, Fountain, Final Draft, Word, .odraft,
+          themes, presets) OPEN, which is what it now says. The stored key
+          keeps its old name on purpose (opendraft:saveloc:downloadFolder) —
+          renaming a key that holds a user's chosen path would silently reset
+          it. */}
       <section>
-        <h3>Downloads</h3>
+        <h3>Saving &amp; Exporting</h3>
         <div className="prefs-check-row">
           <span>
-            Save downloaded scripts to
-            {downloadFolder ? <code className="prefs-path-chip">{downloadFolder}</code> : ' — ask every time'}
+            Save and Export open in
+            {downloadFolder ? <code className="prefs-path-chip">{downloadFolder}</code> : ' — the last folder you used'}
           </span>
           <button
             className="prefs-inline-btn"
             onClick={async (e) => {
               e.preventDefault();
-              const folder = await pickFolder('Folder for downloaded scripts');
+              const folder = await pickFolder('Folder for saved and exported files');
               if (folder) setDownloadFolder(folder);
             }}
           >Choose Folder…</button>

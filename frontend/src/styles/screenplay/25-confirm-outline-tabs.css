@@ -661,3 +661,56 @@
   background: rgba(0, 0, 0, .7); color: #fff;
   padding: 6px 12px; border-radius: 6px; font-size: 12px; pointer-events: none;
 }
+
+/* v7.35, Derek: "any type of save, warning or other, that has a status
+   displayed in the lower right corner (like Settings Saved), should now show
+   in the same location as Save (top of white page)." Toast.tsx measures the
+   spot with the same savedFlashSpot() the flash above uses; this is only the
+   paint. Deliberately the same pill shape and the same colour SOURCE — the
+   old inline styles carried raw #27ae60 / #2c3e50 hex, which is the thing
+   tokenResolve.test.ts exists to stop. */
+.fs-toast-stack {
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;   /* the stack is a spacer; the pills take the clicks */
+}
+/* No page to measure (Statistics, the Beat Board, any fullscreen takeover) —
+   fall back to the corner rather than pinning to a page that isn't there. */
+.fs-toast-stack--corner {
+  bottom: 20px; right: 20px; left: auto; top: auto;
+  transform: none;
+  align-items: flex-end;
+}
+.fs-toast {
+  pointer-events: auto;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  max-width: 420px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,.18);
+  white-space: pre-wrap;
+  text-align: center;
+}
+.fs-toast--success {
+  color: var(--fd-success);
+  background: color-mix(in srgb, var(--fd-success) 15%, var(--fd-page-bg));
+  border: 1px solid color-mix(in srgb, var(--fd-success) 40%, transparent);
+}
+.fs-toast--error {
+  color: var(--fd-danger);
+  background: color-mix(in srgb, var(--fd-danger) 15%, var(--fd-page-bg));
+  border: 1px solid color-mix(in srgb, var(--fd-danger) 40%, transparent);
+}
+.fs-toast--info {
+  color: var(--fd-text);
+  background: color-mix(in srgb, var(--fd-accent) 12%, var(--fd-page-bg));
+  border: 1px solid color-mix(in srgb, var(--fd-accent) 35%, transparent);
+}
