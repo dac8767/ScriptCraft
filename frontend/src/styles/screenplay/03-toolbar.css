@@ -1060,29 +1060,6 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 }
 /* v1.36: the zoom menu's HEADER — a three-cell grid, minus | amount | plus,
    flush with the menu's top edge. The +/- icons fill their whole cell. */
-.zoom-menu-stepper {
-  display: grid;
-  grid-template-columns: 1fr 1.6fr 1fr;
-  align-items: stretch;
-  height: 34px;
-  border-bottom: 1px solid var(--fd-border);
-  margin-bottom: 4px;
-}
-/* v1.38: same height as the zoom text */
-.zoom-menu-value {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  min-width: 0;
-}
-.zoom-menu-value .zoom-label {
-  cursor: text; font-size: 13px; font-weight: 600; color: var(--fd-text);
-  padding: 2px 6px; border-radius: 3px; display: inline-block; min-width: 54px;
-}
-.zoom-menu-value .zoom-label:hover { background: var(--fd-hover-bg); }
-.zoom-menu-value .zoom-input { width: 76px; font-size: 13px; }
-.zoom-menu-sep { height: 1px; background: var(--fd-border); margin: 4px 0; }
 .zoom-menu-item {
   display: flex; align-items: center; gap: 8px;
   padding: 5px 16px; border: none;

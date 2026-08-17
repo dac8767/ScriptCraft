@@ -5,12 +5,6 @@
   border-right: 1px solid var(--fd-border); display: flex;
   flex-direction: column; overflow: hidden;
 }
-.navigator-header {
-  display: flex; align-items: center;
-  padding: 3px 14px; border-bottom: 1px solid var(--fd-border); flex-shrink: 0;
-  gap: 8px;
-}
-.navigator-title { font-weight: 700; font-size: var(--dz-nav-title-font, 13px); text-transform: uppercase; letter-spacing: .5px; color: var(--fd-text); }
 .scene-count { font-size: 12px; color: var(--fd-text-secondary, var(--fd-text)); opacity: 0.7; }
 /* (The header/content top strip is gone app-wide now — see .tool-inline-body
    in 22-tools-extra.css — so the Scenes-only override that lived here is no
@@ -352,31 +346,6 @@
 
 /* Navigator tabs — horizontally scrollable when the panel is narrow,
    with the close button pinned to the right so it's always clickable. */
-.navigator-tabs {
-  display: flex;
-  align-items: stretch;
-  border-bottom: 1px solid var(--fd-border);
-  flex-shrink: 0;
-  min-width: 0;
-}
-.navigator-tab {
-  flex: 1 1 auto;
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--fd-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  padding: 10px 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-  min-height: 40px;
-  white-space: nowrap;
-}
-.navigator-tab:hover { color: var(--fd-text); }
 .navigator-tab.active {
   color: var(--fd-accent);
   border-bottom-color: var(--fd-accent);
@@ -384,36 +353,6 @@
 /* When the tabs collectively overflow the panel width, scroll them
    horizontally while keeping the close button visible (it lives outside
    the scroll container, pinned at the right). */
-.navigator-tabs-scroll {
-  flex: 1 1 auto;
-  display: flex;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  min-width: 0;
-}
-.navigator-tabs-scroll::-webkit-scrollbar { height: 4px; }
-.navigator-tabs-scroll::-webkit-scrollbar-thumb {
-  background: var(--fd-border);
-  border-radius: 2px;
-}
-.navigator-close {
-  background: none;
-  border: none;
-  color: var(--fd-text-muted);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0 12px;
-  line-height: 1;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  min-height: 40px;
-  border-left: 1px solid var(--fd-border);
-}
-.navigator-close:hover { color: var(--fd-text); background: var(--fd-overlay-subtle); }
 
 /* Location items */
 .location-group {
@@ -527,64 +466,6 @@
   font-size: 12px;
   font-family: var(--screenplay-font);
   outline: none;
-}
-.location-scenes {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.location-scene-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 6px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--fd-text);
-  opacity: 0.8;
-  transition: background 0.1s;
-  min-height: 32px;
-}
-.location-scene-item:hover {
-  background: rgba(74, 158, 255, 0.1);
-  opacity: 1;
-}
-.location-scene-num {
-  color: var(--fd-accent);
-  font-weight: 600;
-  flex-shrink: 0;
-  min-width: 20px;
-  margin-top: 1px;
-}
-.location-scene-info {
-  flex: 1;
-  min-width: 0;
-}
-.location-scene-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.location-scene-prefix {
-  font-size: 11px;
-  color: var(--fd-text);
-  opacity: 0.7;
-}
-.location-scene-time {
-  font-size: 11px;
-  color: var(--fd-text);
-  opacity: 0.6;
-  margin-left: auto;
-}
-.location-scene-preamble {
-  font-size: 11px;
-  color: var(--fd-text);
-  opacity: 0.5;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 1px;
 }
 
 /* ── Structure tab ── */
@@ -1295,7 +1176,6 @@
 .locmap-pin:active { cursor: grabbing; }
 .locmap-pin-icon { color: var(--fd-accent); font-size: 11px; flex: 0 0 auto; }
 .locmap-pin-label { font-size: 11px; color: var(--fd-text); max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
-.locmap-pin:hover .locmap-pin-remove { opacity: 1; }
 
 .locmap-empty {
   flex: 1;
@@ -1473,7 +1353,6 @@
 .locmap-pin-menu-item-count { flex: 0 0 auto; font-size: 10px; color: var(--fd-text-muted); }
 .locmap-pin-menu-danger:hover:not(:disabled) { color: var(--fd-danger); }
 .locmap-pin-menu-list { display: flex; flex-direction: column; }
-.location-name-sub { font-size: 10px; color: var(--fd-text-muted); font-weight: 400; }
 /* v5.79: the flipped capsule must also REVERSE its children, or the marker
    (the first child) stays on the left while the transform anchors the right
    edge — a right-half pin drew 16 points of the map away from its own point,
@@ -1622,17 +1501,8 @@
 /* ── the sidebar row's two icon menus (v5.85) ──────────────────────── */
 /* Quiet until the row is under the pointer — the row is for reading first,
    and two lit icons on every line would shout over the names. */
-.locmap-rail-btn {
-  flex: 0 0 auto;
-  display: flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px;
-  background: none; border: none; border-radius: 4px;
-  color: var(--fd-text-muted); font-size: 12px; cursor: pointer;
-  opacity: 0;
-}
 .locmap-rail-row:hover .locmap-rail-btn,
 .locmap-rail-btn:focus-visible { opacity: 1; }
-.locmap-rail-btn:hover { color: var(--fd-accent); background: var(--fd-overlay-subtle); }
 /* A row that IS hidden keeps its buttons visible — otherwise the only way
    back is to hover a row you were told is hidden. */
 .locmap-rail-item-hidden .locmap-rail-btn { opacity: .6; }

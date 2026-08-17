@@ -161,19 +161,6 @@
 }
 /* (v4.25's 300px fullscreen sort select is gone — fullscreen sorts via the
    cluster's Sort dropdown now; this toolbar only renders in the overlay.) */
-.char-profiles-build-btn {
-  padding: 0 10px;
-  height: 28px;
-  background: transparent;
-  border: 1px solid var(--fd-accent);
-  border-radius: 4px;
-  color: var(--fd-accent);
-  font-size: 11px;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.char-profiles-build-btn:hover { background: rgba(74,158,255,.1); }
 /* Sort bar */
 .char-profiles-sort {
   display: flex;
@@ -243,7 +230,6 @@
    + Referred in Script folded into a single reviewable scan list). */
 .char-setup-tab { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 18px; }
 .char-setup-section { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-.char-setup-title { font-size: 12px; font-weight: 600; color: var(--fd-text); }
 .char-setup-desc { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--fd-text-muted); }
 /* The scanned character list: one row per found character, description wrapping
    under the name/age/actions line. */
@@ -265,7 +251,6 @@
 }
 .char-scan-tag { flex: 0 0 auto; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: var(--fd-text-muted); opacity: .7; }
 .char-scan-spacer { flex: 1; }
-.char-scan-added { flex: 0 0 auto; font-size: 10px; color: var(--fd-text-muted); }
 .char-scan-desc { font-size: 11px; line-height: 1.45; color: var(--fd-text-muted); }
 .char-rels-add {
   padding: 5px 12px;
@@ -511,13 +496,6 @@
   background: #fff;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
-.char-profile-chevron {
-  font-size: 10px;
-  color: var(--fd-text-muted);
-  transition: transform .15s;
-  flex-shrink: 0;
-}
-.char-profile-chevron.expanded { transform: rotate(180deg); }
 /* Enlarge button on card header */
 .char-profile-enlarge-btn {
   background: none;
@@ -614,9 +592,6 @@
 }
 /* Top section: description+meta and images — stacks in side panel, side-by-side in fullscreen */
 .char-profile-detail-top { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
-.char-profile-detail-info { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
-.char-profile-detail-media { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
-.char-profile-detail-bottom { display: flex; flex-direction: column; gap: var(--dz-char-field-gap, 8px); }
 /* Fullscreen card view: top row is 50/50 side-by-side */
 .char-profile-detail-fs .char-profile-detail-top {
   flex-direction: row;
@@ -699,12 +674,6 @@
 }
 .char-profile-input::placeholder { color: var(--fd-text-muted); }
 .char-profile-input:focus { border-color: var(--fd-accent); }
-/* Highlight toggle */
-.char-profile-highlight-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 /* v4.26 batch-v4 #4: the scenes <details> is gone — "Appears in (N)" is a
    photo-row toggle now; its chips render as a plain block. The old
    .char-profile-scenes-collapsible/-toggle rules left with it. */
@@ -1026,8 +995,6 @@
 }
 .char-profile-highlight-btn:hover { border-color: #555; }
 .char-profile-highlight-btn.active { color: #fff; border-color: transparent; }
-/* Scene chips */
-.char-profile-scenes { display: flex; flex-direction: column; gap: 4px; }
 .char-profile-scene-chips {
   display: flex;
   flex-wrap: wrap;
@@ -1059,29 +1026,7 @@
   flex-shrink: 0;
   border: 2px solid var(--fd-border);
 }
-/* Color row in expanded detail (when avatar replaces the header swatch) */
-.char-profile-color-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.char-profile-color-row .char-profile-color {
-  margin: 0;
-}
 
-/* === Character Images Section === */
-.char-profile-images {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.char-profile-images-primary {
-  width: 100%;
-  border-radius: 4px;
-  overflow: hidden;
-  background: var(--fd-input-bg);
-  border: 1px solid var(--fd-border);
-}
 .char-profile-image-main {
   width: 100%;
   max-height: var(--dz-char-image-h, 200px); /* v4.26: image-slot Design knob */
@@ -1091,77 +1036,6 @@
   transition: opacity .15s;
 }
 .char-profile-image-main:hover { opacity: .85; }
-
-/* Thumbnail strip for multiple images */
-.char-profile-images-strip {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-.char-profile-images-strip::-webkit-scrollbar { height: 4px; }
-.char-profile-images-strip::-webkit-scrollbar-track { background: transparent; }
-.char-profile-images-strip::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
-.char-profile-thumb-wrap {
-  position: relative;
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 2px solid transparent;
-  cursor: pointer;
-}
-.char-profile-thumb-wrap.active {
-  border-color: var(--fd-accent);
-}
-.char-profile-thumb-wrap:hover {
-  border-color: var(--fd-accent);
-}
-.char-profile-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.char-profile-thumb-remove {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 16px;
-  height: 16px;
-  background: rgba(0,0,0,.7);
-  color: #fff;
-  border: none;
-  border-radius: 0 0 0 4px;
-  font-size: 10px;
-  line-height: 16px;
-  text-align: center;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity .15s;
-  padding: 0;
-}
-.char-profile-thumb-wrap:hover .char-profile-thumb-remove { opacity: 1; }
-.char-profile-thumb-primary {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 16px;
-  height: 16px;
-  background: rgba(0,0,0,.7);
-  color: #f4d35e;
-  border: none;
-  border-radius: 0 4px 0 0;
-  font-size: 10px;
-  line-height: 16px;
-  text-align: center;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity .15s;
-  padding: 0;
-}
-.char-profile-thumb-wrap:hover .char-profile-thumb-primary { opacity: 1; }
 
 /* Image action buttons */
 .char-profile-image-actions {
@@ -1190,22 +1064,6 @@
 }
 .char-profile-voice-btn:hover:not(:disabled) { border-color: var(--fd-accent); color: var(--fd-accent); }
 .char-profile-voice-btn:disabled { opacity: 0.5; cursor: default; }
-.char-profile-img-btn {
-  flex: 1;
-  padding: 4px 8px;
-  background: transparent;
-  border: 1px solid var(--fd-border);
-  border-radius: 3px;
-  color: var(--fd-text-muted);
-  font-size: 10px;
-  cursor: pointer;
-  text-align: center;
-  transition: border-color .15s, color .15s;
-}
-.char-profile-img-btn:hover {
-  border-color: var(--fd-accent);
-  color: var(--fd-accent);
-}
 
 /* === Image Picker Dialog === */
 .char-image-picker-dialog {
@@ -1281,21 +1139,6 @@
 .char-profiles-list::-webkit-scrollbar-track { background: transparent; }
 .char-profiles-list::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
-/* === Role select === */
-.char-profile-select {
-  /* v4.26: rides the shared field-height knob — it sits in the same meta rows
-     as .char-profile-input, so the two must track or the row misaligns. */
-  height: var(--dz-char-input-h, 26px);
-  background: var(--fd-input-bg);
-  color: var(--fd-text);
-  border: 1px solid transparent;
-  border-radius: 3px;
-  padding: 0 4px;
-  font-size: 11px;
-  outline: none;
-  cursor: pointer;
-}
-.char-profile-select:focus { border-color: var(--fd-accent); }
 
 /* 3-column meta row */
 .char-profile-meta-row-3 {

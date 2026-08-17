@@ -262,13 +262,6 @@
   background: var(--fd-navigator-bg);
   flex-shrink: 0;
 }
-.beat-board-title {
-  font-weight: 600;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--fd-text-muted);
-}
 /* v6.56, Derek: "vertically center '4 beats' and add space between that and
    the + button. remove the box that is around it." The box was the tab
    strip's own border — the count sits OUTSIDE that pill now (the AfterTabs
@@ -972,20 +965,6 @@
 .beat-column-cards::-webkit-scrollbar-track { background: transparent; }
 .beat-column-cards::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
-/* ── Beat Board Mode Toggle ── */
-/* v1.98: names the control (Derek: "Arrangement: Columns | Freeform"). */
-.beat-mode-label {
-  font-size: 12px;
-  color: var(--fd-text-muted);
-  white-space: nowrap;
-}
-.beat-mode-toggle {
-  display: flex;
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  overflow: hidden;
-  margin-right: auto;
-}
 .beat-mode-btn {
   background: transparent;
   border: none;

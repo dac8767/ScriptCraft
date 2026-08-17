@@ -423,14 +423,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 4px 8px;
-}
-.ribed-chip-big .ribed-chip-icon { font-size: 29px; }  /* v3.33: the live big-button icon size */
-.ribed-chip-biglabel {
-  font-size: 10px;
-  line-height: 1.1;
-  color: var(--fd-text);
-  white-space: nowrap;
-}
+}  /* v3.33: the live big-button icon size */
 /* dropdown builtins look like the fields they are on the bar — 24px, the
    live selects' resting height (same as the chips, so rows stay equal). */
 .ribed-chip.ribed-chip-dd {
@@ -441,7 +434,6 @@
   border: 1px solid var(--fd-overlay-medium);
   border-radius: 5px;
 }
-.ribed-dd-text { font-size: 11.5px; color: var(--fd-text); white-space: nowrap; }
 /* v3.33, Derek: the Scrapbook's injected ribbon section — always the last
    left-aligned section while the tool is open.
    v3.83, Derek: a standard centred section title (.rib-sec-title) sits on top;
@@ -918,23 +910,8 @@
    the editor's fields are the same length as the bar's. Text sits left like
    a real select. */
 .ribed-chip.ribed-chip-dd { justify-content: flex-start; box-sizing: border-box; }
-.ribed-chip-dd[data-dd="fontFamily"] { min-width: 165px; }  /* the live select rests at ~167px with "Courier Prime" */
-.ribed-chip-dd[data-dd="fontSize"] { min-width: 60px; }
-.ribed-chip-dd[data-dd="element"] { min-width: 140px; }
-.ribed-chip-dd[data-dd="view"] { min-width: 90px; }
 /* v3.34: the macOS select STEPPER (up+down carets), not a single chevron —
    the live fields are native selects and draw exactly this. */
-.ribed-dd-chev {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='12'%3E%3Cpath d='M1 4.5l3-3 3 3' stroke='%23999' fill='none' stroke-width='1.3'/%3E%3Cpath d='M1 7.5l3 3 3-3' stroke='%23999' fill='none' stroke-width='1.3'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-}
 /* insertion indicator while a section rides the pointer — zero net width */
 /* v3.33, Derek: chips carry the LIVE bar's exact metrics — 26×24 like
    .toolbar-btn, 12px glyphs, transparent at rest (the live buttons are
@@ -965,31 +942,9 @@
   user-select: none;
 }
 .ribed-chip svg, .ribed-pal-chip svg { -webkit-user-drag: none; }
-.ribed-chip-lifted { opacity: 0.45; }
 .ribed-chip-icon { display: inline-flex; pointer-events: none; }
 /* v2.97: the spacer chip's WIDTH is the spacer's width — resized by
    dragging the grip on its right edge. */
-.ribed-chip-spacer {
-  background: transparent;
-  border: 1px dashed var(--fd-border);
-  min-width: 8px;
-  padding: 0;
-  justify-content: flex-end;
-  box-sizing: border-box;
-}
-/* v2.97: a one-row divider inside a row — shown as the line it is. */
-.ribed-chip-div {
-  min-width: 10px;
-  padding: 0;
-  background: transparent;
-}
-.ribed-chip-div::before {
-  content: '';
-  width: 2px;
-  height: 18px;
-  border-radius: 1px;
-  background: var(--fd-border);
-}
 /* hidden ✕ buttons must not swallow pointer events (they overhang their
    neighbours) — they only become clickable when their owner is hovered */
 .ribed-chip:hover .ribed-x { opacity: 1; pointer-events: auto; }
@@ -1025,7 +980,6 @@
   flex-wrap: wrap;
   margin-bottom: 8px;
 }
-.ribed-utilrow-spring { flex: 1; }
 .ribed-tools {
   display: flex;
   align-items: center;
@@ -1091,7 +1045,6 @@
   white-space: nowrap;
 }
 .ribed-pal-chip:active { cursor: grabbing; }
-.ribed-pal-util { border-color: color-mix(in srgb, var(--fd-accent) 55%, var(--fd-border)); }
 
 /* v2.95: Word-style editor rulers (EditorRulers.tsx). A zero-size sticky pin
    keeps the canvases at the scroll container's visible corner; the canvases

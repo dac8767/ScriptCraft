@@ -353,7 +353,13 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     id: 'navigator',
     label: 'Navigator & Outline',
     tokens: [
-      { id: 'navTitleFont', label: 'Panel title font', cssVar: '--dz-nav-title-font', unit: 'px', min: 10, max: 20, step: 0.5, def: 13 },
+      /* v7.41: 'Panel title font' (navTitleFont / --dz-nav-title-font) is GONE.
+         Its only reader was `.navigator-title`, in a panel header that no
+         component renders any more — the tool dock draws its own. The slider
+         had been styling nothing since that rewrite; deleting the dead rule is
+         what surfaced it, and the no-dead-knobs test is what refused to let it
+         through. A stale persisted override is harmless: applyDesignVars
+         ignores ids it does not know. */
       { id: 'navScenePadY', label: 'Scene row padding', cssVar: '--dz-nav-scene-pady', unit: 'px', min: 2, max: 24, step: 1, def: 10 },
       { id: 'navSceneFont', label: 'Scene heading font', cssVar: '--dz-nav-scene-font', unit: 'px', min: 10, max: 20, step: 0.5, def: 14 },
       { id: 'navSynopsisFont', label: 'Scene synopsis font', cssVar: '--dz-nav-synopsis-font', unit: 'px', min: 8, max: 18, step: 0.5, def: 11 },

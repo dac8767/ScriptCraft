@@ -476,9 +476,7 @@
     gap: 8px;
     padding: 8px 12px;
   }
-  .beat-board-title { font-size: 11px; }
   .beat-board-info { margin-right: 0; }
-  .beat-mode-toggle { order: 10; width: 100%; }
   .beat-mode-btn {
     flex: 1;
     padding: 8px 10px;
@@ -546,7 +544,7 @@
 /* ── Interaction hints for touch devices ── */
 @media (hover: none) and (pointer: coarse) {
   /* Larger close buttons on panels */
-  .navigator-close, .script-notes-close, .search-close-btn,
+  .search-close-btn,
   .asset-manager-close, .format-panel-close {
     min-width: 44px;
     min-height: 44px;

@@ -40,40 +40,6 @@
   opacity: 0.75;
 }
 
-/* ── Cross-tab search: group labels + General/Script hit rows ── */
-.swn-note-hit {
-  margin: 4px 12px;
-  padding: 7px 10px;
-  border: 1px solid var(--fd-border);
-  border-left: 3px solid var(--fd-accent, #4a90d9);
-  border-radius: 6px;
-  background: var(--fd-bg);
-  cursor: pointer;
-}
-.swn-note-hit:hover { background: var(--fd-bg-hover, rgba(128, 128, 128, 0.08)); }
-.swn-note-hit-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--fd-text);
-  margin-bottom: 2px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.swn-note-hit-snippet {
-  font-size: 11px;
-  color: var(--fd-text-muted);
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.swn-tab.active {
-  color: var(--fd-text);
-  border-bottom-color: var(--fd-accent, #4a90d9);
-}
-
 .swn-scroll {
   flex: 1;
   overflow-y: auto;
@@ -266,11 +232,6 @@
   overflow-y: auto;
 }
 
-.swn-add-row {
-  padding: 8px 12px;
-  border-top: 1px solid var(--fd-border);
-  flex-shrink: 0;
-}
 .swn-add-btn {
   width: 100%;
   padding: 6px 0;

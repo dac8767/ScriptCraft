@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.41",
+  "date": "2026-08-17",
+  "changes": [
+   "Internal: 429 lines of stylesheet that could never match anything are gone — rules for panels and controls the app stopped rendering versions ago. One Design slider went with them: \"Panel title font\" had been styling nothing since the panel header it targeted was replaced."
+  ]
+ },
+ {
   "version": "7.40",
   "date": "2026-08-17",
   "changes": [
