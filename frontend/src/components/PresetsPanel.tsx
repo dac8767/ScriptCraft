@@ -34,8 +34,10 @@ const JSON_FILTER = [{ name: 'ScriptCraft Preset', extensions: ['json'] }];
    window now, so nothing called it. The `customize` collector it used is
    still the one PRESET_PARTS uses — the file the window writes carries the
    same data, alongside whatever else is ticked.
-   importCustomizationsFlow STAYS: the import side is unchanged until Derek
-   decides whether import becomes the mirror-image checklist. */
+   importCustomizationsFlow STAYS. And the import side stays as it is:
+   v7.31, Derek — "leave import as one door". No mirror-image checklist; a
+   preset file already says what it carries, so a second checklist would only
+   re-ask it. */
 
 /** Pick + confirm + apply a customization export. Shared with the Customize
  *  footer. Returns true when applied. */

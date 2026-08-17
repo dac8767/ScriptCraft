@@ -159,9 +159,12 @@
 > scattered export door (ThemesTab, outline presets, Settings ▸ Backup,
 > Customize footer, any workspace export) OPENS THIS WINDOW instead of
 > running its own flow — a door may PRE-CHECK its own category but they all
-> land in the one window. Import side: Derek's spec covers EXPORT; ask (or
-> spec separately) whether import becomes the mirror-image checklist of the
-> combined file before building that half.
+> land in the one window.
+> **IMPORT SIDE — DECIDED AND CLOSED (Derek, 2026-08-16): "leave import as one
+> door".** No mirror-image checklist. v7.31's Restore reads any preset file and
+> applies whatever it carries, so a second checklist would only re-ask a
+> question the file already answers. Do not build that half; if it ever comes
+> back it is a new decision, not this open item.
 
 > QUEUE — WAITING on Derek: the ribbon default preset (he will send a Full
 > Preset export to bake in as the shipped defaults). Otherwise clear; the
