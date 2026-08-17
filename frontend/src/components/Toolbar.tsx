@@ -39,7 +39,7 @@ import { buildRibbonPalette } from './ribbonPaletteData';
 import { useNotebookStore } from '../stores/notebookStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { saveViewState } from '../stores/viewState';
-import { TableGridPicker, applyScrapbookTextFormat } from './NotebookTool';
+import { applyScrapbookTextFormat } from './NotebookTool';
 import { chromePx, chromeScaleFactor } from './chromeSizes';
 import { confirmDialog } from './ConfirmDialog';
 import { commandDef, type ToolbarCommand } from './toolbarCommands';
@@ -58,15 +58,16 @@ import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { BUILT_IN_ELEMENT_IDS } from '../stores/formattingTypes';
 import {
   getCurrentElementRule,
-  getLockedFormatting,
   toggleBoldOverride,
   toggleItalicOverride,
   toggleUnderlineOverride,
 } from '../utils/effectiveFormatting';
-import type { LockedFormatting } from '../utils/effectiveFormatting';
 import FontPicker from './FontPicker';
 import ColorPicker from './ColorPicker';
 import ZoomControl from './ZoomControl';
+import InsertTableControl from './InsertTableControl';
+import TextColorControl from './TextColorControl';
+import { useCursorFormatting } from '../hooks/useCursorFormatting';
 import { FONT_REGISTRY, loadFont } from '../utils/fonts';
 
 
@@ -118,9 +119,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     viewStyle, setViewStyle,
     zoomPanelOpen,
     setZoomPanelOpen,
-    fontFamily,
     setFontFamily,
-    fontSize,
     setFontSize,
     setSearchOpen,
     setGoToPageOpen,
@@ -149,7 +148,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // v2.94: the Insert Table button needs a page to land the table on — the
   // old menu item was disabled without one, and firing the event with no
   // canvas mounted is a silent no-op.
-  const scrapbookPage = useNotebookStore((s) => !!s.selectedPageId);
 
   const activeTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate());
 
@@ -164,7 +162,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   useFormattingTemplateStore((st) => st.elementHidden);   // re-render on change
 
   useFormattingTemplateStore((st) => st.elementOrder);
-  const isEnforceMode = activeTemplate.mode === 'enforce';
   const isOverrideMode = activeTemplate.mode === 'override';
 
   // v4.22, Derek: the Editor View dropdown's options are customizable
@@ -185,19 +182,22 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // v3.40, Derek: the +Add menu has two views — the structural utilities up
   // front, and every addable item behind an "Add Item ▸" submenu.
   const [addView, setAddView] = useState<'main' | 'items'>('main');
-  // Per-attribute locking state — updates reactively when cursor moves between elements
-  const [locked, setLocked] = useState<LockedFormatting>({
-    bold: false, italic: false, underline: false, strikethrough: false,
-    textAlign: false, textColor: false, backgroundColor: false, textTransform: false,
-    fontFamily: false, fontSize: false, subscript: false, superscript: false,
-  });
 
-  // Color picker state
-  const [textColorOpen, setTextColorOpen] = useState(false);
-  // v3.21: the color pickers are PORTALLED (the ribbon clips overflow, so an
-  // absolute popup inside it is invisible — the "dead button" report).
-  // Fixed coordinates measured from the trigger, per the AddMenu rule.
-  const [colorPopAnchor, setColorPopAnchor] = useState<{ top: number; left: number } | null>(null);
+  // v7.48: what the pickers should be showing for the current selection —
+  // which attributes the template locks, the cursor's font and size, and any
+  // font the document carries that the registry does not list. All four are
+  // read by several cases in renderBuiltinControl AND by the Scrapbook
+  // branches above it, which is why the engine is a shared hook rather than
+  // state inside any one control.
+  const { locked, cursorFont, cursorSize, extraFonts } = useCursorFormatting(editor);
+
+  // v7.47: the SCRIPT text-colour picker's state moved to TextColorControl.
+  // What is left here is the Scrapbook's, which is a different control against
+  // a different document — they shared one open flag until v7.47 purely because
+  // both were rendered by renderBuiltinControl, and that cost a real edge:
+  // opening the Scrapbook picker and closing the Scrapbook left the script's
+  // picker looking already open.
+  const [sbTextColorOpen, setSbTextColorOpen] = useState(false);
   // v2.69: the Scrapbook's text-background picker. Its swatch clicks move
   // focus out of the contentEditable, so the selection is captured on the
   // button's mousedown and restored before the execCommand runs.
@@ -207,129 +207,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   // editor's cursor font (always Courier Prime while a box is open); now it
   // follows the selection inside the box and the last font you pick.
   const [sbFont, setSbFont] = useState<string>('');
-  // v2.94: the insert-table grid on the toolbar's second row — the one menu
-  // item that can't move into the native macOS menu bar. Portalled to
-  // document.body (the toolbar's own stacking context sits UNDER the tool
-  // dock — a popup inside it renders but can't be clicked) and positioned
-  // by measured top/left from the trigger, never bottom.
-  const [tableGridOpen, setTableGridOpen] = useState(false);
-  const [tableGridPos, setTableGridPos] = useState<{ top: number; left: number } | null>(null);
-  useEffect(() => {
-    if (!tableGridOpen) return;
-    const close = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement).closest?.('.toolbar-tablegrid-anchor')) setTableGridOpen(false);
-    };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [tableGridOpen]);
-  const [currentTextColor, setCurrentTextColor] = useState<string>('#000000');
   // v1.83: the highlighter color is store state — Format > Highlighting shares it.
 
-  // Track the font/size of the text at current cursor position. Empty string
-  // / null indicates the selection spans more than one value ("mixed").
-  const [cursorFont, setCursorFont] = useState<string>(fontFamily);
-  const [cursorSize, setCursorSize] = useState<number | null>(fontSize);
-  // Fonts found in document that aren't in the registry
-  const [extraFonts, setExtraFonts] = useState<string[]>([]);
-
-  const detectFormatting = useCallback(() => {
-    if (!editor) return;
-
-    // Update locked formatting for current element
-    const rule = getCurrentElementRule(editor, activeTemplate);
-    setLocked(getLockedFormatting(rule, isEnforceMode));
-
-    const { from, to, empty } = editor.state.selection;
-
-    // For an empty cursor, fall back to the textStyle mark at that position.
-    if (empty) {
-      const attrs = editor.getAttributes('textStyle');
-      const detectedFont = (attrs.fontFamily as string | undefined) || '';
-      const detectedSize = (attrs.fontSize as string | undefined) || '';
-      const effectiveFont = detectedFont || rule?.fontFamily || fontFamily;
-      setCursorFont(effectiveFont);
-      if (effectiveFont && !FONT_REGISTRY.find((f) => f.name === effectiveFont)) {
-        setExtraFonts((prev) => (prev.includes(effectiveFont) ? prev : [...prev, effectiveFont]));
-      }
-      if (detectedSize) {
-        const parsed = parseInt(detectedSize, 10);
-        setCursorSize(!isNaN(parsed) ? parsed : (rule?.fontSize ?? fontSize));
-      } else {
-        setCursorSize(rule?.fontSize ?? fontSize);
-      }
-      return;
-    }
-
-    // For a real selection, walk the text nodes within [from, to]. If every
-    // text node carries the same fontFamily / fontSize, show that value;
-    // otherwise show the picker as blank to indicate "mixed".
-    const fonts = new Set<string>();
-    const sizes = new Set<string>();
-    let sawText = false;
-    editor.state.doc.nodesBetween(from, to, (node, pos) => {
-      if (!node.isText || !node.text) return;
-      const start = Math.max(pos, from);
-      const end = Math.min(pos + node.nodeSize, to);
-      if (end <= start) return;
-      sawText = true;
-      const ts = node.marks.find((m) => m.type.name === 'textStyle');
-      const ff = (ts?.attrs.fontFamily as string | undefined) || '';
-      const fs = (ts?.attrs.fontSize as string | undefined) || '';
-      fonts.add(ff);
-      sizes.add(fs);
-    });
-
-    if (!sawText) {
-      // Selection contains only block boundaries / no text — fall back to cursor attrs.
-      const attrs = editor.getAttributes('textStyle');
-      const detectedFont = (attrs.fontFamily as string | undefined) || '';
-      const detectedSize = (attrs.fontSize as string | undefined) || '';
-      const effectiveFont = detectedFont || rule?.fontFamily || fontFamily;
-      setCursorFont(effectiveFont);
-      if (detectedSize) {
-        const parsed = parseInt(detectedSize, 10);
-        setCursorSize(!isNaN(parsed) ? parsed : (rule?.fontSize ?? fontSize));
-      } else {
-        setCursorSize(rule?.fontSize ?? fontSize);
-      }
-      return;
-    }
-
-    if (fonts.size > 1) {
-      setCursorFont('');
-    } else {
-      const single = [...fonts][0] || '';
-      const effective = single || rule?.fontFamily || fontFamily;
-      setCursorFont(effective);
-      if (effective && !FONT_REGISTRY.find((f) => f.name === effective)) {
-        setExtraFonts((prev) => (prev.includes(effective) ? prev : [...prev, effective]));
-      }
-    }
-
-    if (sizes.size > 1) {
-      setCursorSize(null);
-    } else {
-      const single = [...sizes][0] || '';
-      if (single) {
-        const parsed = parseInt(single, 10);
-        setCursorSize(!isNaN(parsed) ? parsed : (rule?.fontSize ?? fontSize));
-      } else {
-        setCursorSize(rule?.fontSize ?? fontSize);
-      }
-    }
-  }, [editor, fontFamily, fontSize, activeTemplate, isEnforceMode]);
-
-  useEffect(() => {
-    if (!editor) return;
-    editor.on('selectionUpdate', detectFormatting);
-    editor.on('transaction', detectFormatting);
-    // Run once on mount / editor ready
-    detectFormatting();
-    return () => {
-      editor.off('selectionUpdate', detectFormatting);
-      editor.off('transaction', detectFormatting);
-    };
-  }, [editor, detectFormatting]);
 
   // v3.71, Derek: while editing the toolbar, Cmd/Ctrl+Z undoes the last ribbon
   // change (each mutation snapshots toolbarLeft). Capture-phase so it beats the
@@ -354,34 +233,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [toolbarEditing]);
 
-  // Collect all unique fonts used in the document (for extra fonts display)
-  useEffect(() => {
-    if (!editor) return;
-    const collectFonts = () => {
-      const found = new Set<string>();
-      editor.state.doc.descendants((node) => {
-        if (node.isText && node.marks) {
-          for (const mark of node.marks) {
-            if (mark.type.name === 'textStyle' && mark.attrs.fontFamily) {
-              const f = mark.attrs.fontFamily as string;
-              if (!FONT_REGISTRY.find(r => r.name === f)) {
-                found.add(f);
-              }
-            }
-          }
-        }
-      });
-      if (found.size > 0) {
-        setExtraFonts(prev => {
-          const merged = new Set([...prev, ...found]);
-          return merged.size !== prev.length ? [...merged] : prev;
-        });
-      }
-    };
-    collectFonts();
-    editor.on('update', collectFonts);
-    return () => { editor.off('update', collectFonts); };
-  }, [editor]);
 
   const handleElementChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const picked = e.target.value;
@@ -754,18 +605,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <button
             className="toolbar-btn"
             title="Text Color (Scrapbook)"
-            onMouseDown={(e) => { e.preventDefault(); setTextColorOpen(!textColorOpen); }}
+            onMouseDown={(e) => { e.preventDefault(); setSbTextColorOpen(!sbTextColorOpen); }}
           >
             {TOOLBAR_ICONS.textColor}
           </button>
-          {showPopups && textColorOpen && (
+          {showPopups && sbTextColorOpen && (
             <ColorPicker
               value=""
               onChange={(color) => {
                 applyScrapbookTextFormat('foreColor', color || '#000000');
-                setTextColorOpen(false);
+                setSbTextColorOpen(false);
               }}
-              onClose={() => setTextColorOpen(false)}
+              onClose={() => setSbTextColorOpen(false)}
             />
           )}
         </div>
@@ -1052,50 +903,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           <FaSuperscript />
         </button>
       );
-      case 'textColor': return (
-        <div className="toolbar-group" style={{ position: 'relative' }}>
-          <button
-            className="toolbar-btn"
-            title="Text Color"
-            disabled={locked.textColor}
-            onClick={(e) => {
-              if (locked.textColor) return;
-              const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              setColorPopAnchor({ top: r.bottom + 4, left: r.left });
-              setTextColorOpen(!textColorOpen);
-            }}
-          >
-            {/* v3.25, Derek: the A ALWAYS wears the picked color — black when
-                black is chosen (the red-default special case is gone). */}
-            <span
-              className="fs-textcolor-icon"
-              aria-hidden="true"
-              style={{ color: currentTextColor }}
-            >
-              A
-              <span className="fs-textcolor-bar" style={{ background: currentTextColor }} />
-            </span>
-          </button>
-          {showPopups && textColorOpen && colorPopAnchor && createPortal(
-            <div style={{ position: 'fixed', top: colorPopAnchor.top, left: colorPopAnchor.left, zIndex: 2147483647 }}>
-              <ColorPicker
-                value={currentTextColor}
-                onChange={(color) => {
-                  setCurrentTextColor(color || '#000000');
-                  if (color) {
-                    editor?.chain().focus(undefined, { scrollIntoView: false }).setColor(color).run();
-                  } else {
-                    editor?.chain().focus(undefined, { scrollIntoView: false }).unsetColor().run();
-                  }
-                  setTextColorOpen(false);
-                }}
-                onClose={() => setTextColorOpen(false)}
-              />
-            </div>,
-            document.body,
-          )}
-        </div>
-      );
+      case 'textColor':
+        return <TextColorControl editor={editor} locked={locked.textColor} showPopups={showPopups} />;
       // v6.10, Derek: SCRIPT highlighting is the Annotations tool's job now —
       // the ribbon highlighter no longer applies the old `highlight` mark.
       // The key survives for the Scrapbook: while a Scrapbook box is focused
@@ -1226,37 +1035,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       /* v2.94, Derek: the Scrapbook's insert-table grid can't live in a native
          macOS menu, so it moves to the toolbar's second row. Only rendered
          while the Scrapbook is open — same visibility as its old menu. */
-      case 'insertTable': {
-        if (!scrapbookOpen) return null;
-        return (
-          <div className="toolbar-group toolbar-tablegrid-anchor">
-            <button
-              className={`toolbar-btn${tableGridOpen ? ' active' : ''}`}
-              disabled={!scrapbookPage}
-              title={scrapbookPage ? 'Insert Table (Scrapbook)' : 'Insert Table — select a Scrapbook page first'}
-              onClick={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setTableGridPos({ top: r.bottom + 4, left: r.left });
-                setTableGridOpen(!tableGridOpen);
-              }}
-            >{TOOLBAR_ICONS.insertTable}</button>
-            {showPopups && tableGridOpen && tableGridPos && createPortal(
-              <div
-                className="toolbar-tablegrid-popup toolbar-tablegrid-anchor"
-                style={{ top: tableGridPos.top, left: tableGridPos.left }}
-              >
-                <TableGridPicker
-                  onPick={(rows, cols) => {
-                    window.dispatchEvent(new CustomEvent('nb-add-table-canvas', { detail: { rows, cols } }));
-                    setTableGridOpen(false);
-                  }}
-                />
-              </div>,
-              document.body,
-            )}
-          </div>
-        );
-      }
+      case 'insertTable':
+        return <InsertTableControl showPopups={showPopups} />;
       case 'view': return (
         <>
           <span className="view-style-label">Editor View</span>

@@ -1065,6 +1065,11 @@ const ScreenplayEditor: React.FC = () => {
       // v6.69: the PROJECT store too — Snapshots/Script History read from it,
       // and a check can't reproduce "a script is open" without it.
       (window as unknown as Record<string, unknown>).__scProjectStore = useProjectStore;
+      // v7.48: and the NOTEBOOK store. Several ribbon controls change identity
+      // while the Scrapbook is open — the font, size and text-colour pickers
+      // each become a different control against a different document — so a
+      // check that cannot open the Scrapbook cannot reach half of them.
+      (window as unknown as Record<string, unknown>).__scNotebookStore = useNotebookStore;
     }
   }, [editor]);
 

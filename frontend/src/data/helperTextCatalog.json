@@ -1963,18 +1963,18 @@
   "text": "Insert Table — select a Scrapbook page first",
   "kind": "tooltip",
   "sites": 1,
-  "area": "Ribbon Toolbar",
+  "area": "Everything Else",
   "where": [
-   "components/Toolbar.tsx"
+   "components/InsertTableControl.tsx"
   ]
  },
  {
   "text": "Insert Table (Scrapbook)",
   "kind": "tooltip",
   "sites": 1,
-  "area": "Ribbon Toolbar",
+  "area": "Everything Else",
   "where": [
-   "components/Toolbar.tsx"
+   "components/InsertTableControl.tsx"
   ]
  },
  {
@@ -3329,9 +3329,9 @@
   "text": "Text Color",
   "kind": "tooltip",
   "sites": 1,
-  "area": "Ribbon Toolbar",
+  "area": "Everything Else",
   "where": [
-   "components/Toolbar.tsx"
+   "components/TextColorControl.tsx"
   ]
  },
  {
