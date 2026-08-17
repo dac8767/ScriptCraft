@@ -230,6 +230,16 @@ what stops the baffling "Cannot find package" after a pull) → launch the Tauri
 It's `&&`-chained, so a failed pull stops rather than launching a half-merged tree.
 `npm run app` launches without pulling.
 
+**`npm run desktop:build`** is the same restore → pull → install, then a
+LOCAL UNSIGNED `.app` (`./build-desktop.sh --local`) — for testing anything
+the OS has to know about, above all FILE ASSOCIATIONS. macOS reads those
+from Info.plist, written at BUILD time, and `tauri dev` never installs a
+bundle, so a dev session can never register one. v7.31: never hand Derek a
+bare `git pull` — the generated lockfiles (`Cargo.lock`,
+`frontend/package-lock.json`) are rewritten by his own local runs and a
+dirty one aborts the merge. Give him the npm script, which restores them
+first.
+
 (If you edited his working copy directly he may not need `git pull` — but he does need
 to restart the app.)
 
