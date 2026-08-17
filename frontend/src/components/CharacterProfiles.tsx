@@ -16,6 +16,7 @@ import { useAssetStore } from '../stores/assetStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
 import MiniRichText from './MiniRichText';
+import { selectCharacterList } from '../utils/characterList';
 import { toTitleCaseName, lastNameOf, joinName, escapeRegExp } from '../utils/characterNames';
 import { buildScanList, filterScanList, type ScannedCharacter } from '../utils/characterScan';
 import { useWindowTabMemory } from '../utils/windowTabMemory';
@@ -618,51 +619,17 @@ const CharacterProfiles: React.FC<CharacterProfilesProps> = ({ editor, projectId
   }, [characterProfiles, scriptCharacterNames]);
 
   // All characters (from profiles + auto-detected), sorted by selected criteria
-  const allCharacters = useMemo(() => {
-    // Union of profiles (which may be orphaned) and the cues present in the
-    // script right now. The stale `characters` store is deliberately NOT a
-    // source here — including it re-added names the writer had just removed,
-    // so Remove appeared to do nothing.
-    const nameSet = new Set<string>();
-    for (const p of characterProfiles) nameSet.add(p.name);
-    for (const name of scriptCharacterNames) nameSet.add(name);
-    let list = Array.from(nameSet);
-
-    if (searchQuery) {
-      const q = searchQuery.toUpperCase();
-      list = list.filter((n) => n.includes(q));
-    }
-    // v6.12, Derek: the header's Filter dimensions.
-    if (filterInScript) list = list.filter((n) => scriptCharacterNames.has(n));
-    if (filterHasImage || filterHasDesc) {
-      const byName = new Map(characterProfiles.map((p) => [p.name, p]));
-      if (filterHasImage) list = list.filter((n) => (byName.get(n)?.images?.length ?? 0) > 0);
-      if (filterHasDesc) list = list.filter((n) => stripHtml(byName.get(n)?.description || '').trim().length > 0);
-    }
-
-    list.sort((a, b) => {
-      const sa = charStats.get(a);
-      const sb = charStats.get(b);
-      switch (sortBy) {
-        case 'name':
-          return a.localeCompare(b);
-        case 'importance':
-          // scenes + dialogues descending
-          return ((sb?.sceneCount ?? 0) + (sb?.dialogueCount ?? 0))
-               - ((sa?.sceneCount ?? 0) + (sa?.dialogueCount ?? 0));
-        case 'scenes':
-          return (sb?.sceneCount ?? 0) - (sa?.sceneCount ?? 0);
-        case 'dialogues':
-          return (sb?.dialogueCount ?? 0) - (sa?.dialogueCount ?? 0);
-        case 'appearance':
-          return (sa?.appearanceOrder ?? 999) - (sb?.appearanceOrder ?? 999);
-        default:
-          return 0;
-      }
-    });
-
-    return list;
-  }, [characterProfiles, scriptCharacterNames, searchQuery, sortBy, charStats, filterInScript, filterHasImage, filterHasDesc]);
+  /* v7.45: the list itself moved to utils/characterList — it is a pure
+     function of these eight inputs, and the union-of-two-sources decision in
+     it is now held by tests rather than a comment alone. */
+  const allCharacters = useMemo(
+    () => selectCharacterList({
+      characterProfiles, scriptCharacterNames, searchQuery, sortBy, charStats,
+      filterInScript, filterHasImage, filterHasDesc,
+    }),
+    [characterProfiles, scriptCharacterNames, searchQuery, sortBy, charStats,
+      filterInScript, filterHasImage, filterHasDesc],
+  );
 
   // v4.24 batch-v2 #6: publish the count the panel shows so the window
   // chrome's title (CharTitleExtra) displays the same number.

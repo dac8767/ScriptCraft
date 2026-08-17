@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.45",
+  "date": "2026-08-17",
+  "changes": [
+   "Internal: the Characters list — which names show, and in what order — moved into a tested function of its own. Fifteen tests now hold what was only a comment, including the reason Remove used to look like it did nothing."
+  ]
+ },
+ {
   "version": "7.44",
   "date": "2026-08-17",
   "changes": [
