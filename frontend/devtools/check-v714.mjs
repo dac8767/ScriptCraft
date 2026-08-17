@@ -119,9 +119,14 @@ const flash = await page.evaluate(async () => {
 ok('flashSaved reaches its listeners', flash.seen.length === 1 && flash.seen[0] === 'Saved', JSON.stringify(flash));
 ok('…and holds long enough to read', flash.ms >= 1200, String(flash.ms));
 
-const menuSrc = readFileSync(new URL('../src/components/MenuBar.tsx', import.meta.url), 'utf8');
+/* v7.43: the save path left MenuBar for hooks/useSaveGuard. The rule is
+   unchanged — a successful save FLASHES, it does not toast — so the assertion
+   follows the code rather than being loosened. Both files are read, so this
+   keeps holding whichever side of the split the call ends up on. */
+const saveSrc = readFileSync(new URL('../src/hooks/useSaveGuard.ts', import.meta.url), 'utf8')
+  + readFileSync(new URL('../src/components/MenuBar.tsx', import.meta.url), 'utf8');
 ok('a successful save no longer toasts',
-  !/showToast\('Saved'/.test(menuSrc) && /flashSaved\(\)/.test(menuSrc), '');
+  !/showToast\('Saved'/.test(saveSrc) && /flashSaved\(\)/.test(saveSrc), '');
 /* v7.14 put the flash in the Quick Access row; v7.25 moved it onto the page
    ("centered and about an inch down from the ruler"), which is check-v725's
    subject. What survives from v7.14 is the part Derek asked for BOTH times —

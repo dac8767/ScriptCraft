@@ -1,5 +1,12 @@
 [
  {
+  "version": "7.43",
+  "date": "2026-08-17",
+  "changes": [
+   "Internal: Save, Save As and the \"you have unsaved changes\" question moved out of the menu bar into one place of their own, with tests covering the case that matters — a saved script whose autosave hasn't caught up yet still asks before anything discards your edits. No behaviour changed."
+  ]
+ },
+ {
   "version": "7.42",
   "date": "2026-08-17",
   "changes": [

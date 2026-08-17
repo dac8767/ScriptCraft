@@ -36,7 +36,6 @@ import { smartUndo, smartRedo, useEditorStore, DEFAULT_PAGE_LAYOUT, DEFAULT_TAG_
 import { useProjectStore } from '../stores/projectStore';
 import { api } from '../services/api';
 import { showToast } from './Toast';
-import { flashSaved } from '../utils/saveFlash';
 import { DiagnosticsDialog } from './DiagnosticsDialog';
 import { AboutDialog } from './AboutDialog';
 import { ChangelogDialog } from './ChangelogDialog';
@@ -73,12 +72,10 @@ import { eventToCombo, COMMAND_BY_ID, formatCombo } from './shortcuts';
 import { useShortcutStore } from '../stores/shortcutStore';
 import { useThemeStore } from '../stores/themeStore';
 import { BUILTIN_THEMES } from './themes';
-import { scriptApi } from '../services/scriptApi';
-import { mirrorSave, mirrorSnapshot } from '../services/saveLocations';
+import { mirrorSnapshot } from '../services/saveLocations';
 import { useSettingsStore } from '../stores/settingsStore';
 import { clearEditorHistory } from '../editor/clearHistory';
 import { importWorkspacesFromFile } from '../utils/workspaceImport';
-import { composeSaveContent } from '../utils/screenplaySaveContent';
 import { openTextFile, openBinaryFile } from '../utils/fileOps';
 import { reportSaveError } from '../stores/saveErrorStore';
 import type { MenuSection as PluginMenuSection } from '../plugins/registry';
@@ -137,6 +134,7 @@ import {
   FaRegFileAlt,
   FaClock,
 } from 'react-icons/fa';
+import { useSaveGuard } from '../hooks/useSaveGuard';
 
 /** v2.98: the Help-menu form links, shared by the menu items and the
  *  ribbon-pinnable commands — one place for each URL. */
@@ -213,7 +211,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     setGrammarModalOpen,
     setGrammarRulesPanelOpen,
     setOpenFileOpen,
-    setPostSaveAction,
     setSaveAsOpen,
     theme,
     setTheme,
@@ -259,127 +256,18 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     setScripts,
   } = useProjectStore();
 
-  // Build a saveable content object: editor JSON + store metadata at top level.
-  // v4.24: delegates to composeSaveContent — this used to be a hand-forked
-  // PARTIAL copy of the extras list (no _shelf, no _outlineTabs/_outlineStash,
-  // no spell/grammar prefs), so a manual File > Save stripped the Scrapbook
-  // and Outline tabs from the file until the next autosave healed it. The
-  // extras list lives in exactly one place now; never fork it again.
-  const buildSaveContent = useCallback((): Record<string, unknown> | undefined => {
-    if (!editor || editor.isDestroyed) return undefined;
-    return composeSaveContent(editor.getJSON());
-  }, [editor]);
-
-  // ── Save current editor content to backend ──
-  const handleSave = useCallback(async () => {
-    if (!editor) return;
-    /*
-     * v1.16 — Save behaves the way Save behaves everywhere else.
-     *
-     * Never saved before  -> open Save As, so you can name it.
-     * Saved before        -> just save, and say so briefly. No dialog, no questions.
-     */
-    if (!currentProject || !currentScriptId) {
-      setSaveAsOpen(true);
-      return;
-    }
-    const { setSaveStatus } = useEditorStore.getState();
-    setSaveStatus('saving');
-    try {
-      const content = buildSaveContent();
-      await scriptApi.saveScript(currentProject.id, currentScriptId, { content });
-      setSaveStatus('saved');
-      /* v7.14, Derek: this confirmation belongs beside the Save button, not in
-         the bottom-right toast corner — utils/saveFlash puts it in the Quick
-         Access bar. Failures still toast: those you DO need to read. */
-      flashSaved();
-      if (content) {
-        void mirrorSave({
-          projectId: currentProject.id,
-          scriptId: currentScriptId,
-          projectName: currentProject.name,
-          title: documentTitle || 'Untitled',
-          content,
-        });
-      }
-    } catch (err) {
-      console.error('Save failed:', err);
-      const msg = err instanceof Error ? err.message : String(err);
-      setSaveStatus('error', msg);
-      // AuthGate / QuotaExceededDialog already surfaced handled errors (401,
-      // 402, 403 unverified) — reportSaveError skips them.  Other failures
-      // get the blocking modal so the user can't miss them.
-      reportSaveError(err, 'manual-save');
-    }
-  }, [editor, currentProject, currentScriptId, buildSaveContent, setSaveAsOpen, documentTitle]);
-
-  /** Save As: always opens the destination/project/filename picker, even when
-   *  the current document is already saved. Use this to fork a local script
-   *  to cloud (or vice versa) or to write a copy under a different name. */
-  const handleSaveAs = useCallback(() => {
-    if (!editor) return;
-    setSaveAsOpen(true);
-  }, [editor, setSaveAsOpen]);
-
-  // ── Unsaved-changes confirmation before New / Import ──
-  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  /* v7.43: Save, Save As and the unsaved-changes guard moved to
+     hooks/useSaveGuard — one unit because the three only make sense together,
+     and it reads the stores itself rather than being handed state MenuBar
+     would only be subscribing to in order to pass on. */
+  const {
+    buildSaveContent, handleSave, handleSaveAs, confirmOrRun,
+    discardConfirmOpen, handleDiscardConfirmSave,
+    handleDiscardConfirmDiscard, handleDiscardConfirmCancel,
+  } = useSaveGuard(editor);
 
   // ── Word import: best-effort warning shown before opening the file picker ──
   const [docxImportWarningOpen, setDocxImportWarningOpen] = useState(false);
-
-  /** Returns true if the editor has unsaved changes worth prompting about.
-   *  - If never saved to a project: true when editor has any meaningful text.
-   *  - If saved to a project: true when auto-save hasn't caught up yet
-   *    (saveStatus is 'unsaved', 'saving', or 'error'). The 30s auto-save
-   *    interval leaves a window where edits exist only in memory; resetting
-   *    the editor in that window would silently discard them. */
-  const editorHasUnsavedChanges = useCallback((): boolean => {
-    if (!editor) return false;
-    if (currentProject && currentScriptId) {
-      const status = useEditorStore.getState().saveStatus;
-      return status === 'unsaved' || status === 'saving' || status === 'error';
-    }
-    // Never-saved document — prompt only if there's real content
-    const text = editor.state.doc.textContent.trim();
-    return text.length > 0;
-  }, [editor, currentProject, currentScriptId]);
-
-  const confirmOrRun = useCallback((action: () => void) => {
-    if (editorHasUnsavedChanges()) {
-      setPendingAction(() => action);
-      setDiscardConfirmOpen(true);
-    } else {
-      action();
-    }
-  }, [editorHasUnsavedChanges]);
-
-  const handleDiscardConfirmSave = useCallback(async () => {
-    setDiscardConfirmOpen(false);
-    if (!currentProject || !currentScriptId) {
-      // No project yet — open save-as dialog; the pending action will run
-      // after save-as completes (via postSaveAction in the store).
-      if (pendingAction) setPostSaveAction(pendingAction);
-      setPendingAction(null);
-      setSaveAsOpen(true);
-      return;
-    }
-    // Existing project — save inline, then run pending action
-    await handleSave();
-    pendingAction?.();
-    setPendingAction(null);
-  }, [handleSave, pendingAction, currentProject, currentScriptId, setSaveAsOpen, setPostSaveAction]);
-
-  const handleDiscardConfirmDiscard = useCallback(() => {
-    setDiscardConfirmOpen(false);
-    pendingAction?.();
-    setPendingAction(null);
-  }, [pendingAction]);
-
-  const handleDiscardConfirmCancel = useCallback(() => {
-    setDiscardConfirmOpen(false);
-    setPendingAction(null);
-  }, []);
 
   // ── Page Setup ──
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
