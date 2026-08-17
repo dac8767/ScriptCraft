@@ -70,6 +70,11 @@ echo ""
 echo ""
 echo "=== Step 1/2: Building frontend ==="
 cd "$FRONTEND_DIR"
+# v7.31: INSTALL FIRST. A pull can add a dependency (esbuild did), and going
+# straight to `npm run build` then fails on a package that is declared but not
+# on disk — which reads as the build being broken rather than one npm install
+# behind. Cheap no-op when nothing changed.
+npm install --silent
 npm run build
 
 # ── Step 2: Build, sign, and notarize with Tauri ─────────────────────────────
