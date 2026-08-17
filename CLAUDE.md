@@ -217,7 +217,12 @@ it actually produced — not by staring at the source and reasoning.
   by the same test file.
 - **Never comment on the time of day or suggest he sleep.**
 
-End any message that delivers a change with:
+**End EVERY message that delivers a change with the terminal command.** v7.31,
+Derek: *"remember to always send the terminal code when you've finish an
+update."* ALWAYS — not when you judge a restart necessary. Docs-only, a
+comment, a one-line fix, a test that never ships: send it anyway. Deciding
+"this one doesn't need a restart" is his call, not yours, and getting it wrong
+costs him a message asking for the line every time.
 
 ```
 cd /Users/dcarl/ScriptCraft && npm run desktop
