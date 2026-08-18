@@ -44,7 +44,7 @@ await page.waitForSelector('.prefs-content .pst-list', { timeout: 8000 });
 await settle(page);
 
 const opened = await page.evaluate(async () => {
-  const row = document.querySelector('.pst-listrow');
+  const row = document.querySelector('.pst-list .template-select-item');
   const view = [...row.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View');
   view.click();
   await new Promise((r) => setTimeout(r, 500));
@@ -103,7 +103,7 @@ const cancelled = await page.evaluate(async () => {
   const dismissed = !document.querySelector('.page-setup-dialog');
 
   // reopen and read the field back
-  const row = document.querySelector('.pst-listrow');
+  const row = document.querySelector('.pst-list .template-select-item');
   [...row.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View').click();
   await new Promise((r) => setTimeout(r, 500));
   return { before, edited, dismissed, reopened: field()?.value };
@@ -128,7 +128,7 @@ const applied = await page.evaluate(async () => {
     .find((b) => b.textContent.trim() === 'Apply').click();
   await new Promise((r) => setTimeout(r, 500));
   const closed = !document.querySelector('.page-setup-dialog');
-  const row = document.querySelector('.pst-listrow');
+  const row = document.querySelector('.pst-list .template-select-item');
   [...row.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View').click();
   await new Promise((r) => setTimeout(r, 500));
   return { closed, reopened: field()?.value };

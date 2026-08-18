@@ -801,16 +801,6 @@
   "icon": "FaCopy"
  },
  {
-  "text": "Create your own template, based on an existing one",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Everything Else",
-  "where": [
-   "components/PageSetupTab.tsx"
-  ],
-  "label": "New Template…"
- },
- {
   "text": "Current theme",
   "kind": "tooltip",
   "sites": 1,
@@ -1049,7 +1039,7 @@
   "sites": 1,
   "area": "Everything Else",
   "where": [
-   "components/PageSetupTab.tsx"
+   "components/TemplateCard.tsx"
   ],
   "label": "Delete"
  },
@@ -1297,7 +1287,7 @@
   "sites": 1,
   "area": "Everything Else",
   "where": [
-   "components/PageSetupTab.tsx"
+   "components/TemplateCard.tsx"
   ],
   "label": "Edit"
  },
@@ -2137,6 +2127,24 @@
   "label": "In script:"
  },
  {
+  "text": "Make a copy of this template",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/TemplateCard.tsx"
+  ]
+ },
+ {
+  "text": "Make an editable copy of this template",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/TemplateCard.tsx"
+  ]
+ },
+ {
   "text": "Manual lets you drag any order; Date Created shows newest first",
   "kind": "tooltip",
   "sites": 1,
@@ -2382,7 +2390,7 @@
   "sites": 1,
   "area": "Everything Else",
   "where": [
-   "components/PageSetupTab.tsx"
+   "components/TemplateCard.tsx"
   ],
   "label": "View"
  },
@@ -3222,6 +3230,16 @@
   "where": [
    "components/Toolbar.tsx"
   ]
+ },
+ {
+  "text": "Start a new template from scratch — or use Duplicate on a row above to base one on it",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "New Script Picker"
  },
  {
   "text": "Sticky color",

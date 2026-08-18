@@ -2,13 +2,21 @@
  * Settings ▸ Page Setup (v6.99) — Derek, via the feedback form: the old
  * Templates checkbox tab and the Page Setup tab are ONE tab now.
  *
- * Templates behave like the Themes tab: a SHOWN list and a HIDDEN list.
- * What's shown is exactly what the New Script picker offers — the same
- * `enabledScriptFormats` ids the old checkboxes wrote, so nothing
- * migrates. The six built-ins are undeletable "Default" templates; user
- * templates get Edit/Delete. "New Template…" asks which existing template
- * to base the copy on (any shown/hidden/custom one), then opens the full
- * template editor on it — the same editor the Format menu uses.
+ * The tab answers two questions in two places, and the split is the point:
+ * the LIST on top says what each template is and how to work on one; the
+ * SHOWN/HIDDEN columns below say which ones the New Script picker offers.
+ * What's shown is exactly what that picker offers — the same
+ * `enabledScriptFormats` ids the old checkboxes wrote, so nothing migrates.
+ *
+ * v7.50: the list is the Format ▸ Script Format / Template window's list —
+ * literally, the same TemplateCard — with View added, since this is the one
+ * place a template's page setup can be opened. The six built-ins are immutable
+ * constants rather than rows in `templates[]`, so they offer View and Duplicate
+ * and not Edit or Delete: updateTemplate() on one is a silent no-op. Custom
+ * templates get all four. Creating starts from blank ("+ Create Template") or
+ * from any row's Duplicate; the old "New Template…" dropdown asked for a base
+ * and copied it, which is what Duplicate already does, so it is gone rather
+ * than kept as a second way to do one thing.
  */
 import { useState } from 'react';
 import { SYSTEM_TEMPLATE_LIST, useFormattingTemplateStore } from '../stores/formattingTemplateStore';
@@ -17,8 +25,8 @@ import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import { useSettingsStore } from '../stores/settingsStore';
 import TemplateEditorDialog from './TemplateEditorDialog';
 import PageSetupDialog from './PageSetupDialog';
+import TemplateCard from './TemplateCard';
 import { DndColumns, type DndColumnSpec } from './CustomizePanelsDialog';
-import { confirmDialog } from './ConfirmDialog';
 import { showToast } from './Toast';
 
 /* v7.10, Derek: "'page setup' used to have a full page of fields for the
@@ -63,9 +71,10 @@ function TemplatePageSetup({ t, onClose }: { t: FormattingTemplate; onClose: () 
 
 export default function PageSetupTab() {
   const templates = useFormattingTemplateStore((s) => s.templates);
-  const duplicateTemplate = useFormattingTemplateStore((s) => s.duplicateTemplate);
+  const createTemplate = useFormattingTemplateStore((s) => s.createTemplate);
   const updateTemplate = useFormattingTemplateStore((s) => s.updateTemplate);
-  const deleteTemplate = useFormattingTemplateStore((s) => s.deleteTemplate);
+  // null means Industry Standard — the card's `current` badge needs the real id.
+  const activeId = useFormattingTemplateStore((s) => s.activeTemplateId) || INDUSTRY_STANDARD_ID;
   const enabled = useSettingsStore((s) => s.enabledScriptFormats);
   const setEnabled = useSettingsStore((s) => s.setEnabledScriptFormats);
   const setInit = useSettingsStore((s) => s.setFormatPreferencesInitialized);
@@ -85,25 +94,17 @@ export default function PageSetupTab() {
 
   const [editing, setEditing] = useState<FormattingTemplate | null>(null);
   const [viewing, setViewing] = useState<FormattingTemplate | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [baseId, setBaseId] = useState<string>(INDUSTRY_STANDARD_ID);
 
-  const createFromBase = async () => {
-    const copy = await duplicateTemplate(baseId);
-    setShown([...shownIds, copy.id]);
-    setCreating(false);
-    setEditing(copy);
+  /* A template the writer just made must appear in the New Script picker, or
+     they have made something they cannot find. Same reason the duplicate
+     handler on each card below adds the copy. */
+  const showAndEdit = (t: FormattingTemplate) => {
+    setShown([...shownIds, t.id]);
+    setEditing(t);
   };
 
-  const remove = async (t: FormattingTemplate) => {
-    const okGo = await confirmDialog(
-      `Delete the template “${t.name}”? This cannot be undone.`,
-      { title: 'Delete template?', confirmLabel: 'Delete', danger: true },
-    );
-    if (!okGo) return;
-    await deleteTemplate(t.id);
-    if (shownIds.includes(t.id)) setShown(shownIds.filter((x) => x !== t.id));
-    showToast('Template deleted', 'success');
+  const createBlank = async () => {
+    showAndEdit(await createTemplate({ name: 'New Template' }));
   };
 
   /* v7.12, Derek: "add a list of all of the page setup templates to the top of
@@ -111,35 +112,32 @@ export default function PageSetupTab() {
      custom templates only) buttons are. bellow that is the shown and hidden
      columns."
 
-     So the tab answers two different questions in two places: WHAT each
-     template is and how to work on it (the list), and WHICH ones the New
-     Script picker offers (the columns). The columns carry no action buttons
-     any more — a row there is a name and a visibility toggle, which is what
-     the Context Menu tab's rows are too. */
-  const actionRow = (t: FormattingTemplate) => {
-    const isSystem = t.category === 'system';
-    return (
-      <div key={t.id} className="pst-listrow">
-        <div className="fmt-card-info">
-          <div className="fmt-card-name">
-            <span>{t.name}</span>
-            {t.scriptTypeGroup && <span className="fmt-card-group">{t.scriptTypeGroup}</span>}
-            {isSystem && <span className="fmt-card-group pst-default-badge">Default</span>}
-          </div>
-          <div className="fmt-card-tagline">{t.scriptTypeTagline || t.description}</div>
-        </div>
-        <div className="pst-row-actions">
-          <button className="dialog-btn dialog-btn-sm" title="Open this template's page setup" onClick={() => setViewing(t)}>View</button>
-          {!isSystem && (
-            <button className="dialog-btn dialog-btn-sm" title="Edit this template" onClick={() => setEditing(t)}>Edit</button>
-          )}
-          {!isSystem && (
-            <button className="dialog-btn dialog-btn-sm" title="Delete this template" onClick={() => { void remove(t); }}>Delete</button>
-          )}
-        </div>
-      </div>
-    );
-  };
+     v7.50, Derek, pointing at Format ▸ Script Format / Template: "this is the
+     window that should be duplicated in the setting > page setup tab. use the
+     window shown in the screenshot, and add the view button. keep the
+     shown/hidden section below this."
+
+     So the list up here IS that window's list — the same TemplateCard, in the
+     same two sections, with View added because this is the one place there is
+     something to view. Not a copy of it: the tab had grown its own row markup,
+     and the two had already drifted apart (that window showed the mode badge
+     and marked which template the script is CURRENTLY using; this one showed
+     neither).
+
+     The tab keeps its own second half, because that answers a different
+     question: the list says what each template is and how to work on one, the
+     columns say WHICH ones the New Script picker offers. */
+  const card = (t: FormattingTemplate) => (
+    <TemplateCard
+      key={t.id}
+      template={t}
+      isCurrent={t.id === activeId}
+      onView={() => setViewing(t)}
+      onEdit={setEditing}
+      onDuplicated={(dup) => setShown([...shownIds, dup.id])}
+      onDeleted={(id: string) => { if (shownIds.includes(id)) setShown(shownIds.filter((x) => x !== id)); }}
+    />
+  );
 
   /* The Shown/Hidden rows: name + the one toggle. Same DndColumns every other
      customization list uses (v7.11), so the drag behaves identically. */
@@ -209,23 +207,28 @@ export default function PageSetupTab() {
             setup — page size, margins, header and footer — which you can edit
             for the built-ins too.
           </p>
-          <div className="pst-list">{all.map(actionRow)}</div>
-          {creating ? (
-            <div className="pst-newrow">
-              Base it on
-              <select className="fb-select pst-baseselect" value={baseId} onChange={(e) => setBaseId(e.target.value)}>
-                {all.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-              <button className="dialog-btn dialog-btn-primary" onClick={() => { void createFromBase(); }}>Create</button>
-              <button className="dialog-btn" onClick={() => setCreating(false)}>Cancel</button>
-            </div>
-          ) : (
-            <div className="pst-newrow">
-              <button className="dialog-btn" title="Create your own template, based on an existing one" onClick={() => setCreating(true)}>
-                New Template…
-              </button>
-            </div>
-          )}
+          <div className="pst-list template-select-list">
+            <div className="template-select-category">Script Formats</div>
+            {SYSTEM_TEMPLATE_LIST.map(card)}
+            <div className="template-select-category">User Defined</div>
+            {userTemplates.length === 0
+              ? <div className="template-select-empty">No custom templates yet.</div>
+              : userTemplates.map(card)}
+          </div>
+          {/* v7.50: the old "New Template…" row asked for a base in a dropdown
+              and then copied it. Every row now carries Duplicate, which is the
+              same operation with a better handle on it, so the dropdown is
+              gone rather than kept as a second way to do one thing. What is
+              left is the one thing Duplicate cannot do: start from blank. */}
+          <div className="pst-newrow">
+            <button
+              className="dialog-btn dialog-btn-primary"
+              title="Start a new template from scratch — or use Duplicate on a row above to base one on it"
+              onClick={() => { void createBlank(); }}
+            >
+              + Create Template
+            </button>
+          </div>
         </section>
         <section>
           <h3>New Script Picker</h3>

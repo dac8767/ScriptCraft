@@ -1041,24 +1041,24 @@ input.fs-switch:checked::after { left: 15px; }
    v7.12, Derek: the ACTIONS live in a list above the columns — so a column row
    is just a name and its one toggle, and the list row is where View/Edit/Delete
    are. Two rows, two jobs; neither repeats the other. */
+/* v7.50, Derek: "this is the window that should be duplicated in the setting >
+   page setup tab" — so the list up here IS the Script Format / Template
+   window's list, the same TemplateCard rows, and the tab's own row markup
+   (.pst-listrow, .pst-default-badge) is gone rather than kept alongside it.
+   Only ONE thing is overridden, and only because the context genuinely
+   differs: the dialog caps its list at 340px and scrolls, which is right in a
+   fixed-height window and wrong inside a Settings tab that is ALREADY a
+   scroller — the cap buried the User Defined section behind a scroll gesture
+   in a box nothing marks as scrollable. */
 .pst-list { display: flex; flex-direction: column; }
-.pst-listrow {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 0;
-  border-bottom: var(--fd-hairline-w, 1px) solid var(--fd-hairline);
-}
-.pst-listrow:last-child { border-bottom: none; }
-.pst-listrow .fmt-card-info { flex: 1; min-width: 0; }
+.pst-list.template-select-list { max-height: none; overflow-y: visible; }
 .pst-dndrow { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 .pst-dndrow .fmt-card-name { flex: 1; min-width: 0; }
-.pst-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.pst-default-badge { opacity: .8; }
 .pst-newrow {
   display: flex; align-items: center; gap: 8px;
   margin-top: 10px;
   font-size: 12.5px; color: var(--fd-text-muted);
 }
-.pst-baseselect { min-width: 200px; }
 /* v7.10: the read-only page-size box is gone — View opens the real page of
    Page Setup fields now. The Defaults rows below stayed. */
 .fs-defaults-row { display: flex; align-items: center; gap: 12px; padding: 5px 0; }

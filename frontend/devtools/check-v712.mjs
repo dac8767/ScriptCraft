@@ -21,12 +21,18 @@ await page.evaluate(() => window.__scStore.getState().openPreferences('page'));
 await page.waitForSelector('.prefs-content .pst-list', { timeout: 8000 });
 await settle(page);
 
+/* v7.50, Derek: the rows in this list are the Format ▸ Script Format / Template
+   window's rows now — one shared TemplateCard, not a second list of the same
+   templates. The selectors moved with it; what each assertion is FOR did not.
+   A built-in used to be marked by a "Default" chip and is now marked by
+   sitting under the Script Formats heading, which is also what decides whether
+   it can be edited, so the two can no longer disagree. */
 const layout = await page.evaluate(() => {
   const list = document.querySelector('.pst-list');
   const cols = document.querySelector('.fs-dnd-cols');
   const box = (el) => el?.getBoundingClientRect();
   return {
-    listRows: document.querySelectorAll('.pst-listrow').length,
+    listRows: document.querySelectorAll('.pst-list .template-select-item').length,
     listBottom: box(list)?.bottom ?? 0,
     colsTop: box(cols)?.top ?? 0,
     heads: [...document.querySelectorAll('.prefs-content h3')].map((h) => h.textContent.trim()),
@@ -38,44 +44,61 @@ ok('the list sits ABOVE the columns', layout.listBottom <= layout.colsTop + 1,
 ok('the two areas are named', layout.heads.length >= 2, JSON.stringify(layout.heads));
 
 const buttons = await page.evaluate(() => {
-  const rows = [...document.querySelectorAll('.pst-listrow')];
-  const read = (r) => ({
-    name: r.querySelector('.fmt-card-name span')?.textContent.trim(),
-    isDefault: !!r.querySelector('.pst-default-badge'),
+  const kids = [...document.querySelector('.pst-list').children];
+  const start = kids.findIndex((k) => k.textContent.trim() === 'Script Formats');
+  const end = kids.findIndex((k, i) => i > start && k.classList.contains('template-select-category'));
+  const read = (r, isDefault) => ({
+    name: r.querySelector('.template-select-item-name')?.textContent.trim(),
+    isDefault,
     btns: [...r.querySelectorAll('button')].map((b) => b.textContent.trim()),
   });
-  return rows.map(read);
+  const inSection = (from, to) => kids.slice(from, to)
+    .filter((k) => k.classList.contains('template-select-item'));
+  return [
+    ...inSection(start + 1, end === -1 ? undefined : end).map((r) => read(r, true)),
+    ...(end === -1 ? [] : inSection(end + 1, undefined).map((r) => read(r, false))),
+  ];
 });
 const builtIns = buttons.filter((r) => r.isDefault);
 ok('every row offers View', buttons.every((r) => r.btns.includes('View')), JSON.stringify(buttons[0]));
-ok('built-ins offer View only — no Edit, no Delete',
-  builtIns.length >= 6 && builtIns.every((r) => r.btns.join() === 'View'), JSON.stringify(builtIns.map((r) => r.btns)));
+/* View to open its page setup, Duplicate to get an editable copy — and NOT
+   Edit or Delete, because a built-in is an immutable constant and both would
+   write into the void. */
+ok('built-ins offer View and Duplicate only — no Edit, no Delete',
+  builtIns.length >= 6 && builtIns.every((r) => r.btns.join() === 'View,Duplicate'),
+  JSON.stringify(builtIns.map((r) => r.btns)));
 
 /* A custom template gets Edit + Delete. Driven through the UI on purpose: a
    dynamic import from the driver can hand back a SECOND module instance, whose
    store the mounted component is not subscribed to — the first cut created a
    template that existed in that copy and never appeared in the list. Clicking
    the app's own buttons cannot lie about which store it used. */
-await page.click('.pst-newrow button');
-await settle(page);
-await page.waitForSelector('.pst-newrow .dialog-btn-primary', { timeout: 8000 });
-await page.click('.pst-newrow .dialog-btn-primary');
-await page.waitForTimeout(600);
-// Creating opens the template editor on the copy — close it and read the list.
+/* v7.50: the way in is Duplicate on a built-in's row. The old "New Template…"
+   row asked for a base in a dropdown and copied it — the same operation with a
+   worse handle on it — so it is gone rather than kept as a second door. */
+await page.evaluate(() => {
+  const first = document.querySelector('.pst-list .template-select-item');
+  [...first.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Duplicate').click();
+});
+await page.waitForTimeout(700);
+// Duplicating a built-in opens the editor on the copy — close it and read the list.
 await page.keyboard.press('Escape');
 await settle(page);
-await page.waitForTimeout(300);
+await page.waitForTimeout(400);
 const custom = await page.evaluate(() => {
-  const own = [...document.querySelectorAll('.pst-listrow')].find((r) => !r.querySelector('.pst-default-badge'));
+  const kids = [...document.querySelector('.pst-list').children];
+  const userHead = kids.findIndex((k) => k.textContent.trim() === 'User Defined');
+  const own = kids.slice(userHead + 1).find((k) => k.classList.contains('template-select-item'));
   return own ? {
-    name: own.querySelector('.fmt-card-name span')?.textContent.trim(),
+    name: own.querySelector('.template-select-item-name')?.textContent.trim(),
     btns: [...own.querySelectorAll('button')].map((b) => b.textContent.trim()),
   } : null;
 });
 ok('a custom template appears in the list',
   Boolean(custom) && /Copy/.test(custom.name || ''), JSON.stringify(custom));
-ok('…offering View, Edit and Delete',
-  custom && ['View', 'Edit', 'Delete'].every((t) => custom.btns.includes(t)), JSON.stringify(custom));
+ok('…offering View, Edit, Duplicate and Delete',
+  custom && ['View', 'Edit', 'Duplicate', 'Delete'].every((t) => custom.btns.includes(t)),
+  JSON.stringify(custom));
 
 // the columns are visibility only now
 const colRows = await page.evaluate(() => {

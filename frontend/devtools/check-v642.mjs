@@ -175,31 +175,57 @@ try {
     [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Page Setup')?.click();
   });
   await settle(page);
-  const pst = await page.evaluate(() => ({
-    heads: [...document.querySelectorAll('.fs-dnd-col-head')].map((h) => h.textContent.trim()),
-    cards: document.querySelectorAll('.pst-listrow').length,
-    defaults: document.querySelectorAll('.pst-default-badge').length,
-    newBtn: [...document.querySelectorAll('.prefs-window button')].some((b) => b.textContent.trim() === 'New Template…'),
-    deletableDefaults: [...document.querySelectorAll('.pst-listrow')].filter((r) =>
-      r.querySelector('.pst-default-badge') && [...r.querySelectorAll('button')].some((b) => b.textContent === 'Delete')).length,
-  }));
+  /* v7.50: the rows here are TemplateCard now — the same component the Format ▸
+     Script Format / Template window uses, at Derek's request. So the selectors
+     moved, and two of these assertions got STRONGER rather than looser:
+
+       · a built-in used to be identified by a "Default" chip. It is now
+         identified by sitting under the Script Formats heading, and the thing
+         actually worth asserting — that you cannot delete one — is read
+         straight off the card instead of off a badge that merely claimed it.
+       · "New Template…" and its base-picker dropdown are gone: every row
+         carries Duplicate, which is the same operation, so what is left is the
+         one thing Duplicate cannot do, "+ Create Template" from blank. */
+  const pst = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('.pst-list .template-select-item')];
+    const btns = (c) => [...c.querySelectorAll('button')].map((b) => b.textContent.trim());
+    // Script Formats runs from its heading to the next one.
+    const kids = [...document.querySelector('.pst-list').children];
+    const start = kids.findIndex((k) => k.textContent.trim() === 'Script Formats');
+    const end = kids.findIndex((k, i) => i > start && k.classList.contains('template-select-category'));
+    const builtIns = kids.slice(start + 1, end === -1 ? undefined : end)
+      .filter((k) => k.classList.contains('template-select-item'));
+    return {
+      heads: [...document.querySelectorAll('.fs-dnd-col-head')].map((h) => h.textContent.trim()),
+      cards: cards.length,
+      builtIns: builtIns.length,
+      newBtn: [...document.querySelectorAll('.prefs-window button')].some((b) => b.textContent.trim() === '+ Create Template'),
+      deletableDefaults: builtIns.filter((c) => btns(c).includes('Delete')).length,
+      editableDefaults: builtIns.filter((c) => btns(c).includes('Edit')).length,
+    };
+  });
   /* v7.11, Derek: "change the page setup tab so that it uses the Shown and
      Hidden windows like the screenshot" — the shared DndColumns, same as the
      Context Menu / Toolbar / Side Panels tabs. */
   ok(pst.heads.some((h) => /Shown/.test(h)) && pst.heads.some((h) => /Hidden/.test(h)),
     `Page Setup uses the Shown/Hidden columns (${pst.heads.join(' | ')})`);
-  ok(pst.cards >= 6 && pst.defaults >= 6 && pst.deletableDefaults === 0 && pst.newBtn,
-    `six Default templates, none deletable, plus New Template… (${pst.cards} cards)`);
+  ok(pst.cards >= 6 && pst.builtIns >= 6 && pst.newBtn,
+    `six built-in templates listed, plus + Create Template (${pst.cards} cards)`);
+  /* The built-ins are immutable CONSTANTS, not rows in templates[] — so
+     updateTemplate/deleteTemplate on one is a silent no-op, and offering either
+     button would be a control that writes into the void. */
+  ok(pst.deletableDefaults === 0 && pst.editableDefaults === 0,
+    `no built-in offers Delete or Edit (${pst.deletableDefaults} deletable, ${pst.editableDefaults} editable)`);
   /* v7.12, Derek: View/Edit/Delete live in the LIST above the columns now —
      a column row is a name and its visibility toggle. */
   ok(await page.evaluate(() => {
-    const rows = [...document.querySelectorAll('.pst-listrow')];
+    const rows = [...document.querySelectorAll('.pst-list .template-select-item')];
     return rows.length > 0
       && rows.every((r) => [...r.querySelectorAll('button')].some((b) => b.textContent === 'View'))
       && ![...document.querySelectorAll('.prefs-content button')].some((b) => b.textContent.trim() === 'Apply');
   }), 'every template row has View; the geometry block (and its Apply) left the tab');
   await page.evaluate(() => {
-    [...document.querySelectorAll('.pst-listrow')[0].querySelectorAll('button')].find((b) => b.textContent === 'View')?.click();
+    [...document.querySelectorAll('.pst-list .template-select-item')[0].querySelectorAll('button')].find((b) => b.textContent === 'View')?.click();
   });
   await settle(page);
   /* v7.10, Derek ("make equivalents for the other templates", built-ins

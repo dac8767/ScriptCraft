@@ -90,10 +90,16 @@ ok('Page Setup is still there', tabs.some((l) => /Page Setup/i.test(l)), JSON.st
 // ── 3. Page setup per template, built-ins included ───────────────────
 console.log('\n3. page setup per template');
 await page.evaluate(() => window.__scStore.getState().openPreferences('page'));
-await page.waitForSelector('.pst-row-actions', { timeout: 8000 });
+/* v7.50: the rows here are TemplateCard now — the same component the Format ▸
+   Script Format / Template window draws, at Derek's request, so the tab's own
+   row markup went away. Only the selector moves; what is checked below is
+   unchanged, and it is the part that matters — View opens a real page of
+   fields for that template, and editing a BUILT-IN's page size lands in
+   storage under that template's id. */
+await page.waitForSelector('.pst-list .template-select-item-actions', { timeout: 8000 });
 await settle(page);
 
-const viewBtn = await page.$('.pst-row-actions button:has-text("View")');
+const viewBtn = await page.$('.pst-list .template-select-item-actions button:has-text("View")');
 ok('a template row offers View', Boolean(viewBtn), '');
 if (viewBtn) {
   await viewBtn.click();

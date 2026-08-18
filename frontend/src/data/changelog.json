@@ -1,5 +1,13 @@
 [
   {
+    "version": "7.50",
+    "date": "2026-08-18",
+    "changes": [
+      "Settings ▸ Page Setup now lists your templates exactly the way the Format ▸ Script Format / Template window does — each one showing its formatting mode, its description, and which template the open script is currently using — with a View button added to open that template's page setup. It is the same list, not a copy of it, so the two can no longer drift apart. The Shown / Hidden columns are unchanged, below it.",
+      "Every template row carries Duplicate now, including the built-ins (duplicating one opens the editor on the copy, since a built-in itself can't be edited). The old “New Template…” dropdown asked you to pick a base and then copied it — which is what Duplicate does — so it's been replaced by “+ Create Template” for starting from blank."
+    ]
+  },
+  {
     "version": "7.49",
     "date": "2026-08-18",
     "changes": [

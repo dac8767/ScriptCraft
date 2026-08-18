@@ -18,11 +18,11 @@ import { useEditorStore } from '../stores/editorStore';
 import { INDUSTRY_STANDARD_TEMPLATE } from '../stores/industryStandardTemplate';
 import type { FormattingTemplate } from '../stores/formattingTypes';
 import TemplateEditorDialog from './TemplateEditorDialog';
+import TemplateCard from './TemplateCard';
 import TemplateConflictDialog from './TemplateConflictDialog';
 import { detectTemplateConflicts, resolveTemplateConflicts, getEnabledElementOptions } from '../utils/templateConflicts';
 import type { TemplateConflicts } from '../utils/templateConflicts';
 import { showToast } from './Toast';
-import { confirmDialog } from './ConfirmDialog';
 
 interface TemplateSelectDialogProps {
   editor: Editor | null;
@@ -37,8 +37,6 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
     loadTemplates,
     createTemplate,
     updateTemplate,
-    deleteTemplate,
-    duplicateTemplate,
   } = useFormattingTemplateStore();
 
   const [selectedId, setSelectedId] = useState<string | null>(activeTemplateId);
@@ -134,85 +132,21 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
   const systemTemplates: FormattingTemplate[] = SYSTEM_TEMPLATE_LIST;
   const userTemplates: FormattingTemplate[] = templates.filter((t) => t.category !== 'system');
 
-  const renderTemplateItem = (t: FormattingTemplate) => {
-    const isSystem = t.category === 'system';
-    const isSelected = (t.id === INDUSTRY_STANDARD_ID && (!selectedId || selectedId === INDUSTRY_STANDARD_ID))
-      || t.id === selectedId;
-    const isCurrent = t.id === resolvedActiveId;
-    return (
-      <div
-        key={t.id}
-        className={`template-select-item${isSelected ? ' selected' : ''}`}
-        onClick={() => setSelectedId(t.id)}
-      >
-        <div className="template-select-item-info">
-          <span className="template-select-item-name">
-            {t.name}
-            {isCurrent && <span className="template-select-current-badge">current</span>}
-          </span>
-          <span className={`template-select-mode-badge template-select-mode-${t.mode}`}>
-            {t.mode}
-          </span>
-        </div>
-        {t.description && (
-          <span className="template-select-item-desc">{t.description}</span>
-        )}
-        {/* Actions: system = duplicate only; user = edit/duplicate/delete */}
-        <div className="template-select-item-actions" onClick={(e) => e.stopPropagation()}>
-          {isSystem ? (
-            <button
-              className="dialog-btn dialog-btn-sm"
-              onClick={async () => {
-                const dup = await duplicateTemplate(t.id);
-                setEditingTemplate(dup);
-              }}
-            >
-              Duplicate
-            </button>
-          ) : (
-            <>
-              <button
-                className="dialog-btn dialog-btn-sm"
-                onClick={() => setEditingTemplate(t)}
-              >
-                Edit
-              </button>
-              <button
-                className="dialog-btn dialog-btn-sm"
-                onClick={async () => {
-                  await duplicateTemplate(t.id);
-                  showToast('Template duplicated', 'success');
-                }}
-              >
-                Duplicate
-              </button>
-              <button
-                className="dialog-btn dialog-btn-sm dialog-btn-danger"
-                onClick={async () => {
-                  /* v7.01 (style audit U350): was native `confirm()`. In the
-                     Tauri app window.confirm is an ASYNC IPC shim that returns
-                     a Promise — and a Promise is always truthy — so this branch
-                     ran whatever the user answered, and the template was
-                     deleted either way. ConfirmDialog.tsx's header documents
-                     the rule; this is the same call PageSetupTab's delete makes. */
-                  const ok = await confirmDialog(
-                    `Delete the template “${t.name}”? This cannot be undone.`,
-                    { title: 'Delete template?', confirmLabel: 'Delete', danger: true },
-                  );
-                  if (!ok) return;
-                  await deleteTemplate(t.id);
-                  if (selectedId === t.id) setSelectedId(INDUSTRY_STANDARD_ID);
-                  showToast('Template deleted', 'success');
-                }}
-              >
-                Delete
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  };
+  /* v7.50: the row itself is TemplateCard, shared with Settings ▸ Page Setup.
+     What this dialog adds is the only thing that differs — a row here is a
+     CHOICE, so it takes onSelect and paints the selected one. */
+  const renderTemplateItem = (t: FormattingTemplate) => (
+    <TemplateCard
+      key={t.id}
+      template={t}
+      isCurrent={t.id === resolvedActiveId}
+      selected={(t.id === INDUSTRY_STANDARD_ID && (!selectedId || selectedId === INDUSTRY_STANDARD_ID))
+        || t.id === selectedId}
+      onSelect={() => setSelectedId(t.id)}
+      onEdit={setEditingTemplate}
+      onDeleted={(id) => { if (selectedId === id) setSelectedId(INDUSTRY_STANDARD_ID); }}
+    />
+  );
 
   return (
     <div className="template-select-overlay" onClick={onClose}>
