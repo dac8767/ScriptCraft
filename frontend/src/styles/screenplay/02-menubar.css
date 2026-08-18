@@ -144,7 +144,18 @@
 .menu-check { display: flex; width: 12px; justify-content: center; font-size: 11px; color: var(--fd-text); flex-shrink: 0; }
 .menu-dropdown-item:hover .menu-dropdown-icon { color: var(--fd-text); }
 .menu-dropdown-item:hover { background: var(--fd-menu-hover); }
-.menu-dropdown-item.disabled { color: var(--fd-text-muted); pointer-events: none; }
+/* v7.58, Derek: "for these grayed out items, show 'This feature is still in
+   development' when hovering over them with the cursor."
+   ROOT CAUSE: this rule carried `pointer-events: none`, which stops the
+   browser delivering hover to the element at all — so the native title
+   tooltip never appeared. v7.06 added those titles and not one of them has
+   ever been seen. Hover is restored and the click is refused in the handler
+   instead, which is where "disabled" was always decided. */
+.menu-dropdown-item.disabled { color: var(--fd-text-muted); cursor: default; }
+/* No hover highlight: it is not going to do anything, and lighting up says it
+   will. The tooltip is the whole feedback. */
+.menu-dropdown-item.disabled:hover { background: transparent; }
+.menu-dropdown-item.disabled:hover .menu-dropdown-icon { color: var(--fd-text-muted); }
 .menu-dropdown-item.disabled .menu-dropdown-icon { opacity: 0.4; }
 .menu-shortcut { color: var(--fd-text-muted); font-size: 12px; margin-left: auto; padding-left: 16px; }
 .menu-dropdown-item:hover .menu-shortcut { color: var(--fd-text-muted); }

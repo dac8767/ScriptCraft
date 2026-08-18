@@ -147,6 +147,27 @@ interface MenuBarProps {
   editor: Editor | null;
 }
 
+/**
+ * v7.58, Derek: "for these grayed out items, show 'This feature is still in
+ * development' when hovering over them with the cursor."
+ *
+ * ONE sentence, so the three items that share this reason cannot drift into
+ * three wordings. It is only for a feature that ISN'T BUILT YET. An item
+ * greyed because the document is in the wrong state — Lock Scene Numbers with
+ * scene numbers turned off — is not in development, and telling the reader it
+ * is would send them away from a setting they could turn on right now. Those
+ * say what state they need instead.
+ */
+export const IN_DEVELOPMENT = 'This feature is still in development.';
+
+/**
+ * The other reason a menu item sits gray: the script's format template is in
+ * Enforce mode and this element does not allow overrides. v7.58 — with hover
+ * restored, these were the items left silent while the ones beside them
+ * explained themselves, and "why is Bold gray" is the question they invite.
+ */
+export const FORMAT_LOCKED = 'The script format locks this element’s formatting (Format ▸ Script Format).';
+
 interface MenuItem {
   label: string;
   shortcut?: string;
@@ -154,8 +175,18 @@ interface MenuItem {
   separator?: boolean;
   disabled?: boolean;
   /** v7.06: hover text. Its reason for existing is a DISABLED item that should
-   *  say why it is disabled rather than just sitting there gray. */
-  title?: string;
+   *  say why it is disabled rather than just sitting there gray.
+   *
+   *  v7.58: it finally SHOWS — the disabled CSS carried pointer-events: none,
+   *  so the browser never delivered the hover a native tooltip needs, and not
+   *  one of these had ever been seen.
+   *
+   *  Named `tooltip`, not `title`. On a DOM element `title` means hover text;
+   *  on a data object it almost always means a HEADING — two of the fourteen
+   *  `title:` sites in this file are the document's name. The helper-text
+   *  harvester has to tell the two apart to list these in the Helper Text
+   *  window, and a name that means one thing is how it does that. */
+  tooltip?: string;
   children?: MenuItem[];
   /** v2.62: custom submenu content (e.g. the Scrapbook's table-size grid).
    *  Rendered inside the submenu flyout instead of a children list; `close`
@@ -941,9 +972,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
 
   const handleItemClick = (item: MenuItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!item.disabled && item.action) {
-      item.action();
-    }
+    /* v7.58: a disabled item swallows the click whole — it used to be
+       unreachable because the CSS set pointer-events: none, which is also why
+       its explanatory tooltip never appeared. With hover restored the click
+       arrives here, and closing the menu on it would take the explanation away
+       at the exact moment the reader went to look for it. */
+    if (item.disabled) return;
+    if (item.action) item.action();
     setActiveMenu(null);
     setOpenSubmenu(null);
   };
@@ -1266,10 +1301,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         // v0.87: Style and Alignment were submenus in a menu with barely anything
         // else in it — two clicks to reach Bold. Their contents are promoted to
         // the top of Format and the wrapper submenus are gone.
-        { icon: <FaBold />, label: 'Bold', shortcut: sc('bold'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold },
-        { icon: <FaItalic />, label: 'Italic', shortcut: sc('italic'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic },
-        { icon: <FaUnderline />, label: 'Underline', shortcut: sc('underline'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline },
-        { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough },
+        { icon: <FaBold />, label: 'Bold', shortcut: sc('bold'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold, tooltip: locked.bold ? FORMAT_LOCKED : undefined },
+        { icon: <FaItalic />, label: 'Italic', shortcut: sc('italic'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic, tooltip: locked.italic ? FORMAT_LOCKED : undefined },
+        { icon: <FaUnderline />, label: 'Underline', shortcut: sc('underline'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline, tooltip: locked.underline ? FORMAT_LOCKED : undefined },
+        { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough, tooltip: locked.strikethrough ? FORMAT_LOCKED : undefined },
         /* v3.24 reorg #3: Subscript/Superscript removed — screenplay
            format never uses them (same call as the v3.19 palette cull).
            The editor marks still exist for imported documents. */
@@ -1278,10 +1313,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         {
           icon: <FaAlignLeft />, label: 'Alignment',
           children: [
-            { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign },
-            { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign },
-            { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign },
-            { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign },
+            { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined },
+            { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined },
+            { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined },
+            { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined },
           ],
         },
         { separator: true, label: '' },
@@ -1363,17 +1398,25 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
            hovering shows 'This feature is in development.'" Both keep their
            place and their icon; neither carries an action, so the shared
            handleItemClick already refuses to fire (it checks `disabled`). */
-        { icon: <FaToggleOn />, label: 'Revision Mode', disabled: true, title: 'This feature is in development.' },
-        { icon: <FaTags />, label: 'Production Tags', disabled: true, title: 'This feature is in development.' },
+        { icon: <FaToggleOn />, label: 'Revision Mode', disabled: true, tooltip: IN_DEVELOPMENT },
+        { icon: <FaTags />, label: 'Production Tags', disabled: true, tooltip: IN_DEVELOPMENT },
         {
           icon: <FaLock />,
           label: 'Lock Scene Numbers',
           checked: sceneNumbersLocked,
           action: () => setSceneNumbersLocked(!sceneNumbersLocked),
           disabled: !sceneNumbersVisible,
+          /* v7.58: greyed for a STATE reason, not an unbuilt one — there is
+             nothing to lock until scene numbers are on. Saying "in
+             development" here would send Derek away from a switch he can
+             throw in the next menu along. */
+          tooltip: sceneNumbersVisible ? undefined
+            : 'Turn scene numbers on first (View ▸ Scene Numbers).',
         },
         // v1.34: Lock Pages is UNRELEASED — same Developer toggle as Help's.
-        ...(showUnreleasedTools ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true }] : []),
+        ...(showUnreleasedTools
+          ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true, tooltip: IN_DEVELOPMENT }]
+          : []),
       ],
     },
   ];
@@ -1892,6 +1935,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             <div
               key={`${i}:${item.label}`}
               className={`menu-dropdown-item has-children ${item.disabled ? 'disabled ' : ''}${openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? 'submenu-open' : ''}`}
+              /* v7.58: and the submenu PARENT — the third render of a menu
+                 item, and the third place `title` had to be repeated. All
+                 three now pass it, so an item can explain itself wherever it
+                 happens to sit. */
+              title={item.tooltip}
               onPointerEnter={(e) => { if (!item.disabled) handleSubmenuPointerEnter(submenuKey(activeMenuData.label, item.label!, i), e); }}
               onTouchEnd={(e) => { if (!item.disabled) handleSubmenuTouchEnd(submenuKey(activeMenuData.label, item.label!, i), e); }}
               onClick={(e) => { e.stopPropagation(); if (!item.disabled) setOpenSubmenu(submenuKey(activeMenuData.label, item.label!, i)); }}
@@ -1925,6 +1973,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
                     <div
                       key={`${j}:${child.label}`}
                       className={`menu-dropdown-item ${child.disabled ? 'disabled' : ''}`}
+                      /* v7.58: a submenu child carries its hover text too. This
+                         render dropped `title` on the floor, so the Align items
+                         could be given one and it would never appear — the same
+                         silent no-op as the pointer-events rule, one level in. */
+                      title={child.tooltip}
                       onTouchEnd={(e) => e.stopPropagation()}
                       onClick={(e) => handleItemClick(child, e)}
                     >
@@ -1945,7 +1998,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
               className={`menu-dropdown-item ${item.disabled ? 'disabled' : ''}`}
               /* v7.06, Derek: a disabled item can say WHY (hover text) instead
                  of just being gray and mute. */
-              title={item.title}
+              title={item.tooltip}
               onPointerEnter={handleItemPointerEnter}
               onClick={(e) => handleItemClick(item, e)}
             >

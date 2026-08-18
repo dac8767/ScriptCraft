@@ -106,12 +106,15 @@ if (qat.skipped) {
     parseFloat(qat.borderTop) > 0, JSON.stringify(qat.borderTop));
 }
 
-/* The left-then-right grammar still has to hold where BOTH groups exist. After
-   v7.57 that is the Ribbon Toolbar tab — Hide All acts on the whole tab rather
-   than adding to a list, so it has no column header to move into. Without this
-   the direction of the bar would go unchecked entirely. */
+/* The left-then-right grammar still has to hold where BOTH groups exist.
+   v7.58 that is ANNOTATIONS: it builds a combo from a grid rather than listing
+   shown against hidden, so its "+ Add Preset" has no column header to move
+   into and stays in the bar beside the tab's reset. (The Ribbon Toolbar tab
+   held this role in v7.57; it grew Shown/Hidden columns, and its Hide All went
+   to the Hidden header where every other tab keeps one.) Without this the
+   direction of the bar would go unchecked entirely. */
 console.log('\nwhere both groups still exist, the direction holds');
-const tb = await measureBar('toolbar');
+const tb = await measureBar('markups');
 if (tb.skipped) {
   console.log(`  SKIP — ${tb.skipped}`);
 } else {
@@ -173,22 +176,32 @@ ok('…so is the separate Export/Import row',
 ok('no tab kept a loose adder or reset row beside the bar',
   perTab.every((t) => !t.strayAdderRow), JSON.stringify(perTab.filter((t) => t.strayAdderRow)));
 /* v7.56: a tab whose adders need its own component's state renders its own bar
-   (Editor, Annotations); the dialog renders one for the rest. Never TWO —
-   that would be the stack again, in a new costume. */
-ok('…and never two bars on one tab',
-  perTab.every((t) => t.barCount <= 1), JSON.stringify(perTab.map((t) => [t.cat, t.barCount])));
+   (Editor, Annotations); the dialog renders one for the rest.
+   v7.58, Derek: "move teh reset buttons so they are each under their respective
+   section." One bar per TAB was right while a tab was one list. The Editor tab
+   is four sections, so its single bar could only follow one of them — it sat
+   under Transitions and read as belonging to it while resetting Elements and
+   Suggestions too. It renders one bar per section now; every other tab still
+   gets exactly one, which is what stops the stack growing back. */
+const PER_SECTION = { elements: 3 };
+ok('…and one bar per tab, except the tab that is four sections',
+  perTab.every((t) => t.barCount === (PER_SECTION[t.cat] ?? (t.bar ? 1 : 0))),
+  JSON.stringify(perTab.map((t) => [t.cat, t.barCount])));
 
 console.log('\none bar, one definition');
 const resets = readFileSync(new URL('../src/components/customizeResets.tsx', import.meta.url), 'utf8');
 const dlg = readFileSync(new URL('../src/components/CustomizePanelsDialog.tsx', import.meta.url), 'utf8');
 ok('TabActionBar replaced ResetSection rather than joining it',
   /export function TabActionBar/.test(resets) && !/export function ResetSection/.test(resets), '');
-ok('…and the dialog renders exactly one of them',
-  (dlg.match(/<TabActionBar/g) || []).length === 1, '');
+/* Two now: the tab-level bar, and the Editor tab's Element Suggestions
+   section — that section's editor lives in this file, so its reset renders
+   here. The other two Editor sections render theirs in EditElementsDialog. */
+ok('…and the dialog renders only the bars it owns',
+  (dlg.match(/<TabActionBar/g) || []).length === 2, '');
 /* The resets still come from the one registry Settings ▸ Defaults compiles —
    the bar changed the arrangement, not the source of truth. */
 ok('the bar still reads the shared reset registry',
-  /CUSTOMIZE_RESETS\.filter\(\(a\) => a\.tab === tab\)/.test(resets), '');
+  /CUSTOMIZE_RESETS\.filter\(\(a\) => a\.tab === tab/.test(resets), '');
 /* The heading went with the section it labelled. It announced what its own
    buttons already say. */
 ok('the "Reset to Default" heading is gone with the section',

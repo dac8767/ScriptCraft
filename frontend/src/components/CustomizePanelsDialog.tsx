@@ -18,8 +18,9 @@ import { UTILITY_ICONS } from './uiIcons';
 import { useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { ALL_TOOLS, WINDOW_IDS, PANEL_EXCLUDED_IDS } from './ToolDock';
 import { saveDialog } from './ConfirmDialog';
+import { saveViewState } from '../stores/viewState';
 import { DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
-import RibbonPalette from './RibbonPalette';
+import { tokenIcon, tokenLabel, spacerPx } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import EditElementsDialog from './EditElementsDialog';
 import SuggestionRulesEditor from './SuggestionRulesEditor';
@@ -31,6 +32,74 @@ import ThemesTab from './ThemesTab';
 import MarkupsCustomizeTab from './MarkupsCustomizeTab';
 import ContextMenuTab from './ContextMenuTab';
 import { QAT_OPTIONS, QAT_BY_ID, isQatDivider, isQatSpacer } from './TitleBar';
+
+/* v7.58: what the Ribbon Toolbar tab's Shown-column "+ Add" offers, and the
+   words it offers them in. Mirrors the on-bar menu this replaces (v4.75's two
+   divider heights included) so nothing became unreachable when that menu did. */
+const TB_STRUCTURAL = [
+  { value: 'divider', label: 'Divider — one row' },
+  { value: 'divider2', label: 'Divider — two rows' },
+  { value: 'spacer', label: 'Spacer' },
+  { value: 'rowbreak', label: 'Row Break' },
+  { value: 'title', label: 'Section Title' },
+  { value: 'split', label: 'Alignment Split' },
+];
+/** A token that shapes the bar rather than doing something ON it — rendered in
+ *  italics so a list of items reads as items. */
+const tbIsStructural = (tok: string) => !/^(?:2!|big!)*(?:b|t|c):/.test(tok);
+
+/* v7.58: the two WIDTHS that were reachable only by dragging an edge on the
+   real bar in edit mode — a ribbon spacer's px (v3.67) and the four dropdowns
+   that read a --ddw-* var (v6.83, "allow resizing of drop down menus
+   horizontally when in customize mode").
+   Retiring in-place editing would have quietly taken both away. Derek asked to
+   stop dragging items ONTO the bar, not to lose the sizing that lived there,
+   so each one is a number field on its own row — the same shape the Side
+   Panels tab has used for a panel spacer since v0.86. Bounds match what the
+   drag gesture enforced, so a layout sized either way is the same layout. */
+const TB_SPACER_MIN = 8;
+const TB_SPACER_MAX = 400;
+const TB_DD_MIN = 48;
+const TB_DD_MAX = 480;
+/** Ribbon dropdowns that carry a stored width, keyed as toolbarDdWidths is.
+ *  The defaults MUST equal the min-width fallbacks in 03-toolbar.css
+ *  (`var(--ddw-element, 140px)`) — the field would otherwise open showing a
+ *  number the dropdown is not actually wearing, and the first nudge would
+ *  jump it. */
+const TB_DD_KEYS = ['fontFamily', 'fontSize', 'element', 'view'];
+const TB_DD_DEFAULT: Record<string, number> = {
+  fontFamily: 120, fontSize: 60, element: 140, view: 120,
+};
+
+/**
+ * v7.58: a section title's text, edited in its row.
+ *
+ * The title IS its token (`st:Format`), and the token is the row's React key.
+ * So writing every keystroke straight through would give the row a new key per
+ * character, remount the input, and drop focus after the first letter — the
+ * field would look broken while working perfectly. It holds a draft and commits
+ * on blur or Enter, the same shape SpacerSize uses two screens down and for the
+ * same reason. Escape puts the old text back.
+ *
+ * Declared at module scope: a component defined inside another is a new type
+ * every render, which remounts it just as surely.
+ */
+function SectionTitleInput({ value, onCommit }: { value: string; onCommit: (v: string) => void }) {
+  const [draft, setDraft] = React.useState<string | null>(null);
+  return (
+    <input
+      className="fs-divider-label-input"
+      value={draft ?? value}
+      placeholder="Section title"
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => { if (draft !== null && draft !== value) onCommit(draft); setDraft(null); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
+        else if (e.key === 'Escape') { e.preventDefault(); setDraft(null); }
+      }}
+    />
+  );
+}
 
 interface Props {
   /** Initial tab; the dialog always renders its own tab bar. */
@@ -81,7 +150,7 @@ function TabInfo({ children }: { children: React.ReactNode }) {
   );
 }
 const TAB_HINTS: Record<string, React.ReactNode> = {
-  toolbar: <>Your toolbar above is now the editor. While this tab is open the real ribbon is live: drag items from the palette straight onto it, drag a section by its body to move it, hover an item or section for its ×. Use a faint “+ Add” block on the bar to insert a section, divider, spacer, alignment split or any item. Drag an item off the bar to remove it. Close this window to lock the layout.</>,
+  toolbar: <>The ribbon above, as a list. Drag items between Shown and Hidden — where you drop one is where it sits on the bar. Dividers, spacers and row breaks are items in the list too: add them from “+ Add” and drag them into place. A Row Break starts a section’s second row; an Alignment Split pushes everything after it to the right edge.</>,
   qat: <>The buttons beside the traffic lights in the titlebar. Drag between Shown and Hidden — where you drop one is where it sits. Add dividers and spacers to group them.</>,
   panels: <>Drag tools between Left Panel, Right Panel and Hidden — where you drop one is where it sits. The Show/Hide in a list’s header controls the whole panel (drag a panel’s inner edge in the app to resize it). Divider labels are edited here only.</>,
 };
@@ -114,8 +183,11 @@ const DEFAULT_PANEL_SPACER = 50;   // v0.86 (the toolbar's lives in tokenMeta.ts
  * just works. Declared at module scope (a component defined inside another
  * remounts on every render).
  */
-function SpacerSize({ value, min, max, onChange }: {
+function SpacerSize({ value, min, max, onChange, label = 'Size:' }: {
   value: number; min: number; max: number; onChange: (px: number) => void;
+  /** v7.58: the same field now sizes a ribbon DROPDOWN, where "Size" reads as
+   *  the font size in it. One component, one word changed. */
+  label?: string;
 }) {
   // v0.95: the minimum was enforced on EVERY keystroke, so typing "10" clamped
   // the "1" to 8 the instant it was typed and you could never get below 80. The
@@ -141,7 +213,7 @@ function SpacerSize({ value, min, max, onChange }: {
       onDragStart={(e) => e.preventDefault()}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <label className="fs-spacer-label">Size:</label>
+      <label className="fs-spacer-label">{label}</label>
       <input
         type="number"
         className="fs-spacer-input"
@@ -240,7 +312,15 @@ export function DndColumns({ columns, onDrop }: {
           >
             <div className="fs-dnd-col-head">
               <span>{col.title}</span>
-              {col.headerExtra}
+              {/* v7.58, Derek: "shift the add button right so it is next to the
+                  Show all button." The head is space-between, which puts ONE
+                  extra at the right edge and strands a SECOND one in the middle
+                  — which is what v7.57's adders became the moment they joined a
+                  Show All. Wrapping them means the head always has exactly two
+                  flex children, so any number of actions stays together at the
+                  right. Done here rather than per caller: every column that
+                  grows a second button would otherwise hit this again. */}
+              {col.headerExtra && <span className="fs-dnd-col-head-actions">{col.headerExtra}</span>}
             </div>
             <div className="fs-dnd-col-body">
               {col.sections.map((sec, si) => (
@@ -281,6 +361,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     toolbarMode, setToolbarMode,
     qatItems, setQatItems,
     uiResizeLocked,
+    // v7.58: the Ribbon Toolbar tab edits the dropdown widths now — the drag
+    // gesture that used to set them lived on the bar's edit mode.
+    toolbarDdWidths,
   } = useEditorStore();
 
 
@@ -598,14 +681,15 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     if (soloCategory) return;
     try { localStorage.setItem(CUSTOMIZE_TAB_KEY, activeCatState); } catch { /* quota */ }
   }, [activeCatState, soloCategory]);
-  // v3.36, Derek: while the Toolbar tab is open, the REAL ribbon bar becomes
-  // the editor (drop surface + handles). Closing the window, or leaving the
-  // tab, locks the layout. The store flag drives Toolbar's edit rendering.
-  // v4.4, Derek: NOT while locked — "Lock All" must freeze layout edits too
-  // (the dialog veils its tabs, but the ribbon bar itself was still editable:
-  // you could add sections and drag items). The lock veil tells you to unlock.
-  // (Declared here — the window-position effect below reads it.)
-  const editingToolbar = open && activeCat === 'toolbar' && !uiResizeLocked;
+  /* v3.36–v7.57: while the Toolbar tab was open the REAL ribbon bar became the
+     editor — a drop surface with handles, a spotlight dimming the rest of the
+     app, and the window pinned below the bar so you could see it.
+
+     v7.58, Derek: "we no longer need the ability to drag items from this
+     window directly onto the toolbar." The tab lists the toolbar as Shown and
+     Hidden columns now, like every other tab, so the bar is a preview again
+     rather than a second editor for the same sequence. The flag is gone with
+     the mode; Toolbar's edit rendering and ribbonDrag go with it. */
 
   // v3.29, Derek: the window OPENS below the toolbar ribbon so the whole bar
   // stays visible while editing (it's still draggable anywhere after).
@@ -613,43 +697,20 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   const [overlayPadTop, setOverlayPadTop] = React.useState<number | null>(null);
   React.useEffect(() => {
     if (!open) { setOverlayPadTop(null); return; }
-    // v4.22, Derek: re-measure after the ribbon's height settles — switching to
-    // the Toolbar tab expands the bar into edit mode (taller), and the old
-    // measurement (taken once on open, before that expansion) left the window
-    // riding up over the bar. Measure in rAF so the new layout is painted, and
-    // leave extra room in edit mode where the per-section + buttons hang below
-    // the bar.
+    // v4.22: measure in rAF so the bar's painted height is the one we read.
+    // v7.58: no edit-mode expansion to allow for any more — the bar keeps one
+    // height now, so the extra 24px it needed for the per-section + buttons
+    // went with them.
     let raf = 0;
     const measure = () => {
       const bar = document.querySelector('.toolbar-stack');
       const b = bar?.getBoundingClientRect().bottom ?? 0;
-      setOverlayPadTop(b > 0 ? Math.round(b) + (editingToolbar ? 24 : 14) : null);
+      setOverlayPadTop(b > 0 ? Math.round(b) + 14 : null);
     };
     raf = requestAnimationFrame(measure);
     window.addEventListener('resize', measure);
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', measure); };
-  }, [open, editingToolbar, tbLeftRaw]);
-  React.useEffect(() => {
-    useEditorStore.getState().setToolbarEditing(editingToolbar);
-    return () => { useEditorStore.getState().setToolbarEditing(false); };
-  }, [editingToolbar]);
-  // v3.36, Derek: SPOTLIGHT the ribbon while editing — dim + block everything
-  // in the app except the bar and this window. Two fixed strips (above and
-  // below the bar) do it; the bar is full-width so nothing sits beside it.
-  // Re-measured when the bar changes size (edits change tbLeftRaw).
-  const [barRect, setBarRect] = React.useState<{ top: number; bottom: number } | null>(null);
-  React.useEffect(() => {
-    if (!editingToolbar) { setBarRect(null); return; }
-    const measure = () => {
-      const bar = document.querySelector('.toolbar-stack');
-      if (!bar) { setBarRect(null); return; }
-      const r = bar.getBoundingClientRect();
-      setBarRect({ top: Math.round(r.top), bottom: Math.round(r.bottom) });
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [editingToolbar, tbLeftRaw]);
+  }, [open, tbLeftRaw]);
   // v1.76: the old per-list drag plumbing (dragProps/zoneDragProps, v0.45 and
   // v0.95) is gone — DndColumns owns drag state for every customization list.
 
@@ -705,11 +766,55 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
   // ── Add-item categories: Toolbar / Edit / Insert / View / Tools / Project,
   //    mirroring the menu-bar taxonomy. v3.38, Derek: the whole list now lives
-  //    in ribbonPaletteData.buildRibbonPalette — ONE source shared with the
-  //    on-bar "+ Add" picker, so the dialog palette and the bar can't drift.
+  //    in ribbonPaletteData.buildRibbonPalette. v7.58: it is the HIDDEN
+  //    column's contents now — "everything not on the bar" — since the tab
+  //    grew Shown/Hidden columns and the on-bar picker it used to share with
+  //    went with in-place editing.
   //    (Ribbon tokens may carry the 2! span flag — compare flag-blind.)
   const tbPlaced = (v: string) => [...tbLeft, ...tbRight].some((t) => stripTall(t) === v);
   const tbAddCategories = buildRibbonPalette(tbPlaced);
+
+  /* v7.58: the structural utilities, offered from the Shown column's "+ Add"
+     the way every other tab offers its own. They used to be reachable only
+     from the REAL bar's in-place "+ Add" (v3.42), which is the affordance
+     Derek retired — so without this the ribbon's shape would have become
+     uneditable, which is a worse tab than the one we started with.
+     One definition of what each one serialises to. Alignment Split is
+     conspicuously absent from the mint list: exactly one may exist, and it is
+     positional rather than a token you append, so it is handled below. */
+  const tbMint: Record<string, () => string> = {
+    divider: () => `d:${Date.now()}`,
+    divider2: () => `2!d:${Date.now()}`,
+    spacer: () => `s:${Date.now()}`,
+    rowbreak: () => `r:${Date.now()}`,
+    /* Empty on purpose: the row it creates IS a text field, so the title is
+       typed where it lives rather than in a modal that asks first. */
+    title: () => 'st:',
+  };
+  /* The dropdown widths live in their own store field (the live bar reads the
+     same one), not in the token — so they are read and written here rather
+     than by rewriting the sequence. Defaults to the CSS width when unset,
+     which is what an unsized dropdown actually wears. */
+  const tbDdWidth = (key: string) => toolbarDdWidths[key] ?? TB_DD_DEFAULT[key] ?? 120;
+  const setTbDdWidth = (key: string, px: number) => {
+    const next = { ...toolbarDdWidths, [key]: px };
+    saveViewState({ toolbarDdWidths: next });
+    useEditorStore.setState({ toolbarDdWidths: next });
+  };
+
+  const tbAddStructural = (kind: string) => {
+    if (kind === 'split') {
+      // At most one; appending a second would be silently ignored on parse.
+      if (tbLeft.some((t) => t.startsWith('a:'))) {
+        showToast('The toolbar already has an alignment split', 'info');
+        return;
+      }
+      setToolbarZones([...tbLeft, `a:${Date.now()}`], tbRight);
+      return;
+    }
+    const mint = tbMint[kind];
+    if (mint) setToolbarZones([...tbLeft, mint()], tbRight);
+  };
 
   // v2.96: tokenIcon/tokenLabel/spacerPx moved to tokenMeta.ts — the ribbon
   // editor is a second consumer, and two copies is how lists drift.
@@ -781,13 +886,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
   /* v7.57: Side Panels and Quick Access moved their adders into the Shown
      column headers, where they sit on the list they add to. What is left here
      is Hide All, which is not an adder — it acts on the whole tab. */
-  const tabAdders: Partial<Record<string, React.ReactNode>> = {
-    toolbar: (
-      <button className="dialog-btn dialog-btn-sm"
-        title="Hide every toolbar item (re-add items from the palette)"
-        onClick={() => setToolbarZones([], [])}>Hide All</button>
-    ),
-  };
+  /* v7.58: empty. The Ribbon Toolbar tab's Hide All moved into its Hidden
+     column header, where every other tab's Hide All already lives — the tab
+     grew Shown/Hidden columns, so it finally has one. Kept as the slot for a
+     tab-wide action with nowhere better rather than deleted: TabActionBar
+     still takes `adders`, and Annotations still passes one. */
+  const tabAdders: Partial<Record<string, React.ReactNode>> = {};
 
   /* v7.56, Derek: "instead of having import+export buttons on all of the tabs
      in the customize window, just have a button below the tabs that says
@@ -861,22 +965,158 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           <section>
             <h3>Toolbar Layout</h3>
             {/* v3.39: the helper text moved to the tab info icon (TAB_HINTS). */}
-            {/* v3.36: the SOURCE side only — the real bar is the drop
-                surface (see RibbonPalette / ribbonDrag). */}
-            <RibbonPalette
-              palette={tbAddCategories}
-              headerControls={<>
-                <span className="fs-customize-seg">
-                  <button
-                    className={toolbarMode !== 'hidden' ? 'active' : ''}
-                    onClick={() => { if (toolbarMode === 'hidden') setToolbarMode('custom'); }}
-                  >Show</button>
-                  <button
-                    className={toolbarMode === 'hidden' ? 'active' : ''}
-                    onClick={() => setToolbarMode('hidden')}
-                  >Hide</button>
-                </span>
-              </>}
+            {/* v7.58, Derek: "restructure this so it has the standard Shown and
+                Hidden columns. If something is moved to the shown column, it
+                appears in the toolbar above. we no longer need the ability to
+                drag items from this window directly onto the toolbar."
+
+                This tab was the last one that did not speak the app's own
+                language. Since v3.36 it showed only the drag SOURCES and made
+                the REAL ribbon the drop target, so learning it taught you
+                nothing about any other tab and vice versa — and the bar became
+                a second editor for the thing this window edits, which is the
+                two-places-for-one-thing rule broken in the largest possible
+                way.
+
+                The Shown column IS the token sequence (`toolbarLeft`), the one
+                source of truth it always was; the structural tokens ride in it
+                as their own rows, the way Quick Access already lists its
+                dividers and spacers. So the sequence is edited directly, in
+                order, and nothing about the ribbon's shape is lost — a two-row
+                section is still a Row Break token sitting between its rows. */}
+            <div className="fs-customize-row">
+              <span className="fs-customize-seg">
+                <button
+                  className={toolbarMode !== 'hidden' ? 'active' : ''}
+                  onClick={() => { if (toolbarMode === 'hidden') setToolbarMode('custom'); }}
+                >Show</button>
+                <button
+                  className={toolbarMode === 'hidden' ? 'active' : ''}
+                  onClick={() => setToolbarMode('hidden')}
+                >Hide</button>
+              </span>
+            </div>
+            <DndColumns
+              columns={[
+                {
+                  id: 'shown', title: 'Shown',
+                  headerExtra: columnAddMenu(
+                    TB_STRUCTURAL.map((s) => ({ value: s.value, label: s.label })),
+                    (v) => tbAddStructural(v),
+                    'Add a divider, spacer or alignment split to the toolbar',
+                  ),
+                  sections: [{
+                    rows: tbLeft.map((tok) => ({
+                      key: tok,
+                      content: (
+                        <span className="fs-customize-tool">
+                          {iconSlot(tokenIcon(stripTall(tok)))}
+                          {/* v7.58: a section TITLE carries its own text in the
+                              token, and the only place it could be typed was
+                              the bar's in-place editor. Edited here now — the
+                              same inline field the Side Panels tab has always
+                              used for a divider's label. Without this, retiring
+                              in-place editing would have made the titles on
+                              Derek's own ribbon impossible to add or reword. */}
+                          {tok.startsWith('st:') ? (
+                            <SectionTitleInput
+                              value={tok.slice(3)}
+                              /* Emptying it REMOVES the token — the rule
+                                 ribRemoveSectionTitle has always followed
+                                 ("no empty st: token survives"), because an
+                                 empty title still paints its band on the bar.
+                                 A title you have cleared is a title you have
+                                 deleted. */
+                              onCommit={(v) => setToolbarZones(
+                                v.trim()
+                                  ? tbLeft.map((t) => (t === tok ? `st:${v}` : t))
+                                  : tbLeft.filter((t) => t !== tok),
+                                tbRight,
+                              )}
+                            />
+                          ) : (
+                            <span className={tbIsStructural(tok) ? 'fs-dnd-structural' : undefined}>
+                              {tokenLabel(stripTall(tok))}
+                            </span>
+                          )}
+                          {/* v7.58: the widths that used to be an edge-drag on
+                              the real bar. A spacer's px, and the four
+                              dropdowns that read a --ddw-* var. */}
+                          {tok.startsWith('s:') && (
+                            <SpacerSize
+                              value={spacerPx(tok)}
+                              min={TB_SPACER_MIN}
+                              max={TB_SPACER_MAX}
+                              onChange={(px) => setToolbarZones(
+                                tbLeft.map((t) => (t === tok ? `s:${tok.split(':')[1]}:${px}` : t)),
+                                tbRight,
+                              )}
+                            />
+                          )}
+                          {TB_DD_KEYS.includes(stripTall(tok).replace(/^big!/, '').slice(2)) && (
+                            <SpacerSize
+                              value={tbDdWidth(stripTall(tok).replace(/^big!/, '').slice(2))}
+                              min={TB_DD_MIN}
+                              max={TB_DD_MAX}
+                              label="Width:"
+                              onChange={(px) => setTbDdWidth(
+                                stripTall(tok).replace(/^big!/, '').slice(2), px,
+                              )}
+                            />
+                          )}
+                          <button
+                            className="fs-dnd-rowbtn"
+                            title="Remove from the toolbar"
+                            onClick={() => setToolbarZones(tbLeft.filter((t) => t !== tok), tbRight)}
+                          >×</button>
+                        </span>
+                      ),
+                    })),
+                  }],
+                },
+                {
+                  id: 'hidden', title: 'Hidden', isHidden: true,
+                  headerExtra: (
+                    <button
+                      className="fs-dnd-headbtn"
+                      title="Take everything off the toolbar"
+                      onClick={() => setToolbarZones([], [])}
+                    >Hide All</button>
+                  ),
+                  /* buildRibbonPalette already drops whatever is placed, so
+                     this column is exactly "everything not on the bar". */
+                  sections: tbAddCategories.map((cat) => ({
+                    label: cat.label,
+                    rows: cat.options.map((o) => ({
+                      key: o.value,
+                      content: (
+                        <span className="fs-customize-tool">
+                          {iconSlot(tokenIcon(o.value))}
+                          {o.label}
+                          <button
+                            className="fs-dnd-rowbtn"
+                            title="Add to the end of the toolbar"
+                            onClick={() => setToolbarZones([...tbLeft, o.value], tbRight)}
+                          >+</button>
+                        </span>
+                      ),
+                    })),
+                  })),
+                },
+              ]}
+              onDrop={(src, dst) => {
+                const tok = src.key;
+                if (dst.col === 'hidden') {
+                  setToolbarZones(tbLeft.filter((t) => t !== tok), tbRight);
+                  return;
+                }
+                /* Dropped in Shown → place it at that index, whether it came
+                   from the palette (new) or from the list (a move). Filtering
+                   first makes both cases the same operation. */
+                const next = tbLeft.filter((t) => t !== tok);
+                next.splice(Math.min(dst.idx, next.length), 0, tok);
+                setToolbarZones(next, tbRight);
+              }}
             />
           </section>
           </>)}
@@ -970,6 +1210,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             <section>
               <h3>Element Suggestions</h3>
               <SuggestionRulesEditor />
+              {/* v7.58: this section's reset, under this section. */}
+              <TabActionBar tab="elements" section="suggestions" />
             </section>
           </>)}
           {activeCat === 'themes' && <ThemesTab />}
@@ -1030,21 +1272,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
   return (
     <>
-    {/* v3.36, Derek: the SPOTLIGHT — two dim strips above and below the bar
-        block + obscure the rest of the app, so only the ribbon and this
-        window read as usable. The bar between them stays bright and
-        droppable; the window (z above these) stays bright too. */}
-    {editingToolbar && barRect && (<>
-      <div className="fs-tbedit-scrim" style={{ top: 0, height: Math.max(0, barRect.top) }} />
-      <div className="fs-tbedit-scrim" style={{ top: barRect.bottom, bottom: 0 }} />
-    </>)}
-    {/* v3.36, Derek: while editing the toolbar, the overlay lets pointer
-       events THROUGH to the real bar above (so drags can drop on it) and
-       drops its dimming — the dialog box re-enables its own events. */}
+    {/* v3.36–v7.57: a SPOTLIGHT dimmed the whole app except the ribbon, and
+        the overlay let pointer events through to the bar so a drag could drop
+        on it. Both existed to make the real bar the editor. v7.58 retired that
+        mode, so the window is an ordinary modal again. */}
     <div
-      className={`dialog-overlay${editingToolbar ? ' dialog-overlay-tbedit' : ''}`}
+      className="dialog-overlay"
       style={overlayPadTop !== null ? { paddingTop: overlayPadTop } : undefined}
-      onClick={editingToolbar ? undefined : requestClose}
+      onClick={requestClose}
     >
       {/* ref: also what the v0.84 size-persist ResizeObserver watches — it
           had come detached from the element entirely (dead code until now). */}

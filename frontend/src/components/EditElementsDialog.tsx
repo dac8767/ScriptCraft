@@ -219,9 +219,13 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
             if (isDefaultTransition(t) && hiddenTransitions.includes(t)) setTransitionHidden(t, false);
           }}
         />
-        {/* v7.57: the adder moved into the Shown column header above. The bar
-            still carries this tab's resets from the shared registry. */}
-        <TabActionBar tab="elements" />
+        {/* v7.58, Derek: "move the reset buttons so they are each under their
+            respective section." One bar per tab assumed one list per tab; the
+            Editor tab is four sections, so its bar could only follow ONE of
+            them — it sat here and read as belonging to Transitions while
+            actually resetting Elements and Suggestions too. Each section's
+            reset comes from the same registry, filtered by section. */}
+        <TabActionBar tab="elements" section="transitions" />
       </section>
 
       <section>
@@ -286,6 +290,7 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
           }}
         />
         {/* v4.66: Show All / Hide All live in the column headers. */}
+        <TabActionBar tab="elements" section="elements" />
       </section>
 
       {addOpen && createPortal(

@@ -6,7 +6,24 @@
    3 Settings ▸ Customize ▸ Toolbar hands over to the REAL Customize
      window with live on-ribbon editing armed
    4 in edit mode the sections after the Align Split hug the right edge,
-     like the live bar */
+     like the live bar
+
+   v7.58, Derek: "we no longer need the ability to drag items from this window
+   directly onto the toolbar." The Ribbon Toolbar tab is Shown/Hidden columns
+   now, and the mode where the real bar became an editor is retired — so items
+   2 and 4, which tested affordances that only existed IN that mode (the
+   divider ghost, the edit-mode align gap), are testing something that is gone.
+
+   What survives is the part that was never about the mode: item 3, and item
+   1's actual subject — a dropdown's width is still customizable, still lands
+   in toolbarDdWidths, and the live bar still wears it. The gesture moved from
+   dragging an edge on the bar to a Width field on the dropdown's row, so that
+   is where this drives it. Deleting the assertion along with the gesture would
+   have quietly dropped the only coverage that Derek's v6.83 ask still works.
+   (check-v758 owns the new tab in full; this file keeps the v6.83 thread.)
+
+   The alignment split is still asserted — it is a property of the RIBBON, not
+   of the retired editor, so it should hold on the ordinary bar. */
 import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1600, height: 950 });
@@ -34,85 +51,76 @@ try {
   ok(embed.content > 10, `and embeds the interactive toolbar editor (${embed.content} nodes)`);
   await page.evaluate(() => { document.querySelector('.prefs-footer .dialog-btn-primary')?.click(); });
   await settle(page);
-  // items 1/2/4 need live on-ribbon editing — armed through the REAL
-  // Customize window door (the v6.83 listener still serves it)
-  await page.evaluate(() => window.dispatchEvent(new CustomEvent('scriptcraft:open-customize', { detail: 'toolbar' })));
-  await page.waitForSelector('.toolbar.toolbar-ribbon.toolbar-editing', { timeout: 8000 });
-  ok(true, 'the Customize window door still arms live on-ribbon editing');
-
-  /* ── 1: dropdown resize ── */
-  await page.waitForSelector('.rib-edit-item', { timeout: 8000 });
-  const grip = await page.evaluate(() => {
-    const el = [...document.querySelectorAll('.rib-edit-item')]
-      .find((it) => it.querySelector('.element-selector'))?.querySelector('.rib-edit-ddgrip');
-    if (!el) return null;
-    const b = el.getBoundingClientRect();
-    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+  /* v7.58: item 1, retargeted. The width is set from the Ribbon Toolbar tab's
+     own row field now — the drag grip went with the edit mode — but the claim
+     is unchanged: it commits to toolbarDdWidths and the REAL bar wears it. */
+  await page.evaluate(() => window.__scStore.getState().openPreferences('cz-toolbar'));
+  await page.waitForSelector('.prefs-content .fs-dnd-col', { timeout: 8000 });
+  const dd = await page.evaluate(async () => {
+    const row = [...document.querySelectorAll('.fs-dnd-col:not(.fs-dnd-hiddencol) .fs-dnd-row')]
+      .find((r) => r.textContent.includes('Element'));
+    const inp = row?.querySelector('.fs-spacer-size input');
+    if (!inp) return { err: 'the Element row carries no width field' };
+    const before = Math.round(
+      document.querySelector('.toolbar-ribbon .element-selector')?.getBoundingClientRect().width ?? 0);
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    inp.focus();
+    setter.call(inp, '220');
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+    inp.blur();
+    await new Promise((r) => setTimeout(r, 600));
+    return {
+      label: row.querySelector('.fs-spacer-label')?.textContent,
+      before,
+      stored: window.__scStore.getState().toolbarDdWidths.element,
+      width: Math.round(
+        document.querySelector('.toolbar-ribbon .element-selector')?.getBoundingClientRect().width ?? 0),
+    };
   });
-  ok(!!grip, 'the Element dropdown wears a resize grip in edit mode');
-  const before = await page.evaluate(() =>
-    Math.round(document.querySelector('.element-selector').getBoundingClientRect().width));
-  await page.mouse.move(grip.x, grip.y);
-  await page.mouse.down();
-  await page.mouse.move(grip.x + 60, grip.y, { steps: 4 });
-  await page.mouse.up();
-  await settle(page);
-  const afterDrag = await page.evaluate(() => ({
-    stored: window.__scStore.getState().toolbarDdWidths.element,
-    width: Math.round(document.querySelector('.element-selector').getBoundingClientRect().width),
-  }));
-  ok(typeof afterDrag.stored === 'number' && Math.abs(afterDrag.stored - (before + 60)) <= 3,
-    `dragging the grip commits the width to toolbarDdWidths (${before} → ${afterDrag.stored})`);
-  ok(Math.abs(afterDrag.width - afterDrag.stored) <= 3,
-    `and the dropdown actually wears it (${afterDrag.width}px)`);
+  ok(!dd.err, `the Element dropdown still has a width control (${dd.label ?? dd.err})`);
+  ok(dd.stored === 220, `setting it commits to toolbarDdWidths (${dd.before} \u2192 ${dd.stored})`);
+  /* The half that matters: the STORE agreeing with itself proves nothing if
+     the bar does not repaint. */
+  ok(Math.abs(dd.width - 220) <= 3, `and the live dropdown actually wears it (${dd.width}px)`);
 
-  /* ── 2: divider click-toggle, no × ── */
-  const sepXs = await page.evaluate(() => document.querySelectorAll('.rib-edit-sep-x').length);
-  ok(sepXs === 0, `dividers carry NO × button (${sepXs})`);
-  const seps = await page.evaluate(() => ({
-    lines: document.querySelectorAll('.rib-edit-sep').length,
-    ghosts: document.querySelectorAll('.rib-edit-sep-ghost').length,
-  }));
-  ok(seps.lines > 0, `visible dividers are clickable lines (${seps.lines})`);
-  await page.click('.rib-edit-sep >> nth=0');
+  /* Item 4, on the ORDINARY bar. The align split is the ribbon's own
+     behaviour; if it only ever worked in edit mode, that was the bug. */
+  await page.evaluate(() => window.__scStore.getState().closePreferences?.());
   await settle(page);
-  const hidden = await page.evaluate(() => ({
-    lines: document.querySelectorAll('.rib-edit-sep').length,
-    ghosts: document.querySelectorAll('.rib-edit-sep-ghost').length,
-  }));
-  ok(hidden.lines === seps.lines - 1 && hidden.ghosts === seps.ghosts + 1,
-    `clicking a divider hides it (${seps.lines}→${hidden.lines} lines, ghost appears)`);
-  await page.click('.rib-edit-sep-ghost >> nth=0');
-  await settle(page);
-  const restored = await page.evaluate(() => ({
-    lines: document.querySelectorAll('.rib-edit-sep').length,
-    ghosts: document.querySelectorAll('.rib-edit-sep-ghost').length,
-  }));
-  ok(restored.lines === seps.lines && restored.ghosts === seps.ghosts,
-    'clicking the ghost brings the divider back');
-
-  /* ── 4: right alignment in edit mode ── */
   const align = await page.evaluate(() => {
     const bar = document.querySelector('.toolbar.toolbar-ribbon');
     const gap = bar?.querySelector('.rib-align-gap');
     if (!gap) return { hasSplit: false };
-    const sections = [...bar.querySelectorAll('.rib-edit-section')];
-    const last = sections[sections.length - 1];
-    const barR = bar.getBoundingClientRect();
-    const lastR = last.getBoundingClientRect();
+    const secs = [...bar.querySelectorAll('.rib-section, .rib-edit-section')];
+    const last = secs[secs.length - 1];
+    if (!last) return { hasSplit: true, noSections: true };
     return {
       hasSplit: true,
       grow: getComputedStyle(gap).flexGrow,
-      tail: Math.round(barR.right - lastR.right),
+      tail: Math.round(bar.getBoundingClientRect().right - last.getBoundingClientRect().right),
     };
   });
-  if (align.hasSplit) {
-    ok(align.grow === '1', `the align gap grows in edit mode (flex-grow ${align.grow})`);
+  ok(align.hasSplit === true, 'the default layout still carries an align split');
+  if (align.hasSplit && !align.noSections) {
+    ok(align.grow === '1', `the align gap grows on the live bar (flex-grow ${align.grow})`);
     ok(align.tail < 60, `sections after the split hug the right edge (${align.tail}px from it)`);
-  } else {
-    ok(false, 'no align split in the default layout — probe assumption broken');
-    ok(false, '(skipped) right-edge assert');
   }
+
+  /* Items 2 and 4's edit-mode halves are retired WITH the mode. Asserted as an
+     absence so this file says what happened rather than going quiet: a check
+     that simply stops testing something reads the same as one that forgot. */
+  const gone = await page.evaluate(async () => {
+    window.__scStore.getState().openPreferences('cz-toolbar');
+    await new Promise((r) => setTimeout(r, 1000));
+    return {
+      editing: Boolean(document.querySelector('.toolbar-ribbon.toolbar-editing')),
+      ghosts: document.querySelectorAll('.rib-edit-sep-ghost').length,
+      grips: document.querySelectorAll('.rib-edit-ddgrip').length,
+    };
+  });
+  ok(gone.editing === false, 'the bar no longer becomes an editor while the tab is open');
+  ok(gone.ghosts === 0 && gone.grips === 0,
+    `and its in-place affordances are gone with it (${gone.ghosts} ghosts, ${gone.grips} grips)`);
 
 } catch (e) {
   console.log('PROBE ERROR:', e.message);

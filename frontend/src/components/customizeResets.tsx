@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { DEFAULT_MARKUP_PRESETS } from '../stores/slices/markupsSlice';
-import { useEditorStore, DEFAULT_TOOL_CONFIG, DEFAULT_TOOL_ORDER, DEFAULT_MORES_CONTDS } from '../stores/editorStore';
+import { useEditorStore, DEFAULT_TOOL_CONFIG, DEFAULT_TOOL_ORDER } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { useWindowUndoStore } from '../stores/windowUndoStore';
 import { useShortcutStore } from '../stores/shortcutStore';
@@ -24,6 +24,15 @@ export interface ResetAction {
   id: string;
   label: string;
   tab: CustomizeTabId;
+  /** v7.58, Derek: "move the reset buttons so they are each under their
+   *  respective section." One bar per tab was right while a tab was one list.
+   *  The Editor tab is four sections, so its bar could only sit after ONE of
+   *  them — it landed under Transitions and read as belonging to it, while
+   *  actually resetting Elements and Suggestions too. A reset that names a
+   *  section renders at the foot of that section instead of in the tab's bar.
+   *  Settings ▸ Defaults still compiles the whole registry by `tab`, so this
+   *  changes where a button sits, never what the app can put back. */
+  section?: string;
   /** What goes back to default, in the warning's words ("the ribbon
    *  toolbar's layout"). v6.77: every reset warns first. */
   what: string;
@@ -57,22 +66,15 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
       return () => useEditorStore.getState().setMarkupPresets(prev);
     },
   },
-  // ── Editor ──
+  /* ── Editor ──
+     v7.58, Derek: "we do not need the 'Reset Mores and Continueds' button at
+     all." Removed from the registry rather than only from the tab, so it
+     leaves Settings ▸ Defaults with it — a reset that exists in one surface
+     and not the other is the drift this registry exists to prevent. The
+     section is four controls with visible defaults; putting them back by hand
+     is quicker than finding the button was. */
   {
-    id: 'moresContds', label: 'Reset Mores & Continueds', tab: 'elements',
-    what: 'the MORE and CONT’D settings',
-    run: () => {
-      const st = useEditorStore.getState();
-      st.setPageLayout({ ...st.pageLayout, moresContds: { ...DEFAULT_MORES_CONTDS } });
-    },
-    // pageLayout is script formatting, not a CUSTOMIZATION_FIELDS entry.
-    capture: () => {
-      const prev = JSON.parse(JSON.stringify(useEditorStore.getState().pageLayout));
-      return () => useEditorStore.getState().setPageLayout(prev);
-    },
-  },
-  {
-    id: 'transitions', label: 'Reset Transitions', tab: 'elements',
+    id: 'transitions', label: 'Reset Transitions', tab: 'elements', section: 'transitions',
     what: 'your transition list — custom entries, hidden ones and their order',
     run: () => useFormattingTemplateStore.getState().resetTransitions(),
     capture: () => {
@@ -86,7 +88,7 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
     },
   },
   {
-    id: 'elements', label: 'Reset Elements', tab: 'elements',
+    id: 'elements', label: 'Reset Elements', tab: 'elements', section: 'elements',
     what: 'the element list’s hidden items and order',
     run: () => useFormattingTemplateStore.getState().resetElementOverrides(),
     capture: () => {
@@ -101,7 +103,7 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
     },
   },
   {
-    id: 'suggestions', label: 'Reset Element Suggestions', tab: 'elements',
+    id: 'suggestions', label: 'Reset Element Suggestions', tab: 'elements', section: 'suggestions',
     what: 'the element suggestion rules',
     run: () => {
       const st = useEditorStore.getState();
@@ -275,8 +277,12 @@ export function runCustomizeReset(a: ResetAction): void {
  * neither — Themes, since + New Theme moved and it registers no resets —
  * renders no bar at all, because a bar with nothing in it is a rule and a gap.
  */
-export function TabActionBar({ tab, adders }: {
+export function TabActionBar({ tab, section, adders }: {
   tab: CustomizeTabId;
+  /** v7.58: render the resets that named THIS section, at its foot. Omitted
+   *  means the tab's own bar, which carries only the resets that named no
+   *  section — so a reset appears in exactly one of the two, never both. */
+  section?: string;
   /** The tab's own adders. They belong at the LEFT, next to what they act on.
    *  Only for adders with nowhere better: a tab with a Shown column puts them
    *  in its header instead (v7.57). Annotations still passes one — it builds a
@@ -284,7 +290,8 @@ export function TabActionBar({ tab, adders }: {
    *  column header to sit in. */
   adders?: React.ReactNode;
 }) {
-  const actions = CUSTOMIZE_RESETS.filter((a) => a.tab === tab);
+  const actions = CUSTOMIZE_RESETS.filter((a) => a.tab === tab
+    && (section ? a.section === section : !a.section));
   if (!adders && !actions.length) return null;
   return (
     <div className="fs-tabbar">

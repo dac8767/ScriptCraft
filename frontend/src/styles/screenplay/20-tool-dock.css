@@ -1333,6 +1333,10 @@ body.fs-tool-dragging { cursor: grabbing; }
   color: var(--fd-text);
   border-bottom: 1px solid var(--fd-chrome-separator);
 }
+/* v7.58: the head's actions travel together at the right edge. The head is
+   space-between, so an unwrapped second button gets stranded in the middle of
+   the row instead of joining the first. */
+.fs-dnd-col-head-actions { display: flex; align-items: center; gap: 6px; }
 .fs-dnd-col-body {
   flex: 1;
   overflow-y: auto;
@@ -1443,6 +1447,11 @@ body.fs-tool-dragging { cursor: grabbing; }
   font-size: 11px;
   margin-left: 6px;
 }
+/* v7.58: a row that shapes the toolbar rather than doing something on it —
+   Divider, Spacer, Row Break, Alignment Split. Italic for the same reason the
+   Quick Access tab italicises its Spacer: so a list of items reads as items
+   and the scaffolding reads as scaffolding. */
+.fs-dnd-structural { font-style: italic; color: var(--fd-text-muted); }
 .fs-dnd-row.locked .fs-customize-tool { opacity: 0.7; }
 .fs-dnd-rowactions {
   margin-left: auto;

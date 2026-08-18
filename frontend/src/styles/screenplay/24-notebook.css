@@ -460,25 +460,15 @@
 .rib-scrapbook-return-label { font-size: 11px; font-weight: 600; line-height: 1.15; text-align: center; white-space: nowrap; }
 
 /* ════════════════════════════════════════════════════════════════════════
-   v3.36, Derek: IN-PLACE toolbar editing. While Customize > Toolbar is open
-   the real bar IS the editor. The Customize overlay lets pointer events
-   through to the bar (so drags land on it) and drops its dimming; the dialog
-   box keeps its own events.
+   v3.36–v7.57: IN-PLACE toolbar editing. While Customize ▸ Toolbar was open
+   the real bar WAS the editor — the overlay passed pointer events through to
+   it, and two scrim strips dimmed everything else so only the ribbon and the
+   window read as live.
+   v7.58, Derek: "we no longer need the ability to drag items from this window
+   directly onto the toolbar." The tab is Shown/Hidden columns now, so the
+   overlay is an ordinary modal overlay again and there is nothing to spotlight.
+   .dialog-overlay-tbedit and .fs-tbedit-scrim went with the mode.
    ════════════════════════════════════════════════════════════════════════ */
-.dialog-overlay-tbedit { pointer-events: none; background: transparent; }
-.dialog-overlay-tbedit > .dialog-box { pointer-events: auto; }
-/* v3.36, Derek: the SPOTLIGHT strips — dim + BLOCK everything above and
-   below the bar, so only the ribbon and the Customize window read as live.
-   z-index sits below the dialog overlay (3000) so the window stays bright,
-   above the app so it's obscured; pointer-events block interaction. */
-.fs-tbedit-scrim {
-  position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 2990;
-  background: rgba(0, 0, 0, .58);
-  pointer-events: auto;
-}
 /* the editable bar announces itself — an accent ring + it floats above the
    scrims (which never cover it, but a hair of glow could otherwise clip). */
 .toolbar-ribbon.toolbar-editing {

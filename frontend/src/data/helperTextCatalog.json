@@ -179,6 +179,15 @@
   ]
  },
  {
+  "text": "Add to the end of the toolbar",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Customize Window",
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
   "text": "Add to the Quick Access Toolbar",
   "kind": "tooltip",
   "sites": 1,
@@ -1713,16 +1722,6 @@
   "label": "Hide All"
  },
  {
-  "text": "Hide every toolbar item (re-add items from the palette)",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ],
-  "label": "Hide All"
- },
- {
   "text": "Hide everything in both panels",
   "kind": "tooltip",
   "sites": 1,
@@ -2531,9 +2530,10 @@
  {
   "text": "Remove from the toolbar",
   "kind": "tooltip",
-  "sites": 1,
-  "area": "Ribbon Toolbar",
+  "sites": 2,
+  "area": "Customize Window",
   "where": [
+   "components/CustomizePanelsDialog.tsx",
    "components/Toolbar.tsx"
   ]
  },
@@ -3276,6 +3276,16 @@
   ]
  },
  {
+  "text": "Take everything off the toolbar",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Customize Window",
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ],
+  "label": "Hide All"
+ },
+ {
   "text": "Target pages for this section on the Outline Bar",
   "kind": "tooltip",
   "sites": 1,
@@ -3342,12 +3352,30 @@
   "label": "Show this outline in the outline bar"
  },
  {
+  "text": "The script format locks this element’s formatting (Format ▸ Script Format).",
+  "kind": "tooltip",
+  "sites": 8,
+  "area": "Menus",
+  "where": [
+   "components/MenuBar.tsx"
+  ]
+ },
+ {
   "text": "This combo is already a preset",
   "kind": "tooltip",
   "sites": 1,
   "area": "Annotations Window",
   "where": [
    "components/MarkupsCustomizeTab.tsx"
+  ]
+ },
+ {
+  "text": "This feature is still in development.",
+  "kind": "tooltip",
+  "sites": 3,
+  "area": "Menus",
+  "where": [
+   "components/MenuBar.tsx"
   ]
  },
  {
@@ -3410,6 +3438,15 @@
    "components/Toolbar.tsx"
   ],
   "icon": "FaFileAlt"
+ },
+ {
+  "text": "Turn scene numbers on first (View ▸ Scene Numbers).",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Menus",
+  "where": [
+   "components/MenuBar.tsx"
+  ]
  },
  {
   "text": "Underline",
@@ -4243,6 +4280,15 @@
   "area": "Outline Window",
   "where": [
    "components/BeatBoard.tsx"
+  ]
+ },
+ {
+  "text": "Section title",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Customize Window",
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
   ]
  },
  {

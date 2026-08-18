@@ -1,5 +1,16 @@
 [
   {
+    "version": "7.58",
+    "date": "2026-08-18",
+    "changes": [
+      "The Ribbon Toolbar tab has the same Shown and Hidden columns as every other tab. It was the last one that didn't: it showed only a palette of what you could add, and you dragged from it onto the real toolbar, which turned into an editor while the window was open. Now the Shown column IS the toolbar, in order — drag between the columns, drag within Shown to reorder. Dividers, spacers, row breaks, section titles and the alignment split are rows in that list too, added from “+ Add” and dragged into place; a section title is typed in its own row, and clearing it deletes it. Dragging onto the toolbar itself is gone, and so is the dimming that came with it.",
+      "The reset buttons on the Editor tab now sit under the section each one resets, instead of in a single row halfway down the tab that looked like it belonged to Transitions. “Reset Mores & Continueds” is gone entirely — from Settings ▸ Defaults as well, so there is no copy of it left anywhere.",
+      "Fix: greyed-out menu items now explain themselves on hover. The Production menu's Revision Mode and Production Tags were given “This feature is in development” back in v7.06 and it has never once appeared — the styling that greys a disabled item also told the browser to ignore the pointer, so no hover ever reached it and the tooltip could not fire. Every greyed item says why now, and the ones greyed for a reason you can fix say what to do: Lock Scene Numbers points at View ▸ Scene Numbers, and a Bold or Align that the script format has locked says so.",
+      "The “+ Add” button in a Shown column header sits beside Show All at the right, instead of stranded in the middle of the header row.",
+      "Menu tooltips are listed in the Helper Text window, so they can be reworded like every other piece of helper text. None of them ever had been."
+    ]
+  },
+  {
     "version": "7.57",
     "date": "2026-08-18",
     "changes": [

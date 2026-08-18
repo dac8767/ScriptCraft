@@ -43,6 +43,22 @@ const HT_RE = /\bht\(\s*(?:'((?:[^'\\]|\\.)+)'|"((?:[^"\\]|\\.)+)")\s*[),]/g;
    the balanced {…} expression after title=/placeholder= and harvests every
    fixed string literal inside it. */
 const ATTR_EXPR_RE = /\b(title|placeholder)=\{/g;
+
+/* v7.58: hover text a component gets handed as DATA rather than written as a
+   JSX attribute. The menu bar builds its items as objects and the render puts
+   the string on the element, so the tooltip never appears as `title=…` in the
+   source and none of the menus' hover text was ever listed — including the two
+   "in development" lines v7.06 added.
+   Keyed on `tooltip:`, not `title:`, and MenuItem was renamed to match. On a
+   DOM element `title` means hover text; on a data object it usually means a
+   HEADING (two of MenuBar's own `title:` sites are the document's name), so
+   harvesting that name would fill the Helper Text window with window titles.
+   One word, one meaning, and the harvest rule can be exact instead of a
+   guess. Both forms: tooltip: 'x' and tooltip: cond ? 'a' : 'b'. */
+const DATA_TOOLTIP_RE = /\btooltip:\s*/g;
+/* A module-level `const NAME = '…'`, so a tooltip that NAMES its wording
+   still gets listed. Read only when a tooltip references the name. */
+const CONST_STR_RE = /\bconst\s+([A-Za-z_$][\w$]*)\s*(?::\s*string\s*)?=\s*(?:'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)")\s*;/g;
 // '…' / "…" / `…` — template literals with ${…} are CONTEXTUAL text (they
 // embed live data, so no fixed default exists to key an override by) and
 // are excluded by the [^`$] class.
@@ -75,6 +91,50 @@ function sliceBalancedExpr(src, open) {
     }
   }
   return null;
+}
+
+/** v7.58: the object literal a property sits in — walked BACKWARDS to its
+ *  opening brace, quote- and bracket-aware. Used to require that a `tooltip:`
+ *  is a sibling of `label:`, i.e. that it really is a menu item's hover text.
+ *  Without that test the scan also harvests `tooltip:` used as a KIND KEY —
+ *  the Helper Text window's own `{ tooltip: 'Hover', placeholder: 'Field' }`
+ *  legend listed the word "Hover" as helper text, which is both wrong and
+ *  circular. Bounded; returns null rather than guessing. */
+function enclosingObject(src, at) {
+  let depth = 0;
+  const floor = Math.max(0, at - 4000);
+  for (let i = at; i >= floor; i--) {
+    const c = src[i];
+    if (c === '}') depth++;
+    else if (c === '{') {
+      if (depth === 0) return src.slice(i, at);
+      depth--;
+    }
+  }
+  return null;
+}
+
+/** v7.58: the VALUE of an object property, from just past the colon to the
+ *  top-level `,` or the `}` that closes its object. Quote- and bracket-aware,
+ *  so a comma inside a string or a nested call doesn't cut the value short.
+ *  Bounded so a malformed slice can't run to the end of the file. */
+function slicePropValue(src, start) {
+  let depth = 0, quote = null;
+  const end = Math.min(src.length, start + 400);
+  for (let i = start; i < end; i++) {
+    const c = src[i];
+    if (quote) {
+      if (c === '\\') { i++; continue; }
+      if (c === quote) quote = null;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') { quote = c; continue; }
+    if (c === '(' || c === '[' || c === '{') depth++;
+    else if (c === ')' || c === ']') depth--;
+    else if (c === '}') { if (depth === 0) return src.slice(start, i); depth--; }
+    else if (c === ',' && depth === 0) return src.slice(start, i);
+  }
+  return src.slice(start, end);
 }
 
 /** Drop `…${…}…` templates from an expression WHOLE — the literals inside
@@ -223,6 +283,31 @@ export function buildCatalog() {
         ? contextAfter(src, m.index + m[0].length + expr.length + 1)
         : {};
       for (const text of literalsInExpr(expr)) add(text, kind, f, ctx);
+    }
+    /* v7.58: hover text handed over as data (MenuItem.tooltip). No JSX
+       context to read a face from — the item's own label is right there in
+       the object, but reading it would need the object parsed, and the Helper
+       Text window already groups by area.
+       A value that NAMES a constant is resolved through the file's own
+       string consts. The whole point of `tooltip: IN_DEVELOPMENT` is that
+       three items share one wording, and a harvester that only sees inline
+       literals would list the sentences nobody shared and miss the one
+       everybody did. Only identifiers a tooltip actually names are looked
+       up, so this reads no constant that isn't helper text. */
+    const strConsts = new Map();
+    for (const m of src.matchAll(CONST_STR_RE)) {
+      strConsts.set(m[1], (m[2] ?? m[3]).replace(/\\(['"`])/g, '$1'));
+    }
+    for (const m of src.matchAll(DATA_TOOLTIP_RE)) {
+      /* It must be a MENU ITEM'S tooltip — a sibling of the item's label —
+         not the word `tooltip` used as a kind key. */
+      const obj = enclosingObject(src, m.index);
+      if (obj === null || !/\blabel:\s*/.test(obj)) continue;
+      const value = slicePropValue(src, m.index + m[0].length);
+      for (const text of literalsInExpr(value)) add(text, 'tooltip', f);
+      for (const id of value.match(/\b[A-Za-z_$][\w$]*\b/g) ?? []) {
+        if (strConsts.has(id)) add(strConsts.get(id), 'tooltip', f);
+      }
     }
   }
 
