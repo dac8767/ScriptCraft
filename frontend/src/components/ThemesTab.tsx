@@ -7,12 +7,11 @@
  * stays legible instead of looking broken).
  */
 import React from 'react';
-import { SCRIPT_EXTS } from '../utils/scriptFileExt';
-import AddMenu from './AddMenu';
 import ColorPicker from './ColorPicker';
 import { DndColumns } from './CustomizePanelsDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { TabActionBar } from './customizeResets';
 import { useThemeStore } from '../stores/themeStore';
 import {
   BUILTIN_THEMES, THEME_VARS, isCustomTheme, seedVarsFromBase,
@@ -38,7 +37,6 @@ export default function ThemesTab() {
   const [editing, setEditing] = React.useState<CustomTheme | null>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null);
   const [pickerKey, setPickerKey] = React.useState<string | null>(null);
-  const [importNote, setImportNote] = React.useState('');
 
   // v3.79, Derek: if the user builds a theme then clicks the Customize dialog's
   // Save (instead of the tab's "Save Theme"), commit it anyway so it lands in
@@ -320,176 +318,50 @@ export default function ThemesTab() {
         </p>
       )}
 
-      {importNote && <p className="fs-shortcut-note">{importNote}</p>}
 
-      <div className="fs-tbzone-adders">
+      {/* v7.56: this tab's adder goes in the SAME TabActionBar every other tab
+          ends with. Its state (`newTheme` opens the editor) lives here, not in
+          CustomizePanelsDialog, so this tab renders its own bar — one
+          component, so the grammar is identical either way. */}
+      <TabActionBar tab="themes" adders={
         <button className="dialog-btn dialog-btn-sm" onClick={newTheme}>+ New Theme</button>
-        {/* v1.4.1: Export is a menu now, matching Import — a panel that opened
-            over the button to ask "which themes?" was a whole extra screen for a
-            question with two real answers: all of them, or that one. */}
-        <AddMenu
-          label="Export Themes..."
-          center
-          title="Save your custom themes to a file"
-          onPick={(v) => {
-            setImportNote('');
-            /* v7.28, the ONE PRESET EXPORT WINDOW: "export every theme" IS
-               the `themes` preset category, so it opens the one window with
-               that ticked. A SINGLE theme is deliberately not routed there —
-               the bundle has no way to say "just this one", so sending it to
-               the window would quietly export all of them, which is a wrong
-               answer wearing the right button's label. */
-            if (v === 'all') useEditorStore.getState().openPresetExport(['themes']);
-            else void exportThemes([v]);
-          }}
-          groups={[{
-            label: '',
-            options: customThemes.length === 0
-              ? []
-              : [
-                  // v7.28: offered even for ONE theme, so the preset window is
-                  // always reachable from this door
-                  { value: 'all', label: `Export All Themes (${customThemes.length}) — as a preset` },
-                  ...customThemes.map((t) => ({ value: t.id, label: `Export “${t.label}”` })),
-                ],
-          }]}
-        />
-        {/* v1.1: one Import button. Two buttons sitting side by side, differing
-            only in where the themes come FROM, made the choice look bigger than
-            it is — it's one action with two sources. */}
-        <AddMenu
-          label="Import Themes..."
-          center
-          title="Load themes from a theme file, or copy them out of another project"
-          onPick={(v) => {
-            if (v === 'file') void importThemes();
-            else void importFromProject();
-          }}
-          groups={[{
-            // No heading: two items that are plainly both imports don't need a
-            // category telling you so.
-            label: '',
-            options: [
-              { value: 'file', label: 'Import from File' },
-              { value: 'project', label: 'Import from Project' },
-            ],
-          }]}
-        />
-      </div>
+      } />
     </section>
   );
 
-  // ── Export / Import ──────────────────────────────────────────────────────
-  // A theme file is plain-text JSON: readable, diffable, and easy to hand to
-  // someone else. It carries a `kind` marker and a version so an import can
-  // tell a real theme file from any other JSON that happens to be lying around.
-  async function exportThemes(ids: string[]) {
-    const chosen = customThemes.filter((t) => ids.includes(t.id));
-    if (chosen.length === 0) return;
-    const payload = { kind: 'scriptcraft-themes', version: 1, themes: chosen };
-    // v4.79, Derek: the export type is spelled out at the END of the name.
-    const name = chosen.length === 1
-      ? `${safeName(chosen[0].label)}_theme.json`
-      : 'scriptcraft-all_themes.json';
-    // saveFile opens the real save dialog on desktop, so the user picks WHERE
-    // it goes rather than it landing silently in Downloads.
-    const { saveFile } = await import('../utils/fileOps');
-    const ok = await saveFile(JSON.stringify(payload, null, 2), name, [
-      { name: 'ScriptCraft Themes', extensions: ['json'] },
-    ]);
-    if (ok) setImportNote(`Exported ${chosen.length} theme${chosen.length === 1 ? '' : 's'}.`);
-  }
+  /* ── Export / Import ──────────────────────────────────────────────────
+     v7.56, Derek: "remove the import and export options from all tabs." The
+     three functions that lived here — exportThemes, importThemes and
+     importFromProject — went with the two menus that were their only callers.
+     They are DELETED rather than parked: a function no caller can reach is a
+     function nobody maintains, and tsc will not hold it anyway.
 
-  /** Import from another ScriptCraft PROJECT (.odraft) — themes now travel inside
-   *  project files, so this copies the look across. Projects exported before
-   *  v0.82 carry no themes, and we say so plainly rather than failing silently. */
-  async function importFromProject() {
-    const { openTextFile } = await import('../utils/fileOps');
-    const result = await openTextFile([
-      { name: 'ScriptCraft Project', extensions: [...SCRIPT_EXTS] },
-    ]);
-    if (!result) return;
-    try {
-      const found = extractThemes(JSON.parse(result.content));
-      if (found.length === 0) {
-        setImportNote('That project has no custom themes. (Projects exported before v0.82 don’t carry themes — re-export it from the newer version.)');
-        return;
-      }
-      addThemes(found);
-    } catch {
-      setImportNote('That file couldn’t be read as a ScriptCraft project.');
-    }
-  }
+     Recover them from git history (v7.55, ThemesTab.tsx) if the two
+     capabilities they carried are wanted back. Both are worth naming, because
+     Settings ▸ Backup & Restore does NOT replace them:
 
-  function importThemes() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,.txt,.script,.odraft,application/json,text/plain';
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const found = extractThemes(JSON.parse(await file.text()));
-        if (found.length === 0) {
-          setImportNote('No themes found in that file.');
-          return;
-        }
-        addThemes(found);
-      } catch {
-        setImportNote('That file couldn’t be read as a theme file.');
-      }
-    };
-    input.click();
-  }
+       · exporting a SINGLE theme as its own file. The preset bundle has no
+         way to say "just this one", so routing it there would have quietly
+         exported all of them — a wrong answer wearing the right label.
+       · Import from Project, which reads themes out of another PROJECT
+         rather than out of a preset file.
 
-  /** Never overwrite an existing theme: imported themes get a fresh id, and a
-   *  duplicate name is suffixed. Re-importing the same file twice is harmless
-   *  rather than destructive. */
-  function addThemes(found: CustomTheme[]) {
-    const existing = new Set(customThemes.map((c) => c.label));
-    let added = 0;
-    for (const t of found) {
-      let label = t.label || 'Imported Theme';
-      let n = 2;
-      while (existing.has(label)) label = `${t.label} (${n++})`;
-      existing.add(label);
-      saveCustomTheme({
-        id: `custom:${Date.now()}-${added}`,
-        label,
-        base: t.base === 'light' ? 'light' : 'dark',
-        vars: t.vars && typeof t.vars === 'object' ? t.vars : {},
-      });
-      added++;
-    }
-    setImportNote(`Imported ${added} theme${added === 1 ? '' : 's'}.`);
-  }
+     Neither wants to come back as a tab-level import/export pair; a per-row
+     action on a theme is the natural home for the first, and the second is a
+     genuine import that belongs wherever imports live now.
+
+     `addThemes` below stays — it is what an import would call, and it holds
+     the rule that imports never overwrite. */
+
 }
 
-const safeName = (s: string) => s.replace(/[^\w-]+/g, '_').slice(0, 40) || 'theme';
 
-/**
- * Pull custom themes out of a parsed file. Accepts an exported theme file, a
- * single bare theme object, or another project's export that happens to carry a
- * themes array — so "import from another project" and "import a theme file" are
- * the same action for the user. (v4.79: exported — the Presets panel imports
- * theme files through this same reader.)
- */
-export function extractThemes(data: unknown): CustomTheme[] {
-  const looksLikeTheme = (v: unknown): v is CustomTheme =>
-    !!v && typeof v === 'object'
-    && typeof (v as CustomTheme).label === 'string'
-    && typeof (v as CustomTheme).vars === 'object';
-
-  if (Array.isArray(data)) return data.filter(looksLikeTheme);
-  if (!data || typeof data !== 'object') return [];
-
-  const o = data as Record<string, unknown>;
-  for (const key of ['themes', 'customThemes', '_themes']) {
-    const v = o[key];
-    if (Array.isArray(v)) return v.filter(looksLikeTheme);
-  }
-  return looksLikeTheme(o) ? [o] : [];
-}
+/* v7.56: `extractThemes` is gone with the imports that called it. Its docblock
+   said it was exported for the Presets panel — that has been untrue since
+   v6.63, when the panel moved to reading useThemeStore directly, so the export
+   had been holding the door open for a caller that no longer existed. Removing
+   the theme imports above simply made that visible. It is in git history with
+   them if the capability comes back. */
 
 /** <input type="color"> only accepts #rrggbb — coerce anything else. */
 function toHex(v: string | undefined): string {

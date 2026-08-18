@@ -6,6 +6,7 @@
  * reset here and every surface picks it up — no drifting copies.
  */
 import React from 'react';
+import { DEFAULT_MARKUP_PRESETS } from '../stores/slices/markupsSlice';
 import { useEditorStore, DEFAULT_TOOL_CONFIG, DEFAULT_TOOL_ORDER, DEFAULT_MORES_CONTDS } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { useWindowUndoStore } from '../stores/windowUndoStore';
@@ -17,7 +18,7 @@ import { confirmDialog } from './ConfirmDialog';
 
 /* v7.00: 'design' / 'helper' / 'keys' are WINDOW groups — they render only
    in Settings ▸ Defaults (no Customize tab carries them). */
-export type CustomizeTabId = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'themes' | 'design' | 'helper' | 'keys';
+export type CustomizeTabId = 'elements' | 'toolbar' | 'panels' | 'qat' | 'context' | 'themes' | 'markups' | 'design' | 'helper' | 'keys';
 
 export interface ResetAction {
   id: string;
@@ -41,6 +42,21 @@ const captureCustomizeState = (): (() => void) => {
 };
 
 export const CUSTOMIZE_RESETS: ResetAction[] = [
+  /* ── Annotations ──
+     v7.56: this one had its OWN button and its own runMajorChange call in
+     MarkupsCustomizeTab, which is exactly the drifting copy this registry's
+     header warns about — and it meant Settings ▸ Defaults, which compiles the
+     registry, never listed it. Registered here it appears in both places and
+     warns through the one wrapper. */
+  {
+    id: 'markupPresets', label: 'Reset Annotation Presets', tab: 'markups',
+    what: 'your annotation presets — the icon and colour combinations',
+    run: () => useEditorStore.getState().setMarkupPresets(DEFAULT_MARKUP_PRESETS),
+    capture: () => {
+      const prev = useEditorStore.getState().markupPresets.map((m) => ({ ...m }));
+      return () => useEditorStore.getState().setMarkupPresets(prev);
+    },
+  },
   // ── Editor ──
   {
     id: 'moresContds', label: 'Reset Mores & Continueds', tab: 'elements',

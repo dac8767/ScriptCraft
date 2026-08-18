@@ -13,11 +13,14 @@
  * One TabActionBar now, with the grammar every dialog footer in this app
  * already uses:
  *
- *     [ adders ] ……………………………… [ resets ] │ [ Export  Import ]
+ *     [ adders ] ……………………………………………………… [ resets ]
  *
- * Left acts on the list above it. Right is the tab's own housekeeping, with a
- * hairline between undoing your changes and moving them between installs —
- * near enough to confuse, far enough apart to matter.
+ * Left acts on the list above it. Right is the tab's own housekeeping.
+ *
+ * v7.56 removed the third group. Export… / Import… moved the whole preset
+ * bundle whatever tab you were on, so repeating them per tab implied a scope
+ * they never had; they are one Backup & Restore door beside the tabs now. The
+ * hairline went with them — a rule between a group and nothing is just a rule.
  *
  * WHY THIS IS CHECKED BY GEOMETRY. "Arrangement" is precisely the property
  * that no type and no unit test can see. Every one of these buttons could keep
@@ -43,8 +46,8 @@ const ok = (name, cond, extra = '') => {
 const { browser, page } = await launch();
 await boot(page);
 
-/* Quick Access is the tab Derek screenshotted, and the one where all three
-   groups are present — adders, a reset, and the transfer pair. */
+/* Quick Access is the tab Derek screenshotted, and still the one that shows
+   both groups — adders and a reset. */
 console.log('\nthe tab Derek screenshotted is one row, not three blocks');
 const qat = await page.evaluate(async () => {
   window.__scStore.getState().openPreferences('cz-qat');
@@ -71,18 +74,27 @@ const qat = await page.evaluate(async () => {
 if (qat.skipped) {
   console.log(`  SKIP — ${qat.skipped}`);
 } else {
-  ok('the adders, the reset and the transfer pair are all present',
-    ['Add Divider', 'Add Spacer', 'Reset Items', 'Export…', 'Import…']
-      .every((l) => qat.labels.includes(l)), JSON.stringify(qat.labels));
+  /* v7.56 took the transfer pair out of every tab — it moved the whole preset
+     bundle regardless of which tab you were on, so it became one Backup &
+     Restore door beside the tabs instead. Two groups here now, not three. */
+  ok('the adders and the tab\'s reset are both present',
+    ['Add Divider', 'Add Spacer', 'Reset Items'].every((l) => qat.labels.includes(l)),
+    JSON.stringify(qat.labels));
+  ok('…and no per-tab Export/Import came back',
+    !qat.labels.some((l) => /Export|Import/.test(l)), JSON.stringify(qat.labels));
   /* THE ASSERTION. Three stacked blocks means three different tops. */
   ok('…on a single row', qat.tops.length === 1, `${qat.tops.length} distinct tops: ${JSON.stringify(qat.tops)}`);
-  ok('…in three groups, not one undifferentiated queue', qat.groups === 3, JSON.stringify(qat.groups));
+  ok('…in two groups, not one undifferentiated queue', qat.groups === 2, JSON.stringify(qat.groups));
   /* Adders left, housekeeping right — the direction carries the meaning. */
   ok('the adders sit left of the housekeeping',
     qat.firstGroupLeft < qat.lastGroupLeft, JSON.stringify(qat));
   ok('…and the housekeeping is pushed to the far edge',
     qat.panelRight - qat.lastGroupRight < 40, JSON.stringify(qat));
-  ok('a hairline separates resets from transfer', qat.hasDivider === true, JSON.stringify(qat));
+  /* The hairline separated resets from transfer. With transfer gone there is
+     nothing left for it to separate, and drawing one anyway would be a line
+     between a group and nothing. */
+  ok('no hairline is drawn now that there is nothing to separate',
+    qat.hasDivider === false, JSON.stringify(qat));
   ok('and a rule separates the bar from the tab\'s content',
     parseFloat(qat.borderTop) > 0, JSON.stringify(qat.borderTop));
 }
@@ -92,7 +104,7 @@ if (qat.skipped) {
    tab at a time. */
 console.log('\nevery Customize tab closes the same way');
 const perTab = [];
-for (const cat of ['toolbar', 'panels', 'qat', 'context', 'themes', 'elements']) {
+for (const cat of ['toolbar', 'panels', 'qat', 'context', 'themes', 'elements', 'markups']) {
   const r = await page.evaluate(async (c) => {
     window.__scStore.getState().openPreferences(`cz-${c}`);
     await new Promise((r) => setTimeout(r, 900));
@@ -106,7 +118,8 @@ for (const cat of ['toolbar', 'panels', 'qat', 'context', 'themes', 'elements'])
       // the retired stack
       oldResetSection: Boolean(content?.querySelector('.fs-reset-section')),
       oldSoloGlobals: Boolean(content?.querySelector('.fs-customize-globals-solo')),
-      strayAdderRow: Boolean(content?.querySelector('.fs-tbzone-adders')),
+      strayAdderRow: Boolean(content?.querySelector('.fs-tbzone-adders, .fs-markup-cz-footrow')),
+      barCount: content?.querySelectorAll('.fs-tabbar').length ?? 0,
     };
   }, cat);
   perTab.push(r);
@@ -122,9 +135,13 @@ ok('…so is the separate Export/Import row',
   perTab.every((t) => !t.oldSoloGlobals), JSON.stringify(perTab.filter((t) => t.oldSoloGlobals)));
 /* Tabs whose adders were lifted into the bar must not have left the old row
    behind — that is how you end up with the buttons in two places. */
-const lifted = perTab.filter((t) => ['toolbar', 'panels', 'qat'].includes(t.cat));
-ok('the lifted adder rows left nothing behind',
-  lifted.every((t) => !t.strayAdderRow), JSON.stringify(lifted.filter((t) => t.strayAdderRow)));
+ok('no tab kept a loose adder or reset row beside the bar',
+  perTab.every((t) => !t.strayAdderRow), JSON.stringify(perTab.filter((t) => t.strayAdderRow)));
+/* v7.56: a tab whose adders need its own component's state renders its own bar
+   (Themes, Editor, Annotations); the dialog renders one for the rest. EXACTLY
+   one either way — two would be the stack again, in a new costume. */
+ok('…and exactly one bar per tab, never two',
+  perTab.every((t) => t.barCount === 1), JSON.stringify(perTab.map((t) => [t.cat, t.barCount])));
 
 console.log('\none bar, one definition');
 const resets = readFileSync(new URL('../src/components/customizeResets.tsx', import.meta.url), 'utf8');

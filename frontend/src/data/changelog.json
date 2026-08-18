@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.56",
+    "date": "2026-08-18",
+    "changes": [
+      "The Export… / Import… pair is gone from every tab in both the Customize window and Settings. In its place the Customize window has one “Backup & Restore” button below the tabs, which takes you to the Settings tab of that name — the one place that actually does it. The pair was never per-tab anyway: both buttons always moved the whole bundle no matter which tab you were on, so the Themes tab's Export… was exporting your toolbar layout too.",
+      "The Themes tab's own Export Themes… and Import Themes… are gone with them. Two things went with those: exporting a single theme as its own file, and importing themes out of another project — neither is something Backup & Restore does, so say the word if you want either back somewhere.",
+      "The Annotations tab's Reset now appears in Settings ▸ Defaults alongside every other reset. It had its own private copy and had never been listed there."
+    ]
+  },
+  {
     "version": "7.55",
     "date": "2026-08-18",
     "changes": [

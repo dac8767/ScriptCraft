@@ -416,6 +416,16 @@
   ]
  },
  {
+  "text": "Back up or restore your customizations — opens Settings ▸ Backup & Restore",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Customize Window",
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ],
+  "label": "Backup &amp; Restore"
+ },
+ {
   "text": "Block quote",
   "kind": "tooltip",
   "sites": 1,
@@ -2070,25 +2080,6 @@
   "label": "Import Preset"
  },
  {
-  "text": "Load customization choices from a file — this replaces your current ones",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ],
-  "label": "Import…"
- },
- {
-  "text": "Load themes from a theme file, or copy them out of another project",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Everything Else",
-  "where": [
-   "components/ThemesTab.tsx"
-  ]
- },
- {
   "text": "Location options",
   "kind": "tooltip",
   "sites": 1,
@@ -2908,16 +2899,6 @@
   ]
  },
  {
-  "text": "Save customizations — opens the preset window with them ticked",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ],
-  "label": "Export…"
- },
- {
   "text": "Save name",
   "kind": "tooltip",
   "sites": 2,
@@ -2948,15 +2929,6 @@
    "components/LocationMapOptions.tsx"
   ],
   "label": "From Asset Manager…"
- },
- {
-  "text": "Save your custom themes to a file",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Everything Else",
-  "where": [
-   "components/ThemesTab.tsx"
-  ]
  },
  {
   "text": "Scan scripts and auto-create location entries",

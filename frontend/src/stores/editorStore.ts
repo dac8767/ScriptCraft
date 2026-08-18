@@ -899,6 +899,10 @@ export interface BeatAnchor { ax: number; ay: number }
 
 export type BeatArrangeMode = 'auto' | 'custom';
 
+/** Which Settings tab a caller can send the user to. */
+export type PreferencesTab =
+  'general' | 'saveloc' | 'languages' | 'keys' | 'page' | 'defaults' | 'backup';
+
 export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, TypewriterSlice, NotesSlice, MarkupsSlice, SceneNavSlice, LocationMapSlice, WorkspacesSlice, ViewPrefsSlice, SpellGrammarSlice, BeatsOutlineSlice, ChromeSlice {
   /** v5.25: Customize ▸ Markups — the predefined icon+color combos the
    *  markup popover offers. Persisted; defaults in markupsSlice. */
@@ -1139,8 +1143,17 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   toggleHelperTextHidden: (text: string) => void;
   /** v6.77: bulk replace — Hide all / Show all and their undo. */
   setHelperTextHidden: (hidden: string[]) => void;
-  preferencesRequest: { open: boolean; tab?: 'saveloc' | 'keys' };
-  openPreferences: (tab?: 'saveloc' | 'keys') => void;
+  /* v7.56: this said `'saveloc' | 'keys'` and had done for a long time, while
+     PreferencesDialog's own prop accepted every tab. The narrow type was not
+     protecting anything — it just meant a caller who wanted any other tab got
+     a compile error for something that works. Widened to the tabs the store
+     can actually send you to, which now includes Backup & Restore: the
+     Customize window's one door replaces the Export/Import pair that used to
+     sit on every tab. The `cz-*` Customize tabs are deliberately absent —
+     nothing routes to them from here, and claiming them would be the same
+     kind of lie in the other direction. */
+  preferencesRequest: { open: boolean; tab?: PreferencesTab };
+  openPreferences: (tab?: PreferencesTab) => void;
   closePreferences: () => void;
   /* v7.28, Derek's ONE PRESET EXPORT WINDOW: "anywhere in the app, if you
      click export theme preset, export settings preset, export workspace…

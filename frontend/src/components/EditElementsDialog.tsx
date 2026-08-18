@@ -24,6 +24,7 @@ import { createPortal } from 'react-dom';
 import { useFormattingTemplateStore, DUAL_DIALOGUE_ID, DEFAULT_TRANSITIONS } from '../stores/formattingTemplateStore';
 import { DndColumns } from './CustomizePanelsDialog';
 import { Modal } from './Modal';
+import { TabActionBar } from './customizeResets';
 
 /** Elements a script can't function without — reorderable, never hidable. */
 const REQUIRED_IDS = ['sceneHeading', 'action', 'character', 'dialogue'];
@@ -210,10 +211,11 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
             if (isDefaultTransition(t) && hiddenTransitions.includes(t)) setTransitionHidden(t, false);
           }}
         />
-        <div className="fs-tbzone-adders">
+        {/* v7.56: Add Transition sits in the tab's one action bar, beside the
+            Editor resets the bar pulls from the shared registry. */}
+        <TabActionBar tab="elements" adders={
           <button className="dialog-btn dialog-btn-sm" onClick={openAddTransition}>Add Transition</button>
-          {/* v4.65: Reset moved to the tab's Reset section (customizeResets). */}
-        </div>
+        } />
       </section>
 
       <section>

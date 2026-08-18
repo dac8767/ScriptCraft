@@ -25,9 +25,14 @@ await boot(page);
 await settle(page);
 
 console.log('\n1. every door opens the window, and none exports on its own');
+/* v7.56, Derek: "remove the import and export options from all tabs in both
+   the customize window and the settings window." Two of the four doors this
+   check was written for are gone — the Customize footer's pair and Export All
+   Themes. The invariant they were here to protect is unchanged and still
+   applies to every door that remains: open the ONE window, never export on
+   the side. Their absence is asserted below, so removing a door and quietly
+   re-adding a private export flow in its place would still fail. */
 const DOORS = [
-  ['components/CustomizePanelsDialog.tsx', 'customize', 'the Customize footer'],
-  ['components/ThemesTab.tsx', 'themes', 'Export All Themes'],
   ['components/BeatBoard.tsx', 'outline', 'the outline presets menu'],
 ];
 for (const [file, part, label] of DOORS) {
@@ -37,8 +42,11 @@ for (const [file, part, label] of DOORS) {
 }
 /* The negative. A door that still called saveFile/downloadBackup would look
    identical from outside — the window opens either way. */
-ok('the Customize footer no longer runs its own export flow',
-  !/exportCustomizationsFlow\(\)/.test(src('components/CustomizePanelsDialog.tsx')), '');
+ok('the Customize window offers no export flow at all now',
+  !/exportCustomizationsFlow\(\)|openPresetExport\(/.test(src('components/CustomizePanelsDialog.tsx')), '');
+/* What replaced it is a DOOR to the place that does this, not another copy. */
+ok('…it points at Settings ▸ Backup & Restore instead',
+  /openPreferences\('backup'\)/.test(src('components/CustomizePanelsDialog.tsx')), '');
 ok('Settings no longer writes its own backup file',
   !/downloadBackup\(/.test(src('components/PreferencesDialog.tsx')), '');
 /* v7.31 went further than routing that door: Derek removed the section
@@ -105,15 +113,19 @@ ok('…and still reads a legacy backup file', /applyBackup\(text\)/.test(prefs),
 ok('…choosing by what the file IS, not by what wrote it',
   /bundleIds \? [\s\S]{0,400}applyPresetFile\(text\)/.test(prefs), '');
 
-console.log('\n4. one theme is not "all themes"');
-/* The bundle has no way to say "just this one", so routing a single-theme
-   export to the window would quietly export ALL of them — a wrong answer
-   wearing the right button's label. */
+console.log('\n4. the Themes tab exports nothing of its own');
+/* This section used to hold the rule that a SINGLE theme must not be routed
+   through the preset bundle, because the bundle cannot say "just this one" and
+   would have quietly exported all of them. v7.56 removed the Themes tab's
+   export and import outright at Derek's request, so there is no longer a
+   single-theme export to protect — and the capability going away is recorded
+   in ThemesTab's own header rather than left to be rediscovered. What is
+   asserted now is that nothing there exports on the side. */
 const themes = src('components/ThemesTab.tsx');
-ok('a single theme still exports as a single theme',
-  /else void exportThemes\(\[v\]\)/.test(themes), '');
-ok('…and the preset route is reachable even with one theme',
-  !/customThemes\.length > 1[\s\S]{0,120}Export All Themes/.test(themes), '');
+ok('no export or import flow survives on the Themes tab',
+  !/exportThemes\(|importThemes\(|importFromProject\(|openPresetExport\(/.test(themes), '');
+ok('…and the removal is documented, not silent',
+  /Recover them from git history/.test(themes), '');
 
 console.log(`\ncheck-v728: ${pass} passed, ${fail} failed`);
 await browser.close();

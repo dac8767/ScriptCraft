@@ -210,10 +210,16 @@ const footer = await page.evaluate(async () => {
 if (footer.skipped) {
   console.log(`  SKIP the Customize footer — ${footer.skipped}`);
 } else {
-  const util = footer.buttons.filter((b) => /Lock|Export|Import/.test(b.t));
+  /* v7.56: Export… / Import… left this footer — they moved the whole preset
+     bundle regardless of the tab, so Derek replaced them with one Backup &
+     Restore door beside the tabs. Lock All is what remains of the utilities. */
+  const util = footer.buttons.filter((b) => /Lock/.test(b.t));
   const acts = footer.buttons.filter((b) => /^(Cancel|Save)$/.test(b.t));
-  ok('the utilities are compact', util.length === 3 && util.every((b) => b.h === 26),
+  ok('the utility is compact', util.length === 1 && util.every((b) => b.h === 26),
     JSON.stringify(util.map((b) => [b.t, b.h])));
+  ok('…and the preset pair is gone from the footer',
+    !footer.buttons.some((b) => /Export|Import/.test(b.t)),
+    JSON.stringify(footer.buttons.map((b) => b.t)));
   ok('…and Cancel / Save keep the full action size',
     acts.length === 2 && acts.every((b) => b.h === 34),
     JSON.stringify(acts.map((b) => [b.t, b.h])));

@@ -81,8 +81,14 @@ const inSettings = await page.evaluate(() =>
   [...document.querySelectorAll('.prefs-content button')].map((b) => b.textContent.trim()));
 ok('no Lock All on a Settings tab',
   !inSettings.some((t) => /^Lock All$|^Locked$/.test(t)), JSON.stringify(inSettings.filter((t) => /Lock/.test(t))));
-ok('…but Export/Import are still offered there',
-  inSettings.some((t) => /Export/.test(t)) && inSettings.some((t) => /Import/.test(t)), '');
+/* v7.56, Derek: "remove the import and export options from all tabs in both
+   the customize window and the settings window (excluding the settings >
+   Backup & Restore tab obviously)." This assertion said the opposite, and it
+   inverts rather than being deleted — the pair being ABSENT is now the thing
+   worth holding, and the tab this runs on is not Backup & Restore. */
+ok('…and Export/Import are gone from an ordinary Settings tab',
+  !inSettings.some((t) => /Export|Import/.test(t)),
+  JSON.stringify(inSettings.filter((t) => /Export|Import/.test(t))));
 await page.evaluate(() => window.__scStore.getState().closePreferences());
 await settle(page);
 

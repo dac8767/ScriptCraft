@@ -831,11 +831,11 @@ input.markup-dot-custom::-webkit-color-swatch { border: none; opacity: 0; }
   margin-left: 8px;
 }
 .fs-markup-cz-preview .markup-glyph { display: flex; }
-/* v7.53: it carried dialog-btn and then overrode its size — 12px text in a
-   34px box. It asks for the compact size by class now; only the spacing is
-   left here. */
-.fs-markup-cz-add { margin-left: 6px; }
-.fs-markup-cz-footrow { margin-top: 16px; }
+/* v7.56: `.fs-markup-cz-add` and `.fs-markup-cz-footrow` are gone. The Add
+   Preset button moved into the tab's shared action bar and the bespoke reset
+   row was replaced by the shared reset registry, so both rules lost their
+   only markup. (v7.53's note here described the add button's size override,
+   which went with it.) */
 
 /* Navigator annotation rows — indented under their scene (v5.28) and
    colored by their icon (inline from the row). v5.33: the LINE STACK CSS

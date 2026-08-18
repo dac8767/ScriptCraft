@@ -29,7 +29,6 @@ import { showToast } from './Toast';
 import ThemesTab from './ThemesTab';
 import MarkupsCustomizeTab from './MarkupsCustomizeTab';
 import ContextMenuTab from './ContextMenuTab';
-import { importCustomizationsFlow } from './PresetsPanel';
 import { QAT_OPTIONS, QAT_BY_ID, isQatDivider, isQatSpacer } from './TitleBar';
 
 interface Props {
@@ -760,25 +759,31 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     </>),
   };
 
-  const presetButtons = (<>
-    {/* v4.79, Derek: carry these choices between installs or scripts. Both
-        run the shared preset flows (PresetsPanel), so the Customize footer,
-        the Presets window and Settings ▸ Presets can never drift. Import
-        confirms first — it overrides everything here. */}
-    {/* v7.28, Derek's ONE PRESET EXPORT WINDOW: this ran its own single-
-        category flow. It opens the one window now with `customize` already
-        ticked — every other category is one tick away, which is the point of
-        there being one window. */}
-    <button className="dialog-btn dialog-btn-sm"
-      title="Save customizations — opens the preset window with them ticked"
-      onClick={() => useEditorStore.getState().openPresetExport(['customize'])}
-    >Export…</button>
-    <button className="dialog-btn dialog-btn-sm"
-      title="Load customization choices from a file — this replaces your current ones"
-      onClick={() => { void importCustomizationsFlow(); }}
-    >Import…</button>
-  </>);
-  const globalsButtons = (<>{lockButton}{presetButtons}</>);
+  /* v7.56, Derek: "instead of having import+export buttons on all of the tabs
+     in the customize window, just have a button below the tabs that says
+     'Backup & Restore'. clicking it takes you to the tab in settings of the
+     same name. remove the import and export options from all tabs in both the
+     customize window and the settings window."
+
+     So the Export… / Import… pair that used to close every tab is gone, and
+     what replaces it is a DOOR, not another copy of the thing. Backing up was
+     never a per-tab job: both buttons always moved the whole `customize`
+     preset bundle regardless of which tab you were looking at, so repeating
+     them on seven tabs implied a scope they never had. One button, one place
+     that actually does it. */
+  /* Tabs that render their own TabActionBar, because their adders need state
+     that lives in their own component rather than here. */
+  const OWN_BAR_TABS: string[] = ['themes', 'elements', 'markups'];
+
+  const backupDoor = (
+    <button
+      className="dialog-btn dialog-btn-sm"
+      title="Back up or restore your customizations — opens Settings ▸ Backup & Restore"
+      onClick={() => useEditorStore.getState().openPreferences('backup')}
+    >Backup &amp; Restore</button>
+  );
+
+  const globalsButtons = lockButton;
 
   const body = (
       // v0.83: tabs live in a LEFT SIDEBAR, the same shape as Settings
@@ -799,13 +804,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               onClick={() => setActiveCat(id)}
             >{label}</button>
           ))}
-          {/* v3.24, Derek's menu reorg #5: the global controls. v3.52: in the
-              Customize WINDOW they moved to the footer (beside Cancel/Save);
-              here they show only in the embedded (Settings) view, which has no
-              footer. */}
-          {embedded && (
-            <div className="fs-customize-globals fs-customize-globals-row">{presetButtons}</div>
-          )}
+          {/* v7.56, Derek: "a button below the tabs that says Backup &
+              Restore". Below the tabs is where it belongs — it is not about
+              the tab you happen to be on, which is the whole reason the pair
+              it replaces was wrong. */}
+          <div className="fs-customize-globals fs-customize-globals-row">{backupDoor}</div>
         </div>
         )}
         {/* v4.64, Derek: the lock must hold BELOW the fold too — the veil is
@@ -944,12 +947,17 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               they act on the list above, the tab's resets and transfer at the
               right. The resets still come from the one customizeResets
               registry that Settings ▸ Defaults also compiles. */}
-          <TabActionBar
-            tab={activeCat as CustomizeTabId}
-            adders={tabAdders[activeCat]}
-            /* Solo mode has no rail or footer to host these. */
-            presets={soloCategory ? presetButtons : undefined}
-          />
+          {/* v7.56: a tab whose adders live in its own component renders its own
+              bar — the same TabActionBar, so the arrangement is identical, but
+              close enough to the state its buttons need. Rendering one here too
+              would put two bars on those tabs; check-v755 asserts exactly one
+              per tab so this cannot drift back. */}
+          {!OWN_BAR_TABS.includes(activeCat) && (
+            <TabActionBar
+              tab={activeCat as CustomizeTabId}
+              adders={tabAdders[activeCat]}
+            />
+          )}
         </div>
       </div>
   );

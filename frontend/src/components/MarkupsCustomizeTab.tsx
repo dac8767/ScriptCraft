@@ -9,8 +9,7 @@
  */
 import { useState } from 'react';
 import { useEditorStore } from '../stores/editorStore';
-import { runMajorChange } from '../utils/majorChange';
-import { DEFAULT_MARKUP_PRESETS } from '../stores/slices/markupsSlice';
+import { TabActionBar } from './customizeResets';
 import { MARKUP_ICONS, MARKUP_EMOJI, MARKUP_COLORS, MarkupIcon } from './markupIcons';
 
 export default function MarkupsCustomizeTab() {
@@ -92,36 +91,20 @@ export default function MarkupsCustomizeTab() {
         ))}
         <input type="color" className="markup-dot markup-dot-custom" value={pickColor} title="Custom color" onChange={(e) => setPickColor(e.target.value)} />
         <span className="fs-markup-cz-preview"><MarkupIcon icon={pickIcon} color={pickColor} /></span>
+      </div>
+
+      {/* v7.56: the reset moved into the shared customizeResets registry — it
+          had its own button and its own runMajorChange call here, the drifting
+          copy that registry exists to prevent, and Settings ▸ Defaults never
+          listed it as a result. The bar below pulls it from there. */}
+      <TabActionBar tab="markups" adders={
         <button
-          className="dialog-btn dialog-btn-sm dialog-btn-primary fs-markup-cz-add"
+          className="dialog-btn dialog-btn-sm dialog-btn-primary"
           disabled={exists}
           title={exists ? 'This combo is already a preset' : 'Add this combo to the presets'}
           onClick={add}
         >+ Add Preset</button>
-      </div>
-
-      <div className="fs-markup-cz-footrow">
-        {/* v6.77: warned + undoable like every bulk reset (majorChange). */}
-        <button
-          className="dialog-btn"
-          onClick={() => {
-            const st = useEditorStore.getState();
-            void runMajorChange({
-              title: 'Reset Annotation Presets',
-              message: `Replace your ${st.markupPresets.length} annotation preset${st.markupPresets.length === 1 ? '' : 's'} with the app's default set?`,
-              confirmLabel: 'Reset',
-              label: 'Reset annotation presets',
-              capture: () => {
-                const prev = st.markupPresets.map((p) => ({ ...p }));
-                return () => useEditorStore.getState().setMarkupPresets(prev);
-              },
-              run: () => useEditorStore.getState().setMarkupPresets(DEFAULT_MARKUP_PRESETS),
-            });
-          }}
-        >
-          Reset to Default
-        </button>
-      </div>
+      } />
     </section>
   );
 }
