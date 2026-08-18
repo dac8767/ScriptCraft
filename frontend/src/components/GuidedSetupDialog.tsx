@@ -247,7 +247,10 @@ export default function GuidedSetupDialog({ open, onClose, onCreate, onBack }: {
               Customize steps below. */}
           {step === 4 && (
             <div className="fs-guided-pagesetup">
-              <PageSetupDialog embedded onClose={() => {}} />
+              {/* No onClose: this step IS the page of fields, so there is
+                  nowhere to dismiss to and no Cancel is drawn. The wizard's
+                  own Back/Next below is the way out. */}
+              <PageSetupDialog embedded />
             </div>
           )}
 

@@ -4,10 +4,7 @@ import type { PageLayout, HeaderFooterContent } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { Modal } from './Modal';
 
-interface PageSetupDialogProps {
-  onClose: () => void;
-  /** Render only the content (no overlay/box) — used inside Preferences. */
-  embedded?: boolean;
+interface PageSetupCommonProps {
   /* v7.10, Derek: "'page setup' used to have a full page of fields for the
      various measurement options. This is what you should see when clicking
      view on an item in the current Page Setup tab. make equivalents for the
@@ -23,6 +20,36 @@ interface PageSetupDialogProps {
   /** Reset returns to this instead of the app defaults (a template's own). */
   resetTo?: PageLayout;
 }
+
+/* v7.49, Derek: "this window needs a cancel button" — of the Page Setup window
+   Settings ▸ Page Setup ▸ View opens.
+
+   It had one. `embedded` was hiding it, and the reason is worth keeping,
+   because it is one prop doing two jobs:
+
+     · "don't draw your own overlay and box, the caller draws them" — which is
+       true of BOTH embedded callers, and
+     · "there is nowhere to cancel to" — which is true of only one.
+
+   Those coincided until the template Page Setup window arrived: it embeds the
+   fields inside its OWN window, with its own header and its own dismiss, so
+   Cancel is entirely meaningful there — and was gated off by a flag that was
+   never about that. The Guided Setup wizard is the genuine no-Cancel case; its
+   step IS this page, so it passed `onClose={() => {}}`, a handler that goes
+   nowhere.
+
+   So the two questions are asked separately now, and the second one is not a
+   boolean that can drift from the truth: CANCEL EXISTS IF AND ONLY IF THERE IS
+   SOMETHING FOR IT TO CALL. A caller with nowhere to dismiss to passes no
+   onClose and gets no button, rather than a button that does nothing — and the
+   union below makes that unrepresentable for the modal path, where a window
+   with no way out is a trap. */
+export type PageSetupDialogProps =
+  /* Its own modal. A dismiss is structural, not optional. */
+  | (PageSetupCommonProps & { embedded?: false; onClose: () => void })
+  /* Fields only. onClose is what Cancel calls and what Apply calls after
+     saving; omit it and neither happens, which is right for a wizard step. */
+  | (PageSetupCommonProps & { embedded: true; onClose?: () => void });
 
 // name is the stable option value; the visible label is built per the units setting.
 const PAGE_SIZES: Array<{ name: string; width: number; height: number }> = [
@@ -41,9 +68,12 @@ function inToPt(inches: number): number {
 
 const CM_PER_IN = 2.54;
 
-const PageSetupDialog: React.FC<PageSetupDialogProps> = ({
-  onClose, embedded = false, value, onSave, resetTo,
-}) => {
+const PageSetupDialog: React.FC<PageSetupDialogProps> = (props) => {
+  /* Destructured for the body, but the modal tail below narrows on `props`
+     itself — destructuring severs a discriminated union from its discriminant,
+     and the union is the whole point: it is what makes "a modal with no way
+     out" fail to compile rather than fail in front of a writer. */
+  const { onClose, embedded = false, value, onSave, resetTo } = props;
   const { pageLayout: docLayout, setPageLayout } = useEditorStore();
   const pageLayout = value ?? docLayout;
 
@@ -126,7 +156,7 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({
   const handleApply = useCallback(() => {
     if (onSave) onSave(layout);
     else setPageLayout(layout);
-    onClose();
+    onClose?.();
   }, [layout, onSave, setPageLayout, onClose]);
 
   const handleReset = useCallback(() => {
@@ -372,7 +402,7 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({
             Reset Default
           </button>
           <div className="page-setup-spacer" />
-          {!embedded && <button onClick={onClose}>Cancel</button>}
+          {onClose && <button className="dialog-btn" onClick={onClose}>Cancel</button>}
           <button className="dialog-btn dialog-btn-primary" onClick={handleApply}>
             Apply
           </button>
@@ -380,10 +410,10 @@ const PageSetupDialog: React.FC<PageSetupDialogProps> = ({
     </>
   );
 
-  if (embedded) return body;
+  if (props.embedded) return body;
 
   return (
-    <Modal onClose={onClose} boxClassName="page-setup-dialog">
+    <Modal onClose={props.onClose} boxClassName="page-setup-dialog">
         <div className="dialog-header">Page Setup</div>
         {body}
     </Modal>

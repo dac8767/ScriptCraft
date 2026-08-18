@@ -1,5 +1,12 @@
 [
   {
+    "version": "7.49",
+    "date": "2026-08-18",
+    "changes": [
+      "Fix: the per-template Page Setup window (Settings ▸ Page Setup ▸ View) had no Cancel — only Reset Default and Apply, so the only way out was to save or to dismiss the window itself. It has one now, and it discards your edits rather than quietly keeping them."
+    ]
+  },
+  {
     "version": "7.48",
     "date": "2026-08-17",
     "changes": [
