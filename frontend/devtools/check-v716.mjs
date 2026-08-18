@@ -6,8 +6,8 @@
      PDF exporter and the Pages thumbnails have always agreed (isFirst ? 0);
      the editor is the renderer that disagreed.
    2 The ribbon EDITOR must render the same controls at the same size as the
-     live bar. RETIRED in v7.59 with the second renderer it compared — see the
-     note below where it used to run.
+     live bar. Measured, not eyeballed: same section boxes, same rows, same
+     buttons, same x — the whole bar, in both modes.
 
    Plus the drift that turned up next door: the Pages tool kept PRIVATE copies
    of the shared geometry, under a comment claiming they matched. */
@@ -80,21 +80,67 @@ ok('the heading BELOW the opening line keeps its two blank lines',
 ok('…and the action below it keeps its one', after[2] === '16px', JSON.stringify(after));
 
 // ── 2: the ribbon editor renders the live bar, not a bigger one ──────
-/* ── 2 (RETIRED) ─────────────────────────────────────────────────────────
-   This part measured the ribbon EDITOR against the live bar — same section
-   boxes, same rows, same buttons, same x — because for a while the bar had two
-   renderings and they drifted apart by a few pixels each time either was
-   touched.
+console.log('\n2. ribbon edit mode is the same size as the live bar');
 
-   v7.58 retired in-place bar editing and v7.59 deleted its renderer, so there
-   is exactly ONE rendering of the ribbon now. The property this asserted is no
-   longer something the code could get wrong: there is nothing to disagree
-   with. Removed rather than left passing vacuously — a check that can only
-   pass is a check that says nothing, and reading one is worse than reading
-   none. check-v759 owns what replaced it (the bar is highlighted, not
-   re-rendered, while its tab is open). */
+const snap = () => page.evaluate(() => {
+  const bar = document.querySelector('.toolbar-ribbon');
+  const r = (e) => { const b = e.getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), x: Math.round(b.left) }; };
+  return {
+    secs: [...bar.querySelectorAll('.rib-section')].map(r),
+    rows: [...bar.querySelectorAll('.rib-row')].map(r),
+    btns: [...bar.querySelectorAll('.toolbar-btn')].map((e) => ({
+      key: e.getAttribute('title') || e.textContent.trim().slice(0, 12), ...r(e),
+    })),
+  };
+});
 
+await page.evaluate(() => window.__scStore.getState().setToolbarEditing(false));
+await settle(page);
+const live = await snap();
+await page.evaluate(() => window.__scStore.getState().setToolbarEditing(true));
+await settle(page);
+await page.waitForTimeout(400);
+const edit = await snap();
 
+ok('edit mode really is on', await page.evaluate(() =>
+  document.querySelector('.toolbar-ribbon')?.classList.contains('toolbar-editing')), '');
+ok('the bar has sections to compare', live.secs.length >= 3 && live.btns.length >= 8,
+  `${live.secs.length} sections / ${live.btns.length} buttons`);
+
+const same = (a, b) => a.length === b.length && a.every((x, i) => x.w === b[i].w && x.h === b[i].h && x.x === b[i].x);
+ok('every SECTION keeps its box and its position',
+  same(live.secs, edit.secs),
+  JSON.stringify(live.secs.map((s, i) => [s.w, s.x, edit.secs[i]?.w, edit.secs[i]?.x]).filter((p) => p[0] !== p[2] || p[1] !== p[3])));
+ok('every ROW keeps its height', same(live.rows, edit.rows), '');
+
+const byKey = new Map(live.btns.map((b) => [b.key, b]));
+const grown = edit.btns.filter((b) => { const l = byKey.get(b.key); return l && (l.w !== b.w || l.h !== b.h); });
+ok('every BUTTON keeps its size', grown.length === 0,
+  JSON.stringify(grown.slice(0, 4).map((b) => `${b.key} ${byKey.get(b.key).w}x${byKey.get(b.key).h}→${b.w}x${b.h}`)));
+ok('…and its position', edit.btns.every((b) => { const l = byKey.get(b.key); return !l || l.x === b.x; }), '');
+
+/* The chrome must still be visible — parity is worthless if it bought itself
+   by drawing nothing. */
+ok('the edit chrome is still drawn', await page.evaluate(() =>
+  document.querySelectorAll('.rib-edit-section').length > 0
+  && document.querySelectorAll('.rib-edit-item').length > 0), '');
+
+/* …and still WORK. The parity fix turned the ×s off at rest (an invisible
+   badge was eating the divider's clicks), so prove the badge still removes
+   its control once you hover it — otherwise this trades one silent no-op
+   for another. */
+const before = await page.locator('.rib-edit-item').count();
+await page.hover('.rib-edit-item >> nth=0');
+await page.waitForTimeout(120);
+await page.locator('.rib-edit-item >> nth=0').locator('.rib-edit-x').click();
+await settle(page);
+await page.waitForTimeout(200);
+const afterRemove = await page.locator('.rib-edit-item').count();
+ok('hovering an item still arms its × and the click removes it',
+  afterRemove === before - 1, `${before} → ${afterRemove}`);
+await page.evaluate(() => window.__scStore.getState().setToolbarEditing(false));
+
+// ── 3: the Pages tool reads the shared geometry, not a copy ──────────
 console.log('\n3. one source for the page geometry');
 const nav = readFileSync(new URL('../src/components/SceneNavigator.tsx', import.meta.url), 'utf8');
 ok('SceneNavigator imports the shared metrics',

@@ -77,6 +77,15 @@
   ]
  },
  {
+  "text": "Add a section, divider, spacer, alignment split or item here",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
   "text": "Add a synopsis for this scene",
   "kind": "tooltip",
   "sites": 1,
@@ -94,6 +103,15 @@
    "components/TitlePageEditor.tsx"
   ],
   "icon": "FaRegImage"
+ },
+ {
+  "text": "Add an item, divider, spacer or section here",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
  },
  {
   "text": "Add annotation",
@@ -161,15 +179,6 @@
   ]
  },
  {
-  "text": "Add to the end of the toolbar",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ]
- },
- {
   "text": "Add to the Quick Access Toolbar",
   "kind": "tooltip",
   "sites": 1,
@@ -216,6 +225,16 @@
    "components/Toolbar.tsx"
   ],
   "icon": "FaAlignRight"
+ },
+ {
+  "text": "Align Split — sections after this hug the right edge",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ],
+  "icon": "FaExchangeAlt"
  },
  {
   "text": "All colors",
@@ -1226,6 +1245,24 @@
   ]
  },
  {
+  "text": "Drag to resize this dropdown",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Drag to resize this spacer",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
   "text": "Drag to scroll — drag an end to zoom",
   "kind": "tooltip",
   "sites": 1,
@@ -1676,6 +1713,16 @@
   "label": "Hide All"
  },
  {
+  "text": "Hide every toolbar item (re-add items from the palette)",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Customize Window",
+  "where": [
+   "components/CustomizePanelsDialog.tsx"
+  ],
+  "label": "Hide All"
+ },
+ {
   "text": "Hide everything in both panels",
   "kind": "tooltip",
   "sites": 1,
@@ -1725,6 +1772,15 @@
  },
  {
   "text": "Hide the Outline Bar",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Hide this divider — click again to bring it back",
   "kind": "tooltip",
   "sites": 1,
   "area": "Ribbon Toolbar",
@@ -2476,9 +2532,9 @@
   "text": "Remove from the toolbar",
   "kind": "tooltip",
   "sites": 1,
-  "area": "Customize Window",
+  "area": "Ribbon Toolbar",
   "where": [
-   "components/CustomizePanelsDialog.tsx"
+   "components/Toolbar.tsx"
   ]
  },
  {
@@ -2530,6 +2586,24 @@
    "components/CharacterProfiles.tsx"
   ],
   "icon": "FaRegTrashAlt"
+ },
+ {
+  "text": "Remove the align split",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Remove the row split",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
  },
  {
   "text": "Remove this attachment",
@@ -2589,6 +2663,15 @@
    "components/TagsPanel.tsx"
   ],
   "icon": "FaRegTrashAlt"
+ },
+ {
+  "text": "Remove this section",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
  },
  {
   "text": "Remove this shortcut",
@@ -2757,6 +2840,24 @@
   "label": "Update in Script"
  },
  {
+  "text": "Row split line: hidden — click to show",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
+  "text": "Row split line: shown — click to hide",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
   "text": "Save (⌘S)",
   "kind": "tooltip",
   "sites": 1,
@@ -2836,6 +2937,15 @@
   "area": "Side Panel & Window Chrome",
   "where": [
    "components/ToolDock.tsx"
+  ]
+ },
+ {
+  "text": "Section title — leave blank for none",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
   ]
  },
  {
@@ -2962,6 +3072,15 @@
    "components/TagsPanel.tsx"
   ],
   "icon": "FaRegEye"
+ },
+ {
+  "text": "Show the divider between these sections",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
+  ]
  },
  {
   "text": "Show the Outline Bar",
@@ -3155,16 +3274,6 @@
   "where": [
    "components/VersionHistory.tsx"
   ]
- },
- {
-  "text": "Take everything off the toolbar",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ],
-  "label": "Hide All"
  },
  {
   "text": "Target pages for this section on the Outline Bar",
@@ -4063,6 +4172,16 @@
   ]
  },
  {
+  "text": "Search items…",
+  "kind": "placeholder",
+  "sites": 2,
+  "area": "Everything Else",
+  "where": [
+   "components/RibbonPalette.tsx",
+   "components/Toolbar.tsx"
+  ]
+ },
+ {
   "text": "Search languages…",
   "kind": "placeholder",
   "sites": 1,
@@ -4154,15 +4273,6 @@
   ]
  },
  {
-  "text": "Section title",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ]
- },
- {
   "text": "Short sentences, formal tone, uses contractions...",
   "kind": "placeholder",
   "sites": 1,
@@ -4214,6 +4324,15 @@
   "area": "Editor & Preview",
   "where": [
    "components/TitlePageEditor.tsx"
+  ]
+ },
+ {
+  "text": "title",
+  "kind": "placeholder",
+  "sites": 1,
+  "area": "Ribbon Toolbar",
+  "where": [
+   "components/Toolbar.tsx"
   ]
  },
  {

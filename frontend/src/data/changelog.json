@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.60",
+    "date": "2026-08-18",
+    "changes": [
+      "The Ribbon Toolbar tab is back to what it was before v7.58: the palette of available items, and the real toolbar above as the editor. Drag items from the palette straight onto the bar, drag a section by its body to move it, hover an item or section for its ×, and use the bar's own “+ Add” for sections, dividers, spacers and the alignment split. The Shown/Hidden columns are gone.",
+      "Everything that came with that editor comes back with it — the highlight and dimming while the tab is open, the drag-to-resize grip on the dropdowns, the click-to-toggle dividers, section titles edited on the bar, and Cmd+Z to undo a ribbon change.",
+      "Kept from the versions in between: the greyed-out menu items still explain themselves on hover, the Editor tab's resets still sit under their own sections, and a column header's “+ Add” still sits beside its Show All."
+    ]
+  },
+  {
     "version": "7.59",
     "date": "2026-08-18",
     "changes": [

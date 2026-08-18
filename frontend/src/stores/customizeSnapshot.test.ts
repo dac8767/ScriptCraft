@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore } from './editorStore';
-import { parseRibbon, serializeRibbon, setSectionTitle, type RibbonSection } from '../components/toolbarBuiltins';
+import { ribSetSectionTitle, ribRemoveSectionTitle } from '../components/ribbonDrag';
+import { parseRibbon, serializeRibbon, type RibbonSection } from '../components/toolbarBuiltins';
 
 const sec = (over: Partial<RibbonSection>): RibbonSection =>
   ({ top: [], bottom: [], hasBreak: false, breakLine: false, ...over });
@@ -63,34 +64,22 @@ describe('captureCustomizations / restoreCustomizations', () => {
  * v3.50 — every section carries a title field. Naming one sets it; clearing
  * the field drops the title so it neither serializes nor renders on the saved
  * bar (an empty title must not leave a stray `st:` token behind).
- *
- * v7.59: the rule moved out of ribbonDrag (which went with in-place bar
- * editing) into the pure setSectionTitle. Same rule, same tests, one function
- * now shared by the Customize row field that is the only way to edit a title.
  */
 describe('section titles — set, clear, and empty-does-not-persist', () => {
   const setBar = (sections: RibbonSection[]) =>
     useEditorStore.setState({ toolbarLeft: serializeRibbon({ sections, splitAt: null }), toolbarRight: [] });
   const titles = () => parseRibbon(store().toolbarLeft).sections.map((s) => s.title);
-  /** The token the row's field is bound to — a section's own st: token. */
-  const titleTok = (i: number) => store().toolbarLeft.filter((t) => t.startsWith('st:'))[i];
 
   it('naming a section stores the title', () => {
-    setBar([sec({ top: ['b:save'], title: '' }), sec({ top: ['b:undo'] })]);
-    useEditorStore.setState({ toolbarLeft: setSectionTitle(store().toolbarLeft, titleTok(0), 'Format') });
+    setBar([sec({ top: ['b:save'] }), sec({ top: ['b:undo'] })]);
+    ribSetSectionTitle(0, 'Format');
     expect(titles()).toEqual(['Format', undefined]);
   });
 
   it('clearing the title removes it entirely — no empty st: token survives', () => {
     setBar([sec({ top: ['b:save'], title: 'Format' })]);
-    useEditorStore.setState({ toolbarLeft: setSectionTitle(store().toolbarLeft, titleTok(0), '') });
+    ribRemoveSectionTitle(0);
     expect(titles()).toEqual([undefined]);
-    expect(store().toolbarLeft.some((t) => t.startsWith('st:'))).toBe(false);
-  });
-
-  it('…and whitespace counts as empty', () => {
-    setBar([sec({ top: ['b:save'], title: 'Format' })]);
-    useEditorStore.setState({ toolbarLeft: setSectionTitle(store().toolbarLeft, titleTok(0), '   ') });
     expect(store().toolbarLeft.some((t) => t.startsWith('st:'))).toBe(false);
   });
 });

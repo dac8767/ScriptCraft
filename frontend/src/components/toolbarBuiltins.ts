@@ -294,22 +294,6 @@ export function parseRibbon(tokens: string[]): RibbonModel {
   return { sections, splitAt };
 }
 
-/**
- * v7.59: set (or clear) a section title in a token sequence.
- *
- * Empty text REMOVES the token rather than storing `st:` — an empty title
- * still paints its band on the bar, so a title you have cleared is a title you
- * have deleted. That rule used to live in ribbonDrag's ribRemoveSectionTitle,
- * which went with in-place bar editing; it lives here now, pure, so the one
- * place that edits titles (the Customize tab's row field) and the test that
- * pins the rule read the same function.
- */
-export function setSectionTitle(tokens: string[], tok: string, text: string): string[] {
-  return text.trim()
-    ? tokens.map((t) => (t === tok ? `st:${text}` : t))
-    : tokens.filter((t) => t !== tok);
-}
-
 /** Model → the flat token sequence. Divider/break ids are positional —
  *  they only need to be unique within the sequence. */
 export function serializeRibbon(model: RibbonModel): string[] {

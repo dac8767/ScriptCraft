@@ -491,6 +491,28 @@
   flex: 1;
 }
 .rib-group .rib-section-ingroup { flex: 0 0 auto; }
+/* v4.19, Derek: in Customize (edit) mode the whole bar shows — no overflow menu
+   collapses it — so a crowded bar used to squeeze sections into each other until
+   they overlapped. Instead, stop sections from shrinking and let the bar scroll
+   horizontally, so the spacing between sections stays constant and off-screen
+   sections are reachable by scrolling. */
+.toolbar.toolbar-ribbon.toolbar-editing {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.toolbar.toolbar-ribbon.toolbar-editing .rib-section {
+  flex: 0 0 auto;
+  /* v4.22, Derek: a small floor so an empty section is still an easy drop
+     target, but no bigger — sections grow with their items (the title field no
+     longer forces them wide, see .rib-edit-sectitle). */
+  min-width: 40px;
+}
+/* the align-split gap collapses when the bar overflows — right-run sections just
+   follow the left run and scroll into view. */
+/* v6.83, Derek: edit mode aligns like the LIVE bar — the gap grows so the
+   sections after the Align Split hug the right edge, with the split marker
+   floating mid-gap. (Was flex:0 to keep the marker compact.) */
+.toolbar.toolbar-ribbon.toolbar-editing .rib-align-gap { flex: 1; }
 /* v4.12, Derek: the vertical spacing between a two-row section's two rows is a
    Design knob. The row BOXES already touch (gap 0); the visible space is each
    row's height around a smaller button, so the knob is a margin on the second
@@ -625,6 +647,10 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
   /* v4.22, Derek: a shown row line matches the vertical dividers' colour. */
   background: var(--fd-text-muted);
 }
+/* In the editor a HIDDEN break line is just a faint click target ("click to
+   show"); once clicked it goes heavy — the same colour/weight as the section
+   dividers (inherits the base above). */
+.rib-edit-breakline:not(.heavy) { background: var(--fd-border); opacity: 0.55; }
 /* Dividers: section separators run the ribbon's height; a plain d: inside
    a row marks just that row. The extra .toolbar class matters: the legacy
    custom-scale rule (.toolbar.toolbar-custom .toolbar-separator, with its
@@ -1060,6 +1086,46 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 /* Spacer (v0.69) — a blank gap that pushes neighbouring items apart. In the
    toolbar it takes horizontal space; in a side panel, vertical. */
 .toolbar-spacer { width: 50px; flex: none; }
+/* v3.51/v3.65, Derek: on the live bar a spacer is invisible (that's the point).
+   While the toolbar is being edited it reads as a block/bubble like a section —
+   same dashed border and fill — but dimmed, so it's easy to spot and grab.
+   Out of edit mode none of this applies, so it goes completely invisible. */
+.toolbar-editing .toolbar-spacer {
+  position: relative;
+  box-sizing: border-box;
+  /* v3.66/v3.68, Derek: a real BAR — brighter accent fill and an explicit
+     height (it was collapsing to a flat dashed line because a spacer has no
+     content to give it height). align-self:center keeps it centred in its row.
+     v3.69: min width 5px so a spacer can be dragged down to its 5px minimum
+     (the resize grip still overhangs the right edge, so it stays grabbable). */
+  min-width: 5px;
+  height: var(--rib-itemh, 24px);
+  align-self: center;
+  border: 1px solid color-mix(in srgb, var(--fd-accent) 70%, var(--fd-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--fd-accent) 24%, var(--fd-toolbar-bg));
+}
+.toolbar-editing .toolbar-spacer::after {
+  content: 'spacer';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; letter-spacing: 0.02em;
+  color: var(--fd-text);
+  overflow: hidden; white-space: nowrap;
+  pointer-events: none;
+}
+/* v3.67, Derek: the drag-to-resize grip on a spacer's right edge (edit mode
+   only — it's rendered inside .rib-edit-item). Sits above the hover cover. */
+.toolbar-spacer-resize {
+  position: absolute;
+  top: 2px; bottom: 2px; right: -1px;
+  width: 8px;
+  z-index: 3;
+  cursor: ew-resize;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--fd-accent) 65%, transparent);
+}
+.toolbar-spacer-resize:hover { background: var(--fd-accent); }
 .tool-dock-spacer { height: 50px; flex: none; }
 .fs-spacer-row-label { color: var(--fd-text-muted); font-size: 12px; font-style: italic; }
 

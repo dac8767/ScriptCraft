@@ -208,197 +208,30 @@ ok('…while the other Editor resets still compile into Defaults',
     .every((l) => defaults.includes(l)), JSON.stringify(defaults));
 
 /* ── 3. the Ribbon Toolbar tab, restructured ─────────────────────────────── */
-console.log('\nthe Ribbon Toolbar tab is Shown and Hidden, like every other tab');
-const tb = await page.evaluate(async () => {
-  window.__scStore.getState().openPreferences('cz-toolbar');
-  await new Promise((r) => setTimeout(r, 1400));
-  const content = document.querySelector('.prefs-content');
-  const cols = [...content.querySelectorAll('.fs-dnd-col')].map((c) => ({
-    title: c.querySelector('.fs-dnd-col-head')?.firstChild?.textContent?.trim(),
-    head: [...c.querySelectorAll('.fs-dnd-col-head button')].map((b) => b.textContent.trim()),
-    rows: [...c.querySelectorAll('.fs-dnd-row')].length,
-  }));
-  return {
-    cols,
-    /* The retired palette, and the mode that made the bar an editor. */
-    palette: Boolean(content.querySelector('.ribed, .ribed-palette')),
-    barEditing: Boolean(document.querySelector('.toolbar-ribbon.toolbar-editing')),
-    scrim: Boolean(document.querySelector('.fs-tbedit-scrim')),
-    tokens: window.__scStore.getState().toolbarLeft.length,
-  };
-});
-ok('it has a Shown column and a Hidden one',
-  tb.cols.some((c) => c.title === 'Shown') && tb.cols.some((c) => c.title === 'Hidden'),
-  JSON.stringify(tb.cols));
-/* The Shown column IS the sequence — same length, in order. A column that
-   rendered plausible rows from somewhere else would look the same. */
-ok('…and Shown holds exactly the toolbar\'s own tokens',
-  tb.cols.find((c) => c.title === 'Shown')?.rows === tb.tokens, JSON.stringify(tb));
-ok('…Hidden offers what is not on the bar',
-  (tb.cols.find((c) => c.title === 'Hidden')?.rows ?? 0) > 10, JSON.stringify(tb.cols));
-ok('the drag-onto-the-bar palette is gone', tb.palette === false, JSON.stringify(tb));
-ok('…and the bar is no longer an editor while the tab is open',
-  tb.barEditing === false && tb.scrim === false, JSON.stringify(tb));
-/* The convention every other tab follows, now that this one has columns. */
-ok('“+ Add” is in the Shown header',
-  tb.cols.find((c) => c.title === 'Shown')?.head.includes('+ Add'), JSON.stringify(tb.cols));
-ok('…“Hide All” is in the Hidden header, where the other tabs keep theirs',
-  tb.cols.find((c) => c.title === 'Hidden')?.head.includes('Hide All'), JSON.stringify(tb.cols));
+/* ── 3 (REVERTED in v7.60) ───────────────────────────────────────────────
+   This part drove the Ribbon Toolbar tab as Shown/Hidden columns: the Shown
+   column being the token sequence, "+ Add" minting structural tokens, the
+   section-title row field, the spacer and dropdown width fields, and the
+   absence of the in-place bar editor.
 
-/* Derek's actual sentence: "If something is moved to the shown column, it
-   appears in the toolbar above." Driven, and read back from the STORE. */
-console.log('\nmoving something to Shown really puts it on the toolbar');
-const moved = await page.evaluate(async () => {
-  const st = () => window.__scStore.getState();
-  const before = [...st().toolbarLeft];
-  const hidden = [...document.querySelectorAll('.fs-dnd-col.fs-dnd-hiddencol .fs-dnd-row')][0];
-  const label = hidden?.textContent.trim().replace(/\+$/, '');
-  hidden?.querySelector('.fs-dnd-rowbtn')?.click();
-  await new Promise((r) => setTimeout(r, 500));
-  const after = [...st().toolbarLeft];
-  /* …and it is on the REAL bar, not merely in the array. */
-  const added = after.find((t) => !before.includes(t));
-  return { label, grew: after.length === before.length + 1, added, onBar: Boolean(document.querySelector('.toolbar-stack')) };
-});
-ok('the item joined the toolbar sequence', moved.grew === true, JSON.stringify(moved));
-ok('…as a real token', Boolean(moved.added), JSON.stringify(moved));
+   Derek: "revert the ribbon toolbar window back to before I asked you to split
+   it into the shown+hidden columns." The tab is the palette-plus-live-bar
+   editor again, so every assertion here describes a screen that no longer
+   exists. Removed rather than left to fail or, worse, quietly rewritten to
+   pass — a check whose subject was withdrawn should say so and stop, not
+   linger asserting something adjacent.
 
-const backOff = await page.evaluate(async () => {
-  const st = () => window.__scStore.getState();
-  const before = st().toolbarLeft.length;
-  const row = [...document.querySelectorAll('.fs-dnd-col:not(.fs-dnd-hiddencol) .fs-dnd-row')].pop();
-  row?.querySelector('.fs-dnd-rowbtn')?.click();
-  await new Promise((r) => setTimeout(r, 500));
-  return { before, after: st().toolbarLeft.length };
-});
-ok('…and removing one takes it off again',
-  backOff.after === backOff.before - 1, JSON.stringify(backOff));
+   The tab's own behaviour is covered by the checks that always covered it:
+   check-v683 (live on-ribbon editing, dropdown resize, dividers, alignment)
+   and check-v716 (the editor renders at the same size as the live bar).
 
-/* The structural utilities were reachable ONLY from the bar's in-place "+ Add"
-   (v3.42). Retiring that without rehoming them would have left the ribbon's
-   shape uneditable — a worse tab than the one we started with. */
-console.log('\nthe ribbon\'s shape is still editable');
-const structural = await page.evaluate(async () => {
-  const col = [...document.querySelectorAll('.fs-dnd-col')]
-    .find((c) => c.querySelector('.fs-dnd-col-head')?.firstChild?.textContent?.trim() === 'Shown');
-  [...col.querySelectorAll('.fs-dnd-col-head button')].find((b) => b.textContent.trim() === '+ Add')?.click();
-  await new Promise((r) => setTimeout(r, 350));
-  return [...document.querySelectorAll('.fs-addmenu-pop button')].map((b) => b.textContent.trim());
-});
-for (const want of ['Divider — one row', 'Divider — two rows', 'Spacer', 'Row Break', 'Section Title', 'Alignment Split']) {
-  ok(`“+ Add” still offers ${want}`, structural.includes(want), JSON.stringify(structural));
-}
+   The other three parts of this file stand — the greyed-menu-item fix, the
+   header adders, and the Editor tab's per-section resets are all unrelated to
+   the tab's shape and none of them was withdrawn. */
 
-/* A section TITLE carries its own text in its token, and the token is the
-   row's React key — so writing each keystroke straight through would give the
-   row a new key per character, remount the field and drop focus after one
-   letter. It would look broken while behaving exactly as written. */
-console.log('\na section title can actually be typed');
-await page.evaluate(async () => {
-  [...document.querySelectorAll('.fs-addmenu-pop button')]
-    .find((b) => b.textContent.trim() === 'Section Title')?.click();
-  await new Promise((r) => setTimeout(r, 500));
-  [...document.querySelectorAll('.prefs-content .fs-divider-label-input')].pop()?.focus();
-});
-await page.keyboard.type('Production');
-const typed = await page.evaluate(() => {
-  const inp = [...document.querySelectorAll('.prefs-content .fs-divider-label-input')].pop();
-  return { value: inp?.value, focused: document.activeElement === inp };
-});
-ok('the whole word survives — focus is not lost per keystroke',
-  typed.value === 'Production' && typed.focused === true, JSON.stringify(typed));
-await page.keyboard.press('Enter');
-await page.waitForTimeout(500);
-const committed = await page.evaluate(() => ({
-  titles: window.__scStore.getState().toolbarLeft.filter((t) => t.startsWith('st:')),
-}));
-ok('…and commits to the toolbar', committed.titles.includes('st:Production'),
-  JSON.stringify(committed));
 
-/* The rule ribRemoveSectionTitle has always followed, and the one this row
-   has to keep now that it is the only way to clear a title: an empty st:
-   token still paints its band on the bar, so a cleared title is a deleted one. */
-const cleared = await page.evaluate(async () => {
-  const inp = [...document.querySelectorAll('.prefs-content .fs-divider-label-input')]
-    .find((i) => i.value === 'Production');
-  if (!inp) return { skipped: 'the title row is gone' };
-  inp.focus();
-  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-  setter.call(inp, '');
-  inp.dispatchEvent(new Event('input', { bubbles: true }));
-  inp.blur();
-  await new Promise((r) => setTimeout(r, 500));
-  return { titles: window.__scStore.getState().toolbarLeft.filter((t) => t.startsWith('st:')) };
-});
-if (cleared.skipped) console.log(`  SKIP — ${cleared.skipped}`);
-else ok('clearing a title removes it — no empty st: token survives',
-  cleared.titles.length === 0, JSON.stringify(cleared));
-
-/* Two WIDTHS lived only on the retired bar-edge drag: a spacer's px (v3.67)
-   and the four dropdowns that read a --ddw-* var (v6.83, Derek: "allow
-   resizing of drop down menus horizontally when in customize mode"). Retiring
-   the mode without rehoming them would have taken both away silently — he
-   asked to stop dragging items ONTO the bar, not to lose the sizing that
-   happened to live there. */
-console.log('\nthe widths that lived on the bar still have a home');
-const widths = await page.evaluate(async () => {
-  window.__scStore.getState().openPreferences('cz-toolbar');
-  await new Promise((r) => setTimeout(r, 1300));
-  const rowFor = (text) => [...document.querySelectorAll('.fs-dnd-col:not(.fs-dnd-hiddencol) .fs-dnd-row')]
-    .find((r) => r.textContent.includes(text));
-  const set = async (row, v) => {
-    const inp = row?.querySelector('.fs-spacer-size input');
-    if (!inp) return null;
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-    inp.focus(); setter.call(inp, String(v));
-    inp.dispatchEvent(new Event('input', { bubbles: true })); inp.blur();
-    await new Promise((r) => setTimeout(r, 500));
-    return row.querySelector('.fs-spacer-label')?.textContent;
-  };
-  const el = rowFor('Element');
-  const beforeW = Math.round(
-    document.querySelector('.toolbar-ribbon .element-selector')?.getBoundingClientRect().width ?? 0);
-  const ddLabel = await set(el, 220);
-  const afterW = Math.round(
-    document.querySelector('.toolbar-ribbon .element-selector')?.getBoundingClientRect().width ?? 0);
-
-  // a spacer, added from + Add, then sized
-  const col = [...document.querySelectorAll('.fs-dnd-col')]
-    .find((c) => c.querySelector('.fs-dnd-col-head')?.firstChild?.textContent?.trim() === 'Shown');
-  [...col.querySelectorAll('.fs-dnd-col-head button')].find((b) => b.textContent.trim() === '+ Add')?.click();
-  await new Promise((r) => setTimeout(r, 300));
-  [...document.querySelectorAll('.fs-addmenu-pop button')].find((b) => b.textContent.trim() === 'Spacer')?.click();
-  await new Promise((r) => setTimeout(r, 500));
-  const spRow = [...document.querySelectorAll('.fs-dnd-col:not(.fs-dnd-hiddencol) .fs-dnd-row')].pop();
-  const spLabel = await set(spRow, 120);
-  return {
-    ddLabel, beforeW, afterW,
-    stored: window.__scStore.getState().toolbarDdWidths.element,
-    spLabel,
-    spacer: window.__scStore.getState().toolbarLeft.filter((t) => t.startsWith('s:')),
-  };
-});
-ok('a dropdown row carries a Width field', widths.ddLabel === 'Width:', JSON.stringify(widths));
-ok('…it commits to the same store field the bar reads',
-  widths.stored === 220, JSON.stringify(widths));
-/* The store agreeing with itself proves nothing if the bar does not repaint. */
-ok('…and the live dropdown actually wears it',
-  Math.abs(widths.afterW - 220) <= 3 && widths.beforeW !== widths.afterW, JSON.stringify(widths));
-ok('a spacer row carries a Size field', widths.spLabel === 'Size:', JSON.stringify(widths));
-ok('…and the width lands in its own token',
-  widths.spacer.some((t) => t.endsWith(':120')), JSON.stringify(widths.spacer));
-
-/* ── the source side ─────────────────────────────────────────────────────── */
-console.log('\nthe retired mode is retired, not merely unreachable from one door');
+console.log('\nthe source side of what survived');
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), 'utf8');
-const dlg = src('components/CustomizePanelsDialog.tsx');
-ok('the Customize window no longer switches the bar into edit mode',
-  !/setToolbarEditing\(/.test(dlg) && !/editingToolbar/.test(dlg), '');
-/* The COMPONENT, not buildRibbonPalette — that is the data source for the
-   Hidden column and is still very much alive. An over-broad regex here would
-   have failed against correct code, which is its own kind of wrong. */
-ok('…and no longer renders the drag-source palette component',
-  !/<RibbonPalette/.test(dlg) && !/from '\.\/RibbonPalette'/.test(dlg), '');
 /* The section filter reads the SAME registry — the resets moved, the source
    of truth did not fork. */
 const resets = src('components/customizeResets.tsx');
@@ -408,6 +241,12 @@ ok('…and each reset lands in exactly one place, never both',
   /section \? a\.section === section : !a\.section/.test(resets), '');
 ok('Reset Mores & Continueds left the registry, not just the tab',
   !/moresContds/.test(resets), '');
+/* v7.60: the ONE v7.58 change to the Customize dialog that survived the
+   revert. Worth pinning in source as well as by geometry above — it is a
+   single wrapper element, and a wholesale file restore is exactly the way it
+   would quietly go missing again. */
+ok('the column head still groups its actions',
+  /fs-dnd-col-head-actions/.test(src('components/CustomizePanelsDialog.tsx')), '');
 /* The CSS rule that made v7.06's tooltips inert. */
 const css = readFileSync(new URL('../src/styles/screenplay/02-menubar.css', import.meta.url), 'utf8');
 ok('a disabled menu item no longer opts out of the pointer',

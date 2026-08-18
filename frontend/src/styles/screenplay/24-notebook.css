@@ -408,6 +408,32 @@
   border-radius: 6px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
 }
+/* ── v2.96: the VISUAL ribbon editor (RibbonEditor.tsx) ─────────────────
+   An editable replica of the ribbon: section boxes, one or two rows each,
+   chips dragged into place, a palette of available items below. */
+/* v2.99, Derek: the editor never SHRINKS — sections, chips and tools keep
+   their size and the ribbon strip scrolls horizontally instead. Without
+   flex-shrink:0 a narrow window compressed the chips into each other. */
+/* v3.24, Derek: the section IS the handle — a grabbable bubble.
+   v3.29: position:relative anchors the close × on its top-right corner. */
+/* v3.29, Derek: the close-section × rides the section bubble's top-right
+   corner (it lived on the divider line before). Hover the section to see it. */
+/* v3.29, Derek: WYSIWYG chips — the editor mirrors the live bar. */
+.ribed-chip.ribed-chip-big {
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+}  /* v3.33: the live big-button icon size */
+/* dropdown builtins look like the fields they are on the bar — 24px, the
+   live selects' resting height (same as the chips, so rows stay equal). */
+.ribed-chip.ribed-chip-dd {
+  height: 24px;
+  padding: 0 22px 0 8px;
+  position: relative;
+  background: var(--fd-input-bg);
+  border: 1px solid var(--fd-overlay-medium);
+  border-radius: 5px;
+}
 /* v3.33, Derek: the Scrapbook's injected ribbon section — always the last
    left-aligned section while the tool is open.
    v3.83, Derek: a standard centred section title (.rib-sec-title) sits on top;
@@ -434,32 +460,310 @@
 .rib-scrapbook-return-label { font-size: 11px; font-weight: 600; line-height: 1.15; text-align: center; white-space: nowrap; }
 
 /* ════════════════════════════════════════════════════════════════════════
-   v3.36–v7.57: IN-PLACE toolbar editing. While Customize ▸ Toolbar was open
-   the real bar WAS the editor — the overlay passed pointer events through to
-   it, and two scrim strips dimmed everything else so only the ribbon and the
-   window read as live.
-   v7.58, Derek: "we no longer need the ability to drag items from this window
-   directly onto the toolbar." The tab is Shown/Hidden columns now, so the
-   overlay is an ordinary modal overlay again and there is nothing to spotlight.
-   .dialog-overlay-tbedit and .fs-tbedit-scrim went with the mode.
+   v3.36, Derek: IN-PLACE toolbar editing. While Customize > Toolbar is open
+   the real bar IS the editor. The Customize overlay lets pointer events
+   through to the bar (so drags land on it) and drops its dimming; the dialog
+   box keeps its own events.
    ════════════════════════════════════════════════════════════════════════ */
-/* v7.59, Derek: "when in the ribbon bar editor, the ribbon bar should still be
-   highlighted like it used to be so that it is clear that it is edited
-   directly." The accent ring, and ONLY the ring.
-
-   It was doing two jobs: "you can drop items here" and "this bar is what that
-   window edits, and it is changing as you go." v7.58 retired the first. The
-   second is exactly what a list of tokens with no visible connection to a bar
-   needs, so the ring stays.
-
-   No z-index and no `overflow: visible` any more. The 2995 lifted it above the
-   scrims that are gone, and overflow:visible let the edit handles hang outside
-   the bar — it would now break the horizontal SCROLL the live bar relies on
-   when it is too wide. The ring is a box-shadow, which paints outside the box
-   without either. */
-.toolbar-ribbon.toolbar-highlight {
+.dialog-overlay-tbedit { pointer-events: none; background: transparent; }
+.dialog-overlay-tbedit > .dialog-box { pointer-events: auto; }
+/* v3.36, Derek: the SPOTLIGHT strips — dim + BLOCK everything above and
+   below the bar, so only the ribbon and the Customize window read as live.
+   z-index sits below the dialog overlay (3000) so the window stays bright,
+   above the app so it's obscured; pointer-events block interaction. */
+.fs-tbedit-scrim {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 2990;
+  background: rgba(0, 0, 0, .58);
+  pointer-events: auto;
+}
+/* the editable bar announces itself — an accent ring + it floats above the
+   scrims (which never cover it, but a hair of glow could otherwise clip). */
+.toolbar-ribbon.toolbar-editing {
+  position: relative;
+  z-index: 2995;
   box-shadow: 0 0 0 2px var(--fd-accent), 0 6px 24px rgba(0, 0, 0, .45);
 }
+
+/* the bar in edit mode: dashed sections, item covers, remove ×s, drop lines */
+.toolbar-ribbon.toolbar-editing { overflow: visible; }
+.rib-edit-section {
+  position: relative;
+  /* v4.22, Derek: the edit ring is drawn with OUTLINE, not border. A border
+     grows the section's layout box (~2px + padding each way), so single-row
+     sections rendered visibly bigger than they do on the live bar. Outline sits
+     outside the box with zero layout cost, so an edited section is exactly the
+     size it will be once saved. */
+  outline: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
+  /* v7.16: the ring sits just OUTSIDE the box instead of just inside, so the
+     section keeps its breathing room without the `padding: 0 2px` that used
+     to buy it — that padding widened every edited section by 4px and slid it
+     2px left, the first of the three things that made an edited bar bigger
+     than the saved one. Outline offset, like outline, costs no layout. */
+  outline-offset: 1px;
+  border-radius: 5px;
+  cursor: grab;
+  touch-action: none;
+  background: color-mix(in srgb, var(--fd-navigator-bg) 40%, transparent);
+}
+.rib-edit-section:hover { outline-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
+/* v7.16, Derek (two screenshots): edit mode drew the SAME controls bigger.
+   Measured — Find & Replace 44x26 live became 44x28, and the two-row
+   Customize block 65x43 became 65x48. The cause is a percentage that lost its
+   base: a two-row control is `height: 80%`, which live resolves against the
+   54px row it sits in (43.2). Wrapping it in an auto-height inline-flex made
+   that percentage circular, so it fell back to content height and the control
+   grew. `align-self: stretch` gives the wrapper the row's height back, and
+   `align-items: center` reproduces what the live row does with its children.
+   Same rule as v4.22's outline-not-border: edit chrome costs no layout. */
+.rib-edit-item { position: relative; display: inline-flex; align-self: stretch; align-items: center; }
+/* the cover eats clicks so the real control never fires while editing */
+.rib-edit-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: grab;
+  border-radius: 4px;
+}
+.rib-edit-item:hover > .rib-edit-cover { background: color-mix(in srgb, var(--fd-accent) 12%, transparent); }
+.rib-edit-x {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 5;
+  /* v7.16: an INVISIBLE × must not eat clicks. It hangs 7px outside its own
+     item, so at opacity 0 it was still winning the hit test over whatever
+     sits beside it — the divider between two sections, most of the time.
+     That is the silent-no-op shape: you click the line, nothing happens, and
+     nothing tells you why. It arms itself when it becomes visible. */
+  pointer-events: none;
+}
+.rib-edit-item:hover > .rib-edit-x,
+.rib-edit-section:hover > .rib-edit-secclose,
+.rib-edit-break:hover > .rib-edit-x,
+.rib-edit-alignsplit:hover > .rib-edit-x { opacity: 1; pointer-events: auto; }
+/* v4.75: removable boundary dividers. v6.83, Derek: NO × — clicking the
+   line hides it, clicking the ghost brings it back; one gesture both ways.
+   v7.16: the click target no longer costs layout. That `padding: 0 4px` made
+   each divider 10px wide against the live bar's 2px, so every section after
+   the first sat 8px further right in edit mode than it would once saved —
+   the third and largest of the spacing gaps in Derek's screenshots. The
+   padding stays, because a 2px divider is unclickable; an equal negative
+   margin cancels its effect on the flow, so the box you click is still 10px
+   and the bar is laid out exactly as it will be saved. (A ::before overlay
+   was the first attempt and it was worse: it left the ELEMENT 2px wide, and
+   an adjacent item's × badge then won the hit test — check-v683 caught it.)
+   Third instance of the same rule in this file: edit chrome costs no layout. */
+.rib-edit-sep {
+  cursor: pointer;
+  padding: 0 4px;
+  box-sizing: content-box;
+  background-clip: content-box;
+}
+/* The cancelling margin has to carry the weight of the rule it is answering:
+   `.toolbar.toolbar-ribbon .rib-section-sep { margin: 0 }` (0-3-0) sets every
+   divider's margin, and a plain `.rib-edit-sep` (0-1-0) loses to it silently
+   — the padding stays, the cancellation doesn't, and the bar shifts anyway. */
+.toolbar.toolbar-ribbon .rib-edit-sep { margin: 0 -4px; }
+.rib-edit-sep:hover { background-color: var(--fd-accent); }
+.rib-edit-sep-ghost {
+  width: 8px;
+  align-self: stretch;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  background: repeating-linear-gradient(180deg, var(--fd-border) 0 4px, transparent 4px 8px) center / 1px 100% no-repeat;
+  opacity: .55;
+}
+.rib-edit-sep-ghost:hover { opacity: 1; }
+/* v3.38, Derek: the section-close moves to the section's top-LEFT corner.
+   Item removal ×s all sit at their item's top-right, so a right-anchored
+   section × collided with the LAST item's × — top-left keeps them apart. */
+.rib-edit-secclose { top: -8px; left: -8px; right: auto; z-index: 6; }
+/* drop indicators — thin accent bars. v3.38: pointer-events NONE so the drag
+   hit-test (elementFromPoint) never lands on the indicator itself — it reads
+   the row/items underneath, which is what keeps the drop spot from
+   fluttering. */
+.rib-edit-dropline {
+  width: 3px;
+  align-self: stretch;
+  margin: 2px -1.5px;
+  border-radius: 2px;
+  background: var(--fd-accent);
+  flex-shrink: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.rib-edit-sec-dropline {
+  width: 3px;
+  align-self: stretch;
+  margin: 2px 0;
+  border-radius: 2px;
+  background: var(--fd-accent);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.rib-edit-emptyhint {
+  font-size: 10px;
+  color: var(--fd-text-muted);
+  padding: 0 8px;
+  white-space: nowrap;
+  align-self: center;
+}
+.rib-edit-emptybar {
+  font-size: 12px;
+  color: var(--fd-text-muted);
+  padding: 0 12px;
+  align-self: center;
+}
+.rib-edit-break { position: relative; display: flex; align-items: center; height: 4px; }
+.rib-edit-breakline { flex: 1; cursor: pointer; }
+/* v3.70, Derek: the align split reads as a block/bubble the size of a 1-/2-row
+   section (full height, dashed border + fill), centred in the align gap so it
+   sits halfway between the left run and the right run. */
+.rib-edit-alignsplit {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fd-accent);
+  font-size: 16px;
+  padding: 2px 14px;
+  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, var(--fd-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
+}
+
+/* ─── v3.38, Derek: the on-bar "+ Add" block + its menu ─────────────────── */
+/* A faint, dashed suggested-button at the end of the left run and the start
+   of the right run. Clicking opens the add menu. */
+.rib-edit-add {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 9px;
+  margin: 0 3px;
+  border: 1px dashed color-mix(in srgb, var(--fd-accent) 55%, var(--fd-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--fd-accent) 8%, transparent);
+  color: color-mix(in srgb, var(--fd-accent) 85%, var(--fd-text));
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: .55;
+  touch-action: none;
+}
+.rib-edit-add:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--fd-accent) 16%, transparent);
+  border-style: solid;
+}
+.rib-edit-add-plus { font-size: 13px; }
+
+/* v4.22, Derek: the per-section "+" — one on every edit section so items land
+   exactly where you click. Absolute (bottom-right, opposite the close ×) so it
+   adds zero width/height to the section. Faint by default, solid on hover. */
+.rib-edit-secadd {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--fd-accent);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 6;
+  opacity: 0.5;
+}
+.rib-edit-section:hover > .rib-edit-secadd,
+.rib-edit-secadd:hover { opacity: 1; }
+
+.rib-add-backdrop { position: fixed; inset: 0; z-index: 3200; }
+.rib-add-menu {
+  position: fixed;
+  min-width: 196px;
+  max-width: 250px;
+  max-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fd-menu-bg, var(--fd-panel-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 9px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .42);
+  overflow: hidden;
+}
+.rib-add-search {
+  margin: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  color: var(--fd-text);
+  font-size: 12.5px;
+  outline: none;
+}
+.rib-add-search:focus { border-color: var(--fd-accent); }
+.rib-add-scroll { overflow-y: auto; padding: 0 6px 8px; }
+/* main view (no search box above it) needs its own top breathing room */
+.rib-add-menu > .rib-add-scroll:first-child { padding-top: 6px; }
+.rib-add-group { margin-top: 3px; }
+.rib-add-grouphdr {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  padding: 5px 8px 2px;
+}
+.rib-add-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fd-text);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.rib-add-opt:hover { background: color-mix(in srgb, var(--fd-accent) 20%, transparent); }
+.rib-add-empty { padding: 14px; text-align: center; color: var(--fd-text-muted); font-size: 12px; }
+/* v3.40, Derek: utilities up front, all other items behind a submenu. */
+.rib-add-sep { height: 1px; margin: 5px 8px; background: var(--fd-border); }
+.rib-add-more { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+.rib-add-caret { color: var(--fd-text-muted); font-size: 15px; }
+.rib-add-back {
+  display: block; width: calc(100% - 16px); margin: 8px 8px 0;
+  padding: 4px 8px; text-align: left;
+  border: none; border-radius: 6px;
+  background: transparent; color: var(--fd-text-muted);
+  font-size: 12px; cursor: pointer;
+}
+.rib-add-back:hover { background: var(--fd-hover-bg); color: var(--fd-text); }
 
 /* ─── v3.42, Derek: a section TITLE sits on top of the section's rows. On the
    live bar it's small centred text; while editing it's an inline input with an
@@ -523,6 +827,35 @@
   height: calc((var(--dz-rib-title-font, 9.5px) + 1.5px) * var(--rib-k, 1));
 }
 .toolbar.toolbar-ribbon .rib-kind-titled .rib-sec-title + .rib-row { margin-top: calc(var(--dz-rib-title-gap, 5px) * var(--rib-k, 1)); }
+.rib-edit-sectitle-wrap { position: relative; display: flex; align-items: center; justify-content: center; gap: 3px; }
+.rib-edit-sectitle {
+  /* v4.22, Derek: flex-BASIS 0 (was auto) so the input contributes NO intrinsic
+     width to the section — a text input's browser default is ~170px, which was
+     forcing every two-row section that wide no matter how few icons it held. At
+     basis 0 the section sizes to its item rows and the title just stretches to
+     match, so a section starts small and grows only as items are added. */
+  flex: 1 1 0; min-width: 0;
+  padding: 0 4px;
+  border: 1px dashed color-mix(in srgb, var(--fd-border) 80%, transparent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fd-text);
+  font-size: 9.5px; font-weight: 600; text-align: center;
+  outline: none;
+}
+.rib-edit-sectitle:focus { border-color: var(--fd-accent); }
+/* v4.22, Derek: single-row (big-button) sections must render at their NORMAL
+   size in edit mode. Live, a single-row section shows no title band (its tall
+   buttons span the full ribbon height); the always-on edit title field was
+   forcing it both taller (an extra ~15px row) and — via the field's 40px
+   min-width — wider than a lone ~20px icon. Drop the field for single-row
+   sections so they match their saved footprint exactly. (Two-row sections keep
+   their title field: they reserve a title band live anyway.) A section can
+   still be titled — give it a second row first. */
+.rib-edit-section.rib-single .rib-edit-sectitle-wrap { display: none; }
+/* v3.50, Derek: the placeholder ("title") reads faint so an unnamed section's
+   field is obviously optional, not an empty label waiting to be filled. */
+.rib-edit-sectitle::placeholder { color: var(--fd-text-muted); opacity: 0.6; }
 
 /* ─── v3.41, Derek: larger visual representations for each ribbon utility in
    the "+ Add" menu — a mini diagram of the shape, not just an icon. */
@@ -541,7 +874,177 @@
   width: 100%; height: 30px;
   color: var(--fd-text-muted);
 }
+.ruv-sec {
+  display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  width: 46px; height: 26px; padding: 3px;
+  border: 1px solid currentColor; border-radius: 4px;
+}
+.ruv-sec-sm { width: 34px; height: 16px; }
+.ruv-row { height: 5px; border-radius: 2px; background: currentColor; opacity: .7; }
+.ruv-divider { width: 2px; height: 26px; background: currentColor; border-radius: 1px; }
+/* v4.75: the one-row divider's menu visual — same line, half the height. */
+.ruv-divider-short { height: 13px; }
+.ruv-spacer {
+  width: 34px; height: 12px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, transparent 0 4px, currentColor 4px 5px);
+  opacity: .6;
+}
+.ruv-box { width: 16px; height: 24px; border: 1px solid currentColor; border-radius: 3px; }
+.ruv-splitgap { display: flex; flex-direction: column; gap: 2px; color: var(--fd-accent); }
+.ruv-splitgap span { width: 7px; height: 2px; background: currentColor; }
 .rib-add-utilgrid + .rib-add-sep { margin-top: 8px; }
+/* v3.34: dropdown width grip — the field's right edge. */
+.ribed-dd-grip {
+  position: absolute;
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.ribed-dd-grip:hover { background: color-mix(in srgb, var(--fd-accent) 35%, transparent); border-radius: 2px; }
+/* v3.34: the ? popover that replaced the Toolbar tab's helper paragraph. */
+/* v3.32, Derek: each dropdown chip carries its LIVE counterpart's min-width
+   (.font-selector 120 / .font-size-selector 60 / .element-selector 140), so
+   the editor's fields are the same length as the bar's. Text sits left like
+   a real select. */
+.ribed-chip.ribed-chip-dd { justify-content: flex-start; box-sizing: border-box; }
+/* v3.34: the macOS select STEPPER (up+down carets), not a single chevron —
+   the live fields are native selects and draw exactly this. */
+/* insertion indicator while a section rides the pointer — zero net width */
+/* v3.33, Derek: chips carry the LIVE bar's exact metrics — 26×24 like
+   .toolbar-btn, 12px glyphs, transparent at rest (the live buttons are
+   flat until hovered). The background only appears on hover, as the
+   grab affordance. */
+.ribed-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 3px;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fd-text);
+  cursor: grab;
+  font-size: 12px;
+}
+.ribed-chip:hover { background: var(--fd-overlay-light); }
+.ribed-chip:active { cursor: grabbing; }
+/* WebKit drag hardening (v2.98, Derek's Mac): mark the chip itself as the
+   draggable element and keep children out of drag/selection negotiation —
+   WKWebView can otherwise refuse to start the drag at all. */
+.ribed-chip, .ribed-pal-chip {
+  -webkit-user-drag: element;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ribed-chip svg, .ribed-pal-chip svg { -webkit-user-drag: none; }
+.ribed-chip-icon { display: inline-flex; pointer-events: none; }
+/* v2.97: the spacer chip's WIDTH is the spacer's width — resized by
+   dragging the grip on its right edge. */
+/* hidden ✕ buttons must not swallow pointer events (they overhang their
+   neighbours) — they only become clickable when their owner is hovered */
+.ribed-chip:hover .ribed-x { opacity: 1; pointer-events: auto; }
+/* (v3.29: the divider's × moved onto the section bubble — .ribed-sec-close.) */
+/* v3.02: the align-split marker between sections */
+/* v3.02: the pointer-drag ghost riding the cursor */
+.ribed-ghost {
+  position: fixed;
+  z-index: 100000;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: var(--fd-btn-bg);
+  color: var(--fd-btn-text);
+  font-size: 11.5px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0,0,0,.35);
+}
+
+/* v2.97, Derek: click the split line to toggle it — HEAVY means the line is
+   drawn on the real toolbar, faint means the split is invisible there. */
+.ribed-break-line.heavy { background: var(--fd-accent); }
+/* v2.99: the drop indicator takes ZERO layout space (width offset by
+   negative margins) — when it consumed 3px it shifted the chips under the
+   cursor, the drop target flipped, and the line flickered back and forth. */
+/* v2.97: the structural tools live beside + Section, in a compact 2×2. */
+/* v3.20: the utilities share ONE row with the dialog's Show/Hide/Reset —
+   controls left, structural tools right. */
+.ribed-utilrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ribed-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.ribed-tools .ribed-pal-chip { justify-content: center; }
+/* v3.22: the two section BLOCKS — little bubble glyphs, one bar per row. */
+/* v3.11: the palette's keyword filter. v3.52, Derek: it rides on the utilrow
+   (with Show/Hide), pinned right at a fixed 300px. */
+.ribed-pal-search { margin-bottom: 6px; }
+.ribed-utilrow .ribed-pal-search {
+  margin-bottom: 0;
+  margin-left: auto;          /* push to the right edge of the row */
+  width: 300px;
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+.ribed-pal-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--fd-text);
+  background: var(--fd-input-bg, var(--fd-navigator-bg));
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  outline: none;
+}
+.ribed-pal-search input:focus { border-color: var(--fd-accent); }
+.ribed-pal-empty { font-size: 12px; color: var(--fd-text-muted); padding: 4px 2px; }
+/* the palette — also the drop target that removes items from the ribbon */
+.ribed-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 6px;
+  background: var(--fd-overlay-subtle);
+}
+.ribed-pal-group { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.ribed-pal-title {
+  width: 88px;
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--fd-text-muted);
+}
+.ribed-pal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--fd-border);
+  border-radius: 4px;
+  background: var(--fd-toolbar-bg);
+  color: var(--fd-text);
+  font-size: 11.5px;
+  cursor: grab;
+  white-space: nowrap;
+}
+.ribed-pal-chip:active { cursor: grabbing; }
 
 /* v2.95: Word-style editor rulers (EditorRulers.tsx). A zero-size sticky pin
    keeps the canvases at the scroll container's visible corner; the canvases

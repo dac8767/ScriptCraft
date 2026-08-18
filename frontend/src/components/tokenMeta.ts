@@ -35,15 +35,5 @@ export const tokenLabel = (tok: string): string => {
   if (tok.startsWith('t:')) return ALL_TOOLS.find((t) => t.id === tok.slice(2))?.label || tok;
   if (tok.startsWith('c:')) return TOOLBAR_COMMANDS.find((c) => c.id === tok.slice(2))?.label || tok;
   if (tok.startsWith('s:')) return 'Spacer';
-  /* v7.58: the rest of the ribbon's structural grammar. This fell through to
-     "Divider" for every one of them, which was harmless while the only reader
-     drew the bar itself — the shapes are visible there. The Customize tab now
-     LISTS the sequence by name, and a row break labelled "Divider" is a wrong
-     answer rather than a vague one. */
-  if (tok.startsWith('st:')) return tok.slice(3) ? `Title — ${tok.slice(3)}` : 'Section Title';
-  if (tok.startsWith('rl:')) return 'Row Break (with line)';
-  if (tok.startsWith('r:')) return 'Row Break';
-  if (tok.startsWith('a:')) return 'Alignment Split';
-  if (tok.startsWith('nd:')) return 'Section Break';
   return 'Divider';
 };

@@ -107,12 +107,13 @@ if (qat.skipped) {
 }
 
 /* The left-then-right grammar still has to hold where BOTH groups exist.
-   v7.58 that is ANNOTATIONS: it builds a combo from a grid rather than listing
-   shown against hidden, so its "+ Add Preset" has no column header to move
-   into and stays in the bar beside the tab's reset. (The Ribbon Toolbar tab
-   held this role in v7.57; it grew Shown/Hidden columns, and its Hide All went
-   to the Hidden header where every other tab keeps one.) Without this the
-   direction of the bar would go unchecked entirely. */
+   ANNOTATIONS is the tab measured here: it builds a combo from a grid rather
+   than listing shown against hidden, so its "+ Add Preset" has no column
+   header to move into and stays in the bar beside the tab's reset. (The Ribbon
+   Toolbar tab qualifies too — v7.60 gave it back its Hide All when the tab
+   reverted to the palette editor — but Annotations is the stabler subject: it
+   has no column headers at all, so nothing can migrate out from under it.)
+   Without this the direction of the bar would go unchecked entirely. */
 console.log('\nwhere both groups still exist, the direction holds');
 const tb = await measureBar('markups');
 if (tb.skipped) {
