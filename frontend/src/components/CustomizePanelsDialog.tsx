@@ -25,6 +25,7 @@ import EditElementsDialog from './EditElementsDialog';
 import SuggestionRulesEditor from './SuggestionRulesEditor';
 import MoresContdsDialog from './MoresContdsDialog';
 import { TabActionBar, type CustomizeTabId } from './customizeResets';
+import AddMenu from './AddMenu';
 import { showToast } from './Toast';
 import ThemesTab from './ThemesTab';
 import MarkupsCustomizeTab from './MarkupsCustomizeTab';
@@ -467,11 +468,29 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             <DndColumns
               columns={[
                 {
-                  id: 'left', title: 'Left Panel', headerExtra: panelHeaderExtra('left'),
+                  id: 'left',
+                  title: 'Left Panel',
+                  headerExtra: (<>
+                    {columnAddMenu(
+                      [{ value: 'divider', label: 'Divider' }, { value: 'spacer', label: 'Spacer' }],
+                      (v) => addPanelItem(v as 'divider' | 'spacer', 'left'),
+                      'Add a divider or spacer to the left panel',
+                    )}
+                    {panelHeaderExtra('left')}
+                  </>),
                   sections: [{ rows: leftRows.map((r) => ({ key: orderTokenOf(r), content: rowContent(r) })) }],
                 },
                 {
-                  id: 'right', title: 'Right Panel', headerExtra: panelHeaderExtra('right'),
+                  id: 'right',
+                  title: 'Right Panel',
+                  headerExtra: (<>
+                    {columnAddMenu(
+                      [{ value: 'divider', label: 'Divider' }, { value: 'spacer', label: 'Spacer' }],
+                      (v) => addPanelItem(v as 'divider' | 'spacer', 'right'),
+                      'Add a divider or spacer to the right panel',
+                    )}
+                    {panelHeaderExtra('right')}
+                  </>),
                   sections: [{ rows: rightRows.map((r) => ({ key: orderTokenOf(r), content: rowContent(r) })) }],
                 },
                 {
@@ -726,37 +745,48 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
      at the LEFT of the one bar that closes the tab. They used to sit in loose
      rows inside the tab body — which is how the bottom of these tabs became
      the "random stack of buttons" Derek reported. */
-  const addPanelItem = (kind: 'divider' | 'spacer') => {
+  const addPanelItem = (kind: 'divider' | 'spacer', side: 'left' | 'right') => {
     // Spacers share the dividers list — a divider with spacer: true (v0.69).
     const id = String(Date.now());
     const order = toolOrder.length ? toolOrder : [...DEFAULT_TOOL_ORDER];
     setPanelDividers([
       ...panelDividers,
-      { id, label: '', side: 'left', ...(kind === 'spacer' ? { spacer: true } : {}) },
+      { id, label: '', side, ...(kind === 'spacer' ? { spacer: true } : {}) },
     ]);
     setToolOrder([...order, `div:${id}`]);
   };
 
+  /* v7.57, Derek: "everytime there is a shown/hidden section, make the ADD
+     buttons appear in the Shown column header. the button should read '+Add',
+     and can have these options when applicable: Divider, Spacer."
+
+     One helper so every Shown header asks in the same words and the menu can
+     never drift between tabs. It wears fs-dnd-headbtn — the class the Show All
+     beside it wears — because a menu that looks like a form field in a header
+     row reads as a mistake rather than as a control. */
+  const columnAddMenu = (
+    options: Array<{ value: string; label: string }>,
+    onPick: (value: string) => void,
+    title: string,
+  ) => (
+    <AddMenu
+      label="+ Add"
+      title={title}
+      triggerClass="fs-dnd-headbtn"
+      groups={[{ label: '', options }]}
+      onPick={onPick}
+    />
+  );
+
+  /* v7.57: Side Panels and Quick Access moved their adders into the Shown
+     column headers, where they sit on the list they add to. What is left here
+     is Hide All, which is not an adder — it acts on the whole tab. */
   const tabAdders: Partial<Record<string, React.ReactNode>> = {
-    panels: (<>
-      <button className="dialog-btn dialog-btn-sm" title="Add a divider line to the left panel"
-        onClick={() => addPanelItem('divider')}>+ Divider</button>
-      <button className="dialog-btn dialog-btn-sm" title="Add a spacer to the left panel"
-        onClick={() => addPanelItem('spacer')}>+ Spacer</button>
-    </>),
     toolbar: (
       <button className="dialog-btn dialog-btn-sm"
         title="Hide every toolbar item (re-add items from the palette)"
         onClick={() => setToolbarZones([], [])}>Hide All</button>
     ),
-    qat: (<>
-      <button className="dialog-btn dialog-btn-sm"
-        title="Add a divider (a thin line) to the end — drag it into place"
-        onClick={() => setQatItems([...qatItems, `qdiv:${Date.now().toString(36)}`])}>Add Divider</button>
-      <button className="dialog-btn dialog-btn-sm"
-        title="Add a spacer (blank gap) to the end — drag it into place"
-        onClick={() => setQatItems([...qatItems, `qsp:${Date.now().toString(36)}`])}>Add Spacer</button>
-    </>),
   };
 
   /* v7.56, Derek: "instead of having import+export buttons on all of the tabs
@@ -857,13 +887,19 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               columns={[
                 {
                   id: 'shown', title: 'Shown',
-                  headerExtra: (
+                  headerExtra: (<>
+                    {columnAddMenu(
+                      [{ value: 'divider', label: 'Divider' }, { value: 'spacer', label: 'Spacer' }],
+                      (v) => setQatItems([...qatItems,
+                        `${v === 'divider' ? 'qdiv' : 'qsp'}:${Date.now().toString(36)}`]),
+                      'Add a divider or spacer to the end — drag it into place',
+                    )}
                     <button
                       className="fs-dnd-headbtn"
                       title="Show every Quick Access button"
                       onClick={() => setQatItems([...qatItems, ...QAT_OPTIONS.map((o) => o.id).filter((id) => !qatItems.includes(id))])}
                     >Show All</button>
-                  ),
+                  </>),
                   sections: [{
                     // v3.39: divider/spacer ids ride here too — they carry no
                     // QAT_BY_ID entry, so render them as their own chips.

@@ -49,25 +49,6 @@
   ]
  },
  {
-  "text": "Add a divider (a thin line) to the end — drag it into place",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ],
-  "label": "Add Divider"
- },
- {
-  "text": "Add a divider line to the left panel",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ]
- },
- {
   "text": "Add a pin — it follows the cursor until you click",
   "kind": "tooltip",
   "sites": 1,
@@ -103,26 +84,6 @@
   "where": [
    "components/Toolbar.tsx"
   ]
- },
- {
-  "text": "Add a spacer (blank gap) to the end — drag it into place",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ],
-  "label": "Add Spacer"
- },
- {
-  "text": "Add a spacer to the left panel",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Customize Window",
-  "where": [
-   "components/CustomizePanelsDialog.tsx"
-  ],
-  "label": "Hide All"
  },
  {
   "text": "Add a synopsis for this scene",
@@ -224,6 +185,15 @@
   "area": "Customize Window",
   "where": [
    "components/CustomizePanelsDialog.tsx"
+  ]
+ },
+ {
+  "text": "Add your own transition",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Dialogs",
+  "where": [
+   "components/EditElementsDialog.tsx"
   ]
  },
  {
@@ -820,6 +790,15 @@
    "components/StickyCard.tsx"
   ],
   "icon": "FaCopy"
+ },
+ {
+  "text": "Create a new theme",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/ThemesTab.tsx"
+  ]
  },
  {
   "text": "Current theme",

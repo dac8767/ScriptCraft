@@ -128,53 +128,59 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
             the top of the next.
           </p>
 
-          <div className="props-field props-field-wide fs-mores-field">
-            <label className="props-label">Continued text</label>
-            <select
-              className="props-input"
-              value={contdCustom ? CUSTOM : contdText}
-              onChange={(e) => {
-                if (e.target.value === CUSTOM) setContdCustom(true);
-                else { setContdCustom(false); setContdText(e.target.value); }
-              }}
-            >
-              {CONTD_PRESETS.map((p) => <option key={p} value={p}>{p}</option>)}
-              <option value={CUSTOM}>Custom…</option>
-            </select>
-            {contdCustom && (
-              <input
+          {/* v7.57, Derek: "make the[m] sit on the same row." Once v7.55
+              capped these at their content width there was a panel of empty
+              space beside each, and two short pickers stacked down the page
+              read as two sections rather than one pair of related settings. */}
+          <div className="fs-mores-row">
+            <div className="props-field props-field-wide fs-mores-field">
+              <label className="props-label">Continued text</label>
+              <select
                 className="props-input"
-                style={{ marginTop: 6 }}
-                value={contdText}
-                onChange={(e) => setContdText(e.target.value)}
-                placeholder="(CONT'D)"
-                autoFocus
-              />
-            )}
-          </div>
+                value={contdCustom ? CUSTOM : contdText}
+                onChange={(e) => {
+                  if (e.target.value === CUSTOM) setContdCustom(true);
+                  else { setContdCustom(false); setContdText(e.target.value); }
+                }}
+              >
+                {CONTD_PRESETS.map((p) => <option key={p} value={p}>{p}</option>)}
+                <option value={CUSTOM}>Custom…</option>
+              </select>
+              {contdCustom && (
+                <input
+                  className="props-input"
+                  style={{ marginTop: 6 }}
+                  value={contdText}
+                  onChange={(e) => setContdText(e.target.value)}
+                  placeholder="(CONT'D)"
+                  autoFocus
+                />
+              )}
+            </div>
 
-          <div className="props-field props-field-wide fs-mores-field">
-            <label className="props-label">More text</label>
-            <select
-              className="props-input"
-              value={moreCustom ? CUSTOM : moreText}
-              onChange={(e) => {
-                if (e.target.value === CUSTOM) setMoreCustom(true);
-                else { setMoreCustom(false); setMoreText(e.target.value); }
-              }}
-            >
-              {MORE_PRESETS.map((p) => <option key={p} value={p}>{p}</option>)}
-              <option value={CUSTOM}>Custom…</option>
-            </select>
-            {moreCustom && (
-              <input
+            <div className="props-field props-field-wide fs-mores-field">
+              <label className="props-label">More text</label>
+              <select
                 className="props-input"
-                style={{ marginTop: 6 }}
-                value={moreText}
-                onChange={(e) => setMoreText(e.target.value)}
-                placeholder="(MORE)"
-              />
-            )}
+                value={moreCustom ? CUSTOM : moreText}
+                onChange={(e) => {
+                  if (e.target.value === CUSTOM) setMoreCustom(true);
+                  else { setMoreCustom(false); setMoreText(e.target.value); }
+                }}
+              >
+                {MORE_PRESETS.map((p) => <option key={p} value={p}>{p}</option>)}
+                <option value={CUSTOM}>Custom…</option>
+              </select>
+              {moreCustom && (
+                <input
+                  className="props-input"
+                  style={{ marginTop: 6 }}
+                  value={moreText}
+                  onChange={(e) => setMoreText(e.target.value)}
+                  placeholder="(MORE)"
+                />
+              )}
+            </div>
           </div>
         </div>
         {/* v4.64: embedded changes apply live (no Apply); v4.65: its Reset

@@ -144,13 +144,21 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
           columns={[
             {
               id: 'shown', title: 'Shown',
-              headerExtra: (
+              headerExtra: (<>
+                {/* v7.57, Derek: "move 'Add Transition' to the header of the
+                    Shown column in the editor tab. change the name to
+                    '+ New Transition'." */}
+                <button
+                  className="fs-dnd-headbtn"
+                  title="Add your own transition"
+                  onClick={openAddTransition}
+                >+ New Transition</button>
                 <button
                   className="fs-dnd-headbtn"
                   title="Show every built-in transition"
                   onClick={() => DEFAULT_TRANSITIONS.forEach((t) => setTransitionHidden(t, false))}
                 >Show All</button>
-              ),
+              </>),
               sections: [{
                 rows: shownTransitions.map((t) => {
                   const isDefault = isDefaultTransition(t);
@@ -211,11 +219,9 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
             if (isDefaultTransition(t) && hiddenTransitions.includes(t)) setTransitionHidden(t, false);
           }}
         />
-        {/* v7.56: Add Transition sits in the tab's one action bar, beside the
-            Editor resets the bar pulls from the shared registry. */}
-        <TabActionBar tab="elements" adders={
-          <button className="dialog-btn dialog-btn-sm" onClick={openAddTransition}>Add Transition</button>
-        } />
+        {/* v7.57: the adder moved into the Shown column header above. The bar
+            still carries this tab's resets from the shared registry. */}
+        <TabActionBar tab="elements" />
       </section>
 
       <section>

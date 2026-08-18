@@ -20,7 +20,7 @@ export interface AddMenuGroup {
   options: { value: string; label: string; icon?: React.ReactNode }[];
 }
 
-export default function AddMenu({ groups, onPick, label = '+ Add Item', title, center }: {
+export default function AddMenu({ groups, onPick, label = '+ Add Item', title, center, triggerClass }: {
   groups: AddMenuGroup[];
   onPick: (value: string) => void;
   /** v1.90: may carry an icon (ListControls' Filter trigger wears the funnel). */
@@ -28,6 +28,11 @@ export default function AddMenu({ groups, onPick, label = '+ Add Item', title, c
   title?: string;
   /** Centre the trigger's text, for when it sits in a row of ordinary buttons. */
   center?: boolean;
+  /** v7.57: wear the surrounding control's class instead of the default
+   *  trigger — a column header's "+Add" has to match the "Show All" beside it,
+   *  and a menu that looks like a form field in a header row reads as a
+   *  mistake. Replaces the trigger's own styling rather than adding to it. */
+  triggerClass?: string;
 }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -109,7 +114,7 @@ export default function AddMenu({ groups, onPick, label = '+ Add Item', title, c
     <div className="fs-addmenu" ref={ref}>
       <button
         ref={btnRef}
-        className={`fs-addmenu-trigger${center ? ' fs-addmenu-center' : ''}`}
+        className={triggerClass ?? `fs-addmenu-trigger${center ? ' fs-addmenu-center' : ''}`}
         title={title}
         onClick={() => setOpen((o) => !o)}
       >{label}</button>

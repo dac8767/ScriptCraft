@@ -1481,10 +1481,32 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   activeTool: migrateToolId(_vs.activeTool as string | null) as ToolId | null,
   setActiveTool: (tool) => {
     saveViewState({ activeTool: tool });
-    // v4.37, Derek: a tool lives in exactly ONE place. Seating it in a slot
-    // takes it out of the fullscreen takeover — otherwise the same window is
-    // open twice (enterToolFullscreen enforces the same invariant in reverse).
-    set((s) => ({ activeTool: tool, ...(tool && s.fullscreenTool === tool ? { fullscreenTool: null } : {}) }));
+    /* v4.37, Derek: a tool lives in exactly ONE place. Seating it in a slot
+       takes it out of the fullscreen takeover — otherwise the same window is
+       open twice (enterToolFullscreen enforces the same invariant in reverse).
+
+       v7.57, Derek ("The scrapbook side panel window is showing twice"): the
+       rule was right and half-applied. It vacated the TAKEOVER but not the
+       OPPOSITE PANEL, so a tool already seated on the right and then seated on
+       the left held both slots at once — and each panel dock renders whatever
+       its slot holds. Two docks, one tool, two copies on screen. Moving a tool
+       between panels is the ordinary way to reach it: the tool opens on its
+       old side, its config changes, and the next open seats it on the new one
+       without the old slot ever being told. */
+    set((s) => ({
+      activeTool: tool,
+      ...(tool && s.activeToolRight === tool ? { activeToolRight: null } : {}),
+      /* And the TEMP slot, which is the pair that actually produced Derek's
+         report. Opening the Scrapbook while its tool is absent from the panels
+         floats it as a temp window; NotebookSurface then auto-docks its nav
+         (the v5.50 behaviour) by calling this setter — so the panel slot and
+         the floating window both held it, and the panel dock and the temp
+         window each drew one. Only ever clears the SAME tool: a different
+         FLOAT_EXEMPT tool riding the temp slot must survive (v6.52). */
+      ...(tool && s.tempTool === tool ? { tempTool: null } : {}),
+      ...(tool && s.fullscreenTool === tool ? { fullscreenTool: null } : {}),
+    }));
+    if (tool && get().activeToolRight === null) saveViewState({ activeToolRight: null });
   },
   toolSizes: migrateNotebookInline(migrateTypewriterSize(migrateSpellingSize(migrateNavigatorInline(_vs.toolSizes ?? {})))),
   setToolSize: (tool, w, h) => set((s) => {
@@ -1514,8 +1536,15 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   activeToolRight: migrateToolId(_vs.activeToolRight as string | null) as ToolId | null,
   setActiveToolRight: (tool) => {
     saveViewState({ activeToolRight: tool });
-    // v4.37: same one-place invariant as setActiveTool.
-    set((s) => ({ activeToolRight: tool, ...(tool && s.fullscreenTool === tool ? { fullscreenTool: null } : {}) }));
+    // v4.37: same one-place invariant as setActiveTool — and v7.57's other
+    // half of it, vacating the LEFT slot rather than only the takeover.
+    set((s) => ({
+      activeToolRight: tool,
+      ...(tool && s.activeTool === tool ? { activeTool: null } : {}),
+      ...(tool && s.tempTool === tool ? { tempTool: null } : {}),
+      ...(tool && s.fullscreenTool === tool ? { fullscreenTool: null } : {}),
+    }));
+    if (tool && get().activeTool === null) saveViewState({ activeTool: null });
   },
   toolConfig: migrateToolConfig({ ...DEFAULT_TOOL_CONFIG, ...(_vs.toolConfig ?? {}) }),
   setToolConfig: (cfg) => {
@@ -1853,12 +1882,28 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
          it silently closed Helper Text the moment its go-to buttons opened
          the target window. */
       const keepTemp = s.tempTool && s.tempTool !== tool && FLOAT_EXEMPT.includes(s.tempTool) ? s.tempTool : null;
+      /* v7.57: vacate the OTHER panel's slot. This branch returns a patch
+         rather than calling setActiveTool, so it needs the one-place rule
+         spelled out here too — the two hidden-panel branches above already
+         clear both slots, and this one was the gap they were written around. */
       if (left) {
         saveViewState({ activeTool: tool });
-        return { ...floats, activeTool: tool, tempTool: keepTemp };
+        if (s.activeToolRight === tool) saveViewState({ activeToolRight: null });
+        return {
+          ...floats,
+          activeTool: tool,
+          ...(s.activeToolRight === tool ? { activeToolRight: null } : {}),
+          tempTool: keepTemp,
+        };
       }
       saveViewState({ activeToolRight: tool });
-      return { ...floats, activeToolRight: tool, tempTool: keepTemp };
+      if (s.activeTool === tool) saveViewState({ activeTool: null });
+      return {
+        ...floats,
+        activeToolRight: tool,
+        ...(s.activeTool === tool ? { activeTool: null } : {}),
+        tempTool: keepTemp,
+      };
     }
     return { ...closeOtherFloats(s, tool), tempTool: tool };
   }),

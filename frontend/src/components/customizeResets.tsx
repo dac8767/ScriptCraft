@@ -254,29 +254,38 @@ export function runCustomizeReset(a: ResetAction): void {
  * One bar now, with a grammar the rest of the app already uses — the same one
  * as any dialog footer:
  *
- *   [ things that ADD to the list above ] … [ resets ] │ [ transfer ]
+ *   [ things that ADD to the list above ] ……………………………… [ resets ]
  *
  * Left is contextual: it acts on what you are looking at. Right is the tab's
- * own housekeeping, and the hairline separates undoing your changes from
- * moving them between installs, which are near enough to confuse and far
- * enough apart to matter.
+ * own housekeeping.
  *
  * The "Reset to Default" heading is gone with the stack. It was labelling a
  * section that no longer exists, in front of buttons that already say "Reset
  * Transitions" and "Reset Items" — a heading whose whole job was to announce
  * what its buttons announce.
+ *
+ * v7.56 took the third group out: Export… / Import… moved the whole preset
+ * bundle whatever tab you were standing on, so a copy per tab advertised a
+ * scope they never had. They are one Backup & Restore door beside the tabs now,
+ * and the `presets` slot that carried them is gone rather than left empty.
+ *
+ * v7.57 emptied the LEFT group on most tabs: an adder belongs on the list it
+ * adds to, so wherever a tab has a Shown column the adder moved into that
+ * column's header. What is left here is what acts on the whole tab. A tab with
+ * neither — Themes, since + New Theme moved and it registers no resets —
+ * renders no bar at all, because a bar with nothing in it is a rule and a gap.
  */
-export function TabActionBar({ tab, adders, presets }: {
+export function TabActionBar({ tab, adders }: {
   tab: CustomizeTabId;
-  /** The tab's own adders. They belong at the LEFT, next to what they add to. */
+  /** The tab's own adders. They belong at the LEFT, next to what they act on.
+   *  Only for adders with nowhere better: a tab with a Shown column puts them
+   *  in its header instead (v7.57). Annotations still passes one — it builds a
+   *  combo from a grid rather than listing shown against hidden, so it has no
+   *  column header to sit in. */
   adders?: React.ReactNode;
-  /** Export / Import. Omitted where a window footer already carries them —
-   *  they move whole-app presets, not this tab's, so two doors would be a lie
-   *  about scope as well as a duplicate. */
-  presets?: React.ReactNode;
 }) {
   const actions = CUSTOMIZE_RESETS.filter((a) => a.tab === tab);
-  if (!adders && !actions.length && !presets) return null;
+  if (!adders && !actions.length) return null;
   return (
     <div className="fs-tabbar">
       {adders && <div className="fs-tabbar-group">{adders}</div>}
@@ -292,8 +301,6 @@ export function TabActionBar({ tab, adders, presets }: {
           ))}
         </div>
       )}
-      {actions.length > 0 && presets && <span className="fs-tabbar-divider" aria-hidden="true" />}
-      {presets && <div className="fs-tabbar-group">{presets}</div>}
     </div>
   );
 }

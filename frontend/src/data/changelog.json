@@ -1,5 +1,15 @@
 [
   {
+    "version": "7.57",
+    "date": "2026-08-18",
+    "changes": [
+      "Fix: the Scrapbook's side panel showed twice — two copies of the same window, side by side, from the moment you opened it from the ribbon. The tool could hold two places at once: opening it floated it as a temporary window, and the Scrapbook then docked its own navigator, which seated it in a panel without the floating copy ever being told to let go. Each one drew the tool. A tool now vacates every other place it was when it takes a new one, whichever way it was opened.",
+      "Wherever a Customize tab lists Shown against Hidden, the button that adds to the list now sits in the Shown column's header, on the list it adds to, rather than in the bar at the bottom of the tab. Side Panels has a “+ Add” in each panel's header offering Divider and Spacer — and the left panel's adder adds to the LEFT panel now, which it did not before; Quick Access has the same in its Shown header. “+ New Theme” and “Add Transition”, renamed “+ New Transition”, moved to their Shown headers too.",
+      "The Continued Text and More Text dropdowns sit on one row. They are one decision — what the continuation markers say — and stacked down the page they read as two unrelated settings.",
+      "The Themes tab no longer ends with an empty action bar: “+ New Theme” was the only thing in it."
+    ]
+  },
+  {
     "version": "7.56",
     "date": "2026-08-18",
     "changes": [

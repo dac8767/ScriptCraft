@@ -22,6 +22,13 @@
  * they never had; they are one Backup & Restore door beside the tabs now. The
  * hairline went with them — a rule between a group and nothing is just a rule.
  *
+ * v7.57 emptied the LEFT group nearly everywhere: an adder belongs on the list
+ * it adds to, so every tab with a Shown column moved its adder into that
+ * column's header (check-v757 owns that half). What this file still owns is
+ * the ARRANGEMENT of whatever is left: one row, one bar per tab, grouped and
+ * pushed to the edges — and, now, that a tab with nothing left to put in a bar
+ * draws no bar rather than an empty rule.
+ *
  * WHY THIS IS CHECKED BY GEOMETRY. "Arrangement" is precisely the property
  * that no type and no unit test can see. Every one of these buttons could keep
  * its class, its label and its handler while drifting back into a stack, and
@@ -46,14 +53,12 @@ const ok = (name, cond, extra = '') => {
 const { browser, page } = await launch();
 await boot(page);
 
-/* Quick Access is the tab Derek screenshotted, and still the one that shows
-   both groups — adders and a reset. */
-console.log('\nthe tab Derek screenshotted is one row, not three blocks');
-const qat = await page.evaluate(async () => {
-  window.__scStore.getState().openPreferences('cz-qat');
+/** Measure one tab's action bar. */
+const measureBar = (cat) => page.evaluate(async (c) => {
+  window.__scStore.getState().openPreferences(`cz-${c}`);
   await new Promise((r) => setTimeout(r, 1200));
   const bar = document.querySelector('.prefs-content .fs-tabbar');
-  if (!bar) return { skipped: 'no action bar on the Quick Access tab' };
+  if (!bar) return { skipped: `no action bar on the ${c} tab` };
   const groups = [...bar.querySelectorAll('.fs-tabbar-group')];
   const btns = [...bar.querySelectorAll('button')];
   const box = (e) => e.getBoundingClientRect();
@@ -62,7 +67,6 @@ const qat = await page.evaluate(async () => {
     labels: btns.map((b) => b.textContent.trim()),
     // every button on ONE row: same top, within a pixel or two
     tops: [...new Set(btns.map((b) => Math.round(box(b).top)))],
-    barTop: Math.round(box(bar).top),
     firstGroupLeft: Math.round(box(groups[0]).left),
     lastGroupLeft: Math.round(box(groups[groups.length - 1]).left),
     panelRight: Math.round(document.querySelector('.prefs-content').getBoundingClientRect().right),
@@ -70,25 +74,28 @@ const qat = await page.evaluate(async () => {
     hasDivider: Boolean(bar.querySelector('.fs-tabbar-divider')),
     borderTop: getComputedStyle(bar).borderTopWidth,
   };
-});
+}, cat);
+
+/* Quick Access is the tab Derek screenshotted. v7.57 moved its adders into the
+   Shown column header, so what remains in its bar is the tab's own reset —
+   which is exactly the group whose ARRANGEMENT this file is about. */
+console.log('\nthe tab Derek screenshotted is one row, not three blocks');
+const qat = await measureBar('qat');
 if (qat.skipped) {
   console.log(`  SKIP — ${qat.skipped}`);
 } else {
-  /* v7.56 took the transfer pair out of every tab — it moved the whole preset
-     bundle regardless of which tab you were on, so it became one Backup &
-     Restore door beside the tabs instead. Two groups here now, not three. */
-  ok('the adders and the tab\'s reset are both present',
-    ['Add Divider', 'Add Spacer', 'Reset Items'].every((l) => qat.labels.includes(l)),
-    JSON.stringify(qat.labels));
+  ok('the tab\'s reset is there', qat.labels.includes('Reset Items'), JSON.stringify(qat.labels));
+  /* v7.57 lifted Add Divider / Add Spacer into the Shown column header. They
+     must not ALSO be here — an adder in two places is the drift this repo's
+     one-source rule exists to stop, and it would look identical in a
+     screenshot of either half. */
+  ok('…and the adders left for the column header rather than staying too',
+    !qat.labels.some((l) => /^\+?\s*Add /.test(l)), JSON.stringify(qat.labels));
   ok('…and no per-tab Export/Import came back',
     !qat.labels.some((l) => /Export|Import/.test(l)), JSON.stringify(qat.labels));
   /* THE ASSERTION. Three stacked blocks means three different tops. */
   ok('…on a single row', qat.tops.length === 1, `${qat.tops.length} distinct tops: ${JSON.stringify(qat.tops)}`);
-  ok('…in two groups, not one undifferentiated queue', qat.groups === 2, JSON.stringify(qat.groups));
-  /* Adders left, housekeeping right — the direction carries the meaning. */
-  ok('the adders sit left of the housekeeping',
-    qat.firstGroupLeft < qat.lastGroupLeft, JSON.stringify(qat));
-  ok('…and the housekeeping is pushed to the far edge',
+  ok('…and pushed to the far edge, not left-dumped',
     qat.panelRight - qat.lastGroupRight < 40, JSON.stringify(qat));
   /* The hairline separated resets from transfer. With transfer gone there is
      nothing left for it to separate, and drawing one anyway would be a line
@@ -97,6 +104,23 @@ if (qat.skipped) {
     qat.hasDivider === false, JSON.stringify(qat));
   ok('and a rule separates the bar from the tab\'s content',
     parseFloat(qat.borderTop) > 0, JSON.stringify(qat.borderTop));
+}
+
+/* The left-then-right grammar still has to hold where BOTH groups exist. After
+   v7.57 that is the Ribbon Toolbar tab — Hide All acts on the whole tab rather
+   than adding to a list, so it has no column header to move into. Without this
+   the direction of the bar would go unchecked entirely. */
+console.log('\nwhere both groups still exist, the direction holds');
+const tb = await measureBar('toolbar');
+if (tb.skipped) {
+  console.log(`  SKIP — ${tb.skipped}`);
+} else {
+  ok('two groups, not one undifferentiated queue', tb.groups === 2, JSON.stringify(tb.groups));
+  ok('…the tab-wide action sits left of the housekeeping',
+    tb.firstGroupLeft < tb.lastGroupLeft, JSON.stringify(tb));
+  ok('…the housekeeping is pushed to the far edge',
+    tb.panelRight - tb.lastGroupRight < 40, JSON.stringify(tb));
+  ok('…and it is all still one row', tb.tops.length === 1, JSON.stringify(tb.tops));
 }
 
 /* The bar is ONE component, so it must appear the same way on every tab that
@@ -124,7 +148,18 @@ for (const cat of ['toolbar', 'panels', 'qat', 'context', 'themes', 'elements', 
   }, cat);
   perTab.push(r);
 }
-ok('every tab has the bar', perTab.every((t) => t.bar), JSON.stringify(perTab.filter((t) => !t.bar)));
+/* v7.57: a tab renders a bar iff it has something to put in one. Themes is now
+   the only tab with nothing — its + New Theme moved into the Shown column
+   header and it registers no resets — and it must draw NO bar rather than an
+   empty rule with a gap under it. Naming the exception explicitly is what
+   stops "no bar" quietly spreading to a tab that should have had one. */
+const NO_BAR = ['themes'];
+ok('every tab that has something to put in a bar has one',
+  perTab.filter((t) => !NO_BAR.includes(t.cat)).every((t) => t.bar),
+  JSON.stringify(perTab.filter((t) => !NO_BAR.includes(t.cat) && !t.bar)));
+ok('…and the one tab with nothing left in it draws no empty rule',
+  perTab.filter((t) => NO_BAR.includes(t.cat)).every((t) => !t.bar),
+  JSON.stringify(perTab.filter((t) => NO_BAR.includes(t.cat) && t.bar)));
 ok('…and its contents never wrap into a second row',
   perTab.every((t) => t.rowsInBar <= 1), JSON.stringify(perTab.map((t) => [t.cat, t.rowsInBar])));
 /* The old blocks are removed, not merely hidden — a stack that still exists in
@@ -138,10 +173,10 @@ ok('…so is the separate Export/Import row',
 ok('no tab kept a loose adder or reset row beside the bar',
   perTab.every((t) => !t.strayAdderRow), JSON.stringify(perTab.filter((t) => t.strayAdderRow)));
 /* v7.56: a tab whose adders need its own component's state renders its own bar
-   (Themes, Editor, Annotations); the dialog renders one for the rest. EXACTLY
-   one either way — two would be the stack again, in a new costume. */
-ok('…and exactly one bar per tab, never two',
-  perTab.every((t) => t.barCount === 1), JSON.stringify(perTab.map((t) => [t.cat, t.barCount])));
+   (Editor, Annotations); the dialog renders one for the rest. Never TWO —
+   that would be the stack again, in a new costume. */
+ok('…and never two bars on one tab',
+  perTab.every((t) => t.barCount <= 1), JSON.stringify(perTab.map((t) => [t.cat, t.barCount])));
 
 console.log('\none bar, one definition');
 const resets = readFileSync(new URL('../src/components/customizeResets.tsx', import.meta.url), 'utf8');

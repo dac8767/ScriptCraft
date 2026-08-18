@@ -11,7 +11,6 @@ import ColorPicker from './ColorPicker';
 import { DndColumns } from './CustomizePanelsDialog';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { TabActionBar } from './customizeResets';
 import { useThemeStore } from '../stores/themeStore';
 import {
   BUILTIN_THEMES, THEME_VARS, isCustomTheme, seedVarsFromBase,
@@ -210,6 +209,14 @@ export default function ThemesTab() {
         columns={[
           {
             id: 'shown', title: 'Shown',
+            /* v7.57, Derek: "Move '+ New Theme' to the header of the themes
+               Shown column header." It sits on the list it adds to now, rather
+               than in the tab's action bar below. */
+            headerExtra: (
+              <button className="fs-dnd-headbtn" title="Create a new theme" onClick={newTheme}>
+                + New Theme
+              </button>
+            ),
             sections: [{
               rows: visibleIds.map((id) => {
                 const custom = isCustomTheme(id);
@@ -319,13 +326,9 @@ export default function ThemesTab() {
       )}
 
 
-      {/* v7.56: this tab's adder goes in the SAME TabActionBar every other tab
-          ends with. Its state (`newTheme` opens the editor) lives here, not in
-          CustomizePanelsDialog, so this tab renders its own bar — one
-          component, so the grammar is identical either way. */}
-      <TabActionBar tab="themes" adders={
-        <button className="dialog-btn dialog-btn-sm" onClick={newTheme}>+ New Theme</button>
-      } />
+      {/* v7.57: no action bar here any more. Its only occupant was + New Theme,
+          which moved into the Shown column header above, and this tab
+          registers no resets — a bar with nothing in it is a rule and a gap. */}
     </section>
   );
 

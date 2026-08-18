@@ -363,12 +363,8 @@ label.fs-presets-row { cursor: pointer; }
 }
 .fs-tabbar-group { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .fs-tabbar-gap { flex: 1 1 auto; }
-/* Resets and transfer are adjacent and easy to confuse; the hairline says
-   they are different kinds of thing. */
-.fs-tabbar-divider {
-  width: 1px; align-self: stretch; min-height: 18px;
-  background: var(--fd-border);
-}
+/* The hairline that separated resets from Export/Import went with the transfer
+   pair in v7.56 — a rule between a group and nothing is just a rule. */
 .fs-reset-all-btn {
   border: 1px solid #c0564f;
   border-radius: 5px;

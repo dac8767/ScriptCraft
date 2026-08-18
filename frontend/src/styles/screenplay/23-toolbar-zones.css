@@ -760,3 +760,10 @@
    own line); it was never right for the control. Capped at a width the longest
    preset comfortably fits, so the field looks like what it holds. */
 .fs-mores-field .props-input { max-width: 260px; }
+/* v7.57: the two of them side by side. They are one decision — what the
+   continuation markers say — so they read better as a pair than as a stack. */
+.fs-mores-row { display: flex; flex-wrap: wrap; gap: 18px; }
+/* Wide enough for the longest preset each one offers — "(CONTINUED)" and
+   "Custom…" — so choosing one never clips what it says. Sizing to the CURRENT
+   value would fit whatever happens to be selected and clip the rest. */
+.fs-mores-row .fs-mores-field { flex: 0 0 auto; min-width: 160px; }
