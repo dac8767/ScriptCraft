@@ -37,6 +37,15 @@ export const FEEDBACK_BACKEND = {
   publishableKey: 'sb_publishable_7scoOBRcdzyGS8YVIVCtVA_Z1i5X4cA',
 } as const;
 
+/* v7.54, Derek: the table now serves more than one app — ScriptCraft, Game
+   Mastery and Fear the Reaper all submit into it — so every row says which one
+   it came from. It is a constant, not a setting: an app knows what it is, and
+   anything that could make this wrong (a stale preference, a copied config)
+   would quietly file bugs under the wrong product. The column carries a CHECK
+   for these three exact strings, so a typo is refused rather than opening a
+   fourth silent bucket. */
+export const FEEDBACK_APP = 'ScriptCraft' as const;
+
 const PROFILE_KEY = 'opendraft:feedbackProfile';
 const QUEUE_KEY = 'opendraft:feedbackQueue';
 export const FEEDBACK_QUEUE_MAX = 10;
@@ -134,6 +143,7 @@ export async function submitFeedback(payload: FeedbackPayload, shots?: Blob[] | 
     method: 'POST',
     headers: { ...keyHeaders(), 'Content-Type': 'application/json', Prefer: 'return=minimal' },
     body: JSON.stringify({
+      app: FEEDBACK_APP,
       name: profile.name,
       email: profile.email,
       category: payload.category,

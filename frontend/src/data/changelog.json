@@ -1,5 +1,12 @@
 [
   {
+    "version": "7.54",
+    "date": "2026-08-18",
+    "changes": [
+      "Feedback submissions now record which app they came from. The feedback table is shared with Game Mastery and Fear the Reaper, so every row says whether it's a ScriptCraft report — otherwise three products' bugs land in one undifferentiated pile."
+    ]
+  },
+  {
     "version": "7.53",
     "date": "2026-08-18",
     "changes": [

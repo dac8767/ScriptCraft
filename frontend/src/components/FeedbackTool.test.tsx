@@ -117,8 +117,17 @@ describe('FeedbackTool — submitting', () => {
     expect(body.email).toBe('tester@example.com');
     expect(body.message).toBe('The margins drift.');
     expect(typeof body.app_version).toBe('string');
+    /* v7.54: the table serves ScriptCraft, Game Mastery and Fear the Reaper,
+       so every row says which app it came from. Omitting it does not fail —
+       the column has a ScriptCraft default so older builds keep working —
+       which is exactly why it needs a test: the failure mode is another
+       product's bugs quietly filed under this one. */
+    expect(body.app).toBe('ScriptCraft');
     expect(body.attachments).toBeNull();               // v6.87 column — screenshot_path is gone
     expect('screenshot_path' in body).toBe(false);
+    // status is Derek's triage state, edited in the dashboard. A form that
+    // sets its own status is a form marking its own homework.
+    expect('status' in body).toBe(false);
     const headers = post!.init?.headers as Record<string, string>;
     expect(headers.apikey).toBe(FEEDBACK_BACKEND.publishableKey);
     expect(headers.Authorization).toBeUndefined();     // no auth — insert-only rule
