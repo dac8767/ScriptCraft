@@ -155,9 +155,9 @@ export default function ThemesTab() {
           </div>
         ))}
 
-        <div className="fs-tbzone-adders fs-adders-equal">
+        <div className="fs-tbzone-adders">
           <button
-            className="swn-add-btn"
+            className="dialog-btn dialog-btn-sm"
             onClick={() => {
               const label = editing.label.trim() || 'My Theme';
               saveCustomTheme({ ...editing, label });
@@ -166,12 +166,12 @@ export default function ThemesTab() {
             }}
           >Save Theme</button>
           <button
-            className="swn-add-btn"
+            className="dialog-btn dialog-btn-sm"
             title="Preview without saving"
             onClick={() => applyThemeToDom(editing.id, [...customThemes, editing])}
           >Preview</button>
           <button
-            className="swn-add-btn"
+            className="dialog-btn dialog-btn-sm"
             onClick={() => {
               setEditing(null);
               applyThemeToDom(theme, customThemes);   // discard any preview
@@ -322,8 +322,8 @@ export default function ThemesTab() {
 
       {importNote && <p className="fs-shortcut-note">{importNote}</p>}
 
-      <div className="fs-tbzone-adders fs-adders-equal">
-        <button className="swn-add-btn" onClick={newTheme}>+ New Theme</button>
+      <div className="fs-tbzone-adders">
+        <button className="dialog-btn dialog-btn-sm" onClick={newTheme}>+ New Theme</button>
         {/* v1.4.1: Export is a menu now, matching Import — a panel that opened
             over the button to ask "which themes?" was a whole extra screen for a
             question with two real answers: all of them, or that one. */}

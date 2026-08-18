@@ -281,7 +281,7 @@ function SaveLocationsTab() {
             {localSaveFolder && <code className="prefs-path-chip">{localSaveFolder}</code>}
           </span>
           <button
-            className="prefs-inline-btn"
+            className="dialog-btn dialog-btn-sm prefs-inline-btn"
             onClick={async (e) => {
               e.preventDefault();
               const folder = await pickFolder('Where should ScriptCraft keep this script?');
@@ -311,7 +311,7 @@ function SaveLocationsTab() {
             {backupSaveFolder && <code className="prefs-path-chip">{backupSaveFolder}</code>}
           </span>
           <button
-            className="prefs-inline-btn"
+            className="dialog-btn dialog-btn-sm prefs-inline-btn"
             onClick={async (e) => {
               e.preventDefault();
               const folder = await pickFolder();
@@ -396,7 +396,7 @@ function SaveLocationsTab() {
             {snapLocalFolder && <code className="prefs-path-chip">{snapLocalFolder}</code>}
           </span>
           <button
-            className="prefs-inline-btn"
+            className="dialog-btn dialog-btn-sm prefs-inline-btn"
             onClick={async (e) => {
               e.preventDefault();
               const folder = await pickFolder();
@@ -494,7 +494,7 @@ function SaveLocationsTab() {
             {downloadFolder ? <code className="prefs-path-chip">{downloadFolder}</code> : ' — the last folder you used'}
           </span>
           <button
-            className="prefs-inline-btn"
+            className="dialog-btn dialog-btn-sm prefs-inline-btn"
             onClick={async (e) => {
               e.preventDefault();
               const folder = await pickFolder('Folder for saved and exported files');
@@ -503,7 +503,7 @@ function SaveLocationsTab() {
           >Choose Folder…</button>
           {downloadFolder && (
             <button
-              className="prefs-inline-btn"
+              className="dialog-btn dialog-btn-sm prefs-inline-btn"
               onClick={(e) => { e.preventDefault(); setDownloadFolder(''); }}
             >Reset</button>
           )}
@@ -521,7 +521,7 @@ function SaveLocationsTab() {
               : ' Downloads (default)'}
           </span>
           <button
-            className="prefs-inline-btn"
+            className="dialog-btn dialog-btn-sm prefs-inline-btn"
             onClick={async (e) => {
               e.preventDefault();
               const folder = await pickFolder('Folder for screenshots');
@@ -530,7 +530,7 @@ function SaveLocationsTab() {
           >Choose Folder…</button>
           {screenshotFolder && (
             <button
-              className="prefs-inline-btn"
+              className="dialog-btn dialog-btn-sm prefs-inline-btn"
               onClick={(e) => { e.preventDefault(); setScreenshotFolder(''); }}
             >Reset to Downloads</button>
           )}
@@ -711,7 +711,7 @@ function GeneralTab() {
             The bus command is the same one the old menu item used. */}
         <div className="prefs-check-row">
           <button
-            className="swn-add-btn"
+            className="dialog-btn dialog-btn-sm"
             onClick={() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'grammarSettings' }))}
           >Grammar &amp; Spelling Settings…</button>
         </div>
@@ -813,7 +813,7 @@ function BackupRestoreTab() {
           {/* ONE import door, and it reads both shapes — the preset files the
               Backup section writes and the whole-app settings files written
               before v7.28. Which one it is, is read off the file. */}
-          <button className="swn-add-btn" onClick={() => fileRef.current?.click()}>
+          <button className="dialog-btn dialog-btn-sm" onClick={() => fileRef.current?.click()}>
             Restore from a file…
           </button>
           <input

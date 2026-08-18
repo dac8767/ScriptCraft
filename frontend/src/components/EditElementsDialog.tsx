@@ -210,8 +210,8 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
             if (isDefaultTransition(t) && hiddenTransitions.includes(t)) setTransitionHidden(t, false);
           }}
         />
-        <div className="fs-tbzone-adders fs-adders-equal">
-          <button className="swn-add-btn" onClick={openAddTransition}>Add Transition</button>
+        <div className="fs-tbzone-adders">
+          <button className="dialog-btn dialog-btn-sm" onClick={openAddTransition}>Add Transition</button>
           {/* v4.65: Reset moved to the tab's Reset section (customizeResets). */}
         </div>
       </section>
@@ -310,8 +310,8 @@ export default function EditElementsDialog({ open = true, onClose, embedded = fa
               />
             </div>
             <div className="fs-add-transition-actions">
-              <button className="swn-add-btn" onClick={closeAddTransition}>Cancel</button>
-              <button className="swn-add-btn swn-add-primary" onClick={commitNewTransition} disabled={!newTransition.trim()}>Add</button>
+              <button className="dialog-btn" onClick={closeAddTransition}>Cancel</button>
+              <button className="dialog-btn dialog-btn-primary" onClick={commitNewTransition} disabled={!newTransition.trim()}>Add</button>
             </div>
           </div>
         </div>,

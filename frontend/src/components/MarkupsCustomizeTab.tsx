@@ -93,7 +93,7 @@ export default function MarkupsCustomizeTab() {
         <input type="color" className="markup-dot markup-dot-custom" value={pickColor} title="Custom color" onChange={(e) => setPickColor(e.target.value)} />
         <span className="fs-markup-cz-preview"><MarkupIcon icon={pickIcon} color={pickColor} /></span>
         <button
-          className="dialog-btn dialog-btn-primary fs-markup-cz-add"
+          className="dialog-btn dialog-btn-sm dialog-btn-primary fs-markup-cz-add"
           disabled={exists}
           title={exists ? 'This combo is already a preset' : 'Add this combo to the presets'}
           onClick={add}

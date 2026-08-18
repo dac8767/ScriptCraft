@@ -1,5 +1,13 @@
 [
   {
+    "version": "7.53",
+    "date": "2026-08-18",
+    "changes": [
+      "The buttons in Settings and Customize are sleeker. Most of them were stretching to fill whatever panel they sat in — “Hide All” was rendered 720px wide, Export… and Import… 613px each — so a two-word label sat marooned in the middle of a slab. They're sized to their own text now, on the app's compact button size, with one corner radius between them.",
+      "A button that asks to be the accent-coloured primary now gets it, wherever it sits. Dialog footers were repainting them plain, which is why the Customize window's Save carried its own colour rule to work around it."
+    ]
+  },
+  {
     "version": "7.52",
     "date": "2026-08-18",
     "changes": [

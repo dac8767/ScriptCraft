@@ -187,21 +187,29 @@
   padding: 14px 20px; border-top: 1px solid var(--fd-border);
   flex-shrink: 0;
 }
-.dialog-footer button {
+/* v7.53: `:not(.dialog-btn)`. These container rules are the fallback for a
+   BARE button dropped into a footer — but at 0,1,1 they outrank `.dialog-btn`
+   and `.dialog-btn-primary` at 0,1,0, so a button that explicitly asked to be
+   a primary got repainted plain by the box it sat in. That is why the
+   Customize footer's Save carried its own accent rule: not because it needed
+   one, but to out-specify this. Excluding `.dialog-btn` makes the class
+   authoritative, which is the rule this project already states — the class
+   carries the shape and the paint, the container only lays them out. */
+.dialog-footer button:not(.dialog-btn) {
   height: var(--dz-dialog-btn-h, 34px); padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 5px); cursor: pointer; font-size: 14px;
 }
-.dialog-footer button:hover { background: var(--fd-toolbar-hover); }
+.dialog-footer button:not(.dialog-btn):hover { background: var(--fd-toolbar-hover); }
 .dialog-actions {
   display: flex; justify-content: flex-end; gap: 8px;
   padding: 14px 20px; border-top: 1px solid var(--fd-border);
   flex-shrink: 0;
 }
-.dialog-actions button {
+.dialog-actions button:not(.dialog-btn) {
   height: var(--dz-dialog-btn-h, 34px); padding: 0 18px; background: var(--fd-toolbar-bg); color: var(--fd-text);
   border: 1px solid var(--fd-border); border-radius: var(--dz-dialog-btn-radius, 5px); cursor: pointer; font-size: 14px;
 }
-.dialog-actions button:hover { background: var(--fd-menu-hover); }
+.dialog-actions button:not(.dialog-btn):hover { background: var(--fd-menu-hover); }
 /* ── v3.25, Derek (task #135): the header/footer redesign goes APP-WIDE ──
    The v1.33 Save As treatment is the standard for every window now: the
    header wears the theme's chrome surface (--fd-toolbar-bg, same as the

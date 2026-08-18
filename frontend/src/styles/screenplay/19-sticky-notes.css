@@ -232,18 +232,19 @@
   overflow-y: auto;
 }
 
-.swn-add-btn {
-  width: 100%;
-  padding: 6px 0;
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  background: var(--fd-bg);
-  color: var(--fd-text);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.swn-add-btn:hover { background: var(--fd-hover-bg, rgba(128, 128, 128, 0.15)); }
+/* v7.53, Derek: "for all of the dark buttons in the settings and customize
+   tabs: they are too big and ugly. redesign them to be sleeker."
+
+   `.swn-add-btn` was the biggest offender and it is RETIRED, not restyled. It
+   began as the sticky-note popover's Add button, where `width: 100%` was
+   right — the popover is 200px wide. That home is gone; by v7.52 all fourteen
+   remaining call sites were Settings and Customize panels 700–1200px wide, so
+   every one of them rendered a two-word label across a slab the width of the
+   window. The height was never really the problem; the WIDTH was.
+
+   They are `dialog-btn dialog-btn-sm` now — the compact size the style scale
+   already defines (26px / 12px, driven by --dz-dialog-btn-h-sm), sized to
+   their own text. One button vocabulary instead of a fossil beside it. */
 
 /* v4.35 (batch-v9 #5): custom color pick — the Characters-row dashed swatch
    (.synopsis-color-custom, 05-scene-navigator.css) rebuilt at swn-dot size:

@@ -528,14 +528,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             />
           );
         })()}
-        <div className="fs-tbzone-adders fs-adders-equal">
+        <div className="fs-tbzone-adders">
           <button
-            className="swn-add-btn"
+            className="dialog-btn dialog-btn-sm"
             title="Add a divider line to the left panel"
             onClick={() => onAdd('divider')}
           >+ Divider</button>
           <button
-            className="swn-add-btn"
+            className="dialog-btn dialog-btn-sm"
             title="Add a spacer to the left panel"
             onClick={() => onAdd('spacer')}
           >+ Spacer</button>
@@ -747,7 +747,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
      the presets only. Still one definition of each button. */
   const lockButton = (
     <button
-      className={uiResizeLocked ? 'active' : ''}
+      className={`dialog-btn dialog-btn-sm${uiResizeLocked ? ' active' : ''}`}
       title={uiResizeLocked
         ? 'Customizations are locked — click to unlock'
         : 'Freeze every customization: sizing, spacing, and layout edits'}
@@ -763,11 +763,11 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         category flow. It opens the one window now with `customize` already
         ticked — every other category is one tick away, which is the point of
         there being one window. */}
-    <button className="dialog-btn"
+    <button className="dialog-btn dialog-btn-sm"
       title="Save customizations — opens the preset window with them ticked"
       onClick={() => useEditorStore.getState().openPresetExport(['customize'])}
     >Export…</button>
-    <button className="dialog-btn"
+    <button className="dialog-btn dialog-btn-sm"
       title="Load customization choices from a file — this replaces your current ones"
       onClick={() => { void importCustomizationsFlow(); }}
     >Import…</button>
@@ -840,9 +840,9 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               </>}
             />
             {/* v4.65: the size + layout resets moved to the Reset section. */}
-            <div className="fs-tbzone-adders fs-adders-equal">
+            <div className="fs-tbzone-adders">
               <button
-                className="swn-add-btn"
+                className="dialog-btn dialog-btn-sm"
                 title="Hide every toolbar item (re-add items from the palette)"
                 onClick={() => setToolbarZones([], [])}
               >Hide All</button>
@@ -918,14 +918,14 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 setQatItems(next);
               }}
             />
-            <div className="fs-tbzone-adders fs-adders-equal">
+            <div className="fs-tbzone-adders">
               <button
-                className="swn-add-btn"
+                className="dialog-btn dialog-btn-sm"
                 title="Add a divider (a thin line) to the end — drag it into place"
                 onClick={() => setQatItems([...qatItems, `qdiv:${Date.now().toString(36)}`])}
               >Add Divider</button>
               <button
-                className="swn-add-btn"
+                className="dialog-btn dialog-btn-sm"
                 title="Add a spacer (blank gap) to the end — drag it into place"
                 onClick={() => setQatItems([...qatItems, `qsp:${Date.now().toString(36)}`])}
               >Add Spacer</button>
@@ -1026,8 +1026,8 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
         <div className="dialog-footer fs-customize-footer">
           <div className="fs-customize-globals fs-customize-footer-globals">{globalsButtons}</div>
           <div className="fs-customize-footer-actions">
-            <button className="fs-customize-cancel" onClick={handleCancel}>Cancel</button>
-            <button className="fs-customize-save" onClick={handleSave}>Save</button>
+            <button className="dialog-btn fs-customize-cancel" onClick={handleCancel}>Cancel</button>
+            <button className="dialog-btn dialog-btn-primary fs-customize-save" onClick={handleSave}>Save</button>
           </div>
         </div>
       </div>

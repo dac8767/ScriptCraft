@@ -162,10 +162,10 @@ export default function KeyboardShortcutsTab() {
         );
       })}
 
-      <div className="fs-tbzone-adders fs-adders-equal">
+      <div className="fs-tbzone-adders">
         {/* v6.77: warned + undoable like every bulk reset (majorChange). */}
         <button
-          className="swn-add-btn"
+          className="dialog-btn dialog-btn-sm"
           title="Restore every shortcut to its default"
           onClick={() => {
             const st = useShortcutStore.getState();

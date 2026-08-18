@@ -231,7 +231,7 @@ export function ResetSection({ tab }: { tab: CustomizeTabId }) {
         {actions.map((a) => (
           <button
             key={a.id}
-            className="swn-add-btn"
+            className="dialog-btn dialog-btn-sm"
             onClick={() => runCustomizeReset(a)}
           >{a.label}</button>
         ))}

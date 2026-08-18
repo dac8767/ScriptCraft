@@ -210,10 +210,14 @@ body.fs-rulers-on .tool-window:not(.tool-window-temp) { top: 20px; }
   flex-direction: row; margin-top: 0; padding-top: 0; align-items: center;
 }
 .fs-customize-footer-actions { display: flex; align-items: center; gap: 8px; }
-.fs-customize-footer .fs-customize-save {
-  background: var(--fd-accent); border-color: var(--fd-accent); color: #fff;
-}
-.fs-customize-footer .fs-customize-save:hover { background: var(--fd-accent); filter: brightness(1.1); }
+/* v7.53: these two carried NO size of their own — `.fs-customize-cancel` had
+   no rule at all and this one only painted, both leaning on
+   `.dialog-footer button` to be the right shape. That is the paint-only class
+   the v7.01 audit retired `.dialog-primary` for: it looks correct inside a
+   footer row and like a bare native button anywhere else. They are
+   `dialog-btn` / `dialog-btn dialog-btn-primary` now, which carry the shape,
+   so the accent fill below is no longer load-bearing — it is deleted rather
+   than left as a second source for the same colour. */
 /* Docked in a side panel / embedded in Settings: fill the host and scroll. */
 .tool-inline-body .fs-customize-body,
 .tool-window-body .fs-customize-body { height: 100%; max-height: none; overflow-y: auto; }

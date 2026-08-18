@@ -177,20 +177,21 @@
   flex-direction: column;
   gap: 6px;
 }
-/* v3.36, Derek: Lock All / Reset All sit side by side, equal width. */
+/* v3.36, Derek: Lock All / Reset All sit side by side.
+   v7.53: side by side, each its own width. They used to be `flex: 1 1 0`,
+   which splits whatever container they are in — right in the 180px rail this
+   was written for, and the reason Export… and Import… were each rendered
+   613px wide once the same row appeared inside a Settings tab. */
 .fs-customize-globals-row { flex-direction: row; }
-.fs-customize-globals-row button { flex: 1 1 0; min-width: 0; }
-.fs-customize-globals button {
-  padding: 6px 8px;
-  font-size: 11px;
-  border: 1px solid var(--fd-border);
-  border-radius: 5px;
-  /* v3.34, Derek: clearly a BUTTON — same surface as dialog buttons. */
-  background: var(--fd-toolbar-bg);
-  color: var(--fd-text);
-  cursor: pointer;
-}
-.fs-customize-globals button:hover { background: var(--fd-hover-bg); }
+/* No width rule for the column direction below: every call site is a ROW —
+   the two preset rows and the dialog footer — so a rule for a narrow stacked
+   rail would be describing a layout that no longer exists. `flex-direction:
+   column` stays on the base only because both row variants override it and
+   the base is never used alone. */
+/* v7.53: no size or paint here any more. These are `dialog-btn dialog-btn-sm`
+   like every other compact button, so the scale governs them — this rule used
+   to force 11px text into a 34px box, which is most of what read as "ugly".
+   What is left is layout only. */
 /* v3.34: the lock veil — blocks every tab's editors while customizations
    are locked; the rail (with the unlock button) stays reachable. */
 .fs-customize-body { position: relative; }

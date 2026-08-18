@@ -254,12 +254,11 @@
 /* ── Customize: 'still reachable via Settings > Layout' warning (v0.47) ── */
 .fs-stuck-warn-dialog .dialog-body p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 
-/* ── Customize: equal-width adder rows (v0.46) ── */
-.fs-tbzone-adders.fs-adders-equal { display: flex; gap: 6px; }
-.fs-tbzone-adders.fs-adders-equal > select,
-.fs-tbzone-adders.fs-adders-equal > button {
-  flex: 1 1 0; min-width: 0; width: auto; box-sizing: border-box;
-}
+/* v7.53: `.fs-adders-equal` is gone. It made every button in an adder row an
+   equal share of the row — sensible in v0.46, when a row was two buttons in a
+   narrow dialog, and absurd once these rows lived in a Settings tab, where
+   "Hide All" was rendered 720px wide. `.fs-tbzone-adders` alone now lays them
+   out: a flex row, 8px gap, each button its own width. */
 
 /* ── Custom chrome sizing (v0.72) ──────────────────────────────────────────
    In 'custom' mode the element's height/width is set inline from the user's
