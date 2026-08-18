@@ -1,5 +1,13 @@
 [
   {
+    "version": "7.52",
+    "date": "2026-08-18",
+    "changes": [
+      "Fix: clicking the lower part of a template card — anywhere in the wide empty space beside the View / Duplicate buttons — did nothing. A guard meant to stop a button press from also selecting the row was sitting on the whole width of that row instead of on the buttons. The whole card selects now, and pressing a button on it still doesn't.",
+      "Changing the format of a script that already has writing in it now asks first, naming the template and saying what happens: every element takes the new template's rules, and its page setup — page size, margins, headers and footers — replaces the current one. Both the Format ▸ Script Format / Template window and Settings ▸ Page Setup ask. Re-choosing the template you're already using, or picking one for an empty document, still goes straight through."
+    ]
+  },
+  {
     "version": "7.51",
     "date": "2026-08-18",
     "changes": [

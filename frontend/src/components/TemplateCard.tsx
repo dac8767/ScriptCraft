@@ -85,10 +85,29 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
     showToast('Template deleted', 'success');
   };
 
+  /* v7.52, Derek: "if i click on the bottom half of a template item it does not
+     select."
+
+     It did not, and the guard causing it was mine. The rule I wanted is "a
+     press ON a button is not also a row selection" — but I wrote it as
+     stopPropagation on the CONTAINER holding the buttons, and that container
+     is the full width of the card. The buttons occupy the first ~50px of it;
+     the other ~1,150px is empty strip that was swallowing clicks. Everything
+     below the description read as dead.
+
+     So the rule is stated where it belongs, on the row, in the terms it was
+     always meant in: the row selects unless the press landed on a control. */
+  const rowClick = onSelect
+    ? (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest('button, input, select, a')) return;
+      onSelect();
+    }
+    : undefined;
+
   return (
     <div
       className={`template-select-item${selected ? ' selected' : ''}${onSelect ? '' : ' template-select-item-static'}`}
-      onClick={onSelect}
+      onClick={rowClick}
     >
       <div className="template-select-item-info">
         <span className="template-select-item-name">
@@ -102,8 +121,10 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
       {t.description && (
         <span className="template-select-item-desc">{t.description}</span>
       )}
-      {/* stopPropagation so a button press is not also a row selection */}
-      <div className="template-select-item-actions" onClick={(e) => e.stopPropagation()}>
+      {/* No handler here: the row above decides, by looking at what was
+          actually pressed. A stopPropagation on this container is what made
+          the whole width of it dead in v7.50–v7.51. */}
+      <div className="template-select-item-actions">
         {onView && (
           <button
             className="dialog-btn dialog-btn-sm"

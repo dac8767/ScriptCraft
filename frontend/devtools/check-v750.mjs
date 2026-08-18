@@ -194,7 +194,14 @@ ok('…and its CSS went with it',
 ok('View appears only where a handler was given',
   /\{onView && \(/.test(card), '');
 ok('a row is clickable only where a selection means something',
-  /onClick=\{onSelect\}/.test(card) && /onSelect \? '' : ' template-select-item-static'/.test(card), '');
+  /const rowClick = onSelect$/m.test(card) && /onSelect \? '' : ' template-select-item-static'/.test(card), '');
+/* v7.52: the guard that keeps a BUTTON press from also selecting the row lives
+   on the row, where it can look at what was pressed. It used to be a
+   stopPropagation on the actions container — which is the full width of the
+   card, so the ~1,150px of empty strip beside the buttons swallowed clicks and
+   the bottom of every card read as dead. */
+ok('…and the button guard is not a blanket stopPropagation on the actions row',
+  !/template-select-item-actions" onClick=\{\(e\) => e\.stopPropagation\(\)\}/.test(card), '');
 ok('the tab does not keep a second renderer around unused',
   !/const actionRow|fmt-card-info/.test(tabSrc), '');
 

@@ -258,7 +258,7 @@ export default function PageSetupTab({ editor }: { editor?: Editor | null }) {
               title={selectedTemplate
                 ? `Format the open script with “${selectedTemplate.name}”`
                 : 'Choose a template above first'}
-              onClick={() => { if (selectedTemplate) requestApply(selectedTemplate); }}
+              onClick={() => { if (selectedTemplate) void requestApply(selectedTemplate); }}
             >
               Apply to Script
             </button>

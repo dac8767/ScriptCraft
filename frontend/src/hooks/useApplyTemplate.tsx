@@ -35,6 +35,7 @@ import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
 import type { FormattingTemplate } from '../stores/formattingTypes';
 import TemplateConflictDialog from '../components/TemplateConflictDialog';
+import { confirmDialog } from '../components/ConfirmDialog';
 import {
   detectTemplateConflicts,
   resolveTemplateConflicts,
@@ -43,7 +44,8 @@ import {
 import type { TemplateConflicts } from '../utils/templateConflicts';
 
 export interface ApplyTemplateApi {
-  /** Apply this template, asking about conflicts first if there are any. */
+  /** Apply this template — confirming first if it would re-format a script
+   *  that already has writing in it, then asking about conflicts if any. */
   requestApply: (t: FormattingTemplate) => void;
   /** Render this. It is null unless a question is pending. */
   conflictDialog: React.ReactNode;
@@ -56,6 +58,8 @@ export function useApplyTemplate(
   onApplied?: (t: FormattingTemplate) => void,
 ): ApplyTemplateApi {
   const setActiveTemplateId = useFormattingTemplateStore((s) => s.setActiveTemplateId);
+  // null means Industry Standard, which is the default rather than a stored id.
+  const activeId = useFormattingTemplateStore((s) => s.activeTemplateId) || INDUSTRY_STANDARD_ID;
   const [pendingConflicts, setPendingConflicts] = useState<TemplateConflicts | null>(null);
   const [pendingTemplate, setPendingTemplate] = useState<FormattingTemplate | null>(null);
 
@@ -94,7 +98,35 @@ export function useApplyTemplate(
     onApplied?.(template);
   }, [editor, isEmptyDoc, onApplied, setActiveTemplateId]);
 
-  const requestApply = useCallback((template: FormattingTemplate) => {
+  const requestApply = useCallback(async (template: FormattingTemplate) => {
+    /* v7.52, Derek: "make sure there is a warning window before allowing the
+       user to change the template on an existing project."
+
+       Two gates, in this order, because they answer different questions:
+
+         1. THIS one — do you want this at all? Changing a template re-formats
+            every element in the script and swaps the page setup underneath it.
+            That is a large, immediate change to someone's draft and it should
+            never happen from one click.
+         2. The conflict pass below — and specifically WHAT will break. It only
+            fires when there is something to say, so it cannot serve as gate 1;
+            plenty of switches are conflict-free and still rewrite the page.
+
+       Neither gate fires when nothing is at stake: re-applying the template the
+       script already uses changes nothing, and an EMPTY document is the
+       new-script and Guided Setup flow, where a confirmation on every choice
+       would be noise rather than safety. */
+    const changing = activeId !== template.id;
+    if (changing && !isEmptyDoc()) {
+      const go = await confirmDialog(
+        `This script will be re-formatted to “${template.name}”. Every element takes that `
+        + 'template\'s rules, and its page setup — page size, margins, headers and footers — '
+        + 'replaces the current one.',
+        { title: 'Change the script\'s format?', confirmLabel: 'Change Format' },
+      );
+      if (!go) return;
+    }
+
     if (editor && !editor.isDestroyed) {
       const conflicts = detectTemplateConflicts(editor, template);
       if (conflicts.hasConflicts) {
@@ -104,7 +136,7 @@ export function useApplyTemplate(
       }
     }
     applyTemplate(template);
-  }, [editor, applyTemplate]);
+  }, [editor, applyTemplate, activeId, isEmptyDoc]);
 
   const clearPending = () => { setPendingConflicts(null); setPendingTemplate(null); };
 

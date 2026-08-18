@@ -174,10 +174,16 @@ const conflict = await page.evaluate(async () => {
   await new Promise((r) => setTimeout(r, 250));
   [...document.querySelectorAll('.pst-newrow button')]
     .find((b) => /Apply to Script/.test(b.textContent)).click();
-  await new Promise((r) => setTimeout(r, 900));
+  await new Promise((r) => setTimeout(r, 700));
+  /* v7.52 put a confirmation in front of this — changing the format of a script
+     with writing in it is not a one-click act. Consent to it here; check-v752
+     is where the warning itself is driven. */
+  const consent = [...document.querySelectorAll('button')]
+    .find((b) => /^Change Format$/i.test(b.textContent.trim()));
+  if (consent) { consent.click(); await new Promise((r) => setTimeout(r, 700)); }
   const dlg = [...document.querySelectorAll('.dialog-box, [class*=conflict]')]
     .find((d) => /conflict/i.test(d.className) || /conflict/i.test(d.textContent));
-  const out = { asked: Boolean(dlg), wasCurrent };
+  const out = { asked: Boolean(dlg), wasCurrent, wasWarned: Boolean(consent) };
   if (dlg) {
     out.choices = [...dlg.querySelectorAll('button')].map((b) => b.textContent.trim());
     [...dlg.querySelectorAll('button')].find((b) => /^Cancel$/i.test(b.textContent.trim()))?.click();

@@ -119,7 +119,7 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
         {/* Actions */}
         <div className="template-select-actions">
           <button className="dialog-btn" onClick={onClose}>Cancel</button>
-          <button className="dialog-btn dialog-btn-primary" onClick={() => requestApply(getSelectedTemplate())}>Apply</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={() => void requestApply(getSelectedTemplate())}>Apply</button>
         </div>
 
         {/* Template Editor sub-dialog */}
