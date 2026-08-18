@@ -19,7 +19,7 @@ import { useEditorStore, DEFAULT_TOOL_CONFIG, type ToolId, type ToolConfig, DEFA
 import { ALL_TOOLS, WINDOW_IDS, PANEL_EXCLUDED_IDS } from './ToolDock';
 import { saveDialog } from './ConfirmDialog';
 import { saveViewState } from '../stores/viewState';
-import { DEFAULT_TOOLBAR_LEFT, stripTall } from './toolbarBuiltins';
+import { DEFAULT_TOOLBAR_LEFT, stripTall, setSectionTitle } from './toolbarBuiltins';
 import { tokenIcon, tokenLabel, spacerPx } from './tokenMeta';
 import { buildRibbonPalette } from './ribbonPaletteData';
 import EditElementsDialog from './EditElementsDialog';
@@ -687,9 +687,28 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
 
      v7.58, Derek: "we no longer need the ability to drag items from this
      window directly onto the toolbar." The tab lists the toolbar as Shown and
-     Hidden columns now, like every other tab, so the bar is a preview again
-     rather than a second editor for the same sequence. The flag is gone with
-     the mode; Toolbar's edit rendering and ribbonDrag go with it. */
+     Hidden columns now, like every other tab, so the bar is no longer a second
+     editor for the same sequence. Toolbar's edit rendering and ribbonDrag went
+     with the mode.
+
+     v7.59, Derek: "when in the ribbon bar editor, the ribbon bar should still
+     be highlighted like it used to be so that it is clear that it is edited
+     directly." The RING comes back — just the ring. It was doing a second job
+     all along: not only "you can drop here" but "this bar is what this tab
+     edits, and it changes as you go." The first job is gone; the second is
+     exactly what a list of tokens with no visible connection to a bar needs.
+
+     Not the spotlight that came with it: two scrims dimmed the whole app so
+     the ribbon was the only droppable thing. There is nothing to drop now, and
+     dimming the editor to point at a bar the tab already changes live would be
+     theatre. */
+  const highlightToolbar = open && activeCat === 'toolbar' && !uiResizeLocked;
+  React.useEffect(() => {
+    useEditorStore.getState().setToolbarHighlighted(highlightToolbar);
+    // Leaving the tab, closing the window, or unmounting must clear it — a ring
+    // left burning on a bar nothing is editing is worse than no ring.
+    return () => { useEditorStore.getState().setToolbarHighlighted(false); };
+  }, [highlightToolbar]);
 
   // v3.29, Derek: the window OPENS below the toolbar ribbon so the whole bar
   // stays visible while editing (it's still draggable anywhere after).
@@ -1027,12 +1046,7 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                                  empty title still paints its band on the bar.
                                  A title you have cleared is a title you have
                                  deleted. */
-                              onCommit={(v) => setToolbarZones(
-                                v.trim()
-                                  ? tbLeft.map((t) => (t === tok ? `st:${v}` : t))
-                                  : tbLeft.filter((t) => t !== tok),
-                                tbRight,
-                              )}
+                              onCommit={(v) => setToolbarZones(setSectionTitle(tbLeft, tok, v), tbRight)}
                             />
                           ) : (
                             <span className={tbIsStructural(tok) ? 'fs-dnd-structural' : undefined}>

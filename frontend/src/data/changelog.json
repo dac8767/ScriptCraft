@@ -1,5 +1,13 @@
 [
   {
+    "version": "7.59",
+    "date": "2026-08-18",
+    "changes": [
+      "The ribbon bar is highlighted again while the Ribbon Toolbar tab is open, so it's clear that the list you're editing is that bar — and that it changes as you go. Just the accent ring: the dimming that used to come with it was there to make the bar the only thing you could drop onto, and there's nothing to drop now.",
+      "The machinery behind the old in-place bar editor is gone — about 1,300 lines of drag handling, on-bar handles, the add menu and their styles, all unreachable since v7.58. Nothing you can see changes; the app just no longer carries a second toolbar editor it doesn't use."
+    ]
+  },
+  {
     "version": "7.58",
     "date": "2026-08-18",
     "changes": [

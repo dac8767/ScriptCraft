@@ -730,27 +730,6 @@
 }
 .fs-saveas-draft { color: inherit; }
 
-/* ═══ v4.25, Derek: ribbon-edit HORIZONTAL drop line ═══
-   Dragging an item into the upper/lower band of a ONE-ROW section splits it
-   into two rows; this bar previews the NEW ROW, spanning the section's width
-   exactly where that row will appear. The vertical partners
-   (.rib-edit-dropline / .rib-edit-sec-dropline — the blank-space new-SECTION
-   drop reuses the latter) live in 24-notebook.css with the other rib-edit
-   styles. Same accent, same pointer-events:none (the drag hit-test must read
-   the row underneath, not the indicator), and NET-ZERO height via negative
-   margins so its appearance never shifts the row it points at (the v3.38
-   flutter lesson). In-flow child of the .rib-section flex column. */
-.rib-edit-dropline-h {
-  height: 3px;
-  align-self: stretch;
-  margin: -1.5px 2px;
-  border-radius: 2px;
-  background: var(--fd-accent);
-  flex-shrink: 0;
-  z-index: 4;
-  pointer-events: none;
-}
-
 
 /* v7.55, Derek: "the large drop down fields at the top should be scaled down
    horizontally as well." These two hold "(CONT'D)" and "(MORE)" — eight

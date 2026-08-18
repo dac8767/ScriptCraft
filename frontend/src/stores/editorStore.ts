@@ -313,7 +313,6 @@ export const MENU_BAR_LABELS = ['File', 'Edit', 'View', 'Insert', 'Format', 'Pro
 
 /** v3.36: where a dragged ribbon item would drop — section index, which row,
  *  and the item slot. Shared by the in-place editor's drag controller. */
-export interface RibDropSpot { sec: number; row: 'top' | 'bottom'; idx: number }
 
 /**
  * v0.85: Navigator belongs INSIDE the left panel by default. It already does on
@@ -1059,10 +1058,18 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
    *  Customize > Toolbar tab shows only the palette; the bar itself becomes
    *  the drop surface while that tab is open, and locks when it closes.
    *  These are EPHEMERAL (not persisted). */
-  toolbarEditing: boolean;
-  setToolbarEditing: (b: boolean) => void;
-  ribEdit: { dragging: boolean; spot: RibDropSpot | null; secSpot: number | null };
-  setRibEdit: (partial: Partial<{ dragging: boolean; spot: RibDropSpot | null; secSpot: number | null }>) => void;
+  /** v7.59, Derek: "when in the ribbon bar editor, the ribbon bar should still
+   *  be highlighted like it used to be so that it is clear that it is edited
+   *  directly." True while the Customize window (or Settings) is showing the
+   *  Ribbon Toolbar tab — the tab's Shown column edits THIS bar, live, and the
+   *  ring is what says so.
+   *
+   *  Named for what it does. Its predecessor was `toolbarEditing` and it meant
+   *  something stronger: the bar WAS the editor, a drop surface with handles
+   *  (v3.36–v7.57). That mode is gone; a flag still called "editing" would be
+   *  an invitation to hang behaviour off it again. */
+  toolbarHighlighted: boolean;
+  setToolbarHighlighted: (b: boolean) => void;
   setQatItems: (ids: string[]) => void;
   /** v2.11: Outline Bar zoom — pixels per page on the timeline. 0 = fit
    *  the whole ruler to the visible width. Persisted view state. */
@@ -1594,13 +1601,8 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   },
   toolbarDdWidths: (_vs.toolbarDdWidths && typeof _vs.toolbarDdWidths === 'object')
     ? (_vs.toolbarDdWidths as Record<string, number>) : {},
-  toolbarEditing: false,
-  setToolbarEditing: (b) => set({
-    toolbarEditing: b,
-    ...(b ? {} : { ribEdit: { dragging: false, spot: null, secSpot: null } }),
-  }),
-  ribEdit: { dragging: false, spot: null, secSpot: null },
-  setRibEdit: (partial) => set((s) => ({ ribEdit: { ...s.ribEdit, ...partial } })),
+  toolbarHighlighted: false,
+  setToolbarHighlighted: (b) => set({ toolbarHighlighted: b }),
   outlineBarZoom: (_vs.outlineBarZoom as number) ?? 0,
   setOutlineBarZoom: (px) => {
     saveViewState({ outlineBarZoom: px });
