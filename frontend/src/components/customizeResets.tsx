@@ -5,6 +5,7 @@
  * plus the Reset All button (moved there from the Customize globals). Add a
  * reset here and every surface picks it up — no drifting copies.
  */
+import React from 'react';
 import { useEditorStore, DEFAULT_TOOL_CONFIG, DEFAULT_TOOL_ORDER, DEFAULT_MORES_CONTDS } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { useWindowUndoStore } from '../stores/windowUndoStore';
@@ -221,22 +222,63 @@ export function runCustomizeReset(a: ResetAction): void {
  *  warning window" — every entry warns first and lands on the window-undo
  *  lane, through the ONE wrapper (runMajorChange), so no button can drift
  *  back to resetting silently. */
-export function ResetSection({ tab }: { tab: CustomizeTabId }) {
+/**
+ * TabActionBar — the one bar that closes every Customize tab.
+ *
+ * v7.55, Derek, of the bottom of these tabs: "now it just looks like a random
+ * stack of buttons. figure out a way to organize where buttons that is clean
+ * and intuitive. the size is good, the arrangement/presentation is not."
+ *
+ * He was right, and the stack was structural rather than stylistic. Three
+ * separate blocks ended each tab, each authored somewhere different and none
+ * of them aware of the others: the tab's own adder row, a Reset section with
+ * its own heading, and the Export/Import row. Stacked with their own margins
+ * they read as three unrelated afterthoughts, because that is what they were.
+ *
+ * One bar now, with a grammar the rest of the app already uses — the same one
+ * as any dialog footer:
+ *
+ *   [ things that ADD to the list above ] … [ resets ] │ [ transfer ]
+ *
+ * Left is contextual: it acts on what you are looking at. Right is the tab's
+ * own housekeeping, and the hairline separates undoing your changes from
+ * moving them between installs, which are near enough to confuse and far
+ * enough apart to matter.
+ *
+ * The "Reset to Default" heading is gone with the stack. It was labelling a
+ * section that no longer exists, in front of buttons that already say "Reset
+ * Transitions" and "Reset Items" — a heading whose whole job was to announce
+ * what its buttons announce.
+ */
+export function TabActionBar({ tab, adders, presets }: {
+  tab: CustomizeTabId;
+  /** The tab's own adders. They belong at the LEFT, next to what they add to. */
+  adders?: React.ReactNode;
+  /** Export / Import. Omitted where a window footer already carries them —
+   *  they move whole-app presets, not this tab's, so two doors would be a lie
+   *  about scope as well as a duplicate. */
+  presets?: React.ReactNode;
+}) {
   const actions = CUSTOMIZE_RESETS.filter((a) => a.tab === tab);
-  if (!actions.length) return null;
+  if (!adders && !actions.length && !presets) return null;
   return (
-    <section className="fs-reset-section">
-      <h3>Reset to Default</h3>
-      <div className="fs-reset-row">
-        {actions.map((a) => (
-          <button
-            key={a.id}
-            className="dialog-btn dialog-btn-sm"
-            onClick={() => runCustomizeReset(a)}
-          >{a.label}</button>
-        ))}
-      </div>
-    </section>
+    <div className="fs-tabbar">
+      {adders && <div className="fs-tabbar-group">{adders}</div>}
+      <div className="fs-tabbar-gap" />
+      {actions.length > 0 && (
+        <div className="fs-tabbar-group">
+          {actions.map((a) => (
+            <button
+              key={a.id}
+              className="dialog-btn dialog-btn-sm"
+              onClick={() => runCustomizeReset(a)}
+            >{a.label}</button>
+          ))}
+        </div>
+      )}
+      {actions.length > 0 && presets && <span className="fs-tabbar-divider" aria-hidden="true" />}
+      {presets && <div className="fs-tabbar-group">{presets}</div>}
+    </div>
   );
 }
 

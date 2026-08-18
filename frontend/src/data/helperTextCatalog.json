@@ -121,7 +121,8 @@
   "area": "Customize Window",
   "where": [
    "components/CustomizePanelsDialog.tsx"
-  ]
+  ],
+  "label": "Hide All"
  },
  {
   "text": "Add a synopsis for this scene",

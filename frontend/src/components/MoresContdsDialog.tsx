@@ -128,7 +128,7 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
             the top of the next.
           </p>
 
-          <div className="props-field props-field-wide">
+          <div className="props-field props-field-wide fs-mores-field">
             <label className="props-label">Continued text</label>
             <select
               className="props-input"
@@ -153,7 +153,7 @@ const MoresContdsDialog: React.FC<Props> = ({ onClose, embedded = false }) => {
             )}
           </div>
 
-          <div className="props-field props-field-wide">
+          <div className="props-field props-field-wide fs-mores-field">
             <label className="props-label">More text</label>
             <select
               className="props-input"

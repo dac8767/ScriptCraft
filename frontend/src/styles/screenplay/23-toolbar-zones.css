@@ -751,3 +751,12 @@
   pointer-events: none;
 }
 
+
+/* v7.55, Derek: "the large drop down fields at the top should be scaled down
+   horizontally as well." These two hold "(CONT'D)" and "(MORE)" — eight
+   characters — and were stretching the full width of the Settings panel,
+   ~1,230px, because `props-field-wide` means "span the whole grid row" and the
+   grid row is the panel. Wide is still right for the LABEL's row (it keeps its
+   own line); it was never right for the control. Capped at a width the longest
+   preset comfortably fits, so the field looks like what it holds. */
+.fs-mores-field .props-input { max-width: 260px; }

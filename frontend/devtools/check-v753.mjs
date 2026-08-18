@@ -26,6 +26,21 @@
  * no labelled button in any Settings tab may exceed a share of its panel, and
  * every one must sit on a height the scale actually defines.
  *
+ * v7.55 — THIS CHECK MISSED TWO, and the correction is the interesting part.
+ * Derek came back with "these buttons were not fixed in the last round of
+ * updates", of Export Themes… and Import Themes…. They slipped through twice
+ * over: they are AddMenu components rather than plain `button`s, so the survey
+ * below never queried them, and at 304px in a 1,308px panel they sat under a
+ * threshold expressed as a SHARE OF THE PANEL.
+ *
+ * The share was the wrong measure. What makes a button look wrong is being far
+ * wider than its own label — that reads as broken in a narrow panel and a wide
+ * one alike, and it is scale-invariant, so it does not quietly stop applying
+ * when a window is resized. The survey now measures SLACK: the control's width
+ * minus the width its own text actually needs. It also queries selects and
+ * AddMenu triggers, not just buttons, because "dark thing stretched across the
+ * panel" was never really about the tag name.
+ *
  * The specificity fix is checked too, because it is the one with reach beyond
  * these tabs. `.dialog-footer button` and `.dialog-actions button` are the
  * fallback for a bare button dropped in a footer, but at 0,1,1 they outranked
@@ -71,6 +86,17 @@ for (const label of tabs) {
     if (!c) return [];
     const cw = c.getBoundingClientRect().width;
     const re = new RegExp(spec);
+    /* Measure the width this control's own text needs, in its own font. */
+    const textWidth = (el) => {
+      const probe = document.createElement('span');
+      probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:'
+        + getComputedStyle(el).font;
+      probe.textContent = el.textContent || el.value || '';
+      document.body.appendChild(probe);
+      const w = probe.getBoundingClientRect().width;
+      probe.remove();
+      return w;
+    };
     return [...c.querySelectorAll('button')]
       .filter((b) => b.getBoundingClientRect().height > 0 && b.textContent.trim().length > 1)
       // A segmented toggle's halves wear only `active`/nothing — the control
@@ -88,6 +114,7 @@ for (const label of tabs) {
           pct: Math.round((rc.width / cw) * 100),
           font: cs.fontSize,
           radius: cs.borderRadius,
+          slack: Math.round(rc.width - textWidth(b)),
         };
       });
   }, { lab: label, spec: SPECIALISED });
@@ -96,16 +123,56 @@ for (const label of tabs) {
 ok('there are labelled buttons to check at all', surveyed.length >= 15,
   `${surveyed.length} across ${tabs.length} tabs`);
 
-/* THE ONE THAT WOULD CATCH A RELAPSE. Before this change the worst was 95% of
-   the panel; a label-sized button is nowhere near a third of a Settings
-   panel. */
-const slabs = surveyed.filter((b) => b.pct >= 30);
-ok('no labelled button takes a third of its panel',
+/* Every CONTROL that holds a label, not just <button> — a select and an
+   AddMenu trigger stretch exactly the same way, and the two Derek had to
+   report twice were AddMenus. The size-scale assertions further down stay
+   button-only, because a dropdown has its own row on the scale. */
+const controls = [];
+for (const label of tabs) {
+  const rows = await page.evaluate(async (lab) => {
+    [...document.querySelectorAll('.prefs-tab')].find((x) => x.textContent.trim() === lab).click();
+    await new Promise((r) => setTimeout(r, 600));
+    const c = document.querySelector('.prefs-content');
+    if (!c) return [];
+    const textWidth = (el) => {
+      const probe = document.createElement('span');
+      probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:'
+        + getComputedStyle(el).font;
+      probe.textContent = el.textContent || el.value || '';
+      document.body.appendChild(probe);
+      const w = probe.getBoundingClientRect().width;
+      probe.remove();
+      return w;
+    };
+    return [...c.querySelectorAll('button, select, .fs-addmenu-trigger')]
+      .filter((e) => e.getBoundingClientRect().height > 0
+        && String(e.textContent || e.value || '').trim().length > 1)
+      .map((e) => ({
+        tab: lab,
+        label: String(e.textContent || e.value).trim().slice(0, 22),
+        cls: e.className,
+        w: Math.round(e.getBoundingClientRect().width),
+        slack: Math.round(e.getBoundingClientRect().width - textWidth(e)),
+      }));
+  }, label);
+  controls.push(...rows);
+}
+ok('the wider survey sees selects and menus too, not just buttons',
+  controls.length > surveyed.length, `${controls.length} controls vs ${surveyed.length} buttons`);
+
+/* THE ONE THAT WOULD CATCH A RELAPSE, and the one that FAILED to in v7.53.
+   Slack — width minus the width the label needs — is the honest measure: it
+   reads the same in a narrow panel and a wide one, where a share-of-panel
+   threshold silently stops applying as the window grows. 140px of slack is
+   already a button twice the size of its word; the ones Derek reported carried
+   190px and the worst of the originals over 600px. */
+const slabs = controls.filter((b) => b.slack > 140);
+ok('no control is far wider than the label it holds',
   slabs.length === 0,
   JSON.stringify(slabs.slice(0, 4)));
-const widest = surveyed.reduce((a, b) => (b.pct > a.pct ? b : a), surveyed[0]);
-ok('…and the widest one is comfortably label-sized',
-  widest.pct < 25, JSON.stringify(widest));
+const loosest = controls.reduce((a, b) => (b.slack > a.slack ? b : a), controls[0]);
+ok('…and the loosest one is still comfortably label-sized',
+  loosest.slack <= 140, JSON.stringify(loosest));
 
 /* Every one on a height the scale defines — 34/14 for an action, 26/12 for a
    compact. A fourth size nobody chose is how this started. */

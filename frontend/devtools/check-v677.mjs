@@ -178,14 +178,17 @@ try {
   /* ── a Customize tab reset (they all ride the same wrapper) ── */
   await page.evaluate(() => window.__scStore.getState().setQatItems(['save', 'print']));
   await page.evaluate(() => window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' })));
-  await page.waitForSelector('.fs-reset-section', { timeout: 8000 }).catch(() => {});
-  const hasCustomize = await page.evaluate(() => !!document.querySelector('.fs-reset-section'));
+  /* v7.55: the per-tab Reset section became the tab's one action bar (adders
+     left, resets and transfer right) — Derek's "random stack of buttons".
+     Selectors move with it; what is checked below does not change. */
+  await page.waitForSelector('.fs-tabbar', { timeout: 8000 }).catch(() => {});
+  const hasCustomize = await page.evaluate(() => !!document.querySelector('.fs-tabbar'));
   if (hasCustomize) {
     // land on the Quick Access tab so its Reset Items is on screen
     await page.evaluate(() => [...document.querySelectorAll('button')]
       .find((b) => /^Quick Access/.test(b.textContent.trim()))?.click());
     await settle(page);
-    await page.evaluate(() => [...document.querySelectorAll('.fs-reset-row button')]
+    await page.evaluate(() => [...document.querySelectorAll('.fs-tabbar button')]
       .find((b) => b.textContent === 'Reset Items')?.click());
     await page.waitForSelector('.fs-confirm-overlay', { timeout: 5000 });
     ok(/Quick Access Toolbar/i.test(await confirmBox()), 'a Customize reset warns, naming what it resets');

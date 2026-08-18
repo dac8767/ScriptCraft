@@ -24,7 +24,7 @@ import { buildRibbonPalette } from './ribbonPaletteData';
 import EditElementsDialog from './EditElementsDialog';
 import SuggestionRulesEditor from './SuggestionRulesEditor';
 import MoresContdsDialog from './MoresContdsDialog';
-import { ResetSection, type CustomizeTabId } from './customizeResets';
+import { TabActionBar, type CustomizeTabId } from './customizeResets';
 import { showToast } from './Toast';
 import ThemesTab from './ThemesTab';
 import MarkupsCustomizeTab from './MarkupsCustomizeTab';
@@ -357,30 +357,12 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       ...ALL_TOOLS.filter((t) => !WINDOW_IDS.includes(t.id) && !PANEL_PRODUCTION_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Tools', value: `t:${t.id}`, label: t.label })),
       ...ALL_TOOLS.filter((t) => PANEL_PRODUCTION_IDS.includes(t.id) && !cfgOf(t.id).enabled).map((t) => ({ group: 'Production', value: `t:${t.id}`, label: t.label })),
     ];
-    const onAdd = (value: string) => {
-      if (value === 'divider' || value === 'spacer') {
-        // Spacers share the dividers list — a divider with spacer: true (v0.69).
-        const id = String(Date.now());
-        setPanelDividers([
-          ...panelDividers,
-          { id, label: '', side: 'left', ...(value === 'spacer' ? { spacer: true } : {}) },
-        ]);
-        setToolOrder([...order, `div:${id}`]);
-      } else if (value.startsWith('all:')) {
-        const group = value.slice(4);
-        const next = { ...toolConfig };
-        addOptions
-          .filter((o) => o.group === group && o.value.startsWith('t:'))
-          .forEach((o) => {
-            const id = o.value.slice(2) as ToolId;
-            next[id] = { ...cfgOf(id), enabled: true, side: homeSide(id) };
-          });
-        setToolConfig(next);
-      } else if (value.startsWith('t:')) {
-        const id = value.slice(2) as ToolId;
-        setTool(id, { enabled: true, side: homeSide(id) });
-      }
-    };
+    /* v7.55: `onAdd` is gone with the two buttons that were its only caller —
+       + Divider and + Spacer, which moved into the tab's action bar and call
+       `addPanelItem` there. Its other two branches ('all:' and 't:', for
+       re-enabling tools) were already dead: the Hidden column's own + button
+       does that directly. tsc found the orphan; this note records that the
+       dead branches were dead before the move, not because of it. */
     // v4.65: the panels reset lives in customizeResets (the Reset section).
     const removeAll = () => {
       const next = { ...toolConfig };
@@ -528,19 +510,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
             />
           );
         })()}
-        <div className="fs-tbzone-adders">
-          <button
-            className="dialog-btn dialog-btn-sm"
-            title="Add a divider line to the left panel"
-            onClick={() => onAdd('divider')}
-          >+ Divider</button>
-          <button
-            className="dialog-btn dialog-btn-sm"
-            title="Add a spacer to the left panel"
-            onClick={() => onAdd('spacer')}
-          >+ Spacer</button>
-          {/* v4.66: Hide All moved into the Hidden column header. */}
-        </div>
       </section>
     );
   };
@@ -754,6 +723,43 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
       onClick={() => useEditorStore.getState().setUiResizeLocked(!uiResizeLocked)}
     >{uiResizeLocked ? 'Locked' : 'Lock All'}</button>
   );
+  /* v7.55: each tab's own adders, gathered here so TabActionBar can put them
+     at the LEFT of the one bar that closes the tab. They used to sit in loose
+     rows inside the tab body — which is how the bottom of these tabs became
+     the "random stack of buttons" Derek reported. */
+  const addPanelItem = (kind: 'divider' | 'spacer') => {
+    // Spacers share the dividers list — a divider with spacer: true (v0.69).
+    const id = String(Date.now());
+    const order = toolOrder.length ? toolOrder : [...DEFAULT_TOOL_ORDER];
+    setPanelDividers([
+      ...panelDividers,
+      { id, label: '', side: 'left', ...(kind === 'spacer' ? { spacer: true } : {}) },
+    ]);
+    setToolOrder([...order, `div:${id}`]);
+  };
+
+  const tabAdders: Partial<Record<string, React.ReactNode>> = {
+    panels: (<>
+      <button className="dialog-btn dialog-btn-sm" title="Add a divider line to the left panel"
+        onClick={() => addPanelItem('divider')}>+ Divider</button>
+      <button className="dialog-btn dialog-btn-sm" title="Add a spacer to the left panel"
+        onClick={() => addPanelItem('spacer')}>+ Spacer</button>
+    </>),
+    toolbar: (
+      <button className="dialog-btn dialog-btn-sm"
+        title="Hide every toolbar item (re-add items from the palette)"
+        onClick={() => setToolbarZones([], [])}>Hide All</button>
+    ),
+    qat: (<>
+      <button className="dialog-btn dialog-btn-sm"
+        title="Add a divider (a thin line) to the end — drag it into place"
+        onClick={() => setQatItems([...qatItems, `qdiv:${Date.now().toString(36)}`])}>Add Divider</button>
+      <button className="dialog-btn dialog-btn-sm"
+        title="Add a spacer (blank gap) to the end — drag it into place"
+        onClick={() => setQatItems([...qatItems, `qsp:${Date.now().toString(36)}`])}>Add Spacer</button>
+    </>),
+  };
+
   const presetButtons = (<>
     {/* v4.79, Derek: carry these choices between installs or scripts. Both
         run the shared preset flows (PresetsPanel), so the Customize footer,
@@ -839,14 +845,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 </span>
               </>}
             />
-            {/* v4.65: the size + layout resets moved to the Reset section. */}
-            <div className="fs-tbzone-adders">
-              <button
-                className="dialog-btn dialog-btn-sm"
-                title="Hide every toolbar item (re-add items from the palette)"
-                onClick={() => setToolbarZones([], [])}
-              >Hide All</button>
-            </div>
           </section>
           </>)}
           {activeCat === 'qat' && (<>
@@ -918,19 +916,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
                 setQatItems(next);
               }}
             />
-            <div className="fs-tbzone-adders">
-              <button
-                className="dialog-btn dialog-btn-sm"
-                title="Add a divider (a thin line) to the end — drag it into place"
-                onClick={() => setQatItems([...qatItems, `qdiv:${Date.now().toString(36)}`])}
-              >Add Divider</button>
-              <button
-                className="dialog-btn dialog-btn-sm"
-                title="Add a spacer (blank gap) to the end — drag it into place"
-                onClick={() => setQatItems([...qatItems, `qsp:${Date.now().toString(36)}`])}
-              >Add Spacer</button>
-              {/* v4.65: Reset moved to the Reset section at the bottom. */}
-            </div>
           </section>
           </>)}
           {activeCat === 'elements' && (<>
@@ -952,14 +937,19 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
           {activeCat === 'markups' && <MarkupsCustomizeTab />}
           {activeCat === 'context' && <ContextMenuTab />}
           {activeCat === 'panels' && renderPanelsTab()}
-          {/* v4.65, Derek: every tab ends in its Reset section (one registry —
-              customizeResets — also compiled by Settings ▸ Defaults). */}
-          <ResetSection tab={activeCat as CustomizeTabId} />
-          {/* Solo mode has no rail to host the global controls — they close
-              the tab's content instead. */}
-          {soloCategory && (
-            <div className="fs-customize-globals fs-customize-globals-row fs-customize-globals-solo">{presetButtons}</div>
-          )}
+          {/* v7.55, Derek: "now it just looks like a random stack of buttons."
+              It was three blocks — the tab's adders, a Reset section with its
+              own heading, and Export/Import — each authored somewhere else and
+              none aware of the others. One bar now: adders at the left where
+              they act on the list above, the tab's resets and transfer at the
+              right. The resets still come from the one customizeResets
+              registry that Settings ▸ Defaults also compiles. */}
+          <TabActionBar
+            tab={activeCat as CustomizeTabId}
+            adders={tabAdders[activeCat]}
+            /* Solo mode has no rail or footer to host these. */
+            presets={soloCategory ? presetButtons : undefined}
+          />
         </div>
       </div>
   );

@@ -350,8 +350,25 @@ label.fs-presets-row { cursor: pointer; }
 .fs-presets-dialog { width: 620px; max-width: 94vw; }
 .fs-presets-dialog .dialog-body { max-height: 66vh; overflow: auto; padding: 4px 16px 16px; }
 
-.fs-reset-section { margin-top: 18px; }
-.fs-reset-row { display: flex; flex-wrap: wrap; gap: 6px; }
+/* v7.55, Derek: "now it just looks like a random stack of buttons." The three
+   blocks that used to end a Customize tab — its adders, a Reset section with
+   its own heading, and Export/Import — are one bar. A rule above it separates
+   the tab's housekeeping from the tab's content, the way a dialog footer does;
+   the gap pushes the right-hand group to the edge so the two halves read as
+   two groups rather than one queue. */
+.fs-tabbar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-top: 16px; padding-top: 12px;
+  border-top: 1px solid var(--fd-border);
+}
+.fs-tabbar-group { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.fs-tabbar-gap { flex: 1 1 auto; }
+/* Resets and transfer are adjacent and easy to confuse; the hairline says
+   they are different kinds of thing. */
+.fs-tabbar-divider {
+  width: 1px; align-self: stretch; min-height: 18px;
+  background: var(--fd-border);
+}
 .fs-reset-all-btn {
   border: 1px solid #c0564f;
   border-radius: 5px;
@@ -975,7 +992,6 @@ input.fs-switch:checked::after { left: 15px; }
    tab list is one flat run now. */
 .fs-customize-solo { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 .fs-customize-solo > .fs-customize-body { flex: 1; min-height: 0; }
-.fs-customize-globals-solo { margin-top: 18px; }
 .prefs-tabs {
   width: 190px;
   flex-shrink: 0;

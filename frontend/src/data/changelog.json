@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.55",
+    "date": "2026-08-18",
+    "changes": [
+      "The bottom of every Customize tab is one action bar instead of three stacked blocks: what you can add to the list on the left, the tab's Reset and Export / Import on the right, with a rule above it and a hairline between the two. Quick Access, for example, went from three loose rows to one.",
+      "Fix: Export Themes… and Import Themes… were still stretched across the panel — they're sized to their labels now, along with the Continued Text and More Text dropdowns on the Editor tab, which were spanning the whole window to hold “(CONT'D)”.",
+      "The “Reset to Default” heading is gone. It sat above buttons that already say “Reset Items” and “Reset Transitions”."
+    ]
+  },
+  {
     "version": "7.54",
     "date": "2026-08-18",
     "changes": [

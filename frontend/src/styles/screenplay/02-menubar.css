@@ -34,9 +34,19 @@
    a checkmark against something you never chose. A menu has no selected state to
    advertise, which is also the truer model: these run an action, they don't hold
    a value. */
-.fs-addmenu { position: relative; display: inline-flex; flex: 1; min-width: 0; }
+/* v7.55, Derek: "these buttons were not fixed in the last round of updates" —
+   of Export Themes… and Import Themes…, which are these. The v7.53 sweep
+   missed them twice over: they are AddMenu components rather than plain
+   buttons, so the survey never looked at them, and at 304px they slipped under
+   a threshold measured as a share of the panel. The share was the wrong
+   measure — what makes a button look wrong is being far wider than its own
+   label, whatever the panel is doing.
+
+   `flex: 1` made each one an equal slice of its row, exactly as `.swn-add-btn`
+   did. Sizing to content is the default now; a caller that genuinely wants a
+   full-width picker asks for it. */
+.fs-addmenu { position: relative; display: inline-flex; min-width: 0; }
 .fs-addmenu-trigger {
-  width: 100%;
   padding: 5px 10px;
   background: var(--fd-input-bg, var(--fd-dropdown-bg));
   color: var(--fd-text);
