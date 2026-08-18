@@ -529,6 +529,16 @@
   "label": "Additional save locations:"
  },
  {
+  "text": "Choose a template above first",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/PageSetupTab.tsx"
+  ],
+  "label": "Apply to Script"
+ },
+ {
   "text": "Choose which annotations show (script and window together)",
   "kind": "tooltip",
   "sites": 1,
@@ -3238,8 +3248,7 @@
   "area": "Everything Else",
   "where": [
    "components/PageSetupTab.tsx"
-  ],
-  "label": "New Script Picker"
+  ]
  },
  {
   "text": "Sticky color",

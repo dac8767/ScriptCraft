@@ -17,10 +17,12 @@
  *
  *   · the tab has View, because it is the only place with a page setup to open;
  *     the dialog must not grow one, having nowhere to send it.
- *   · the dialog's rows are a CHOICE (click one, then Apply); the tab's are a
- *     management list where clicking means nothing, so its rows must not paint
- *     as selected — a row that highlights on click while doing nothing is the
- *     silent no-op this project treats as cardinal.
+ *   · both lists' rows are a CHOICE — click one, then Apply. The tab's were
+ *     inert when this check was written, on my reasoning that a management
+ *     list has nothing to select FOR; Derek corrected that in v7.51 and it now
+ *     applies templates too. The rule was never about which list it is: a row
+ *     must not highlight with nothing to act on the highlight, so the row and
+ *     its Apply are checked as a pair.
  *
  * And the Shown/Hidden columns must still be below all of it, which is the
  * half of Derek's message it would be easiest to satisfy by accident and lose
@@ -94,8 +96,17 @@ ok('the list is not clipped inside its own scroller here',
 ok('the retired base-picker row is really gone from the tab',
   tabShape.basePicker === false, JSON.stringify(tabShape));
 
-/* A management list, not a chooser. Clicking a row must do NOTHING visible —
-   a row that highlights and then has no Apply to act on is a lie. */
+/* v7.50 asserted the OPPOSITE of what follows, and the correction is worth
+   keeping visible. I had made these rows inert on the reasoning that the tab
+   was a management list where a selection meant nothing. Derek: "the window
+   lacks the ability to select a template and apply it, like the other window
+   has." So it is a chooser as well, from v7.51.
+
+   The rule underneath did not change, only which side of it this list is on: a
+   row must never highlight with nothing to act on the highlight. So what is
+   checked here is the PAIR — the row selects, AND there is an Apply that
+   consumes the selection. Either one alone is the dead affordance. (What the
+   Apply actually does is check-v751's job.) */
 const clicked = await page.evaluate(async () => {
   const card = document.querySelectorAll('.pst-list .template-select-item')[1];
   card.click();
@@ -103,10 +114,15 @@ const clicked = await page.evaluate(async () => {
   return {
     selected: card.classList.contains('selected'),
     anySelected: document.querySelectorAll('.pst-list .template-select-item.selected').length,
+    apply: [...document.querySelectorAll('.pst-newrow button')]
+      .filter((b) => /Apply to Script/.test(b.textContent))
+      .map((b) => ({ disabled: b.disabled })),
   };
 });
-ok('clicking a row in the tab selects nothing — there is no Apply to select for',
-  clicked.selected === false && clicked.anySelected === 0, JSON.stringify(clicked));
+ok('clicking a row in the tab selects it', clicked.selected === true, JSON.stringify(clicked));
+ok('…exactly one at a time', clicked.anySelected === 1, JSON.stringify(clicked));
+ok('…and there is an Apply for that selection to feed',
+  clicked.apply.length === 1 && clicked.apply[0].disabled === false, JSON.stringify(clicked));
 
 await page.evaluate(() => window.__scStore.getState().closePreferences?.());
 await page.waitForTimeout(400);

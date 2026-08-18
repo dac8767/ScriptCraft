@@ -1,5 +1,13 @@
 [
   {
+    "version": "7.51",
+    "date": "2026-08-18",
+    "changes": [
+      "Settings ▸ Page Setup can now select a template and apply it to the open script, the way the Format ▸ Script Format / Template window does — click a row, then “Apply to Script”. It opens with the template your script is already using selected. Unlike the Format window it leaves Settings open afterwards and confirms with a message, rather than closing the whole window while you're still configuring things.",
+      "Applying a template is one shared piece of work now, so both windows do all of it: the template's page setup lands on the script, conflicts (an element the new template drops) are asked about first, and starter content is only ever seeded into an empty document."
+    ]
+  },
+  {
     "version": "7.50",
     "date": "2026-08-18",
     "changes": [

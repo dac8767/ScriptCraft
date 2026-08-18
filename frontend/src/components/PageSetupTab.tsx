@@ -19,6 +19,7 @@
  * than kept as a second way to do one thing.
  */
 import { useState } from 'react';
+import type { Editor } from '@tiptap/react';
 import { SYSTEM_TEMPLATE_LIST, useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import type { FormattingTemplate } from '../stores/formattingTypes';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
@@ -26,6 +27,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import TemplateEditorDialog from './TemplateEditorDialog';
 import PageSetupDialog from './PageSetupDialog';
 import TemplateCard from './TemplateCard';
+import { useApplyTemplate } from '../hooks/useApplyTemplate';
 import { DndColumns, type DndColumnSpec } from './CustomizePanelsDialog';
 import { showToast } from './Toast';
 
@@ -69,7 +71,7 @@ function TemplatePageSetup({ t, onClose }: { t: FormattingTemplate; onClose: () 
   );
 }
 
-export default function PageSetupTab() {
+export default function PageSetupTab({ editor }: { editor?: Editor | null }) {
   const templates = useFormattingTemplateStore((s) => s.templates);
   const createTemplate = useFormattingTemplateStore((s) => s.createTemplate);
   const updateTemplate = useFormattingTemplateStore((s) => s.updateTemplate);
@@ -94,6 +96,15 @@ export default function PageSetupTab() {
 
   const [editing, setEditing] = useState<FormattingTemplate | null>(null);
   const [viewing, setViewing] = useState<FormattingTemplate | null>(null);
+  /* v7.51, Derek: "the window lacks the ability to select a template and apply
+     it, like the other window has." So a row here is a choice as well as a
+     thing to manage, and it starts on the one the script is already using —
+     the same place the Format window starts. */
+  const [selectedId, setSelectedId] = useState<string>(activeId);
+  const { requestApply, conflictDialog } = useApplyTemplate(
+    editor ?? null,
+    (t) => showToast(`“${t.name}” applied to the script.`, 'success'),
+  );
 
   /* A template the writer just made must appear in the New Script picker, or
      they have made something they cannot find. Same reason the duplicate
@@ -102,6 +113,10 @@ export default function PageSetupTab() {
     setShown([...shownIds, t.id]);
     setEditing(t);
   };
+
+  /* The union of built-ins and custom ones — the built-ins are constants
+     rather than rows in `templates`, so neither list alone can resolve an id. */
+  const selectedTemplate = all.find((t) => t.id === selectedId) ?? null;
 
   const createBlank = async () => {
     showAndEdit(await createTemplate({ name: 'New Template' }));
@@ -132,6 +147,8 @@ export default function PageSetupTab() {
       key={t.id}
       template={t}
       isCurrent={t.id === activeId}
+      selected={t.id === selectedId}
+      onSelect={() => setSelectedId(t.id)}
       onView={() => setViewing(t)}
       onEdit={setEditing}
       onDuplicated={(dup) => setShown([...shownIds, dup.id])}
@@ -222,11 +239,28 @@ export default function PageSetupTab() {
               left is the one thing Duplicate cannot do: start from blank. */}
           <div className="pst-newrow">
             <button
-              className="dialog-btn dialog-btn-primary"
+              className="dialog-btn"
               title="Start a new template from scratch — or use Duplicate on a row above to base one on it"
               onClick={() => { void createBlank(); }}
             >
               + Create Template
+            </button>
+            <div className="pst-newrow-spacer" />
+            {/* v7.51: applying goes through the SAME flow the Format window
+                uses — conflicts asked about, page layout carried over, starter
+                content only into an empty document. Settings stays open
+                afterwards and says so with a toast; closing the whole window
+                out from under someone mid-configuration would be its own
+                surprise. */}
+            <button
+              className="dialog-btn dialog-btn-primary"
+              disabled={!selectedTemplate}
+              title={selectedTemplate
+                ? `Format the open script with “${selectedTemplate.name}”`
+                : 'Choose a template above first'}
+              onClick={() => { if (selectedTemplate) requestApply(selectedTemplate); }}
+            >
+              Apply to Script
             </button>
           </div>
         </section>
@@ -239,6 +273,8 @@ export default function PageSetupTab() {
           <DndColumns columns={columns} onDrop={onDrop} />
         </section>
       </div>
+
+      {conflictDialog}
 
       {viewing && <TemplatePageSetup t={viewing} onClose={() => setViewing(null)} />}
 

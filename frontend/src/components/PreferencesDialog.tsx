@@ -838,7 +838,9 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
   /** v1.21: open straight ON a tab — Save As sends you to Save Options. */
   openTab?: PrefTab;
 }) {
-  void editor;   // v7.06: accepted for call-site compatibility; no tab uses it
+  // v7.51: Page Setup uses it again — its list can apply a template to the
+  // open script now, which needs the editor for the conflict pass and for
+  // seeding starter content into an empty document.
   const [tab, setTab] = useState<PrefTab>('general');
 
   /* v6.99 (Derek, via the feedback form): Save/Cancel footer, Customize-
@@ -1004,7 +1006,7 @@ export default function PreferencesDialog({ open, onClose, editor, openTab }: {
                 onClose={() => {}}
               />
             )}
-            {tab === 'page' && <PageSetupTab />}
+            {tab === 'page' && <PageSetupTab editor={editor} />}
             {tab === 'keys' && <KeyboardShortcutsTab />}
             {tab === 'saveloc' && <SaveLocationsTab />}
             {tab === 'languages' && (

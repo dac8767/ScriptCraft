@@ -14,14 +14,11 @@ import React, { useState, useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useFormattingTemplateStore, SYSTEM_TEMPLATES, SYSTEM_TEMPLATE_LIST } from '../stores/formattingTemplateStore';
 import { INDUSTRY_STANDARD_ID } from '../stores/formattingTypes';
-import { useEditorStore } from '../stores/editorStore';
 import { INDUSTRY_STANDARD_TEMPLATE } from '../stores/industryStandardTemplate';
 import type { FormattingTemplate } from '../stores/formattingTypes';
 import TemplateEditorDialog from './TemplateEditorDialog';
 import TemplateCard from './TemplateCard';
-import TemplateConflictDialog from './TemplateConflictDialog';
-import { detectTemplateConflicts, resolveTemplateConflicts, getEnabledElementOptions } from '../utils/templateConflicts';
-import type { TemplateConflicts } from '../utils/templateConflicts';
+import { useApplyTemplate } from '../hooks/useApplyTemplate';
 import { showToast } from './Toast';
 
 interface TemplateSelectDialogProps {
@@ -33,7 +30,6 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
   const {
     templates,
     activeTemplateId,
-    setActiveTemplateId,
     loadTemplates,
     createTemplate,
     updateTemplate,
@@ -41,8 +37,6 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
 
   const [selectedId, setSelectedId] = useState<string | null>(activeTemplateId);
   const [editingTemplate, setEditingTemplate] = useState<FormattingTemplate | null>(null);
-  const [pendingConflicts, setPendingConflicts] = useState<TemplateConflicts | null>(null);
-  const [pendingTemplate, setPendingTemplate] = useState<FormattingTemplate | null>(null);
 
   useEffect(() => { loadTemplates(); }, [loadTemplates]);
 
@@ -58,75 +52,12 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
     return templates.find((t) => t.id === selectedId) || INDUSTRY_STANDARD_TEMPLATE;
   };
 
-  /** Returns true if the editor doc has no user-authored content (single empty paragraph or empty). */
-  const isEmptyDoc = (): boolean => {
-    if (!editor || editor.isDestroyed) return false;
-    const doc = editor.state.doc;
-    if (doc.childCount === 0) return true;
-    if (doc.childCount === 1 && doc.firstChild?.textContent === '') return true;
-    return false;
-  };
-
-  const applyTemplate = (template: FormattingTemplate) => {
-    if (template.id === INDUSTRY_STANDARD_ID) {
-      setActiveTemplateId(null);
-    } else {
-      setActiveTemplateId(template.id);
-    }
-    /* v7.10, Derek: a template's PAGE SETUP is part of the template. Settings
-       ▸ Page Setup ▸ View edits a full page of fields per template (built-ins
-       included); choosing the template is what puts those measurements on the
-       script. Without this the fields would look like they worked and change
-       nothing — the failure mode this repo keeps finding. */
-    useEditorStore.getState().setPageLayout(
-      useFormattingTemplateStore.getState().getTemplatePageLayout(template.id),
-    );
-    // Seed starter content for empty docs (e.g. new-script flow). Existing content is left untouched.
-    if (template.starterDocument && template.starterDocument.length > 0 && editor && !editor.isDestroyed && isEmptyDoc()) {
-      try {
-        editor.chain().focus().setContent({ type: 'doc', content: template.starterDocument as unknown as Record<string, unknown>[] }).run();
-      } catch (err) {
-        console.warn('[TemplateSelectDialog] failed to seed starter document', err);
-      }
-    }
-    onClose();
-  };
-
-  const handleApply = () => {
-    const template = getSelectedTemplate();
-
-    // Detect conflicts if we have an editor with content
-    if (editor && !editor.isDestroyed) {
-      const conflicts = detectTemplateConflicts(editor, template);
-      if (conflicts.hasConflicts) {
-        setPendingTemplate(template);
-        setPendingConflicts(conflicts);
-        return;
-      }
-    }
-
-    applyTemplate(template);
-  };
-
-  const handleConflictResolve = (resolved: TemplateConflicts) => {
-    if (editor && pendingTemplate) {
-      resolveTemplateConflicts(editor, pendingTemplate, resolved);
-    }
-    if (pendingTemplate) applyTemplate(pendingTemplate);
-    setPendingConflicts(null);
-    setPendingTemplate(null);
-  };
-
-  const handleConflictSkip = () => {
-    if (pendingTemplate) applyTemplate(pendingTemplate);
-    setPendingConflicts(null);
-    setPendingTemplate(null);
-  };
-
-  const handleConflictCancel = () => {
-    setPendingConflicts(null);
-    setPendingTemplate(null);
-  };
+  /* v7.51: applying lives in useApplyTemplate, shared with Settings ▸ Page
+     Setup, which grew its own Apply at Derek's request. Applying is four
+     things, not one — the active id, the template's page layout, the conflict
+     question, and starter content for an empty doc — and three of them are the
+     kind that go missing without anything looking wrong. */
+  const { requestApply, conflictDialog } = useApplyTemplate(editor, onClose);
 
   // Split templates by category — SYSTEM_TEMPLATE_LIST owns the canonical order of script-type templates.
   const systemTemplates: FormattingTemplate[] = SYSTEM_TEMPLATE_LIST;
@@ -188,7 +119,7 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
         {/* Actions */}
         <div className="template-select-actions">
           <button className="dialog-btn" onClick={onClose}>Cancel</button>
-          <button className="dialog-btn dialog-btn-primary" onClick={handleApply}>Apply</button>
+          <button className="dialog-btn dialog-btn-primary" onClick={() => requestApply(getSelectedTemplate())}>Apply</button>
         </div>
 
         {/* Template Editor sub-dialog */}
@@ -204,17 +135,7 @@ const TemplateSelectDialog: React.FC<TemplateSelectDialogProps> = ({ editor, onC
           />
         )}
 
-        {/* Template Conflict Resolution sub-dialog */}
-        {pendingConflicts && pendingTemplate && (
-          <TemplateConflictDialog
-            conflicts={pendingConflicts}
-            enabledElements={getEnabledElementOptions(pendingTemplate)}
-            templateName={pendingTemplate.name}
-            onResolve={handleConflictResolve}
-            onSkip={handleConflictSkip}
-            onCancel={handleConflictCancel}
-          />
-        )}
+        {conflictDialog}
       </div>
     </div>
   );
