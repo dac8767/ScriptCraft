@@ -7,6 +7,8 @@ import { computeOverviewStats } from '../utils/scriptStatistics';
 import { GoalChip } from './GoalsTool';
 import { computeScriptStructure } from '../utils/scriptStructure';
 import { useNotebookStore } from '../stores/notebookStore';
+import { useProjectStore } from '../stores/projectStore';
+import { formatSaveMoment } from '../utils/dateFormat';
 
 const SAVE_STATUS_DISPLAY: Record<string, { label: string; className: string }> = {
   idle: { label: '', className: '' },
@@ -33,6 +35,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
     goal,
   } = useEditorStore();
   const mirrorStatuses = useEditorStore((s) => s.mirrorStatuses);
+  /* v7.61, Derek: "in the footer of the entire app, add a new feature to the
+     right of the script name that shows the date and time of the last save.
+     this can be either auto save or manual save, but indicate which." */
+  const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
+  const lastSaveKind = useEditorStore((s) => s.lastSaveKind);
+  const lastSavedScriptId = useEditorStore((s) => s.lastSavedScriptId);
+  const currentScriptId = useProjectStore((s) => s.currentScriptId);
+  const dateFormat = useSettingsStore((s) => s.dateFormat);
   const { saveToGDrive, saveToOneDrive } = useSettingsStore();
   const enabledMirrors = [saveToGDrive && 'Google Drive', saveToOneDrive && 'OneDrive'].filter(Boolean) as string[];
   const mirrorChips: Array<[string, 'saving' | 'saved' | 'error']> = enabledMirrors
@@ -41,6 +51,25 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
   const getActiveTemplate = useFormattingTemplateStore((s) => s.getActiveTemplate);
 
   const saveDisplay = SAVE_STATUS_DISPLAY[saveStatus] || SAVE_STATUS_DISPLAY.idle;
+
+  /* The stamp belongs to ONE script. After switching, the previous script's
+     save time would otherwise sit there looking like this one's — so it shows
+     only while the id still matches. Nothing is shown before the first save of
+     the session either: there is no last save to report, and a blank is
+     honest where an invented time would not be. */
+  const lastSave = useMemo(() => {
+    if (!lastSavedAt || !lastSaveKind) return null;
+    if (lastSavedScriptId !== currentScriptId) return null;
+    const when = new Date(lastSavedAt);
+    return {
+      /* BOTH kinds say which, in parallel. A bare "Saved 11:04 PM" only reads
+         as "manual" if you have also seen "Auto-saved" at some other moment —
+         which is not indicating which, it is leaving it to be inferred from a
+         state that is not on screen. */
+      label: `${lastSaveKind === 'manual' ? 'Manually saved' : 'Auto-saved'} ${formatSaveMoment(when, dateFormat)}`,
+      title: `Last ${lastSaveKind === 'manual' ? 'manual' : 'automatic'} save — ${when.toLocaleString()}`,
+    };
+  }, [lastSavedAt, lastSaveKind, lastSavedScriptId, currentScriptId, dateFormat]);
   // With a takeover surface up (Scrapbook, Characters fullscreen) the editor
   // isn't what's on screen — the script-specific readouts (current element,
   // page count, acts, runtime, revision, goal) don't apply. File + account
@@ -106,6 +135,19 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
           {documentTitle || 'Untitled'}
           {draftLabel && <span className="status-draft"> - {draftLabel}</span>}
         </span>
+        {/* v7.61: when the script last saved, and whether Derek asked for it.
+            Right of the script name, in the same dot-separated run as the rest
+            of this side. "Saved" vs "Auto-saved" carries the WHICH — a bare
+            "Saved 11:04 PM" would leave the two indistinguishable, which is
+            the half of the request that is easy to drop. */}
+        {lastSave && (
+          <>
+            <span className="status-sep">&middot;</span>
+            <span className="status-item status-lastsave" title={lastSave.title}>
+              {lastSave.label}
+            </span>
+          </>
+        )}
         {/* v4.30 batch-v7 #4, Derek: no "Local System - Saved" chatter — saving
             is the normal state. A FAILURE still shows (hiding that would be a
             silent no-op); mirror chips below are other locations and stay. */}

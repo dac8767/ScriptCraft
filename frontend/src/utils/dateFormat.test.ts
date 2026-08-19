@@ -13,7 +13,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import type { DateFormatId } from './dateFormat';
-import { DATE_FORMATS, formatAppDate, parseISODate } from './dateFormat';
+import { DATE_FORMATS, formatAppDate, formatSaveMoment, parseISODate } from './dateFormat';
 
 // Local-time constructors, so getMonth()/getDate() in the formatters see exactly
 // these components regardless of the machine's time zone.
@@ -110,5 +110,60 @@ describe('parseISODate', () => {
     const leap = parseISODate('2028-02-29')!;
     expect([leap.getFullYear(), leap.getMonth(), leap.getDate()]).toEqual([2028, 1, 29]);
     expect(parseISODate('2026-02-29')).toBeNull();
+  });
+});
+
+/**
+ * v7.61 — the footer's "last saved" moment.
+ *
+ * The one real decision in it is TODAY vs any other day: today shows the time
+ * alone (the date is noise on a line you glance at mid-sentence), any other day
+ * leads with the date. Both branches are pinned here, plus the property that
+ * actually matters for consistency — the date half goes through the SAME
+ * registry as every other date in the app, so Settings ▸ General governs it.
+ *
+ * `now` is injected rather than read from the clock: a test that builds "today"
+ * from Date.now() passes at 11:00 and fails at 23:59:59.9 when the day turns
+ * between constructing the fixture and asserting on it.
+ */
+describe('formatSaveMoment (v7.61)', () => {
+  const now = new Date(2026, 7, 19, 14, 30);          // 19 Aug 2026, 2:30 PM
+
+  it('shows the time alone for a save made today', () => {
+    const out = formatSaveMoment(new Date(2026, 7, 19, 9, 5), 'short', now);
+    // Locale decides 12h/24h and the separator, so assert the SHAPE: a time,
+    // and no date component from any of the registry's formats.
+    expect(out).toMatch(/\d{1,2}[:.]\d{2}/);
+    expect(out).not.toMatch(/2026|08\/19|8\/19|19\/8/);
+  });
+
+  it('leads with the date for any other day', () => {
+    const out = formatSaveMoment(new Date(2026, 7, 18, 22, 5), 'short', now);
+    expect(out.startsWith('08/18/26')).toBe(true);
+    expect(out).toMatch(/\d{1,2}[:.]\d{2}/);
+  });
+
+  it('a save EARLIER on the same calendar day is still "today"', () => {
+    // Not a 24-hour window: 00:01 today is today even though it is >12h back.
+    const out = formatSaveMoment(new Date(2026, 7, 19, 0, 1), 'short', now);
+    expect(out).not.toMatch(/08\/19/);
+  });
+
+  it('…and the same clock time YESTERDAY is not', () => {
+    const out = formatSaveMoment(new Date(2026, 7, 18, 14, 30), 'short', now);
+    expect(out.startsWith('08/18/26')).toBe(true);
+  });
+
+  it('the date half obeys the app-wide format setting', () => {
+    const d = new Date(2026, 7, 18, 22, 5);
+    expect(formatSaveMoment(d, 'iso', now).startsWith('2026-08-18')).toBe(true);
+    expect(formatSaveMoment(d, 'european', now).startsWith('18/8/2026')).toBe(true);
+    expect(formatSaveMoment(d, 'us', now).startsWith('8/18/2026')).toBe(true);
+  });
+
+  it('crossing midnight into a new YEAR still counts as another day', () => {
+    const ny = new Date(2027, 0, 1, 0, 30);
+    expect(formatSaveMoment(new Date(2026, 11, 31, 23, 55), 'iso', ny)
+      .startsWith('2026-12-31')).toBe(true);
   });
 });

@@ -23,6 +23,23 @@ export function formatAppDate(date: Date, id: DateFormatId): string {
   return f.format(date);
 }
 
+/**
+ * v7.61: a moment, for the footer's "last saved" readout.
+ *
+ * Today shows the TIME only — the date would be noise on the line you glance
+ * at while writing, and "today" is the answer 99% of the time. Any other day
+ * leads with the date, formatted through the SAME registry above so it obeys
+ * Settings ▸ General like every other date in the app; a second date format
+ * living in the status bar is exactly the drift this module exists to prevent.
+ */
+export function formatSaveMoment(date: Date, id: DateFormatId, now = new Date()): string {
+  const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const sameDay = date.getFullYear() === now.getFullYear()
+    && date.getMonth() === now.getMonth()
+    && date.getDate() === now.getDate();
+  return sameDay ? time : `${formatAppDate(date, id)} ${time}`;
+}
+
 /** Parse a stored YYYY-MM-DD as a LOCAL date (new Date('YYYY-MM-DD') is UTC,
  *  which shifts the day west of Greenwich). */
 export function parseISODate(iso: string): Date | null {

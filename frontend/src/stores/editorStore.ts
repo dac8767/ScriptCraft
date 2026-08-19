@@ -46,6 +46,11 @@ export type BuiltInElementType =
  *  The `(string & {})` trick keeps autocomplete on built-ins while accepting any string. */
 export type ElementType = BuiltInElementType | (string & {});
 
+/** v7.61: which kind of save produced the footer's timestamp. 'manual' is a
+ *  save the writer asked for (⌘S, File ▸ Save, Save As); 'auto' is the app
+ *  saving on its own (the 30s interval, the metadata debounce). */
+export type SaveKind = 'manual' | 'auto';
+
 /** Display labels for built-in element types. Keyed permissively as `string` so callers
  *  can index with any `ElementType` (custom ids return undefined; pair with `|| fallback`). */
 export const ELEMENT_LABELS: Record<string, string> = {
@@ -1329,7 +1334,32 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   // Save status
   saveStatus: 'idle' | 'unsaved' | 'saving' | 'saved' | 'error';
   saveError: string | null;
-  setSaveStatus: (status: 'idle' | 'unsaved' | 'saving' | 'saved' | 'error', error?: string | null) => void;
+  /** v7.61: 'saved' is DELIBERATELY not in this union. A save that set the
+   *  status without stamping the time and kind would leave the footer showing
+   *  a stale save — or none at all after the most deliberate save there is,
+   *  which is exactly what Save As did before this version. markSaved is the
+   *  only way in, and tsc enforces it rather than a source-scanning check. */
+  setSaveStatus: (status: 'idle' | 'unsaved' | 'saving' | 'error', error?: string | null) => void;
+  /** v7.61, Derek: the footer shows when the script last saved, and whether
+   *  that was an automatic save or one he asked for.
+   *
+   *  ONE way to record a completed save, taking both facts it needs, so a
+   *  caller cannot record a save without saying which kind it was or which
+   *  script it belongs to. A fourth optional argument on setSaveStatus would
+   *  have been forgettable, and a forgotten kind is a footer that quietly
+   *  calls Derek's ⌘S an autosave.
+   *
+   *  The script id rides along so the footer can ignore a stamp left by the
+   *  file you just closed — the alternative was clearing on switch, which
+   *  races Save As (it changes the script id and then finishes saving).
+   *
+   *  Session state, deliberately not persisted: after a restart nothing has
+   *  been saved yet, and showing a time from a previous session would be a
+   *  readout that lies about what just happened. */
+  markSaved: (kind: SaveKind, scriptId: string | null) => void;
+  lastSavedAt: number | null;
+  lastSaveKind: SaveKind | null;
+  lastSavedScriptId: string | null;
 
   // Dialogs
   searchOpen: boolean;
@@ -2139,6 +2169,16 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
   saveStatus: 'idle',
   saveError: null,
   setSaveStatus: (status, error = null) => set({ saveStatus: status, saveError: error }),
+  lastSavedAt: null,
+  lastSaveKind: null,
+  lastSavedScriptId: null,
+  markSaved: (kind, scriptId) => set({
+    saveStatus: 'saved',
+    saveError: null,
+    lastSavedAt: Date.now(),
+    lastSaveKind: kind,
+    lastSavedScriptId: scriptId,
+  }),
 
   searchOpen: false,
   setSearchOpen: (open) => set({ searchOpen: open }),

@@ -1648,7 +1648,7 @@ const ScreenplayEditor: React.FC = () => {
         lastSavedNonEmptyRef.current = docHasAnyText(content);
         setSaveStatus('saving');
         scriptApi.saveScript(currentProject.id, currentScriptId, { content }).then(() => {
-          setSaveStatus('saved');
+          useEditorStore.getState().markSaved('auto', currentScriptId);
         }).catch((err) => {
           console.error('Auto-save failed:', err);
           const msg = err instanceof Error ? err.message : String(err);
@@ -1965,7 +1965,10 @@ const ScreenplayEditor: React.FC = () => {
           lastSavedNonEmptyRef.current = docHasAnyText(content);
           useEditorStore.getState().setSaveStatus('saving');
           scriptApi.saveScript(pid, sid, { content }).then(() => {
-            useEditorStore.getState().setSaveStatus('saved');
+            // v7.61: the debounce is the app saving on its own, so 'auto' —
+            // it fires from a store subscription, not from a keystroke the
+            // writer aimed at saving.
+            useEditorStore.getState().markSaved('auto', sid);
           }).catch((err) => {
             console.error('Metadata save failed:', err);
             const msg = err instanceof Error ? err.message : String(err);
@@ -3048,6 +3051,12 @@ const ScreenplayEditor: React.FC = () => {
         if (!hasDeferredAction) {
           navigate(`/project/${projectId}/edit/${scriptId}`, { replace: true });
         }
+        /* v7.61: Save As writes the script inside SaveAsDialog and never went
+           near setSaveStatus, so the footer's readout would have stayed blank
+           after the most deliberate save there is. Stamped here, where the
+           write has succeeded AND the editor has adopted the new script — the
+           id passed is the NEW one, which is what the footer compares against. */
+        useEditorStore.getState().markSaved('manual', scriptId);
         showToast(destination === 'cloud' ? 'Saved to cloud' : 'Saved', 'success');
       } catch (err) {
         console.error('Failed to finalize save:', err);
@@ -3345,7 +3354,9 @@ const ScreenplayEditor: React.FC = () => {
             setSaveStatus('saving');
             scriptApi.saveScript(currentProject.id, currentScriptId, { content }).then(() => {
               lastSavedJsonRef.current = JSON.stringify(content);
-              setSaveStatus('saved');
+              // v7.61: 'manual' — he pressed Retry. The failure it retries came
+              // from an autosave, but the save that succeeded is his.
+              useEditorStore.getState().markSaved('manual', currentScriptId);
               showToast('Saved successfully', 'success');
             }).catch((err) => {
               const msg = err instanceof Error ? err.message : String(err);

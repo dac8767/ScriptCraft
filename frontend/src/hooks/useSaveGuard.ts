@@ -72,7 +72,9 @@ export function useSaveGuard(editor: Editor | null) {
     try {
       const content = buildSaveContent();
       await scriptApi.saveScript(currentProject.id, currentScriptId, { content });
-      setSaveStatus('saved');
+      // v7.61: 'manual' — this is the one path the writer asked for, and the
+      // footer says so.
+      useEditorStore.getState().markSaved('manual', currentScriptId);
       /* v7.14, Derek: this confirmation belongs beside the Save button, not in
          the bottom-right toast corner — utils/saveFlash puts it in the Quick
          Access bar. Failures still toast: those you DO need to read. */

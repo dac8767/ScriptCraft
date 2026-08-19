@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.61",
+    "date": "2026-08-19",
+    "changes": [
+      "The footer shows when the script last saved, just right of its name — “Manually saved 11:04 PM” for a save you asked for, “Auto-saved 11:04 PM” for one the app made on its own. Hover it for the full date and time. A save made on another day leads with the date, in whichever date format you've picked in Settings.",
+      "Save As now counts. It writes the script through its own dialog and never told the rest of the app it had saved, so the most deliberate save there is would have left the footer blank.",
+      "Nothing is shown until the first save of the session, and a save time never carries over to a different script — a time belonging to the file you just closed would be worse than none."
+    ]
+  },
+  {
     "version": "7.60",
     "date": "2026-08-18",
     "changes": [
