@@ -111,6 +111,7 @@ import {
   FaAdjust,
   FaBars,
   FaInfoCircle,
+  FaArrowUp,
   FaKeyboard,
   FaStethoscope,
   FaSlidersH,   // v7.33: Help ▸ Developer ▸ Design… — the same icon the tool rail gives it
@@ -131,6 +132,7 @@ import {
   FaClock,
 } from 'react-icons/fa';
 import { useScriptImport } from '../hooks/useScriptImport';
+import { requestUpdateCheck } from './UpdateBanner';
 import { useSaveGuard } from '../hooks/useSaveGuard';
 
 /** v2.98: the Help-menu form links, shared by the menu items and the
@@ -1451,6 +1453,15 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         icon: <FaInfoCircle />,
         label: 'Knowledge Base',
         action: () => setKnowledgeBaseOpen(true),
+      },
+      {
+        /* v7.62: the check the user ASKED for. Unlike the silent one on
+           launch, this one always answers — up to date, or why it could not
+           find out. A question that gets silence back cannot be told apart
+           from a broken feature. */
+        icon: <FaArrowUp />,
+        label: 'Check for Updates…',
+        action: () => requestUpdateCheck(),
       },
       /* v3.24 reorg #7: Changelog folded into About ("What's New"). */
       { separator: true, label: '' },

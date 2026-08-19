@@ -133,6 +133,31 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
+      # v7.62: the tag and the bundle must agree, or the release is mislabelled.
+      # This step is the only thing standing between "tagged v7.62" and a .dmg
+      # whose Info.plist says something else — release.yml reads the tag for the
+      # release NOTES only and never writes it into tauri.conf.json, which is
+      # how every build since v0.19 came out stamped 0.19.0.
+      # It fails rather than patching the config: a build that quietly rewrites
+      # its own version produces an artifact that matches no commit.
+      - name: Check the tag matches the app version
+        shell: bash
+        run: |
+          BUNDLE=$(node -e "console.log(require('./src-tauri/tauri.conf.json').version)")
+          APP=$(node -e "console.log(/APP_VERSION = '([^']+)'/.exec(require('fs').readFileSync('frontend/src/data/changelog.ts','utf8'))[1])")
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "tag=$TAG  bundle=$BUNDLE  app=$APP"
+          if [ "$BUNDLE" != "$APP" ]; then
+            echo "::error::tauri.conf.json ($BUNDLE) and APP_VERSION ($APP) disagree — run: node frontend/devtools/sync-version.mjs"
+            exit 1
+          fi
+          # A -test / -rc suffix on the tag is allowed: shakedown runs of this
+          # workflow should not need a version bump to be legal.
+          case "$TAG" in
+            "$BUNDLE"|"$BUNDLE"-*) ;;
+            *) echo "::error::tag $TAG does not match app version $BUNDLE"; exit 1 ;;
+          esac
+
       - name: Build Tauri app
         id: tauri_build
         timeout-minutes: 60

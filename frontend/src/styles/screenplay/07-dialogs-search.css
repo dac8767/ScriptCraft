@@ -18,6 +18,47 @@
 .status-revision { color: #f0ad4e; }
 .status-page { font-variant-numeric: tabular-nums; }
 /* Save failure recovery banner */
+/* v7.62: "a newer build exists". Deliberately NOT the save-failure banner's
+   red — nothing is wrong, and a warning colour for good news trains people to
+   ignore the colour. Accent-tinted, one line, dismissible. */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  background: color-mix(in srgb, var(--fd-accent) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--fd-accent) 45%, transparent);
+  font-size: 13px;
+  color: var(--fd-text);
+  min-height: 32px;
+  flex-shrink: 0;
+}
+.update-banner-icon { display: inline-flex; color: var(--fd-accent); font-size: 12px; }
+.update-banner-text { flex: 1; min-width: 0; }
+.update-banner-have { color: var(--fd-text-muted); }
+.update-banner-btn {
+  padding: 3px 12px;
+  border: 1px solid var(--fd-accent);
+  border-radius: 5px;
+  background: var(--fd-accent);
+  color: #fff;
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.update-banner-btn:hover { filter: brightness(1.1); }
+.update-banner-x {
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  color: var(--fd-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.update-banner-x:hover { color: var(--fd-text); }
+.update-banner-busy { color: var(--fd-text-muted); font-size: 11px; }
+
 .save-failure-banner {
   display: flex;
   align-items: center;

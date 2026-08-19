@@ -2328,6 +2328,17 @@
   ]
  },
  {
+  "text": "Not now — ask again when there's a newer version",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/UpdateBanner.tsx"
+  ],
+  "icon": "FaTimes",
+  "label": "Checking…"
+ },
+ {
   "text": "Notes",
   "kind": "tooltip",
   "sites": 1,
@@ -2355,6 +2366,17 @@
   "where": [
    "components/MarkupIconLayer.tsx"
   ]
+ },
+ {
+  "text": "Open the download page",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Everything Else",
+  "where": [
+   "components/UpdateBanner.tsx"
+  ],
+  "icon": "FaTimes",
+  "label": "Download"
  },
  {
   "text": "Open the Outline window (popped out)",

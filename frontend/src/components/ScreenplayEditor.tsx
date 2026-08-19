@@ -44,6 +44,7 @@ import { generateTemplateCss, injectTemplateCss } from '../utils/templateCss';
 import { collectOutlineSections, outlineSectionSignature, syncSectionAnnotations } from '../utils/outlineScriptSync';
 import { docHasAnyText } from '../utils/docText';
 import { getCurrentElementRule, getLockedFormatting } from '../utils/effectiveFormatting';
+import UpdateBanner from './UpdateBanner';
 import { setPaginationPrintMode, setPaginationVisibility, setPaginationContinuousMode, CONTINUOUS_GAP_PX, createPaginationPlugin, getPageMetrics, setMeasuredFills } from '../editor/pagination';
 import { createContdCasePlugin } from '../editor/contdCase';
 import { ScreenplayImage } from '../editor/extensions/ScreenplayImage';
@@ -3322,6 +3323,10 @@ const ScreenplayEditor: React.FC = () => {
 
   return (
     <div className={`app-container${isHistoryMode ? ' history-mode' : ''}`}>
+      {/* v7.62: it mounts unconditionally and renders nothing until it has
+          something to say — the check has to run whether or not a banner ever
+          appears, and this is also what Help ▸ Check for Updates… talks to. */}
+      <UpdateBanner />
       {isHistoryMode && (
         <div className="history-banner">
           <span className="history-banner-icon">&#128337;</span>
