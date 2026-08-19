@@ -17,7 +17,6 @@ import {
   FaStickyNote,
   FaTags,
   FaHighlighter,
-  FaEllipsisV,
   FaHashtag,
   FaFileAlt, FaRegFileAlt,
   FaExchangeAlt, FaMarker,
@@ -335,77 +334,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     window.addEventListener('resize', measure);
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', measure); };
   });
-  const [hiddenPriorities, setHiddenPriorities] = useState<Set<string>>(new Set());
-  const [overflowOpen, setOverflowOpen] = useState(false);
-  const overflowRef = useRef<HTMLDivElement>(null);
 
-  // Close overflow menu on outside click
-  useEffect(() => {
-    if (!overflowOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
-        setOverflowOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [overflowOpen]);
 
-  // Measure toolbar overflow. v4.23: width overflow now scrolls (see CSS); this
-  // only routes CSS-hidden (mobile-only) sections into the overflow menu.
-  useEffect(() => {
-    const toolbar = toolbarRef.current;
-    if (!toolbar) return;
-
-    const measure = () => {
-      const groups = Array.from(toolbar.querySelectorAll<HTMLElement>('[data-priority]'));
-      if (groups.length === 0) return;
-
-      // Show all groups to measure the natural layout
-      groups.forEach(g => { g.style.display = ''; });
-
-      const newHidden = new Set<string>();
-      for (const g of groups) {
-        // CSS-hidden items (e.g. toolbar-desktop-only on mobile) have 0 width —
-        // mark them as hidden so they appear in the overflow menu.
-        if (g.offsetWidth === 0) newHidden.add(g.dataset.priority!);
-      }
-
-      // v4.23, Derek: a narrow window no longer HIDES sections into the overflow
-      // menu (which "squished" the bar as groups vanished). The ribbon scrolls
-      // horizontally instead (see .toolbar-ribbon overflow-x in 03-toolbar.css),
-      // exactly like Customize/edit mode already did — spacing stays constant
-      // and off-screen sections are reached by scrolling. The overflow menu now
-      // only carries CSS-hidden (mobile-only) items, detected above.
-
-      setHiddenPriorities(prev => {
-        if (prev.size !== newHidden.size) return newHidden;
-        for (const p of newHidden) { if (!prev.has(p)) return newHidden; }
-        return prev;
-      });
-    };
-
-    let rafId = 0;
-    let lastWidth = 0;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      const w = Math.round(entry.contentRect.width);
-      // Only re-measure if container width actually changed (not just internal reflow)
-      if (w === lastWidth) return;
-      lastWidth = w;
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(measure);
-    });
-    ro.observe(toolbar);
-    requestAnimationFrame(measure);
-    return () => { ro.disconnect(); cancelAnimationFrame(rafId); };
-    // v2.10: the Scrapbook section appearing/disappearing changes CONTENT
-    // width, which the container-width guard can't see — re-measure on
-    // toggle or the collapse state computed for the other layout sticks.
-  }, [scrapbookOpen]);
-
-  const hasOverflow = hiddenPriorities.size > 0;
 
   // ── Notes handler (shared between inline and overflow) ──
   // v4.33: a script note is edited in the POPOVER on its highlight now (the
@@ -526,17 +456,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
   if (toolbarMode === 'hidden') return null;
 
-  // Check if a given priority prefix has any collapsed items
-  const isHidden = (prefix: string) => {
-    for (const k of hiddenPriorities) { if (k.startsWith(prefix)) return true; }
-    return false;
-  };
 
   // ── Per-item built-in controls (v0.42) ──────────────────────────────────
   // Each built-in toolbar item renders independently (see toolbarBuiltins.ts).
-  // inOverflow: overflow-menu copy. showPopups: suppress ColorPicker popups
-  // on a collapsed inline copy so only the overflow copy owns popup state.
-  const renderBuiltinControl = (key: string, inOverflow = false, showPopups = true): React.ReactNode => {
+  const renderBuiltinControl = (key: string, showPopups = true): React.ReactNode => {
     // v2.07: exec-mappable formatting keys act on the Scrapbook's focused
     // contentEditable while it's open. mousedown-preventDefault keeps the
     // box's selection alive; same icon, same spot, different target.
@@ -573,7 +496,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               if (entry) loadFont(entry);
               setSbFont(val);
               applyScrapbookTextFormat('fontName', val);
-              if (inOverflow) setOverflowOpen(false);
             }}
           />
         </div>
@@ -587,7 +509,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
           onChange={(e) => {
             if (e.target.value === '') return;
             applyScrapbookTextFormat('fontSizePx', `${Number(e.target.value)}pt`);
-            if (inOverflow) setOverflowOpen(false);
           }}
           title="Font Size (Scrapbook)"
         >
@@ -756,7 +677,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <button
           className="toolbar-btn"
           title="Title Page"
-          onClick={() => { useEditorStore.getState().setTitlePageEditorOpen(true); if (inOverflow) setOverflowOpen(false); }}
+          onClick={() => { useEditorStore.getState().setTitlePageEditorOpen(true); }}
         >
           <FaFileAlt />
         </button>
@@ -777,7 +698,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               } else {
                 editor?.chain().focus(undefined, { scrollIntoView: false }).setMark('textStyle', { fontFamily: val }).run();
               }
-              if (inOverflow) setOverflowOpen(false);
             }}
           />
         </div>
@@ -797,7 +717,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             } else {
               editor?.chain().focus(undefined, { scrollIntoView: false }).setFontSize(`${val}pt`).run();
             }
-            if (inOverflow) setOverflowOpen(false);
           }}
           title="Font Size"
         >
@@ -955,7 +874,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <button
           className="toolbar-btn"
           title="Find & Replace (⌘F)"
-          onClick={() => { setSearchOpen(true); if (inOverflow) setOverflowOpen(false); }}
+          onClick={() => { setSearchOpen(true); }}
         >
           <LuSearch />
         </button>
@@ -964,7 +883,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <button
           className="toolbar-btn"
           title="Go to Page (⌘G)"
-          onClick={() => { setGoToPageOpen(true); if (inOverflow) setOverflowOpen(false); }}
+          onClick={() => { setGoToPageOpen(true); }}
         >
           <FaHashtag />
         </button>
@@ -1102,7 +1021,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         </button>
       );
     }
-    const showPopups = !def.priority || !isHidden(def.priority);
     const cls = 'toolbar-priority-block'
       + (tall ? ' rib-tall' : '')
       + (def.desktopOnly ? ' toolbar-desktop-only' : '')
@@ -1116,9 +1034,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
         <div
           className={cls}
           data-key={def.key}
-          {...(def.priority ? { 'data-priority': def.priority } : {})}
         >
-          {renderBuiltinControl(def.key, false, showPopups)}
+          {renderBuiltinControl(def.key)}
           {/* v2.97, Derek: in a one-row section every item is a BIG BUTTON —
               large icon with its name underneath.
               v3.38: the `view` control captions itself — no second label.
@@ -1145,40 +1062,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     );
   };
 
-  // Overflow menu: collapsed priorities re-render their PRESENT items only —
-  // items removed from the toolbar in Customize never reappear here.
-  // (Ribbon tokens may carry the 2! span flag — compare flag-blind.)
-  const presentKeys = new Set(
-    leftTokens.map(stripTall).filter((t) => t.startsWith('b:')).map((t) => t.slice(2)),
-  );
-  let overflowContent: React.ReactNode[] | null = null;
-  if (hiddenPriorities.size > 0) {
-    // v2.71, Derek: the menu reads in TOOLBAR order. Priority decides only
-    // WHAT collapses first — rendering by priority group re-shuffled the
-    // items relative to how they sit on the bar. Runs of neighbours that
-    // collapsed together stay grouped, separated where the bar had a break.
-    const runs: { pr: string; keys: string[] }[] = [];
-    for (const raw of leftTokens) {
-      const tok = stripTall(raw);
-      if (!tok.startsWith('b:')) continue;
-      const key = tok.slice(2);
-      const d = BUILTIN_BY_KEY[key];
-      if (!d?.priority || !hiddenPriorities.has(d.priority) || !presentKeys.has(key)) continue;
-      const last = runs[runs.length - 1];
-      if (last && last.pr === d.priority) last.keys.push(key);
-      else runs.push({ pr: d.priority, keys: [key] });
-    }
-    const items: React.ReactNode[] = [];
-    runs.forEach((r, i) => {
-      if (i > 0) items.push(<div className="toolbar-overflow-sep" key={`ovsep-${i}`} />);
-      items.push(
-        <div className="toolbar-group" key={`ov-${i}-${r.pr}`}>
-          {r.keys.map((k) => <React.Fragment key={k}>{renderBuiltinControl(k, true, true)}</React.Fragment>)}
-        </div>,
-      );
-    });
-    overflowContent = items.length ? items : null;
-  }
 
   /** v2.96: ribbon token → cell in its section row. `tall` comes from the
    *  SECTION now (a section with no row break spans its items across both
@@ -1677,23 +1560,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       )}
     </div>
 
-    {/* Overflow 3-dot menu — beside the ribbon, spanning its height */}
-    {hasOverflow && overflowContent && (
-      <div className="toolbar-group toolbar-overflow-wrap" ref={overflowRef}>
-        <button
-          className={`toolbar-btn toolbar-overflow-btn${overflowOpen ? ' active' : ''}`}
-          title="More formatting options"
-          onClick={() => setOverflowOpen(!overflowOpen)}
-        >
-          <FaEllipsisV />
-        </button>
-        {overflowOpen && (
-          <div className="toolbar-overflow-menu">
-            {overflowContent}
-          </div>
-        )}
-      </div>
-    )}
 
     {/* v3.38, Derek: the on-bar "+ Add" menu, portalled to the body so it
         escapes the ribbon's overflow/stacking context. One item list —

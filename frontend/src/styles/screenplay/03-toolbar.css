@@ -55,27 +55,6 @@
 .zoom-group { gap: 4px; }
 .zoom-mobile-group { display: none; }
 
-/* ── Toolbar overflow (3-dot) menu ── */
-.toolbar-overflow-wrap { position: relative; }
-.toolbar-overflow-btn { font-size: 14px; }
-.toolbar-overflow-menu {
-  position: absolute; top: 100%; right: 0; z-index: 200;
-  background: var(--fd-dropdown-bg, var(--fd-bg));
-  border: 1px solid var(--fd-border); border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.18);
-  padding: 6px 8px; margin-top: 4px;
-  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
-  min-width: 200px; max-width: min(400px, calc(100vw - 16px));
-  overflow: visible;
-}
-/* Color picker inside overflow menu: open upward so it stays on-screen */
-.toolbar-overflow-menu .color-picker-popup {
-  top: auto; bottom: 100%; left: auto; right: 0;
-}
-.toolbar-overflow-sep {
-  width: 100%; height: 1px; background: var(--fd-border); margin: 2px 0;
-}
-
 /* ── Settings > System: Reset All Settings (v0.48) ── */
 .fs-reset-confirm-overlay { z-index: 10060; }
 .fs-reset-confirm-dialog { max-width: 400px; }
@@ -902,9 +881,6 @@ div.rib-tall, .toolbar-priority-block.rib-tall { height: 80%; display: flex; ali
 .toolbar-ribbon .rib-single [data-key="goals"] svg { color: #4cbfbf; }
 .toolbar-ribbon .rib-single [data-key="fragments"] svg { color: #d377b0; }
 .toolbar-ribbon .rib-single [data-key="notebook"] svg { color: #d9a441; }
-
-/* The overflow menu rides beside the ribbon, centered on its height. */
-.toolbar-stack .toolbar-overflow-wrap { align-self: center; position: relative; }
 
 /* v3.02: the align split — the gap that pushes later sections to the
    toolbar's right edge. */

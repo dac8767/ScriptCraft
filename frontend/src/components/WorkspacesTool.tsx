@@ -6,8 +6,9 @@
  * dialogs use (workspaces / applyWorkspace / saveWorkspace / renameWorkspace /
  * deleteWorkspace), so the two entry points can never drift apart.
  * v4.35: the menu's remaining actions live here too — save-changes, reset,
- * Edit Workspaces… and Import Workspaces from a Project… (the save-as row at
- * the top already covers "Save as New Workspace…").
+ * Edit Workspaces… and Import Workspaces from a Project….
+ * v7.64: "Save as New Workspace" joined them as a BUTTON at the head of that
+ * group, replacing the text field that used to sit above the list.
  */
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -15,6 +16,7 @@ import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { EditWorkspacesDialog } from './WorkspaceDialogs';
 import { importWorkspacesFromFile } from '../utils/workspaceImport';
+import { promptDialog, confirmDialog } from './ConfirmDialog';
 
 export default function WorkspacesTool() {
   const workspaces = useEditorStore((s) => s.workspaces);
@@ -25,20 +27,35 @@ export default function WorkspacesTool() {
   const deleteWorkspace = useEditorStore((s) => s.deleteWorkspace);
   const renameWorkspace = useEditorStore((s) => s.renameWorkspace);
 
-  const [newName, setNewName] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const names = workspaceOrder.filter((n) => workspaces[n]);
-  const trimmed = newName.trim();
-  const saveExists = trimmed.length > 0 && Object.prototype.hasOwnProperty.call(workspaces, trimmed);
 
-  const doSave = () => {
-    if (!trimmed) return;
-    saveWorkspace(trimmed);
-    setNewName('');
+  /* v7.64, Derek: a BUTTON that asks for the name, under the list and above
+     "Save Changes to this Workspace" — the shape Photoshop uses, and the one
+     he sent a screenshot of. It replaces a text field that sat above the list
+     and read as a search box: a bare input with a greyed Save beside it says
+     "filter these", not "make a new one from what's on screen right now".
+     The name is asked for AFTER the intent, which is also the order that lets
+     an existing name raise the overwrite question instead of silently
+     replacing a saved layout — the old field just relabelled its button
+     "Overwrite" and hoped you read it. */
+  const doSaveAs = async () => {
+    const name = (await promptDialog('Name this workspace:', 'Untitled Workspace', {
+      title: 'New Workspace',
+      confirmLabel: 'OK',
+    }))?.trim();
+    if (!name) return;
+    if (Object.prototype.hasOwnProperty.call(workspaces, name)
+      && !(await confirmDialog(`“${name}” already exists. Replace its saved layout with the current one?`, {
+        title: 'Replace Workspace',
+        confirmLabel: 'Replace',
+        danger: true,
+      }))) return;
+    saveWorkspace(name);
   };
 
   const startEdit = (name: string) => { setEditing(name); setEditValue(name); };
@@ -50,22 +67,9 @@ export default function WorkspacesTool() {
 
   return (
     <div className="ws-tool">
-      <div className="ws-save-row">
-        <input
-          className="ws-save-input"
-          placeholder="Save current layout as…"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') doSave(); }}
-        />
-        <button className="ws-save-btn" onClick={doSave} disabled={!trimmed} title={saveExists ? 'Overwrite this workspace' : 'Save current layout'}>
-          {saveExists ? 'Overwrite' : 'Save'}
-        </button>
-      </div>
-
       <div className="ws-list">
         {names.length === 0 ? (
-          <div className="ws-empty">No saved workspaces yet. Arrange your panels, then save the layout above.</div>
+          <div className="ws-empty">No saved workspaces yet. Arrange your panels, then use “Save as New Workspace” below.</div>
         ) : (
           names.map((name) => {
             const isActive = name === activeWorkspace;
@@ -109,6 +113,16 @@ export default function WorkspacesTool() {
 
       {/* v4.35: the View → Workspaces menu's actions, mirrored. */}
       <div className="ws-actions">
+        {/* v7.64, Derek: first in this group, directly under the list. It is
+            the only one here that is always available — the two below it need
+            a workspace to be active. */}
+        <button
+          className="ws-action-btn"
+          title="Save the current panel layout as a new workspace"
+          onClick={() => { void doSaveAs(); }}
+        >
+          Save as New Workspace
+        </button>
         <button
           className="ws-action-btn"
           disabled={!activeWorkspace}

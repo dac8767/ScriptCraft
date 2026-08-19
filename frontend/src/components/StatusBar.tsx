@@ -62,11 +62,12 @@ const StatusBar: React.FC<StatusBarProps> = ({ editorDoc = null }) => {
     if (lastSavedScriptId !== currentScriptId) return null;
     const when = new Date(lastSavedAt);
     return {
-      /* BOTH kinds say which, in parallel. A bare "Saved 11:04 PM" only reads
-         as "manual" if you have also seen "Auto-saved" at some other moment —
-         which is not indicating which, it is leaving it to be inferred from a
-         state that is not on screen. */
-      label: `${lastSaveKind === 'manual' ? 'Manually saved' : 'Auto-saved'} ${formatSaveMoment(when, dateFormat)}`,
+      /* v7.64, Derek: "when it is a manual save, just have it say 'Saved'.
+         drop the word 'manually'." v7.61 argued both kinds should name
+         themselves in parallel; his answer is that "Saved" is what a save
+         you performed yourself is called, and "Auto-saved" is still there to
+         mark the other kind. The tooltip below still says which, in full. */
+      label: `${lastSaveKind === 'manual' ? 'Saved' : 'Auto-saved'} ${formatSaveMoment(when, dateFormat)}`,
       title: `Last ${lastSaveKind === 'manual' ? 'manual' : 'automatic'} save — ${when.toLocaleString()}`,
     };
   }, [lastSavedAt, lastSaveKind, lastSavedScriptId, currentScriptId, dateFormat]);

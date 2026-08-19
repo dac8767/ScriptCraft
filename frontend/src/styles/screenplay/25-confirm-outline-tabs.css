@@ -60,7 +60,7 @@
    but tinted a touch warm so it doesn't read as the plain Cancel beside it. */
 .fs-confirm-tertiary {
   border-color: color-mix(in srgb, var(--fd-danger) 45%, var(--fd-border));
-  color: color-mix(in srgb, var(--fd-danger) 70%, var(--fd-text));
+  color: color-mix(in srgb, var(--fd-danger) 40%, var(--fd-text));
 }
 .fs-confirm-actions button:hover { filter: brightness(1.1); }
 /* v3.36: a requireText confirm — the button is dead until the phrase matches. */
@@ -699,18 +699,41 @@
   white-space: pre-wrap;
   text-align: center;
 }
+/* v7.64 — THE SURFACE, not the tint, was wrong.
+   These mixed their background from --fd-page-bg: the SCRIPT PAGE colour,
+   which is #ffffff in the base sheet and is overridden by no theme, because
+   the paper stays white when the chrome goes dark. The text came from
+   --fd-text / --fd-success / --fd-danger, which DO follow the theme. So in
+   every dark theme a light foreground was being painted onto a near-white
+   pill: measured 1.18:1 for info on the default dark theme — Derek's
+   screenshot, where "This window only appears in the side panel" is legible
+   only if you already know what it says. 24 of 36 theme/kind combinations
+   were under 3:1.
+   A toast is chrome floating over the app, not part of the page, so it takes
+   --fd-menu-bg, the chrome popover surface every theme already defines.
+
+   That alone fixed info but not success/error, because those used ONE token
+   for both the tint and the ink — so the text always sat close to a background
+   made of itself (2.4:1 and 2.9:1). Mixing the semantic colour toward
+   --fd-text pushes it AWAY from the surface in whichever direction that theme
+   needs: lighter on dark chrome, darker on light. 40% keeps the hue plainly
+   green/red while clearing AA.
+
+   Measured across all 12 themes × 3 kinds: was 24 of 36 under 3:1, now 0 of 36
+   under 4.5:1. devtools/probe-toast-contrast.mjs is that measurement — run it
+   before touching these four lines. */
 .fs-toast--success {
-  color: var(--fd-success);
-  background: color-mix(in srgb, var(--fd-success) 15%, var(--fd-page-bg));
+  color: color-mix(in srgb, var(--fd-success) 40%, var(--fd-text));
+  background: color-mix(in srgb, var(--fd-success) 15%, var(--fd-menu-bg));
   border: 1px solid color-mix(in srgb, var(--fd-success) 40%, transparent);
 }
 .fs-toast--error {
-  color: var(--fd-danger);
-  background: color-mix(in srgb, var(--fd-danger) 15%, var(--fd-page-bg));
+  color: color-mix(in srgb, var(--fd-danger) 40%, var(--fd-text));
+  background: color-mix(in srgb, var(--fd-danger) 15%, var(--fd-menu-bg));
   border: 1px solid color-mix(in srgb, var(--fd-danger) 40%, transparent);
 }
 .fs-toast--info {
   color: var(--fd-text);
-  background: color-mix(in srgb, var(--fd-accent) 12%, var(--fd-page-bg));
+  background: color-mix(in srgb, var(--fd-accent) 12%, var(--fd-menu-bg));
   border: 1px solid color-mix(in srgb, var(--fd-accent) 35%, transparent);
 }

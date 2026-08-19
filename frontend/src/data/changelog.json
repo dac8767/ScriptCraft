@@ -1,5 +1,15 @@
 [
   {
+    "version": "7.64",
+    "date": "2026-08-19",
+    "changes": [
+      "A save you made yourself now just says “Saved” in the footer. “Auto-saved” still marks the ones the app made on its own, and hovering either still gives you the full date, time and which kind it was.",
+      "Fix: pop-up messages were close to unreadable on every dark theme. They were tinted from the script page's colour — which stays white when the rest of the app goes dark — so light text was landing on an almost-white bubble. Measured across all twelve themes, two thirds of these messages sat below the point where text stops being legible at all; none do now.",
+      "The ribbon's “⋮ More formatting options” button is gone, along with the collapsing behaviour behind it. A narrow window has scrolled the ribbon rather than hiding controls since v4.23, so the button was an escape hatch from something that no longer happens.",
+      "Workspaces: “Save current layout as…” is now a “Save as New Workspace” button sitting under the list, above “Save Changes to this Workspace”. Clicking it asks for the name in a window, and warns before replacing a workspace that already exists — the old text field quietly relabelled its button “Overwrite” instead."
+    ]
+  },
+  {
     "version": "7.63",
     "date": "2026-08-19",
     "changes": [

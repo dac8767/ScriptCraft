@@ -21,9 +21,6 @@
 export interface ToolbarBuiltin {
   key: string;
   label: string;
-  /** Responsive collapse priority ('1' collapses first … '5' last). Items
-   *  without a priority never collapse into the overflow menu. */
-  priority?: string;
   /** Hidden on mobile via .toolbar-desktop-only. */
   desktopOnly?: boolean;
   /** Hidden on mobile via .zoom-group (mobile shows the single Zoom button). */
@@ -62,29 +59,29 @@ export const TOOLBAR_BUILTINS: ToolbarBuiltin[] = [
   // v5.40: custom pages — palette-only, like the annotation buttons.
   { key: 'insertCustomPage', label: 'Insert Custom Page' },
   { key: 'titlePage', label: 'Title Page' },
-  { key: 'fontFamily', label: 'Font Family', priority: '5', desktopOnly: true },
-  { key: 'fontSize', label: 'Font Size', priority: '5', desktopOnly: true },
-  { key: 'bold', label: 'Bold', priority: '4', desktopOnly: true },
-  { key: 'italic', label: 'Italic', priority: '4', desktopOnly: true },
-  { key: 'underline', label: 'Underline', priority: '4', desktopOnly: true },
-  { key: 'strike', label: 'Strikethrough', priority: '4', desktopOnly: true },
+  { key: 'fontFamily', label: 'Font Family', desktopOnly: true },
+  { key: 'fontSize', label: 'Font Size', desktopOnly: true },
+  { key: 'bold', label: 'Bold', desktopOnly: true },
+  { key: 'italic', label: 'Italic', desktopOnly: true },
+  { key: 'underline', label: 'Underline', desktopOnly: true },
+  { key: 'strike', label: 'Strikethrough', desktopOnly: true },
   // v3.19: sub/superscript are word-processor leftovers — screenplay format
   // never uses them. Unlisted from the palette, kept for old layouts.
-  { key: 'subscript', label: 'Subscript', priority: '4', desktopOnly: true, unlisted: true },
-  { key: 'superscript', label: 'Superscript', priority: '4', desktopOnly: true, unlisted: true },
-  { key: 'textColor', label: 'Text Color', priority: '4', desktopOnly: true },
+  { key: 'subscript', label: 'Subscript', desktopOnly: true, unlisted: true },
+  { key: 'superscript', label: 'Superscript', desktopOnly: true, unlisted: true },
+  { key: 'textColor', label: 'Text Color', desktopOnly: true },
   // v6.10: script highlighting retired (Annotations owns it) — the key
   // survives as the Scrapbook's box-background picker only.
-  { key: 'highlightColor', label: 'Box Background (Scrapbook)', priority: '4', desktopOnly: true },
-  { key: 'alignLeft', label: 'Align Left', priority: '3', desktopOnly: true },
-  { key: 'alignCenter', label: 'Align Center', priority: '3', desktopOnly: true },
-  { key: 'alignRight', label: 'Align Right', priority: '3', desktopOnly: true },
-  { key: 'alignJustify', label: 'Justify', priority: '3', desktopOnly: true },
-  { key: 'find', label: 'Find & Replace', priority: '2' },
-  { key: 'goto', label: 'Go to Page', priority: '2' },
+  { key: 'highlightColor', label: 'Box Background (Scrapbook)', desktopOnly: true },
+  { key: 'alignLeft', label: 'Align Left', desktopOnly: true },
+  { key: 'alignCenter', label: 'Align Center', desktopOnly: true },
+  { key: 'alignRight', label: 'Align Right', desktopOnly: true },
+  { key: 'alignJustify', label: 'Justify', desktopOnly: true },
+  { key: 'find', label: 'Find & Replace' },
+  { key: 'goto', label: 'Go to Page' },
   { key: 'scriptNotes', label: 'Notes' },
   { key: 'tags', label: 'Production Tags' },
-  { key: 'zoom', label: 'Page Zoom', priority: '1', zoom: true },
+  { key: 'zoom', label: 'Page Zoom', zoom: true },
   { key: 'view', label: 'Editor View', desktopOnly: true },
   /* v2.34's one-click surface toggles. v3.25, Derek: the side-panel pair is
      REMOVED (task #137) — the panel collapse chevrons and View > Toolbars

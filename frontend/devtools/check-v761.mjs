@@ -80,13 +80,16 @@ console.log('\na save he asked for says THAT');
 await mark('manual', null);
 const manual = await read();
 ok('the readout changes', manual.text !== auto.text, JSON.stringify([auto.text, manual.text]));
-/* THE half of the request that is easy to drop. "Saved 11:04 PM" only reads as
-   manual if you have also seen "Auto-saved" at some other moment — which is
-   not indicating which, it is leaving it to be inferred from a state that is
-   not on screen. Both kinds name themselves. */
-ok('…and names the kind as manual', /^Manually saved /.test(manual.text), JSON.stringify(manual.text));
+/* v7.64, Derek: "when it is a manual save, just have it say 'Saved'. drop the
+   word 'manually'." v7.61 asserted the opposite here, on the reasoning that
+   both kinds should name themselves in parallel. His answer is that a save you
+   performed is simply called Saved, and "Auto-saved" still marks the other one.
+   The assertion below is the part that still matters and is unchanged in
+   spirit: the two must not be tellable apart only by their timestamp. */
+ok('…and a manual save is just "Saved"',
+  /^Saved /.test(manual.text) && !/Manual/i.test(manual.text), JSON.stringify(manual.text));
 ok('the two kinds are distinguishable from the text alone',
-  /Auto/.test(auto.text) && /Manual/i.test(manual.text)
+  /^Auto-saved /.test(auto.text)
   && auto.text.replace(/\d/g, '') !== manual.text.replace(/\d/g, ''),
   JSON.stringify([auto.text, manual.text]));
 /* The tooltip carries the full date and time — the line itself stays short. */

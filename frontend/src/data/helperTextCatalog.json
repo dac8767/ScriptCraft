@@ -2175,16 +2175,6 @@
   "icon": "FaBars"
  },
  {
-  "text": "More formatting options",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Ribbon Toolbar",
-  "where": [
-   "components/Toolbar.tsx"
-  ],
-  "icon": "FaEllipsisV"
- },
- {
   "text": "More notes per row (smaller cards)",
   "kind": "tooltip",
   "sites": 1,
@@ -2404,15 +2394,6 @@
   "area": "Scenes / Pages / Locations Windows",
   "where": [
    "components/SceneNavigator.tsx"
-  ]
- },
- {
-  "text": "Overwrite this workspace",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Workspaces",
-  "where": [
-   "components/WorkspacesTool.tsx"
   ]
  },
  {
@@ -2891,15 +2872,6 @@
   "label": "Save"
  },
  {
-  "text": "Save current layout",
-  "kind": "tooltip",
-  "sites": 1,
-  "area": "Workspaces",
-  "where": [
-   "components/WorkspacesTool.tsx"
-  ]
- },
- {
   "text": "Save name",
   "kind": "tooltip",
   "sites": 2,
@@ -2909,6 +2881,16 @@
    "components/WorkspacesTool.tsx"
   ],
   "icon": "FaCheck"
+ },
+ {
+  "text": "Save the current panel layout as a new workspace",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Workspaces",
+  "where": [
+   "components/WorkspacesTool.tsx"
+  ],
+  "label": "Save as New Workspace"
  },
  {
   "text": "Save the ticked items as one preset file",
@@ -4100,15 +4082,6 @@
   "area": "Settings & Setup",
   "where": [
    "components/PageSetupDialog.tsx"
-  ]
- },
- {
-  "text": "Save current layout as…",
-  "kind": "placeholder",
-  "sites": 1,
-  "area": "Workspaces",
-  "where": [
-   "components/WorkspacesTool.tsx"
   ]
  },
  {
