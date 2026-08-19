@@ -26,6 +26,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { launch, boot, settle } from './driver.mjs';
+import { readAppVersion, readBundleVersion, toSemver } from './sync-version.mjs';
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra = '') => {
@@ -183,12 +184,14 @@ const banner = (page) => page.evaluate(() => {
 console.log('\nthe app and the bundle ship the same number');
 /* check-version-sync owns this in full; the one assertion repeated here is the
    one that made the feature necessary — an updater comparing a frozen 0.19.0
-   against a frozen 0.19.0 would report "up to date" forever. */
-const conf = readFileSync(new URL('../../src-tauri/tauri.conf.json', import.meta.url), 'utf8');
-const app = /APP_VERSION = '([^']+)'/.exec(
-  readFileSync(new URL('../src/data/changelog.ts', import.meta.url), 'utf8'))[1];
+   against a frozen 0.19.0 would report "up to date" forever.
+   v7.63: compared through toSemver, because the bundle version is three
+   components ("7.63.0") and APP_VERSION is two ("7.63"). Matching them as raw
+   strings is the mistake that shipped a config Tauri refused to parse. */
 ok('tauri.conf.json carries the app\'s version, not the stale 0.19.0',
-  new RegExp(`"version":\\s*"${app.replace('.', '\\.')}"`).test(conf), app);
+  readBundleVersion() === toSemver(readAppVersion())
+  && readBundleVersion() !== '0.19.0',
+  `${readAppVersion()} vs ${readBundleVersion()}`);
 
 /* The manifest lives on a PUBLIC host. The source repo is private, and a
    private repo's assets need an authenticated request — which would mean

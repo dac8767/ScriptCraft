@@ -1,6 +1,6 @@
 {
  "_comment": "DERIVED by devtools/build-check-map.mjs — do not hand-edit. Maps each browser check to the frontend/src files it covers, so check-all --changed can run the relevant ones in the iteration loop. A check with no entry is always run (unmapped means unknown, and unknown must not mean skipped).",
- "_generated_from": "81bbe84",
+ "_generated_from": "4fcec3a",
  "_ritual": [
   "frontend/src/data/changelog.json",
   "frontend/src/data/changelog.ts"
@@ -1430,15 +1430,28 @@
    ]
   },
   "check-v762.mjs": {
-   "sha": "",
+   "sha": "4fcec3a",
    "covers": [
+    "frontend/src/components/MenuBar.tsx",
+    "frontend/src/components/ScreenplayEditor.tsx",
+    "frontend/src/components/UpdateBanner.tsx",
     "frontend/src/data/changelog.ts",
-    "frontend/src/services/updateCheck.ts"
+    "frontend/src/data/helperTextCatalog.json",
+    "frontend/src/services/updateCheck.ts",
+    "frontend/src/styles/screenplay/07-dialogs-search.css"
    ]
   },
   "check-version-sync.mjs": {
-   "sha": "",
-   "covers": []
+   "sha": "4fcec3a",
+   "covers": [
+    "frontend/src/components/MenuBar.tsx",
+    "frontend/src/components/ScreenplayEditor.tsx",
+    "frontend/src/components/UpdateBanner.tsx",
+    "frontend/src/data/helperTextCatalog.json",
+    "frontend/src/services/diagnostics.ts",
+    "frontend/src/services/updateCheck.ts",
+    "frontend/src/styles/screenplay/07-dialogs-search.css"
+   ]
   }
  }
 }

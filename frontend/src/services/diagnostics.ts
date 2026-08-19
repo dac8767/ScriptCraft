@@ -9,6 +9,7 @@
 import { getCompatEntries } from './compat';
 import { useStorageStatusStore } from '../stores/storageStatusStore';
 import { isDesktopTauri } from './platform';
+import { APP_VERSION } from '../data/changelog';
 
 export interface DiagnosticsReport {
   appVersion: string;
@@ -112,13 +113,14 @@ function describeSettingsIcon(): string {
   } catch { return 'unknown'; }
 }
 
+/* v7.63 — this used to look for a `window.__OPENDRAFT_VERSION__` that nothing
+   in the app has ever set, and fall back to the literal '0.19.0'. So the one
+   artifact whose whole job is telling you which build someone is running has
+   been reporting the fork's version to every tester, and reporting it with
+   complete confidence. Same disease as the frozen bundle version: a plausible
+   number that never moves. APP_VERSION is the source; read it. */
 function getAppVersion(): string {
-  // Version is hard-coded in MenuBar/About; pull from a global if exposed,
-  // otherwise rely on what the Tauri build embeds.
-  if (typeof window !== 'undefined' && (window as any).__OPENDRAFT_VERSION__) {
-    return (window as any).__OPENDRAFT_VERSION__;
-  }
-  return '0.19.0';
+  return APP_VERSION;
 }
 
 /** Format a report as plain text suitable for pasting into a GitHub issue. */

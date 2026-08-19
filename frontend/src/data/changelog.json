@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.63",
+    "date": "2026-08-19",
+    "changes": [
+      "Fix: the app would not start. Stamping the real version into the build last release wrote “7.62” where the desktop build requires three numbers — “7.62.0” — and it refused to launch rather than run with a version it could not read. The number is now filled out on the way in, and the check that is supposed to catch this looks at what was actually written instead of what it was given.",
+      "Fix: the Diagnostics report has been telling every reader the app is version 0.19.0 — the version this was forked from, three hundred releases ago. It quoted a number that no part of the app has ever set, so the one thing you'd paste into a bug report to say which build you're running was confidently wrong. It now reads the real version, the same one the About box shows.",
+      "The crate and lockfile versions were stale in the same way and now follow along, so there is one number in one place and everything else copies it."
+    ]
+  },
+  {
     "version": "7.62",
     "date": "2026-08-19",
     "changes": [

@@ -145,17 +145,23 @@ jobs:
         run: |
           BUNDLE=$(node -e "console.log(require('./src-tauri/tauri.conf.json').version)")
           APP=$(node -e "console.log(/APP_VERSION = '([^']+)'/.exec(require('fs').readFileSync('frontend/src/data/changelog.ts','utf8'))[1])")
+          # v7.63: APP_VERSION is two components ('7.63') and a bundle version
+          # must be three ('7.63.0') or Tauri will not parse its own config, so
+          # these are compared NORMALISED. Comparing them raw is what this step
+          # did first, and it would have failed every legal release.
+          APP_SEMVER=$(node -e "const p=process.argv[1].split('-')[0].split('.'); while(p.length<3)p.push('0'); console.log(p.slice(0,3).join('.'))" "$APP")
           TAG="${GITHUB_REF_NAME#v}"
-          echo "tag=$TAG  bundle=$BUNDLE  app=$APP"
-          if [ "$BUNDLE" != "$APP" ]; then
+          echo "tag=$TAG  bundle=$BUNDLE  app=$APP (normalised $APP_SEMVER)"
+          if [ "$BUNDLE" != "$APP_SEMVER" ]; then
             echo "::error::tauri.conf.json ($BUNDLE) and APP_VERSION ($APP) disagree — run: node frontend/devtools/sync-version.mjs"
             exit 1
           fi
           # A -test / -rc suffix on the tag is allowed: shakedown runs of this
-          # workflow should not need a version bump to be legal.
+          # workflow should not need a version bump to be legal. The tag may be
+          # written either way — v7.63 or v7.63.0.
           case "$TAG" in
-            "$BUNDLE"|"$BUNDLE"-*) ;;
-            *) echo "::error::tag $TAG does not match app version $BUNDLE"; exit 1 ;;
+            "$APP"|"$APP"-*|"$BUNDLE"|"$BUNDLE"-*) ;;
+            *) echo "::error::tag $TAG does not match app version $APP"; exit 1 ;;
           esac
 
       - name: Build Tauri app
