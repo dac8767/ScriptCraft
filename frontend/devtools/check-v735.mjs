@@ -110,7 +110,9 @@ console.log('\nB–F. the rest of the queue');
 const prefs = src('components/PreferencesDialog.tsx');
 ok('the folder setting no longer claims scripts are "downloaded"',
   !/Save downloaded scripts to/.test(prefs), '');
-ok('…it says what it actually seeds', /Save and Export open in/.test(prefs), '');
+/* v7.65: the row went from "Save and Export open in" to "These windows open
+   in" when its heading started naming the windows — same claim, said once. */
+ok('…it says what it actually seeds', /These windows open in/.test(prefs), '');
 ok('…and the stored key keeps its old name (renaming it would reset his path)',
   /downloadFolder/.test(src('stores/settingsStore.ts')), '');
 

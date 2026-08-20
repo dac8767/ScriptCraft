@@ -486,11 +486,26 @@ function SaveLocationsTab() {
           keeps its old name on purpose (opendraft:saveloc:downloadFolder) —
           renaming a key that holds a user's chosen path would silently reset
           it. */}
+      {/* v7.65, Derek: "i dont understand the Saving & exporting section. how
+          is this different than the chosen save location in the same window?"
+
+          It is genuinely different and the heading was hiding that. SCRIPT
+          SAVE LOCATIONS is where the script IS WRITTEN — automatically, on
+          every save, to each place that is ticked. This one never writes
+          anywhere: it is the folder the Save As and Export WINDOWS are sitting
+          in when they open, a starting point you can then navigate away from.
+          Two headings that both began "Sav…" for a destination and a starting
+          point.
+
+          Named for the windows now, so the contrast is on screen rather than
+          in this comment. The stored key keeps its old name on purpose
+          (opendraft:saveloc:downloadFolder) — renaming a key that holds a
+          user's chosen path would silently reset it. */}
       <section>
-        <h3>Saving &amp; Exporting</h3>
+        <h3>Save As &amp; Export Windows</h3>
         <div className="prefs-check-row">
           <span>
-            Save and Export open in
+            These windows open in
             {downloadFolder ? <code className="prefs-path-chip">{downloadFolder}</code> : ' — the last folder you used'}
           </span>
           <button

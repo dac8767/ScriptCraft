@@ -1,5 +1,16 @@
 [
   {
+    "version": "7.65",
+    "date": "2026-08-20",
+    "changes": [
+      "Fix: the app icon was bigger than everything else in the Dock. macOS lays icons out on a fixed square and expects a margin inside it — ours was drawn edge to edge, so it rendered about a quarter larger than every icon beside it. It now sits on Apple's grid.",
+      "Fix: the outline bar's scale slider was inside out. The stretch between the two knobs — the part showing how much of the script you're looking at — was the darker piece, and the rest of the bar was lighter. It's the other way round now, and the middle is actually visible: it had been within a hair of the track's colour on every one of the twelve themes, so all you could really see were the two knobs.",
+      "“Save Changes to this Workspace” and “Reset to Saved Layout” are greyed out until you've actually moved something. Both do nothing when the layout already matches what was saved, in the Workspaces window and the View menu alike.",
+      "Customize… moved from the View menu to the Format menu.",
+      "Settings: the “Saving & Exporting” section is now “Save As & Export Windows”, because that is all it does — it sets the folder those windows are already sitting in when they open. Where your script actually gets written is the “Script Save Locations” section above it. Your chosen folder is unchanged."
+    ]
+  },
+  {
     "version": "7.64",
     "date": "2026-08-19",
     "changes": [

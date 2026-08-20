@@ -100,19 +100,39 @@
 }
 .fs-ob-scroll::-webkit-scrollbar { display: none; }
 /* v2.28: the Premiere-style navigator — scroll and rescale from one bar. */
+/* v7.65, Derek: "the coloring of the scale bar for the outline toolbar is
+   backwards… the section between the adjustment knobs is supposed to be the
+   light part, and the rest of the bar is supposed to be the dark part" — with
+   Premiere's zoom scrollbar attached as the reference.
+
+   He is right, and it was worse than backwards. The track was
+   --fd-overlay-subtle (a 4% white veil, so very slightly LIGHTER than the
+   chrome) and the thumb was --fd-border (slightly DARKER). Measured: on the
+   default dark theme, track 0.047 luminance against thumb 0.023 — inverted,
+   and separated by so little that the thumb was invisible in all twelve
+   themes, not just the ones where the order was wrong. Only the knobs could
+   be seen, which is why it reads as two loose dots on a flat bar.
+
+   The relationship, stated so it survives a theme flip: the TRACK is a
+   recessed well (--fd-border, the app's seam colour — darker than the chrome
+   in light themes and in dark ones alike), and the THUMB is foreground ink on
+   it (--fd-text-muted), with the knobs brighter still (--fd-text). On a dark
+   theme that comes out as Premiere: dark bar, light middle, lighter knobs. On
+   a light theme it inverts correctly instead of washing out.
+   devtools/probe-navbar.mjs measures it; check-v765 holds it. */
 .fs-ob-nav {
   position: relative;
   height: 14px;
   margin-top: 3px;
   border-radius: 7px;
-  background: var(--fd-overlay-subtle);
+  background: var(--fd-border);
 }
 .fs-ob-nav-thumb {
   position: absolute;
   top: 0;
   height: 100%;
   border-radius: 7px;
-  background: var(--fd-border);
+  background: var(--fd-text-muted);
   cursor: grab;
 }
 .fs-ob-nav-thumb:hover { filter: brightness(1.15); }
@@ -122,7 +142,13 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--fd-text-muted);
+  background: var(--fd-text);
+  /* Ringed in the TRACK colour, so each knob is delineated by an edge and not
+     only by its tone. solarized-light puts --fd-text and --fd-text-muted a
+     1.33x step apart — a palette that low-contrast by design cannot separate
+     the knob from the thumb by luminance alone, and every theme's track
+     already contrasts with its thumb by 3.3x or more. */
+  box-shadow: 0 0 0 1.5px var(--fd-border);
   cursor: ew-resize;
 }
 .fs-ob-nav-handle-l { left: 1px; }

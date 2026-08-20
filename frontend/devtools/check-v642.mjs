@@ -146,8 +146,11 @@ try {
   await settle(page);
   ok(await page.evaluate(() => {
     const heads = [...document.querySelectorAll('.prefs-general section > h3')].map((h) => h.textContent);
-    // v7.35: 'Downloads' became 'Saving & Exporting' — nothing here downloads.
-    return heads.includes('Saving & Exporting') && heads[heads.length - 1] === 'Screenshots';
+    /* v7.35: 'Downloads' became 'Saving & Exporting' — nothing here downloads.
+       v7.65, Derek: and 'Saving & Exporting' became 'Save As & Export Windows',
+       because it was reading as a second save DESTINATION next to Script Save
+       Locations when all it sets is the folder those windows open in. */
+    return heads.includes('Save As & Export Windows') && heads[heads.length - 1] === 'Screenshots';
   }), 'Save Options holds the save/export folder + Screenshots, last');
   await page.evaluate(() => {
     [...document.querySelectorAll('.prefs-tab')].find((t) => t.textContent.trim() === 'Defaults')?.click();

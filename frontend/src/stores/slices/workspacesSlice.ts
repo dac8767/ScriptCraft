@@ -28,6 +28,73 @@ export interface WorkspacesSlice {
   renameWorkspace: (oldName: string, newName: string) => void;
 }
 
+/* v7.65 — THE SNAPSHOT'S FIELD LIST, in one place.
+   It used to be written out inline inside saveWorkspace, with applyWorkspace
+   restoring a second hand-maintained copy of the same list. Those two drifted
+   once already (v4.24: save captured panelSizeMode / chromeCustomPx / theme,
+   apply restored none of them, and the most visible parts of a workspace
+   silently stayed put). Derek's ask this time — grey out "Save Changes" and
+   "Reset" when nothing has changed — needs a THIRD reading of that list to
+   compare live state against the saved snapshot, and a third copy is how the
+   v4.24 bug happens again. So capture is a function now, and the comparison
+   is built from its output rather than from its own list. */
+export function captureWorkspace(s: EditorState): WorkspaceSnapshot {
+  return {
+    toolConfig: s.toolConfig, toolOrder: s.toolOrder,
+    toolbarHiddenItems: s.toolbarHiddenItems, toolbarPinnedTools: s.toolbarPinnedTools,
+    navigatorOpen: s.navigatorOpen, shelfOpen: s.shelfOpen, toolSizes: s.toolSizes,
+    toolbarMode: s.toolbarMode, activeTool: s.activeTool, activeToolRight: s.activeToolRight,
+    toolbarLeft: s.toolbarLeft, toolbarRight: s.toolbarRight,
+    menuBarOrder: s.menuBarOrder, menuBarHidden: s.menuBarHidden, menuMode: s.menuMode,
+    panelDividers: s.panelDividers,
+    panelSizeMode: s.panelSizeMode, chromeCustomPx: s.chromeCustomPx,
+    theme: s.theme,                       // v0.78: the theme is part of a workspace
+  };
+}
+
+/** The migrations applyWorkspace runs before restoring. The comparison has to
+ *  see what apply WOULD produce, or a snapshot holding a retired tool id reads
+ *  as "changed" the instant it is applied. */
+export function normalizeWorkspace(raw: WorkspaceSnapshot): WorkspaceSnapshot {
+  return {
+    ...raw,
+    toolConfig: migrateToolConfig(raw.toolConfig),
+    toolOrder: migrateToolOrder(raw.toolOrder),
+    toolbarPinnedTools: migrateToolOrder((raw.toolbarPinnedTools as string[]) ?? []) as ToolId[],
+    ...(raw.activeTool ? { activeTool: migrateToolId(raw.activeTool) as ToolId | null } : {}),
+    ...(raw.activeToolRight ? { activeToolRight: migrateToolId(raw.activeToolRight) as ToolId | null } : {}),
+  };
+}
+
+/** Key order is not meaningful — a snapshot that has been through localStorage
+ *  and one built just now can carry the same values in a different order. */
+function stable(v: unknown): string {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v) ?? 'null';
+  if (Array.isArray(v)) return `[${v.map(stable).join(',')}]`;
+  const o = v as Record<string, unknown>;
+  return `{${Object.keys(o).sort().map((k) => `${JSON.stringify(k)}:${stable(o[k])}`).join(',')}}`;
+}
+
+/**
+ * Has the live layout moved away from the workspace it was applied from?
+ *
+ * v7.65, Derek: "if no changes have been made to the current workspace, then
+ * 'Save changes to this workspace' and 'reset to saved layout' should be
+ * grayed out." Both actions are no-ops in that state — one writes back what is
+ * already stored, the other restores what is already on screen — and a control
+ * that looks live and does nothing is this app's cardinal sin.
+ *
+ * FALSE when no workspace is applied: there is nothing to be dirty against.
+ * (The buttons stay disabled in that case for the reason they always were.)
+ */
+export function workspaceIsDirty(s: EditorState): boolean {
+  const name = s.activeWorkspace;
+  if (!name) return false;
+  const saved = s.workspaces[name];
+  if (!saved) return false;
+  return stable(captureWorkspace(s)) !== stable(normalizeWorkspace(saved));
+}
+
 export const createWorkspacesSlice: StateCreator<EditorState, [], [], WorkspacesSlice> = (set, get) => ({
   workspaces: _vs.workspaces ?? {},
   workspaceOrder: _vs.workspaceOrder ?? Object.keys(_vs.workspaces ?? {}).sort(),
@@ -57,17 +124,7 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     return added;
   },
   saveWorkspace: (name) => set((s) => {
-    const snap: WorkspaceSnapshot = {
-      toolConfig: s.toolConfig, toolOrder: s.toolOrder,
-      toolbarHiddenItems: s.toolbarHiddenItems, toolbarPinnedTools: s.toolbarPinnedTools,
-      navigatorOpen: s.navigatorOpen, shelfOpen: s.shelfOpen, toolSizes: s.toolSizes,
-      toolbarMode: s.toolbarMode, activeTool: s.activeTool, activeToolRight: s.activeToolRight,
-      toolbarLeft: s.toolbarLeft, toolbarRight: s.toolbarRight,
-      menuBarOrder: s.menuBarOrder, menuBarHidden: s.menuBarHidden, menuMode: s.menuMode,
-      panelDividers: s.panelDividers,
-      panelSizeMode: s.panelSizeMode, chromeCustomPx: s.chromeCustomPx,
-      theme: s.theme,                       // v0.78: the theme is part of a workspace
-    };
+    const snap = captureWorkspace(s);
     const workspaces = { ...s.workspaces, [name]: snap };
     const workspaceOrder = s.workspaceOrder.includes(name)
       ? s.workspaceOrder : [...s.workspaceOrder, name];
@@ -85,14 +142,7 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     // snapshots heal too. v7.33: through migrateToolId, so a DROPPED tool
     // (null heir) empties the slot rather than being left in it — the old
     // truthiness test skipped null and handed the dead id straight back.
-    const snap: WorkspaceSnapshot = {
-      ...raw,
-      toolConfig: migrateToolConfig(raw.toolConfig),
-      toolOrder: migrateToolOrder(raw.toolOrder),
-      toolbarPinnedTools: migrateToolOrder((raw.toolbarPinnedTools as string[]) ?? []) as ToolId[],
-      ...(raw.activeTool ? { activeTool: migrateToolId(raw.activeTool) as ToolId | null } : {}),
-      ...(raw.activeToolRight ? { activeToolRight: migrateToolId(raw.activeToolRight) as ToolId | null } : {}),
-    };
+    const snap = normalizeWorkspace(raw);
     // v0.12 fields are optional (older snapshots): only restore when captured.
     const extras: Partial<EditorState> = {};
     // A workspace that had Index Cards showing reopens Scenes in Cards view.

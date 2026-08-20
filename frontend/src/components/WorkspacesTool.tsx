@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
+import { workspaceIsDirty } from '../stores/slices/workspacesSlice';
 import { EditWorkspacesDialog } from './WorkspaceDialogs';
 import { importWorkspacesFromFile } from '../utils/workspaceImport';
 import { promptDialog, confirmDialog } from './ConfirmDialog';
@@ -26,6 +27,10 @@ export default function WorkspacesTool() {
   const applyWorkspace = useEditorStore((s) => s.applyWorkspace);
   const deleteWorkspace = useEditorStore((s) => s.deleteWorkspace);
   const renameWorkspace = useEditorStore((s) => s.renameWorkspace);
+  /* v7.65, Derek: both of these are no-ops when the layout still matches what
+     was saved — one writes back what is already stored, the other restores
+     what is already on screen. */
+  const dirty = useEditorStore(workspaceIsDirty);
 
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -125,17 +130,21 @@ export default function WorkspacesTool() {
         </button>
         <button
           className="ws-action-btn"
-          disabled={!activeWorkspace}
-          title={activeWorkspace ? `Overwrite “${activeWorkspace}” with the current layout` : 'Apply a workspace first'}
-          onClick={() => { if (activeWorkspace) saveWorkspace(activeWorkspace); }}
+          disabled={!activeWorkspace || !dirty}
+          title={!activeWorkspace ? 'Apply a workspace first'
+            : dirty ? `Overwrite “${activeWorkspace}” with the current layout`
+              : `“${activeWorkspace}” already matches the current layout`}
+          onClick={() => { if (activeWorkspace && dirty) saveWorkspace(activeWorkspace); }}
         >
           Save Changes to this Workspace
         </button>
         <button
           className="ws-action-btn"
-          disabled={!activeWorkspace}
-          title={activeWorkspace ? `Reapply the saved “${activeWorkspace}” layout` : 'Apply a workspace first'}
-          onClick={() => { if (activeWorkspace) applyWorkspace(activeWorkspace); }}
+          disabled={!activeWorkspace || !dirty}
+          title={!activeWorkspace ? 'Apply a workspace first'
+            : dirty ? `Reapply the saved “${activeWorkspace}” layout`
+              : 'Nothing has moved since this workspace was applied'}
+          onClick={() => { if (activeWorkspace && dirty) applyWorkspace(activeWorkspace); }}
         >
           Reset to Saved Layout
         </button>

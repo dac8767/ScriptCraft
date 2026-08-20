@@ -2339,6 +2339,16 @@
   "icon": "FaStickyNote"
  },
  {
+  "text": "Nothing has moved since this workspace was applied",
+  "kind": "tooltip",
+  "sites": 1,
+  "area": "Workspaces",
+  "where": [
+   "components/WorkspacesTool.tsx"
+  ],
+  "label": "Reset to Saved Layout"
+ },
+ {
   "text": "Numbered list",
   "kind": "tooltip",
   "sites": 1,

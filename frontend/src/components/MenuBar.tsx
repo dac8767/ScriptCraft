@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
+import { workspaceIsDirty } from '../stores/slices/workspacesSlice';
 import AddCustomPageDialog from './AddCustomPageDialog';
 import { MarkupIcon } from './markupIcons';
 import { iconLabel as markupIconLabel } from './MarkupPickers';
@@ -269,6 +270,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     sceneNumbersLocked,
     setSceneNumbersLocked,
   } = useEditorStore();
+  /* v7.65: the SAME dirty test the Workspaces tool reads, so the menu's two
+     workspace actions and the tool's two buttons can never disagree about
+     whether there is anything to save or reset. */
+  const workspaceDirty = useEditorStore(workspaceIsDirty);
 
   // v5.28: the View ▸ Annotations submenu lists only types the script uses
   // (plus any already-hidden pick, so it can always be turned back on).
@@ -1156,11 +1161,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     {
       label: 'View',
       items: [
-        /* v4.86 removed Customize from View; v6.14, Derek: it's BACK by his
-           ask — "Add 'Customize' to the view menu". Opens on the remembered
-           last-used tab (the v6.02 generic door). Design stays out. */
-        { icon: <FaWrench />, label: 'Customize…', action: () => openCustomize() },
-        { separator: true, label: '' },
         {
           icon: <FaColumns />, label: 'Workspaces',
           children: [
@@ -1171,12 +1171,16 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             })),
             ...(Object.keys(workspaces).length > 0 ? [{ separator: true, label: '' }] : []),
             { icon: <FaColumns />, label: 'Save as New Workspace…', action: () => setSaveWorkspaceOpen(true) },
+            /* v7.65, Derek: dead when the layout still matches what was
+               saved. The SAME workspaceIsDirty the Workspaces tool reads —
+               these two lists of actions have to agree, and the way they
+               agree is by asking one function. */
             { icon: <FaColumns />, label: 'Save Changes to this Workspace', action: () => {
-              if (activeWorkspace) saveWorkspace(activeWorkspace);
-            }, disabled: !activeWorkspace },
+              if (activeWorkspace && workspaceDirty) saveWorkspace(activeWorkspace);
+            }, disabled: !activeWorkspace || !workspaceDirty },
             { icon: <FaColumns />, label: 'Reset to Saved Layout', action: () => {
-              if (activeWorkspace) applyWorkspace(activeWorkspace);
-            }, disabled: !activeWorkspace },
+              if (activeWorkspace && workspaceDirty) applyWorkspace(activeWorkspace);
+            }, disabled: !activeWorkspace || !workspaceDirty },
             { icon: <FaColumns />, label: 'Edit Workspaces…', action: () => setEditWorkspacesOpen(true) },
             { separator: true, label: '' },
             { icon: <FaFileImport />, label: 'Import Workspaces from a Project…', action: handleImportWorkspaces },
@@ -1324,6 +1328,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         { separator: true, label: '' },
         { icon: <FaFileAlt />, label: `Formatting Template (${activeTemplate.name})...`, action: () => setTemplateSelectOpen(true) },
         { icon: <FaFileAlt />, label: 'Script Format Preferences…', action: () => setFormatPrefsOpen({ firstRun: false, afterSave: null }) },
+        /* v4.86 removed Customize from View; v6.14 put it back there at Derek's
+           ask; v7.65, Derek: "move customize from the view menu to format
+           menu". It sits with the other two doors that configure how the app
+           looks rather than what the script says. Opens on the remembered
+           last-used tab (the v6.02 generic door). */
+        { separator: true, label: '' },
+        { icon: <FaWrench />, label: 'Customize…', action: () => openCustomize() },
       ],
     },
     {
