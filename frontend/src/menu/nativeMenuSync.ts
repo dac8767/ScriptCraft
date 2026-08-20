@@ -29,6 +29,7 @@ import { isTauri } from '../services/platform';
    being the wrong size. A data URI needs no server round trip and decodes in
    dev and in a build alike. */
 import gearUrl from '../assets/settings-gear.png?inline';
+import { labelWithNote } from './menuLabel';
 
 export interface NativeItemData {
   label: string;
@@ -39,6 +40,11 @@ export interface NativeItemData {
   children?: NativeItemData[];
   render?: unknown;          // custom submenu content — cannot exist natively
   checked?: boolean;         // v3.05: checkable items become CheckMenuItems
+  /** v7.68: the short reason a disabled item is disabled. A native menu has
+   *  nowhere to put hover text — Tauri's menu API takes no tooltip — so the
+   *  reason rides in the label instead, through the SAME labelWithNote the
+   *  in-app menu uses. */
+  note?: string;
 }
 export interface NativeSectionData { label: string; items: NativeItemData[] }
 
@@ -66,6 +72,11 @@ const PREDEFINED_EDIT: Record<string, 'Copy' | 'Cut' | 'Paste' | 'SelectAll'> = 
  *  native `text:` that comes from menu data goes through this. */
 export const nativeText = (s: string) => s.replace(/&/g, '&&');
 
+/** The label a native item shows, reason included. Imported rather than
+ *  reimplemented: the two menus reading an item differently is the bug. */
+const nativeLabel = (it: { label: string; note?: string }) =>
+  nativeText(labelWithNote(it.label, it.note));
+
 /** formatCombo's display string → a muda accelerator ("⌘⇧S" → "Cmd+Shift+S"). */
 export function displayShortcutToAccelerator(s?: string): string | undefined {
   if (!s) return undefined;
@@ -89,7 +100,7 @@ export function displayShortcutToAccelerator(s?: string): string | undefined {
 
 function signatureOf(sections: NativeSectionData[]): string {
   const item = (it: NativeItemData): unknown => [
-    it.separator ? '|' : it.label, it.disabled ? 1 : 0, it.shortcut ?? '',
+    it.separator ? '|' : labelWithNote(it.label, it.note), it.disabled ? 1 : 0, it.shortcut ?? '',
     it.checked === undefined ? '' : (it.checked ? 'C1' : 'C0'),
     it.children ? it.children.map(item) : (it.render ? 'R' : 0),
   ];
@@ -198,14 +209,14 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
     }
     if (it.children && it.children.length > 0) {
       const kids = await Promise.all(it.children.map((c, i) => buildItem(c, [...path, i], false)));
-      return Submenu.new({ text: nativeText(it.label), enabled: !it.disabled, items: kids as never[] });
+      return Submenu.new({ text: nativeLabel(it), enabled: !it.disabled, items: kids as never[] });
     }
     // v3.05: checkable items are real CheckMenuItems, so macOS draws the
     // checkmark in its own gutter. The signature includes checked state,
     // so a toggle rebuilds the menu with the mark in the right place.
     if (it.checked !== undefined) {
       return CheckMenuItem.new({
-        text: nativeText(it.label),
+        text: nativeLabel(it),
         checked: it.checked,
         enabled: !it.disabled && !!it.action,
         accelerator: displayShortcutToAccelerator(it.shortcut),
@@ -213,7 +224,7 @@ export async function syncNativeMenu(sections: NativeSectionData[]): Promise<voi
       });
     }
     return MenuItem.new({
-      text: nativeText(it.label),
+      text: nativeLabel(it),
       enabled: !it.disabled && !!(it.action || it.render),
       accelerator: displayShortcutToAccelerator(it.shortcut),
       action: () => { actionAt(path)?.(); },

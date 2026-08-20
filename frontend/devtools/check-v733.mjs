@@ -1,7 +1,9 @@
 /* check-v733 — Derek's four, from one reload of v7.32.
  *
  *   1 "design tool is not in the dev menu like it should be."
- *   2 "'AI Writer' is an option for the side panels… Action Rewrite was
+ *   2 "'AI Writer' is an option for the side panels…" — REVERSED in v7.68
+ *     ("readd the ai writer tool"); check-v768 holds it now. Originally:
+ *     "Action Rewrite was
  *      supposed to be fully removed"
  *   4 "the menu icons are not pure white. they are dddddd. change the gear
  *      icon color to match"
@@ -93,56 +95,16 @@ const dock = src('components/ToolDock.tsx');
 ok('Design is still devOnly (the menu is its only door)',
   /\{ id: 'design',[^\n]*devOnly: true/.test(dock), '');
 
-console.log('\n2. AI Writer is gone');
-
-await page.keyboard.press('Escape');
-await settle(page);
-const gone = await page.evaluate(async () => {
-  const st = window.__scStore.getState();
-  st.closeTool('design');
-  // Put the dead id back the way a stale saved layout would, then look at
-  // what the app rebuilds from it.
-  st.setToolConfig({ ...st.toolConfig, aiwriter: { side: 'right', enabled: true } });
-  await new Promise((r) => setTimeout(r, 400));
-  const railLabels = [...document.querySelectorAll('.tool-dock-item')].map((e) => (e.textContent || '').trim());
-  return { railLabels, inRail: railLabels.some((l) => /AI Writer/i.test(l)) };
-});
-ok('the rail rendered (else the next line proves nothing)',
-  (gone.railLabels || []).includes('Scenes'), JSON.stringify(gone.railLabels));
-ok('AI Writer is not in the tool rail', gone.inRail === false, JSON.stringify(gone.railLabels));
-
-/* Customize is MenuBar-local state, opened from View ▸ Customize… — the
-   side-panel list Derek was actually looking at. */
-await openMenu(page, 'View');
-await page.waitForSelector('.menu-dropdown', { timeout: 5000 });
-const cz = await page.evaluate(async () => {
-  const item = [...document.querySelectorAll('.menu-dropdown-item')]
-    .find((r) => /^Customize/.test((r.textContent || '').trim()));
-  if (!item) return { opened: false, why: 'no Customize item' };
-  item.click();
-  await new Promise((r) => setTimeout(r, 1100));
-  const body = document.body.innerText || '';
-  return {
-    opened: /Panels/i.test(body),
-    // every OTHER panel tool must still be listed — that is what makes the
-    // absence of one name meaningful rather than an empty dialog passing.
-    listsOtherTools: /Thesaurus/i.test(body) && /Goals/i.test(body),
-    anywhereOnScreen: /AI Writer/i.test(body),
-  };
-});
-ok('View ▸ Customize… opened the panel list', cz.opened === true, JSON.stringify(cz));
-ok('…and that list has the other tools in it', cz.listsOtherTools === true, JSON.stringify(cz));
-ok('…but not AI Writer', cz.anywhereOnScreen === false, '');
-
-/* The component, its styles and the ribbon exception all went with it — a
-   tool half-removed is the kind of thing that grows back. */
-ok('the component file is gone', (() => {
-  try { src('components/AiWriterTool.tsx'); return false; } catch { return true; }
-})(), '');
-ok('its stylesheet block is gone', !/fs-aiwriter/.test(src('styles/screenplay/20-tool-dock.css')), '');
-ok('the ribbon no longer special-cases it', !/aiwriter/.test(src('components/ribbonPaletteData.ts')), '');
-ok('the retirement map records it as DROPPED, not merged',
-  /aiwriter:\s*null/.test(src('stores/editorStore.ts')), '');
+console.log('\n2. AI Writer — MOVED to check-v768');
+/* v7.68, Derek: "readd the ai writer tool." Everything this section asserted
+   is now false ON PURPOSE, and check-v768 asserts the opposite: the tool is in
+   the registry, opens, renders its line, has its stylesheet back, and carries
+   no retirement entry that would strip it out of a saved layout again.
+   The MECHANISM the section was really guarding — a null heir means DROPPED,
+   so a deleted tool cannot come back from persisted state — outlived the tool
+   and is exercised against a synthetic id in stores/toolMigrations.test.ts.
+   Two checks asserting opposite things about the same four files is how one of
+   them ends up quietly wrong. */
 
 console.log('\n4. the gear matches the menu ink');
 

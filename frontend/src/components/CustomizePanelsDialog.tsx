@@ -820,7 +820,13 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
     >Backup &amp; Restore</button>
   );
 
-  const globalsButtons = lockButton;
+  /* v7.68, Derek: "move the restore and backup button to the same row as the
+     lock button." It sat under the tab rail (v7.56, "a button below the tabs")
+     while the lock sat in the footer, so the two window-wide controls stacked
+     into the loose column his screenshot shows. Both are about the whole
+     window rather than the open tab, so both belong on the one row that is
+     also window-wide. */
+  const globalsButtons = <>{lockButton}{backupDoor}</>;
 
   const body = (
       // v0.83: tabs live in a LEFT SIDEBAR, the same shape as Settings
@@ -841,11 +847,6 @@ export default function CustomizePanelsDialog({ open, onClose, embedded = false,
               onClick={() => setActiveCat(id)}
             >{label}</button>
           ))}
-          {/* v7.56, Derek: "a button below the tabs that says Backup &
-              Restore". Below the tabs is where it belongs — it is not about
-              the tab you happen to be on, which is the whole reason the pair
-              it replaces was wrong. */}
-          <div className="fs-customize-globals fs-customize-globals-row">{backupDoor}</div>
         </div>
         )}
         {/* v4.64, Derek: the lock must hold BELOW the fold too — the veil is

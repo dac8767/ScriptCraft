@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import CustomizePanelsDialog from './CustomizePanelsDialog';
+import { labelWithNote, NOTE_IN_DEVELOPMENT, NOTE_FORMAT_LOCKED } from '../menu/menuLabel';
 import { workspaceIsDirty } from '../stores/slices/workspacesSlice';
 import AddCustomPageDialog from './AddCustomPageDialog';
 import { MarkupIcon } from './markupIcons';
@@ -171,6 +172,7 @@ export const IN_DEVELOPMENT = 'This feature is still in development.';
  */
 export const FORMAT_LOCKED = 'The script format locks this element’s formatting (Format ▸ Script Format).';
 
+
 interface MenuItem {
   label: string;
   shortcut?: string;
@@ -190,6 +192,20 @@ interface MenuItem {
    *  harvester has to tell the two apart to list these in the Helper Text
    *  window, and a name that means one thing is how it does that. */
   tooltip?: string;
+  /** v7.68 — the reason, SHORT, shown in the label itself.
+   *
+   *  `tooltip` is hover text, and hover text does not exist in a native macOS
+   *  menu: nativeMenuSync hands Tauri a text/enabled/accelerator/checked
+   *  triple and Tauri's menu API has no tooltip field to hand it (NSMenuItem
+   *  has toolTip; Tauri does not expose it). So on Derek's Mac — which runs
+   *  the NATIVE menu — every disabled item has been grey and mute since v7.06,
+   *  no matter how many render paths passed `title` through. He reported it
+   *  twice.
+   *
+   *  A label is the only channel both menus share, so the reason goes there.
+   *  Keep it to two or three words: it renders as "Revision Mode (in
+   *  development)". The fuller `tooltip` still shows on hover in-app. */
+  note?: string;
   children?: MenuItem[];
   /** v2.62: custom submenu content (e.g. the Scrapbook's table-size grid).
    *  Rendered inside the submenu flyout instead of a children list; `close`
@@ -1307,10 +1323,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         // v0.87: Style and Alignment were submenus in a menu with barely anything
         // else in it — two clicks to reach Bold. Their contents are promoted to
         // the top of Format and the wrapper submenus are gone.
-        { icon: <FaBold />, label: 'Bold', shortcut: sc('bold'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold, tooltip: locked.bold ? FORMAT_LOCKED : undefined },
-        { icon: <FaItalic />, label: 'Italic', shortcut: sc('italic'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic, tooltip: locked.italic ? FORMAT_LOCKED : undefined },
-        { icon: <FaUnderline />, label: 'Underline', shortcut: sc('underline'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline, tooltip: locked.underline ? FORMAT_LOCKED : undefined },
-        { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough, tooltip: locked.strikethrough ? FORMAT_LOCKED : undefined },
+        { icon: <FaBold />, label: 'Bold', shortcut: sc('bold'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleBold().run(), disabled: locked.bold, tooltip: locked.bold ? FORMAT_LOCKED : undefined, note: locked.bold ? NOTE_FORMAT_LOCKED : undefined },
+        { icon: <FaItalic />, label: 'Italic', shortcut: sc('italic'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleItalic().run(), disabled: locked.italic, tooltip: locked.italic ? FORMAT_LOCKED : undefined, note: locked.italic ? NOTE_FORMAT_LOCKED : undefined },
+        { icon: <FaUnderline />, label: 'Underline', shortcut: sc('underline'), action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleUnderline().run(), disabled: locked.underline, tooltip: locked.underline ? FORMAT_LOCKED : undefined, note: locked.underline ? NOTE_FORMAT_LOCKED : undefined },
+        { icon: <FaStrikethrough />, label: 'Strikethrough', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).toggleStrike().run(), disabled: locked.strikethrough, tooltip: locked.strikethrough ? FORMAT_LOCKED : undefined, note: locked.strikethrough ? NOTE_FORMAT_LOCKED : undefined },
         /* v3.24 reorg #3: Subscript/Superscript removed — screenplay
            format never uses them (same call as the v3.19 palette cull).
            The editor marks still exist for imported documents. */
@@ -1319,10 +1335,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         {
           icon: <FaAlignLeft />, label: 'Alignment',
           children: [
-            { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined },
-            { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined },
-            { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined },
-            { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined },
+            { icon: <FaAlignLeft />, label: 'Align Left', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('left').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined, note: locked.textAlign ? NOTE_FORMAT_LOCKED : undefined },
+            { icon: <FaAlignCenter />, label: 'Align Center', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('center').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined, note: locked.textAlign ? NOTE_FORMAT_LOCKED : undefined },
+            { icon: <FaAlignRight />, label: 'Align Right', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('right').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined, note: locked.textAlign ? NOTE_FORMAT_LOCKED : undefined },
+            { icon: <FaAlignJustify />, label: 'Justify', action: () => editor?.chain().focus(undefined, { scrollIntoView: false }).setTextAlign('justify').run(), disabled: locked.textAlign, tooltip: locked.textAlign ? FORMAT_LOCKED : undefined, note: locked.textAlign ? NOTE_FORMAT_LOCKED : undefined },
           ],
         },
         { separator: true, label: '' },
@@ -1411,8 +1427,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
            hovering shows 'This feature is in development.'" Both keep their
            place and their icon; neither carries an action, so the shared
            handleItemClick already refuses to fire (it checks `disabled`). */
-        { icon: <FaToggleOn />, label: 'Revision Mode', disabled: true, tooltip: IN_DEVELOPMENT },
-        { icon: <FaTags />, label: 'Production Tags', disabled: true, tooltip: IN_DEVELOPMENT },
+        { icon: <FaToggleOn />, label: 'Revision Mode', disabled: true, tooltip: IN_DEVELOPMENT, note: NOTE_IN_DEVELOPMENT },
+        { icon: <FaTags />, label: 'Production Tags', disabled: true, tooltip: IN_DEVELOPMENT, note: NOTE_IN_DEVELOPMENT },
         {
           icon: <FaLock />,
           label: 'Lock Scene Numbers',
@@ -1425,10 +1441,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
              throw in the next menu along. */
           tooltip: sceneNumbersVisible ? undefined
             : 'Turn scene numbers on first (View ▸ Scene Numbers).',
+          note: sceneNumbersVisible ? undefined : 'scene numbers off',
         },
         // v1.34: Lock Pages is UNRELEASED — same Developer toggle as Help's.
         ...(showUnreleasedTools
-          ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true, tooltip: IN_DEVELOPMENT }]
+          ? [{ icon: <FaLock />, label: 'Lock Pages', disabled: true, tooltip: IN_DEVELOPMENT, note: NOTE_IN_DEVELOPMENT }]
           : []),
       ],
     },
@@ -1968,7 +1985,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             >
               {hasChecks(activeMenuData.items) && <span className="menu-check" />}
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
-              <span>{item.label}</span>
+              <span>{labelWithNote(item.label, item.note)}</span>
               <span className="menu-submenu-arrow">{openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? <FaChevronDown /> : <FaChevronRight />}</span>
               <div
                 className={`menu-submenu ${openSubmenu === submenuKey(activeMenuData.label, item.label!, i) ? 'submenu-visible' : ''}`}
@@ -2026,7 +2043,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
             >
               {hasChecks(activeMenuData.items) && <span className="menu-check">{item.checked ? <FaCheck /> : ''}</span>}
               {item.icon && <span className="menu-dropdown-icon">{item.icon}</span>}
-              <span>{item.label}</span>
+              <span>{labelWithNote(item.label, item.note)}</span>
               {item.shortcut && (
                 <span className="menu-shortcut">{item.shortcut}</span>
               )}

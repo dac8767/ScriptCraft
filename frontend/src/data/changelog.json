@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.68",
+    "date": "2026-08-20",
+    "changes": [
+      "Fix: greyed-out menu items now say why they're greyed out — “Revision Mode (in development)”, “Lock Scene Numbers (scene numbers off)”. They were supposed to explain themselves on hover, and in the Mac menu bar they never could: that menu has nowhere to put hover text. The reason is in the name itself now, so it's there whichever menu you're looking at, with no hovering.",
+      "The Customize window's “Backup & Restore” button moved down onto the same row as “Lock All”. Both are about the whole window rather than the tab you're on, so they belong together.",
+      "The AI Writer tool is back."
+    ]
+  },
+  {
     "version": "7.67",
     "date": "2026-08-20",
     "changes": [

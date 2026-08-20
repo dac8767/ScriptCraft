@@ -256,7 +256,7 @@ export type ToolId =
   | 'navigator' | 'scenes' | 'pages' | 'structure' | 'locations' | 'characters'
   | 'beatboard' | 'tags' | 'projects' | 'assets' | 'markups'
   | 'analytics' | 'gender' | 'goals' | 'sticky' | 'fragments' | 'todo'
-  | 'spelling' | 'history' | 'customize' | 'vomit' | 'typewriter'
+  | 'spelling' | 'history' | 'customize' | 'vomit' | 'typewriter' | 'aiwriter'
   | 'notebook' | 'design' | 'workspaces' | 'feedback' | 'thesaurus'
   /** v6.52, Derek: the Helper Text editor is a real TOOL now — draggable
    *  into a side panel like any window. Opens from Help ▸ Developer; no
@@ -472,6 +472,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
   beatboard: { side: 'right', enabled: true },
   goals: { side: 'right', enabled: true },
   typewriter: { side: 'right', enabled: true },
+  aiwriter: { side: 'right', enabled: true },
   // v5.53, Derek: the Thesaurus (local MyThes/WordNet data — no network)
   thesaurus: { side: 'right', enabled: true },
   notebook: { side: 'right', enabled: true },
@@ -485,7 +486,7 @@ export const DEFAULT_TOOL_CONFIG: Record<string, ToolConfig> = {
  *  within each panel. 'Reset to Default' restores exactly this. */
 export const DEFAULT_TOOL_ORDER: string[] = [
   'navigator', 'scenes', 'pages', 'characters', 'locations', 'spelling', 'assets',
-  'sticky', 'markups', 'fragments', 'beatboard', 'goals', 'typewriter', 'thesaurus', 'notebook', 'analytics',
+  'sticky', 'markups', 'fragments', 'beatboard', 'goals', 'typewriter', 'aiwriter', 'thesaurus', 'notebook', 'analytics',
   'tags',
 ];
 
@@ -567,7 +568,12 @@ export function migrateDesignToolMode(
  *  removed tool comes back from persisted state. */
 export const RETIRED_TOOL_IDS: Record<string, string | null> = {
   indexcards: 'scenes', todo: 'sticky', titlepage: 'pages',
-  aiwriter: null,   // v7.33, Derek — removed, no successor
+  /* v7.68, Derek: "readd the ai writer tool" — so it is NOT retired any more,
+     and the null heir has to go with it. Left in place, migrateToolId would
+     keep dropping 'aiwriter' out of every saved layout and workspace snapshot
+     the moment they loaded, and the tool would be un-keepable: addable from
+     Customize, gone again next launch. Deleting a tool needed this map;
+     un-deleting one needs it just as much. */
 };
 
 /** One id through the retirement map: its heir, itself, or null if dropped.

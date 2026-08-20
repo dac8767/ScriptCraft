@@ -60,8 +60,13 @@ if (door.skipped) {
   console.log(`  SKIP — ${door.skipped}`);
 } else {
   ok('the door is there', door.exists === true, JSON.stringify(door));
-  ok('…in the tab rail', door.inRail === true, JSON.stringify(door));
-  ok('…below the tabs, not among them', door.belowTabs === true, JSON.stringify(door));
+  /* v7.68, Derek: "move the restore and backup button to the same row as the
+     lock button." It sat under the tab rail from v7.56 ("a button below the
+     tabs") until the lock's own row turned out to be the better home — both
+     are window-wide, and stacked in two places they read as the loose column
+     of buttons he photographed. check-v768 pins the new placement; what stays
+     here is the part v7.56 was really about, which is that there is ONE of it
+     and it goes somewhere. */
   ok('…and there is exactly one of it', door.count === 1, JSON.stringify(door));
 }
 

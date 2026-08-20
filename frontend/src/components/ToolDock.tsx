@@ -24,7 +24,7 @@ import {
   FaStream, FaTags, FaBoxes, FaSpellCheck, FaHistory,
   FaKeyboard, FaBook, FaBookOpen, FaSlidersH, FaColumns,
   FaCommentDots, FaChevronRight, FaChevronDown, FaMarker,
-  FaRegEdit,
+  FaRegEdit, FaRobot,
 } from 'react-icons/fa';
 import { useEditorStore, toolConfigFor, NO_FULLSCREEN_TOOLS, FULLSCREEN_ONLY_TOOLS, type ToolId, type ToolSide } from '../stores/editorStore';
 import { useNotebookStore } from '../stores/notebookStore';
@@ -50,6 +50,7 @@ import ThesaurusTool from './ThesaurusTool';
 import { ScenesTool } from './ScenesTool';
 import BeatBoard, { OutlineHeaderControls, useOutlineTabs, OutlineTabsExtra, OutlineBeatCount } from './BeatBoard';
 import TypewriterTool, { FocusHeaderControls } from './TypewriterTool';
+import AiWriterTool from './AiWriterTool';
 import NotebookTool, { NotebookHeaderExtra } from './NotebookTool';
 import HelperTextTool, { HelperTextTitleExtra } from './HelperTextWindow';
 
@@ -119,6 +120,7 @@ export const ALL_TOOLS: ToolDef[] = [
   // v1.77: stays open on editor clicks — its options are tuned while writing.
   // v4.22, Derek: renamed "Typewriter" → "Focus" (the id stays 'typewriter' —
   // it's the persisted tool key and ribbon token).
+  { id: 'aiwriter', label: 'AI Writer', icon: <FaRobot />, defaultSize: { w: 300, h: 150 }, group: 3 },
   { id: 'typewriter', label: 'Focus', icon: <FaKeyboard />, defaultSize: { w: 340, h: 520 }, group: 3, keepOpenOnEditorClick: true },
   // v1.69: the joke. It ships enabled — that's the joke landing.
   // v5.53, Derek: the Thesaurus — MyThes en_US (WordNet-derived) bundled
@@ -590,6 +592,8 @@ export function ToolContent({ id, editor, scrollContainer, inTakeover = false }:
       return <GoalsTool editor={editor} />;
     case 'typewriter':
       return <TypewriterTool editor={editor} />;
+    case 'aiwriter':
+      return <AiWriterTool />;
     case 'notebook':
       return <NotebookTool />;
     case 'sticky':
