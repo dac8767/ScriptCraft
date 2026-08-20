@@ -100,39 +100,72 @@
 }
 .fs-ob-scroll::-webkit-scrollbar { display: none; }
 /* v2.28: the Premiere-style navigator — scroll and rescale from one bar. */
-/* v7.65, Derek: "the coloring of the scale bar for the outline toolbar is
+/* THE OUTLINE BAR'S SCALE BAR — two rounds of Derek's, and the second one
+   corrected the first.
+
+   v7.65: "the coloring of the scale bar for the outline toolbar is
    backwards… the section between the adjustment knobs is supposed to be the
-   light part, and the rest of the bar is supposed to be the dark part" — with
-   Premiere's zoom scrollbar attached as the reference.
+   light part, and the rest of the bar is supposed to be the dark part", with
+   Premiere's zoom scrollbar attached. It was, and worse: the track was
+   --fd-overlay-subtle (a 4% white VEIL, so a shade LIGHTER than the chrome)
+   and the thumb --fd-border (a shade darker). Inverted — and separated so
+   little that the thumb was invisible on all twelve themes, not only the ones
+   with the order wrong. Only the knobs could be seen.
 
-   He is right, and it was worse than backwards. The track was
-   --fd-overlay-subtle (a 4% white veil, so very slightly LIGHTER than the
-   chrome) and the thumb was --fd-border (slightly DARKER). Measured: on the
-   default dark theme, track 0.047 luminance against thumb 0.023 — inverted,
-   and separated by so little that the thumb was invisible in all twelve
-   themes, not just the ones where the order was wrong. Only the knobs could
-   be seen, which is why it reads as two loose dots on a flat bar.
+   v7.66: "Make sure the outline toolbar adjustment bar color fits the color
+   theme." The v7.65 fix reached for --fd-text-muted and --fd-text, which are
+   READING colours. At the widths this thumb actually takes it became the
+   brightest band in the outline bar — measured 4.3x the toolbar's own
+   luminance, body-text loudness for a piece of chrome — and a neutral grey in
+   every theme, ignoring the palette entirely.
 
-   The relationship, stated so it survives a theme flip: the TRACK is a
-   recessed well (--fd-border, the app's seam colour — darker than the chrome
-   in light themes and in dark ones alike), and the THUMB is foreground ink on
-   it (--fd-text-muted), with the knobs brighter still (--fd-text). On a dark
-   theme that comes out as Premiere: dark bar, light middle, lighter knobs. On
-   a light theme it inverts correctly instead of washing out.
-   devtools/probe-navbar.mjs measures it; check-v765 holds it. */
+   WHAT IT IS NOW, and why each piece:
+
+     track   --fd-border, the seam colour: a groove, darker than the chrome.
+     lip     an inset hairline. Solarized is deliberately low-contrast — its
+             border and chrome are close enough that no tonal groove exists
+             there (the thumb separates by 1.5x against 2.1-3.2x elsewhere),
+             so the groove is delineated by an EDGE as well as by tone. Same
+             move as the knobs' ring, for the same reason: a palette that
+             cannot express a step can still express a line.
+     thumb   the ACCENT, mixed 65% into the chrome. It wears the theme (blue
+             on dark, cyan on nord, purple on dracula, gold on gruvbox) and
+             stays a tint of it rather than a colour of its own.
+     knobs   the accent mixed toward the ink, so they read against the thumb
+             in light themes and dark ones alike, ringed in the seam colour.
+
+   The loudness rule is stated in CONTEXT, not as a ratio to the chrome. "Below
+   the ink" passes #999999 (below #e0e0e0) while that thumb still measured
+   4.3x the toolbar. A fixed ratio to the chrome is unstable — midnight's
+   toolbar is near-black, so every possible thumb scores loud against it. What
+   holds everywhere: the Beats lane is --fd-accent at full strength and is the
+   loudest thing in this bar BY DESIGN, because it is the content. A scrollbar
+   must not out-shout what it scrolls.
+
+   devtools/probe-navbar.mjs measures all of it; check-v766 holds it. Both
+   composite ALPHA before comparing anything — reading rgba(255,255,255,.04)
+   as opaque white is what made the first measurement report nine healthy
+   themes when the truth was twelve broken ones. */
 .fs-ob-nav {
   position: relative;
   height: 14px;
   margin-top: 3px;
   border-radius: 7px;
   background: var(--fd-border);
+  /* The groove's lip. Solarized is deliberately low-contrast — its border and
+     its chrome are close enough that there is no tonal groove to be had (the
+     thumb separates by only 1.5x there against 2.1-3.2x everywhere else), so
+     the track is delineated by an EDGE as well as by tone. Same move as the
+     knobs' ring, for the same reason: a palette that cannot express a step
+     can still express a line. */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fd-text) 32%, transparent);
 }
 .fs-ob-nav-thumb {
   position: absolute;
   top: 0;
   height: 100%;
   border-radius: 7px;
-  background: var(--fd-text-muted);
+  background: color-mix(in srgb, var(--fd-accent) 65%, var(--fd-toolbar-bg));
   cursor: grab;
 }
 .fs-ob-nav-thumb:hover { filter: brightness(1.15); }
@@ -142,12 +175,10 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--fd-text);
-  /* Ringed in the TRACK colour, so each knob is delineated by an edge and not
-     only by its tone. solarized-light puts --fd-text and --fd-text-muted a
-     1.33x step apart — a palette that low-contrast by design cannot separate
-     the knob from the thumb by luminance alone, and every theme's track
-     already contrasts with its thumb by 3.3x or more. */
+  background: color-mix(in srgb, var(--fd-accent) 85%, var(--fd-text));
+  /* Ringed in the seam colour, so each knob is delineated by an edge and not
+     only by its tone — the knob and the thumb are both drawn from the accent,
+     so on a low-contrast palette their tones can land close together. */
   box-shadow: 0 0 0 1.5px var(--fd-border);
   cursor: ew-resize;
 }

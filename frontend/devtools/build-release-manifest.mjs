@@ -47,7 +47,25 @@ function firstLine() {
   const SENTINEL = '\u0001';
   const masked = first.replace(/(\d)\.(\d)/g, `$1${SENTINEL}$2`);
   const sentence = /^(.*?[.!?])(\s|$)/.exec(masked);
-  return (sentence ? sentence[1] : masked).split(SENTINEL).join('.').trim();
+  const line = (sentence ? sentence[1] : masked).split(SENTINEL).join('.').trim();
+  return cap(line);
+}
+
+/**
+ * The banner shows this inline beside the version, so it has a budget.
+ *
+ * The changelog's first sentence is not written to one — v7.66's opens at 187
+ * characters, which is a paragraph in a pill. It is trimmed at a WORD boundary
+ * rather than mid-word, and the ellipsis is honest about there being more:
+ * the banner links to the release, which is where the rest of it lives.
+ * `--notes` overrides this whenever a release deserves a written teaser.
+ */
+const MAX_NOTE = 110;
+function cap(line) {
+  if (line.length <= MAX_NOTE) return line;
+  const cut = line.slice(0, MAX_NOTE);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > 40 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:—-]+$/, '')}…`;
 }
 
 const manifest = {

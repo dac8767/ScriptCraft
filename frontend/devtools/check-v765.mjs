@@ -5,19 +5,12 @@
  *    than the chosen save location in the same window?"
  *   "if no changes have been made to the current workspace, then 'Save changes
  *    to this workspace' and 'reset to saved layout' should be grayed out."
- *   "the coloring of the scale bar for the outline toolbar is backwards…
- *    the section between the adjustment knobs is supposed to be the light
- *    part, and the rest of the bar is supposed to be the dark part"
+ *   "the coloring of the scale bar for the outline toolbar is backwards…"
+ *    (now held by check-v766, which carries his v7.66 correction with it)
  *   "the script craft icon is larger than all other icons in the mac dock"
  *
- * TWO of these are measurements rather than assertions about a string, and
- * both are measurements the eye gets wrong:
- *
- *   The scale bar. Its track was rgba(255,255,255,.04) — a 4% white VEIL over
- *   the chrome, not white. Read as an opaque colour it measures luminance 1,
- *   which inverts every verdict; the first run of the probe said nine themes
- *   were fine when the truth was that the thumb was invisible in all twelve.
- *   Alpha is composited here before anything is compared.
+ * ONE of these is a measurement rather than an assertion about a string, and
+ * it is a measurement the eye gets wrong:
  *
  *   The dock icon. "Too big" is exact: macOS lays out icons on the 1024 canvas
  *   and reserves a margin, so artwork drawn edge to edge renders 1024/824 ≈
@@ -168,86 +161,13 @@ ok('…and both save and the dirty test read it',
   /saveWorkspace: \(name\) => set\(\(s\) => \{\s*const snap = captureWorkspace\(s\)/.test(wsSlice)
   && /stable\(captureWorkspace\(s\)\)/.test(wsSlice), '');
 
-/* ── the outline bar's scale bar ─────────────────────────────────────────── */
-console.log('\nthe outline scale bar reads like Premiere\'s');
-const nav = await page.evaluate(() => {
-  /* Alpha composited before anything is measured — the track is a 4% veil. */
-  const rgba = (s) => {
-    const n = (s.match(/[\d.]+/g) || []).map(Number);
-    const c = /^color\(/.test(s) ? n.slice(0, 3).map((v) => v * 255) : n.slice(0, 3);
-    return { c, a: n.length > 3 ? n[3] : 1 };
-  };
-  const over = (fg, bg) => {
-    const f = rgba(fg); const b = rgba(bg);
-    return f.c.map((v, i) => v * f.a + b.c[i] * (1 - f.a));
-  };
-  const lumOf = (c) => {
-    const f = c.map((v) => {
-      const x = v / 255;
-      return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
-    });
-    return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
-  };
-  const step = (a, b) => {
-    const [hi, lo] = [a, b].sort((x, y) => y - x);
-    return +((hi + 0.05) / (lo + 0.05)).toFixed(2);
-  };
-  const themes = new Set(['']);
-  for (const sheet of document.styleSheets) {
-    let rules; try { rules = sheet.cssRules; } catch { continue; }
-    for (const r of rules || []) {
-      const m = /\[data-theme="([^"]+)"\]/.exec(r.selectorText || '');
-      if (m) themes.add(m[1]);
-    }
-  }
-  const host = document.createElement('div');
-  host.innerHTML = '<div class="fs-ob-nav"><div class="fs-ob-nav-thumb">'
-    + '<div class="fs-ob-nav-handle fs-ob-nav-handle-l"></div></div></div>';
-  host.style.cssText = 'position:fixed;top:-999px;left:0;width:400px;background:var(--fd-toolbar-bg)';
-  document.body.appendChild(host);
-  const was = document.documentElement.getAttribute('data-theme');
-  const out = [];
-  for (const theme of themes) {
-    if (theme) document.documentElement.setAttribute('data-theme', theme);
-    else document.documentElement.removeAttribute('data-theme');
-    const chromeBg = getComputedStyle(host).backgroundColor;
-    const trackRgb = over(getComputedStyle(host.querySelector('.fs-ob-nav')).backgroundColor, chromeBg);
-    const thumbRgb = over(getComputedStyle(host.querySelector('.fs-ob-nav-thumb')).backgroundColor,
-      `rgb(${trackRgb.join(',')})`);
-    const knobEl = host.querySelector('.fs-ob-nav-handle');
-    const knobRgb = over(getComputedStyle(knobEl).backgroundColor, `rgb(${thumbRgb.join(',')})`);
-    const ringRaw = /(rgba?\([^)]*\)|color\([^)]*\))/.exec(getComputedStyle(knobEl).boxShadow)?.[1];
-    const ringRgb = ringRaw ? over(ringRaw, `rgb(${thumbRgb.join(',')})`) : thumbRgb;
-    const chrome = lumOf(rgba(chromeBg).c);
-    const track = lumOf(trackRgb); const thumb = lumOf(thumbRgb);
-    out.push({
-      theme: theme || 'default',
-      dark: chrome < 0.2,
-      thumbLighter: thumb > track,
-      thumbStep: step(thumb, track),
-      knobStep: Math.max(step(lumOf(knobRgb), thumb), step(lumOf(ringRgb), thumb)),
-    });
-  }
-  host.remove();
-  if (was) document.documentElement.setAttribute('data-theme', was);
-  else document.documentElement.removeAttribute('data-theme');
-  return out;
-});
-
-ok('every theme was measured', nav.length >= 10, `${nav.length} themes`);
-/* Derek's sentence, as a test: on a dark theme the middle is the LIGHT part
-   and the rest of the bar is the dark part. On a light theme the same
-   relationship inverts — what has to hold either way is that the thumb reads
-   as foreground. */
-const wrongWay = nav.filter((r) => (r.dark ? !r.thumbLighter : r.thumbLighter));
-ok('the part between the knobs is the light part on every dark theme',
-  wrongWay.length === 0, JSON.stringify(wrongWay));
-/* A SIGN is not enough. Before this change nine of twelve themes already had
-   the right sign and the thumb was still invisible — 0.072 against 0.067. */
-const flat = nav.filter((r) => r.thumbStep < 2);
-ok('…and separated enough to see (≥2x, was 1.07x)', flat.length === 0, JSON.stringify(flat));
-const lostKnobs = nav.filter((r) => r.knobStep < 1.5);
-ok('…with the knobs still distinct from the thumb', lostKnobs.length === 0, JSON.stringify(lostKnobs));
+/* ── the outline bar's scale bar ─────────────────────────────────────────
+   MOVED to check-v766. Derek corrected this one the next day ("make sure the
+   colour fits the color theme"), and the rules changed with it: a thumb built
+   from the accent instead of from reading colours, and a groove that may be
+   delineated by its lip where a low-contrast palette cannot give a tonal step.
+   Two checks asserting overlapping-but-different rules on the same four CSS
+   declarations is how one of them ends up quietly wrong. ── */
 
 /* ── the dock icon fits Apple's grid ─────────────────────────────────────── */
 console.log('\nthe app icon sits on Apple\'s grid instead of filling the canvas');
