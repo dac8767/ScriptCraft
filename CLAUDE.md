@@ -322,14 +322,69 @@ wants it back.
 
 ## 6. Open items
 
-- **Rotate the GitHub PAT** — embedded in a remote URL and has appeared in terminal output.
-- **Replace all OpenDraft brand art** (`src-tauri/icons/`, splash, favicon) — biggest release
-  blocker.
-- Apple Developer Program membership; swap the Proteus signing identity in `build-desktop.sh`.
-- `languageCatalog.ts` fetches dictionaries from Proteus's CDN — rehost before release.
-- Dictionary + Courier Prime license files; trademark clearance on "ScriptCraft".
-- `macos-private-api` is enabled in `src-tauri/Cargo.toml` — this **rules out the Mac App
-  Store**. Fine for the `.dmg` plan, but know it.
+> Re-verified v7.66 against the tree, one item at a time. Half of what this
+> list used to say was already done — it named the brand art as "the biggest
+> release blocker" months after that art shipped, and it nearly sent this
+> session chasing a PAT that is not there. **Check before you act on a line
+> here, and correct the line when you do.**
+
+### Actually still open
+
+- **Apple Developer Program ($99/yr), and your own signing identity.**
+  `build-desktop.sh:51` still exports
+  `Developer ID Application: Base Information Management Pvt. Ltd. (335RGMFDB6)`
+  — Proteus's certificate, whose private key we do not have. Unsigned means
+  Gatekeeper's "cannot be opened because the developer cannot be verified".
+  Nothing else on this list matters until the app opens.
+- **Courier Prime ships with no licence file.** Four `.ttf` in
+  `frontend/public/fonts/` and no OFL text anywhere. SIL OFL 1.1 permits
+  commercial bundling but REQUIRES the licence travel with the font. One file.
+- **Trademark clearance on "ScriptCraft".** Not searched. The name is in use
+  elsewhere (there is a well-known open-source ScriptCraft for Minecraft), and
+  screenwriting software is a dense category. USPTO TESS is free.
+- **`docs/PRIVACY.md` is now false, and it is about to carry your name.** It
+  says the app is "developed by Proteus Technologies Private Limited", collects
+  nothing, and that "the only optional network feature is real-time
+  collaboration". The app now talks to Supabase (feedback, INCLUDING uploaded
+  screenshots), raw.githubusercontent.com (the update check), Google Fonts,
+  jsDelivr + LibreOffice (dictionaries), and Google/Microsoft if Drive or
+  OneDrive is configured.
+- **The Supabase feedback key ships to whoever has the app.** Publishable by
+  design, and fine while the readers are testers. Confirm the `feedback` table
+  is insert-only with no select, and that `feedback-shots` has size and rate
+  limits, before it is on the open internet.
+- **Nothing gates the app.** No licence key, no trial, no activation, no
+  payment path anywhere in the tree. If it is to be sold, a merchant of record
+  (Paddle / Lemon Squeezy) also solves EU VAT, which applies from the first
+  euro of consumer sales.
+- **Windows and Linux build but are unsigned.** The CI matrix produces all
+  three. Unsigned Windows means SmartScreen on every download; see
+  `docs/WINDOWS_SIGNING.md`.
+- **`macos-private-api` is enabled** in `src-tauri/Cargo.toml` — this **rules
+  out the Mac App Store**. Fine for the `.dmg` plan, but know it.
+
+### Unverified, and worth five seconds
+
+- **The `opendraft-extra` dictionaries may be 404ing.** `languageCatalog.ts`
+  serves four of them from
+  `https://cdn.jsdelivr.net/gh/dac8767/ScriptCraft@main/dictionaries-extra`,
+  and jsDelivr's `/gh/` endpoint serves **public repositories only**. This repo
+  looks private. Neither the sandbox that wrote that line nor the one that
+  wrote this one can reach jsDelivr to check — open the URL in a browser. If it
+  404s, those languages fail silently and the files need a public home.
+
+### Done — do not re-open these
+
+- ~~Rotate the GitHub PAT~~ — the remote is a plain
+  `https://github.com/dac8767/ScriptCraft`, no token embedded.
+- ~~Replace all OpenDraft brand art~~ — icons, splash and favicon are all the
+  SC artwork; the whole set was regenerated onto Apple's grid in v7.65.
+- ~~Dictionaries fetched from Proteus's CDN~~ — they come from jsDelivr and
+  LibreOffice's own repo now (but see the note above).
+- ~~Dependency licences~~ — audited v7.65: 463 packages, 376 MIT / 26 ISC /
+  20 Apache-2.0, no viral copyleft. JSZip is dual MIT-or-GPL (elect MIT); three
+  MPL-2.0 are file-level only. Upstream OpenDraft is **MIT**, so a closed-source
+  commercial product is permitted provided the notice ships. No TipTap Pro.
 
 ---
 
