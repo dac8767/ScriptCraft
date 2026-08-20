@@ -365,13 +365,25 @@ wants it back.
 
 ### Unverified, and worth five seconds
 
-- **The `opendraft-extra` dictionaries may be 404ing.** `languageCatalog.ts`
-  serves four of them from
+- **Odia spell-check is 404ing.** `languageCatalog.ts` serves it from
   `https://cdn.jsdelivr.net/gh/dac8767/ScriptCraft@main/dictionaries-extra`,
   and jsDelivr's `/gh/` endpoint serves **public repositories only**. This repo
-  looks private. Neither the sandbox that wrote that line nor the one that
-  wrote this one can reach jsDelivr to check — open the URL in a browser. If it
-  404s, those languages fail silently and the files need a public home.
+  is private — confirmed v7.66 from GitHub's own settings page. `main` does
+  carry `dictionaries-extra/or_IN`, so the ref is right and the visibility is
+  the whole problem.
+
+  ONE language, not four: `or_IN` is the only `opendraft-extra` entry (7.6 MB,
+  a 321,831-word list). An earlier pass here counted regex hits on the string
+  `opendraft-extra` — a type, a const and two uses — and reported them as four
+  languages.
+
+  **Do not fix this by making the repo public.** That publishes the whole
+  commercial source to serve one dictionary. It is also blocked twice over:
+  GitHub refuses visibility changes on a fork, so it would mean leaving the
+  fork network first. Host the folder in the PUBLIC `ScriptCraft-releases`
+  repo (which the updater already uses) and repoint the constant, or bundle
+  the 7.6 MB in the app and drop the CDN entirely. Switching to LibreOffice's
+  or_IN is already ruled out in the source: 1,030 words against 321,831.
 
 ### Done — do not re-open these
 
