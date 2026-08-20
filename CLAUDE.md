@@ -363,36 +363,19 @@ wants it back.
 - **`macos-private-api` is enabled** in `src-tauri/Cargo.toml` — this **rules
   out the Mac App Store**. Fine for the `.dmg` plan, but know it.
 
-### Unverified, and worth five seconds
-
-- **Odia spell-check is 404ing.** `languageCatalog.ts` serves it from
-  `https://cdn.jsdelivr.net/gh/dac8767/ScriptCraft@main/dictionaries-extra`,
-  and jsDelivr's `/gh/` endpoint serves **public repositories only**. This repo
-  is private — confirmed v7.66 from GitHub's own settings page. `main` does
-  carry `dictionaries-extra/or_IN`, so the ref is right and the visibility is
-  the whole problem.
-
-  ONE language, not four: `or_IN` is the only `opendraft-extra` entry (7.6 MB,
-  a 321,831-word list). An earlier pass here counted regex hits on the string
-  `opendraft-extra` — a type, a const and two uses — and reported them as four
-  languages.
-
-  **Do not fix this by making the repo public.** That publishes the whole
-  commercial source to serve one dictionary. It is also blocked twice over:
-  GitHub refuses visibility changes on a fork, so it would mean leaving the
-  fork network first. Host the folder in the PUBLIC `ScriptCraft-releases`
-  repo (which the updater already uses) and repoint the constant, or bundle
-  the 7.6 MB in the app and drop the CDN entirely. Switching to LibreOffice's
-  or_IN is already ruled out in the source: 1,030 words against 321,831.
-
 ### Done — do not re-open these
 
 - ~~Rotate the GitHub PAT~~ — the remote is a plain
   `https://github.com/dac8767/ScriptCraft`, no token embedded.
 - ~~Replace all OpenDraft brand art~~ — icons, splash and favicon are all the
   SC artwork; the whole set was regenerated onto Apple's grid in v7.65.
-- ~~Dictionaries fetched from Proteus's CDN~~ — they come from jsDelivr and
-  LibreOffice's own repo now (but see the note above).
+- ~~Dictionaries fetched from Proteus's CDN~~ — LibreOffice's own repo now,
+  and Odia SHIPS WITH THE APP (v7.67). It had been fetched from jsDelivr's
+  `/gh/` endpoint, which serves public repos only, so it 404'd from the day
+  that line was written — silently, because a failed download is
+  indistinguishable from a language nobody selected. Do not put a CDN back:
+  the alternative was publishing the whole commercial source to serve one
+  7.6 MB word list.
 - ~~Dependency licences~~ — audited v7.65: 463 packages, 376 MIT / 26 ISC /
   20 Apache-2.0, no viral copyleft. JSZip is dual MIT-or-GPL (elect MIT); three
   MPL-2.0 are file-level only. Upstream OpenDraft is **MIT**, so a closed-source

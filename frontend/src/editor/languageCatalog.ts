@@ -84,27 +84,32 @@ export function findLanguage(code: string): CatalogLanguage | undefined {
   return ALL_BY_CODE.get(code);
 }
 
-/** GitHub repo that hosts the `dictionaries-extra/` folder consumed by the
- *  `opendraft-extra` source kind. Pinned to `main` — jsDelivr caches a single
- *  ref aggressively, so users won't re-download on every release.
+/** Where the `opendraft-extra` dictionaries live. SHIPPED WITH THE APP, in
+ *  frontend/public/dictionaries-extra/ — the same way en_US already works.
  *
- *  v7.36, Derek asked how to get off Proteus's CDN. The answer turned out to
- *  be: change this line. The dictionary was never theirs to lend — the folder,
- *  the filtered 320k-word list and its MPL-2.0 NOTICE.md are all committed in
- *  THIS repo (dictionaries-extra/or_IN/, byte-identical to what that URL was
- *  serving), and `main` carries them, which is the ref jsDelivr reads. Only
- *  the constant still said Proteus.
+ *  v7.36 pointed this at jsDelivr, reading our own repo, to get off Proteus's
+ *  CDN. v7.67: that URL has been 404ing the whole time. jsDelivr's `/gh/`
+ *  endpoint serves PUBLIC repositories only and this repo is private, so Odia
+ *  spell-check silently did nothing — a download that fails is indistinguishable
+ *  from a language nobody selected. Neither sandbox that touched that line
+ *  could reach jsDelivr to notice; GitHub's own settings page is what finally
+ *  said so.
  *
- *  Not switched to LibreOffice, which also publishes or_IN: theirs is 1,030
- *  words against this list's 321,831, so "remove the dependency" that way
- *  would have quietly gutted Odia spell-check to buy a URL change.
+ *  The obvious repair was to make the repo public. That publishes the entire
+ *  commercial source to serve one dictionary, and GitHub blocks it anyway
+ *  (visibility cannot be changed on a fork). Bundling costs 7.6 MB in the
+ *  .dmg and removes the network from the path entirely — no CDN, no repo
+ *  visibility, and it works offline, which for a spell-checker is the right
+ *  behaviour regardless.
  *
- *  NOTE for whoever verifies this: jsDelivr is unreachable from the sandbox
- *  these commits are written in, so the URL shape is checked against the
- *  repo's tree rather than by fetching it. The ref must keep pointing at a
- *  branch or tag that CONTAINS dictionaries-extra/ — `main` does today. */
-const OPENDRAFT_EXTRA_BASE =
-  'https://cdn.jsdelivr.net/gh/dac8767/ScriptCraft@main/dictionaries-extra';
+ *  Still not switched to LibreOffice, which also publishes or_IN: theirs is
+ *  1,030 words against this list's 321,831, so "remove the dependency" that
+ *  way would quietly gut Odia spell-check.
+ *
+ *  dictionaries-extra/or_IN/ at the repo root stays as the source of record
+ *  (it carries the MPL-2.0 NOTICE.md); public/ holds the shipped copy.
+ *  check-v767 fails if the two drift apart. */
+const OPENDRAFT_EXTRA_BASE = '/dictionaries-extra';
 
 /** Build .aff/.dic download URLs for a catalog entry. */
 export function urlsFor(lang: CatalogLanguage): { aff: string; dic: string } {

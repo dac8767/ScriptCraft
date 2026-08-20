@@ -1,5 +1,12 @@
 [
   {
+    "version": "7.67",
+    "date": "2026-08-20",
+    "changes": [
+      "Fix: Odia spell-check never worked. The dictionary was being downloaded from an address that has been returning “not found” the whole time, and a failed download looks exactly like a language you never turned on — so it just quietly did nothing. It now ships inside the app, like English already did, and works with no internet connection at all."
+    ]
+  },
+  {
     "version": "7.66",
     "date": "2026-08-20",
     "changes": [
