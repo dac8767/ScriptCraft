@@ -150,6 +150,14 @@ const fb = await page.evaluate(async () => {
      tool renders the name/email card and every assertion below would pass
      against nothing. */
   localStorage.setItem('opendraft:feedbackProfile', JSON.stringify({ name: 'Tester T', email: 't@example.com' }));
+  /* MOUNT IT AFTER the profile exists. The panel reads the profile once, when
+     it mounts, and v7.72's shipped defaults have Feedback already open in the
+     right panel — so it had mounted at boot, before the line above ran, and
+     openTool on an already-open tool does not re-mount it. Every assertion
+     below then measured the name/email card instead of the form. Close first,
+     so the open below is a real mount. */
+  window.__scStore.getState().closeTool('feedback');
+  await new Promise((r) => setTimeout(r, 200));
   window.__scStore.getState().openTool('feedback');
   await new Promise((r) => setTimeout(r, 700));
   const head = document.querySelector('.fb-attach-head');

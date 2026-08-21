@@ -25,7 +25,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { launch, boot, settle } from './driver.mjs';
-import { EXCLUDED_SETTINGS, EXCLUDED_VIEWSTATE } from './build-default-preset.mjs';
+import { EXCLUDED_SETTINGS, EXCLUDED_PREFIXES, EXCLUDED_VIEWSTATE } from './build-default-preset.mjs';
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra = '') => {
@@ -54,6 +54,14 @@ ok('…nor the three view-state fields', leakedVs.length === 0, JSON.stringify(l
 const raw = JSON.stringify(BUNDLE);
 ok('…no email address anywhere in it', !/@pm\.me|derekcarl/i.test(raw), '');
 ok('…no path into his home folder', !/\/Users\/dcarl|\/Volumes\/Home/.test(raw), '');
+/* v7.72: the SEED MARK must never be in here. His 2026-08-21 export carried
+   `opendraft:defaultsSeeded:1` — the note saying his machine had already had
+   the defaults written into it. As a shipped default it is nonsense, and a
+   preset carrying it, imported into a genuinely fresh install, would stop that
+   install seeding at all. Prefix-matched because the key is versioned. */
+const seeds = Object.keys(BUNDLE.parts.settings)
+  .filter((k) => EXCLUDED_PREFIXES.some((p) => k.startsWith(p)));
+ok('…and no "already seeded" mark', seeds.length === 0, JSON.stringify(seeds));
 /* Every value localStorage holds is a string; a nested object here would be
    written as "[object Object]" and read back as junk by whatever parses it. */
 const nonString = Object.entries(BUNDLE.parts.settings).filter(([, v]) => typeof v !== 'string');

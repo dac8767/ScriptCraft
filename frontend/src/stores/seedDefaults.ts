@@ -27,7 +27,7 @@
  * The reasons are listed there, by key.
  */
 import DEFAULT_PRESET from '../data/defaultPreset.json';
-import { BACKUP_EXCLUDED } from '../utils/settingsBackup';
+import { isBackupExcluded } from '../utils/settingsBackup';
 import { WORKSPACE_FIELDS } from './workspaceFields';
 
 /** Bumping the suffix re-runs the pass — for a NEW default bundle, not for
@@ -175,7 +175,7 @@ export function seedDefaultSettings(): string[] {
       /* The same rule applyBackup uses on an imported file, from the same
          list: only `opendraft:*`, never a credential or a per-device id, and
          only the raw strings localStorage actually holds. */
-      if (!key.startsWith(PREFIX) || BACKUP_EXCLUDED.has(key)) continue;
+      if (!key.startsWith(PREFIX) || isBackupExcluded(key)) continue;
       if (typeof value !== 'string') continue;
       if (localStorage.getItem(key) !== null) continue;   // never overwrite
       localStorage.setItem(key, value);

@@ -5,7 +5,7 @@
  * dev app's config can move to a release build.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { gatherSettings, buildBackup, applyBackup, BACKUP_EXCLUDED } from './settingsBackup';
+import { gatherSettings, buildBackup, applyBackup, BACKUP_EXCLUDED, isBackupExcluded } from './settingsBackup';
 
 beforeEach(() => localStorage.clear());
 
@@ -80,5 +80,39 @@ describe('applyBackup validation', () => {
     expect(localStorage.getItem('opendraft:theme')).toBe('dark');
     expect(localStorage.getItem('evil')).toBeNull();
     expect(localStorage.getItem('opendraft:auth')).toBeNull();
+  });
+});
+
+/**
+ * v7.72: the seed mark must not travel — in either direction.
+ *
+ * Derek's 2026-08-21 preset export carried `opendraft:defaultsSeeded:1`,
+ * because his app had been seeded. Shipped as a default it is nonsense, and
+ * imported into a genuinely fresh install it says "already done" and stops
+ * that install ever receiving the defaults. Prefix-matched, because the key
+ * carries a version suffix and bumping it must not silently un-exclude it.
+ */
+describe('the shipped-defaults seed mark never travels', () => {
+  it('is excluded by prefix, whatever the version suffix', () => {
+    expect(isBackupExcluded('opendraft:defaultsSeeded:1')).toBe(true);
+    expect(isBackupExcluded('opendraft:defaultsSeeded:9')).toBe(true);
+    // and the plain rule still holds, in both directions
+    expect(isBackupExcluded('opendraft:auth')).toBe(true);
+    expect(isBackupExcluded('opendraft:theme')).toBe(false);
+  });
+
+  it('an export leaves it behind', () => {
+    localStorage.setItem('opendraft:defaultsSeeded:1', 'v7.72');
+    localStorage.setItem('opendraft:theme', 'dark');
+    expect(gatherSettings()).toEqual({ 'opendraft:theme': 'dark' });
+  });
+
+  it('and an import refuses it, so a fresh install still seeds', () => {
+    applyBackup(JSON.stringify({
+      app: 'ScriptCraft', kind: 'settings-backup', version: 1, exportedAt: 'x',
+      data: { 'opendraft:defaultsSeeded:1': 'v7.70', 'opendraft:theme': 'dark' },
+    }));
+    expect(localStorage.getItem('opendraft:defaultsSeeded:1')).toBeNull();
+    expect(localStorage.getItem('opendraft:theme')).toBe('dark');
   });
 });

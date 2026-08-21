@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.72",
+    "date": "2026-08-21",
+    "changes": [
+      "Your latest preset is in. The Default workspace's ribbon lost the two empty sections at the end and the alignment split moved up to take their place — 62 buttons now instead of 64. Everything else about the five workspaces is unchanged.",
+      "Your Default workspace now also opens the Feedback panel on the right — you had it open when you exported, and it's saved into the workspace. Tell me if you'd rather it didn't and I'll clear it.",
+      "Fix: preset and backup files were carrying a hidden marker that says \"this machine already has the defaults\". Yours did. Importing such a file into a brand-new install would have told it the defaults were already in place, so it would never have received them. The marker is now kept out of every export and refused on the way back in."
+    ]
+  },
+  {
     "version": "7.71",
     "date": "2026-08-21",
     "changes": [

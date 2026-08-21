@@ -40,6 +40,17 @@ export const EXCLUDED_SETTINGS = {
   'opendraft:saveloc:snapToLocalFolder': 'points at the snapshot folder above',
 };
 
+/** Key PREFIXES dropped the same way — for keys that carry a version suffix.
+ *
+ *  v7.72: his 2026-08-21 export carried `opendraft:defaultsSeeded:1`, the mark
+ *  saying that machine had already had the shipped defaults written into it.
+ *  Shipping "already seeded" as part of the defaults is nonsense, and importing
+ *  such a preset into a genuinely fresh install would stop it seeding at all.
+ *  The real defence is in the app — isBackupExcluded (utils/settingsBackup.ts)
+ *  now keeps it out of every export and refuses it on the way back in — so this
+ *  is belt and braces, and it keeps the committed bundle readable. */
+export const EXCLUDED_PREFIXES = ['opendraft:defaultsSeeded:'];
+
 /** Fields inside the viewState blob, same rule. */
 export const EXCLUDED_VIEWSTATE = {
   showUnreleasedTools:
@@ -67,6 +78,9 @@ export function buildDefaultPreset(bundle) {
   const settings = { ...(bundle.parts.settings ?? {}) };
   for (const key of Object.keys(EXCLUDED_SETTINGS)) {
     if (key in settings) { delete settings[key]; dropped.push(key); }
+  }
+  for (const key of Object.keys(settings)) {
+    if (EXCLUDED_PREFIXES.some((p) => key.startsWith(p))) { delete settings[key]; dropped.push(key); }
   }
 
   /* viewState rides inside settings as a JSON string. */

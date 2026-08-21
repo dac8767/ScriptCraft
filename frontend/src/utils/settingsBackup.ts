@@ -31,6 +31,24 @@ export const BACKUP_EXCLUDED = new Set<string>([
   'opendraft:fallback',
 ]);
 
+/** Key prefixes that never travel either (v7.72).
+ *
+ *  `opendraft:defaultsSeeded:N` is the mark saying THIS machine has already
+ *  had the shipped defaults written into it. Derek's 2026-08-21 export carried
+ *  it, because his app had been seeded — and a preset that says "already
+ *  seeded" would, if imported into a genuinely fresh install, stop that install
+ *  from ever seeding. The version suffix is why this is a prefix and not
+ *  another entry in the Set above: bumping it must not silently un-exclude it.
+ */
+const EXCLUDED_PREFIXES = ['opendraft:defaultsSeeded:'];
+
+/** The one answer to "may this key travel?" — used on the way out
+ *  (gatherSettings), on the way in (applyBackup), and by the shipped-defaults
+ *  seeder, so a key cannot be excluded from one and not the others. */
+export function isBackupExcluded(key: string): boolean {
+  return BACKUP_EXCLUDED.has(key) || EXCLUDED_PREFIXES.some((p) => key.startsWith(p));
+}
+
 export interface SettingsBackup {
   app: 'ScriptCraft';
   kind: 'settings-backup';
@@ -49,7 +67,7 @@ export function gatherSettings(s?: Storage): Record<string, string> {
   const out: Record<string, string> = {};
   for (let i = 0; i < st.length; i++) {
     const key = st.key(i);
-    if (!key || !key.startsWith(PREFIX) || BACKUP_EXCLUDED.has(key)) continue;
+    if (!key || !key.startsWith(PREFIX) || isBackupExcluded(key)) continue;
     const val = st.getItem(key);
     if (val !== null) out[key] = val;
   }
@@ -84,7 +102,7 @@ export function applyBackup(json: string, s?: Storage): ApplyResult {
   const st = store(s);
   let imported = 0, skipped = 0;
   for (const [key, val] of Object.entries(d.data as Record<string, unknown>)) {
-    if (!key.startsWith(PREFIX) || BACKUP_EXCLUDED.has(key) || typeof val !== 'string') { skipped++; continue; }
+    if (!key.startsWith(PREFIX) || isBackupExcluded(key) || typeof val !== 'string') { skipped++; continue; }
     st.setItem(key, val);
     imported++;
   }
