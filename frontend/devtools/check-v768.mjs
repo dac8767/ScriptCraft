@@ -64,6 +64,13 @@ await boot(page);
 await settle(page);
 
 const production = await page.evaluate(async () => {
+  /* v7.69 hid the Production menu ("hide the entire production menu for now"),
+     and the in-development items this section is about live in it. The toggle
+     that hides it is the same Developer one that already gated Lock Pages, so
+     the mechanism is tested where the items actually are rather than moved to
+     a menu that happens to have a greyed item today. */
+  window.__scStore.getState().setShowUnreleasedTools(true);
+  await new Promise((r) => setTimeout(r, 400));
   [...document.querySelectorAll('.menu-item')].find((m) => m.textContent.trim() === 'Production')?.click();
   await new Promise((r) => setTimeout(r, 500));
   return [...document.querySelectorAll('.menu-dropdown-item')].map((el) => ({

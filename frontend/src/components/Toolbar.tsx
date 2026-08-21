@@ -1436,6 +1436,24 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               startRibbonDrag(e, `sec:${i}`);
             }}
           >
+            {/* v7.69, Derek: "it is very hard to move ribbon toolbar spaces. make
+                the top of the section easier to grab in order to drag and move
+                the section." The only grabbable area WAS the few pixels of
+                margin around the items: the top strip is the title field, and
+                a text input has to swallow pointerdown or you could not put a
+                caret in it. So the section gets a real handle across its top —
+                a strip that is nothing but a drag target, above the title
+                rather than fighting it. (v6.82 removed the "Drag to move this
+                section" tooltip because it collided with edit mode's other
+                bubbles; a visible grip says the same thing without a bubble.) */}
+            <span
+              /* NOT `rib-edit-grip`: startRibbonDrag refuses anything inside
+                 that class (it belongs to an older resize grip), so the first
+                 version of this handle looked grabbable and did nothing at all
+                 — the exact silent no-op it was added to remove. */
+              className="rib-edit-sechandle"
+              onPointerDown={(e) => startRibbonDrag(e, `sec:${i}`)}
+            />
             {sections.length > 1 && (
               <button
                 className="rib-edit-x rib-edit-secclose"

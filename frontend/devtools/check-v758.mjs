@@ -47,6 +47,13 @@ await boot(page);
 /* ── 4. the greyed items say why ─────────────────────────────────────────── */
 console.log('\na greyed menu item can be hovered, and says why it is grey');
 const menu = await page.evaluate(async () => {
+  /* v7.69 hid the Production menu ("hide the entire production menu for now")
+     behind the Developer toggle, and the greyed items this section is about
+     live in it. Turned on here so the mechanism is tested where the items
+     actually are, rather than relocated to whichever menu happens to have a
+     disabled item on the day. */
+  window.__scStore.getState().setShowUnreleasedTools(true);
+  await new Promise((r) => setTimeout(r, 400));
   const open = () => [...document.querySelectorAll('.menu-item')]
     .find((m) => m.textContent.trim() === 'Production')?.click();
   open();

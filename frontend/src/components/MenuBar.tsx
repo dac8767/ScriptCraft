@@ -1568,7 +1568,17 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
   // orderedMenus, and can't be customized or hidden.
   const scrapbookMenus = useScrapbookMenus() as unknown as MenuSection[];
 
-  const visibleMenus = menus.filter((m) => m.label === 'File' || !menuBarHidden.includes(m.label));
+  /* v7.69, Derek: "hide the entire production menu for now." Behind the same
+     Developer toggle that already gated Lock Pages, rather than deleted — "for
+     now" says it comes back, and a menu that still builds is a menu that has
+     not rotted while it waited. Three of its four items were unbuilt anyway;
+     the fourth, Lock Scene Numbers, keeps its other door as an addable ribbon
+     button (toolbarCommands' lockSceneNumbers), so nothing working is
+     orphaned by this. */
+  const visibleMenus = menus.filter((m) => (
+    (m.label === 'File' || !menuBarHidden.includes(m.label))
+    && (m.label !== 'Production' || showUnreleasedTools)
+  ));
   const orderIdxOf = (label: string) => {
     const i = menuBarOrder.indexOf(label);
     return i === -1 ? 100 + menus.findIndex((m) => m.label === label) : i;

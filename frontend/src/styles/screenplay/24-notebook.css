@@ -509,6 +509,49 @@
   background: color-mix(in srgb, var(--fd-navigator-bg) 40%, transparent);
 }
 .rib-edit-section:hover { outline-color: color-mix(in srgb, var(--fd-accent) 45%, var(--fd-border)); }
+
+/* v7.69, Derek: "it is very hard to move ribbon toolbar spaces. make the top of
+   the section easier to grab in order to drag and move the section."
+
+   The section has always been draggable from anywhere that is not a control,
+   but in practice that meant the two or three pixels of margin around the
+   items: the top strip is the title INPUT, and a text field must swallow
+   pointerdown or you could never put a caret in it. So the top is now a strip
+   that does nothing else.
+
+   It is the full width of the section and sits ABOVE the title rather than
+   competing with it, and it carries the same two-line grip the menu-bar and
+   toolbar spacing handles use (.fs-gap-handle-bar) so it reads as "drag me"
+   from the app's own vocabulary. Only in edit mode — the live bar has no
+   sections to move. */
+.rib-edit-sechandle {
+  /* ABSOLUTE, and that is not cosmetic: check-v716 pins edit mode to the exact
+     sizes the live bar renders (v7.16 — edit mode used to draw the same
+     controls bigger). A 9px strip in the flow made every section 9px taller
+     the moment you opened the editor, which is the regression that check
+     exists to catch. It caught it. */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 7px;
+  z-index: 3;
+  cursor: move;
+  border-radius: 3px 3px 0 0;
+  /* Two hairlines, centred — the figure the menu-bar and toolbar spacing grips
+     already draw, so it reads as "drag me" in the app's own vocabulary. */
+  background:
+    linear-gradient(var(--fd-text-muted), var(--fd-text-muted)) center 2px / 55% 1px no-repeat,
+    linear-gradient(var(--fd-text-muted), var(--fd-text-muted)) center 4px / 55% 1px no-repeat;
+  opacity: 0.4;
+  transition: opacity 0.12s ease, background-color 0.12s ease;
+}
+.rib-edit-section:hover .rib-edit-sechandle { opacity: 0.75; }
+.rib-edit-sechandle:hover,
+.rib-edit-sechandle:active {
+  opacity: 1;
+  background-color: color-mix(in srgb, var(--fd-accent) 22%, transparent);
+}
 /* v7.16, Derek (two screenshots): edit mode drew the SAME controls bigger.
    Measured — Find & Replace 44x26 live became 44x28, and the two-row
    Customize block 65x43 became 65x48. The cause is a percentage that lost its

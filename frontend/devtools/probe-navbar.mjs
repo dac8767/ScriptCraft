@@ -83,7 +83,16 @@ const rows = await page.evaluate(() => {
       else h = (r - g) / (mx - mn) + 4;
       return ((h * 60) + 360) % 360;
     };
-    const hueGap = (a, b) => {
+    /* Saturation, 0 = grey. v7.69 measures this instead of hue distance: Derek's
+     ask is "a light gray (exact shade should come from the theme)", and a grey
+     HAS no meaningful hue to compare. Some themes' ink and accent share a hue
+     anyway (gruvbox is warm in both), so a hue gap could not tell a grey bar
+     from a coloured one there. */
+  const sat = (c) => {
+    const mx = Math.max(...c); const mn = Math.min(...c);
+    return mx === 0 ? 0 : +((mx - mn) / mx).toFixed(3);
+  };
+  const hueGap = (a, b) => {
       const ha = hue(a); const hb = hue(b);
       if (ha === null || hb === null) return ha === hb ? 0 : 999;
       const d = Math.abs(ha - hb);
@@ -99,6 +108,8 @@ const rows = await page.evaluate(() => {
       text: lumOf(textRgb),
       beat: lumOf(beatRgb),
       thumbHueGap: hueGap(thumbRgb, accentRgb),
+      thumbSat: sat(thumbRgb),
+      accentSat: sat(accentRgb),
       lip: lumOf(lipRgb),
     });
   }
@@ -151,13 +162,22 @@ for (const r of rows) {
      content, which a full-strength accent thumb passed. */
   const readsAsChrome = (dark ? r.thumb < r.beat : r.thumb > r.beat)
     && step(r.beat, r.thumb) >= 1.2;
-  const wearsTheTheme = r.thumbHueGap <= 30;
+  /* v7.69, Derek: "the scroll bar … (which is currently blue) should be a
+     light gray (exact shade should come from the theme)." So the test is the
+     opposite of v7.66's: the bar must read GREY, not accent-coloured. It is
+     still theme-derived — the grey is mixed from that theme's own ink and
+     chrome, which is why gruvbox's runs warm and nord's runs cool. */
+  /* Relative to the ACCENT, not an absolute floor. catppuccin's ink is
+     lavender-tinted, so a grey mixed from it is lavender-tinted too — which is
+     the "shade should come from the theme" half of the ask, not a failure. An
+     absolute threshold called that theme broken. */
+  const wearsTheTheme = r.thumbSat < r.accentSat * 0.75;
   if (!thumbStandsOut || !knobStandsOut || !readsAsChrome || !wearsTheTheme) wrong++;
   console.log(`  ${thumbStandsOut ? 'ok  ' : 'BACK'} ${knobStandsOut ? 'knob ok' : 'knob LOST'}`
-    + ` ${readsAsChrome ? 'chrome ' : 'TOO LOUD'} ${wearsTheTheme ? 'hue ok ' : 'hue OFF(' + r.thumbHueGap + ')'}`
+    + ` ${readsAsChrome ? 'chrome ' : 'TOO LOUD'} ${wearsTheTheme ? 'grey ok ' : 'TOO COLOURED(' + r.thumbSat + ')'}`
     + `  ${(dark ? 'dark ' : 'light')}  ${r.theme.padEnd(16)}`
     + ` chrome=${r.chrome} thumb=${r.thumb} (${chromeStep}x chrome, ${step(r.thumb, r.track)}x track)`
-    + ` knob=${step(r.knob, r.thumb)}x`);
+    + ` knob=${step(r.knob, r.thumb)}x sat=${r.thumbSat}/${r.accentSat}`);
 }
 console.log(`\n${wrong} of ${rows.length} themes wrong.`);
 await browser.close();

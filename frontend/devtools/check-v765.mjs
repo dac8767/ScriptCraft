@@ -155,9 +155,13 @@ ok('…and its Reset does too', menuReset?.disabled === true, JSON.stringify(men
    hand-written field list is how v4.24 happened (save captured three fields
    apply never restored, silently). */
 const wsSlice = readFileSync(new URL('../src/stores/slices/workspacesSlice.ts', import.meta.url), 'utf8');
-const captureCount = (wsSlice.match(/toolbarHiddenItems:\s*s\.toolbarHiddenItems/g) || []).length;
-ok('the snapshot field list exists exactly once', captureCount === 1, `${captureCount} copies`);
-ok('…and both save and the dirty test read it',
+/* v7.65 counted the ONE hand-written copy of the field list. v7.69 removed the
+   hand-written list entirely — capture is built from CUSTOMIZATION_FIELDS, the
+   list Customize itself reads — so the assertion is now that no copy exists at
+   all. check-v769 holds the rest of that arrangement. */
+ok('the snapshot has no hand-written field list left',
+  !/toolbarHiddenItems:\s*s\.toolbarHiddenItems/.test(wsSlice), '');
+ok('…and both save and the dirty test read one capture',
   /saveWorkspace: \(name\) => set\(\(s\) => \{\s*const snap = captureWorkspace\(s\)/.test(wsSlice)
   && /stable\(captureWorkspace\(s\)\)/.test(wsSlice), '');
 

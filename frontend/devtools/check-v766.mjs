@@ -6,12 +6,17 @@
  *           dark part"                            (Premiere, attached)
  *   v7.66: "Make sure the outline toolbar adjustment bar color fits the color
  *           theme."
+ *   v7.69: "the scroll bar in the outline toolbar (which is currently blue)
+ *           should be a light gray (exact shade should come from the theme)"
  *
- * The v7.65 fix was right about the order and wrong about the palette: it
- * reached for --fd-text-muted and --fd-text, which are READING colours, so the
- * thumb became the brightest band in the outline bar and a neutral grey in
- * every theme. This file holds BOTH asks at once, which is the only way they
- * stay held — satisfying either one alone is what produced each bug.
+ * THREE passes, and each one corrected the last. v7.65 got the order right and
+ * reached for --fd-text-muted, a READING colour, so the thumb became the
+ * brightest band in the bar. "Fits the color theme" I then read as "wear the
+ * accent", and made it blue. It is a GREY — mixed from the theme's own ink and
+ * chrome, so the shade is the theme's without the bar being coloured.
+ *
+ * This file holds all three asks at once, which is the only way they stay
+ * held: satisfying any one alone is what produced each of the other two.
  *
  * EVERY ASSERTION HERE COMPOSITES ALPHA FIRST. The track was
  * rgba(255,255,255,.04) — a 4% white veil over the chrome, not white. Read as
@@ -59,6 +64,15 @@ const rows = await page.evaluate(() => {
     else if (mx === g) h = (b - r) / (mx - mn) + 2;
     else h = (r - g) / (mx - mn) + 4;
     return ((h * 60) + 360) % 360;
+  };
+  /* Saturation, 0 = grey. v7.69 measures this instead of hue distance: Derek's
+     ask is "a light gray (exact shade should come from the theme)", and a grey
+     HAS no meaningful hue to compare. Some themes' ink and accent share a hue
+     anyway (gruvbox is warm in both), so a hue gap could not tell a grey bar
+     from a coloured one there. */
+  const sat = (c) => {
+    const mx = Math.max(...c); const mn = Math.min(...c);
+    return mx === 0 ? 0 : +((mx - mn) / mx).toFixed(3);
   };
   const hueGap = (a, b) => {
     const ha = hue(a); const hb = hue(b);
@@ -118,6 +132,8 @@ const rows = await page.evaluate(() => {
       lip: lip ? lumOf(over(lip, `rgb(${trackRgb.join(',')})`)) : lumOf(trackRgb),
       beat: lumOf(beatRgb),
       thumbHueGap: hueGap(thumbRgb, accentRgb),
+      thumbSat: sat(thumbRgb),
+      accentSat: sat(accentRgb),
     });
   }
   host.remove();
@@ -161,13 +177,24 @@ const lostKnobs = rows.filter((r) => step(r.knob, r.thumb) < 1.5 && step(r.ring,
 ok('…with the knobs still distinct from the thumb', lostKnobs.length === 0,
   JSON.stringify(lostKnobs.map((r) => r.theme)));
 
-console.log('\nv7.66: and it wears the theme rather than a neutral grey');
-/* THE correction. --fd-text-muted is neutral in most themes; the accent is
-   not. A bar built from reading colours looks the same in gruvbox as in
-   dracula, which is the complaint. */
-const offHue = rows.filter((r) => r.thumbHueGap > 30);
-ok('the thumb carries the theme\'s accent hue', offHue.length === 0,
-  JSON.stringify(offHue.map((r) => ({ theme: r.theme, gap: r.thumbHueGap }))));
+console.log('\nv7.69: it is a grey, and the grey comes from the theme');
+/* THE THIRD PASS, and the one that sticks. v7.65 made it a neutral grey and he
+   asked for it to fit the theme; I read that as "wear the accent" and made it
+   blue; v7.69: "the scroll bar … (which is currently blue) should be a light
+   gray (exact shade should come from the theme)."
+   So: grey, but mixed from the THEME'S OWN ink and chrome rather than picked —
+   which is why gruvbox's runs warm, nord's cool, and catppuccin's carries that
+   palette's lavender. Both halves of his sentence, in one rule. */
+const coloured = rows.filter((r) => r.thumbSat >= r.accentSat * 0.75);
+ok('the thumb reads as a grey, not as the accent', coloured.length === 0,
+  JSON.stringify(coloured.map((r) => ({ theme: r.theme, thumb: r.thumbSat, accent: r.accentSat }))));
+/* Measured RELATIVE to the accent, never against a fixed floor. catppuccin's
+   ink is lavender-tinted, so a grey mixed from it is lavender-tinted too —
+   that is the "shade comes from the theme" half, and an absolute threshold
+   called that theme broken. */
+ok('…and it is mixed from the theme\'s ink, not chosen',
+  /--fd-nav-thumb-mix|var\(--fd-text\) \d+%, var\(--fd-toolbar-bg\)/.test(
+    readFileSync(new URL('../src/styles/screenplay/21-outline-bar.css', import.meta.url), 'utf8')), '');
 
 /* LOUDNESS, in context. "Below the ink" passes #999999 (below #e0e0e0) while
    that thumb still measured 4.3x the toolbar — body-text loudness for chrome.
@@ -195,9 +222,8 @@ ok('…and stays a clear step quieter than the Beats lane it scrolls', shouting.
 const css = readFileSync(new URL('../src/styles/screenplay/21-outline-bar.css', import.meta.url), 'utf8');
 const navRules = /\.fs-ob-nav \{[\s\S]*?\.fs-ob-nav-handle-l/.exec(css)?.[0] ?? '';
 const navCode = navRules.replace(/\/\*[\s\S]*?\*\//g, '');
-ok('the bar is built from the accent, not from reading colours',
-  /--fd-accent/.test(navCode) && !/--fd-text-muted/.test(navCode),
-  navCode.slice(0, 160));
+ok('the thumb is not built from the accent',
+  !/\.fs-ob-nav-thumb \{[^}]*--fd-accent/.test(navCode), navCode.slice(0, 200));
 ok('…and the groove keeps its lip', /inset 0 0 0 1px/.test(navCode), '');
 
 await browser.close();

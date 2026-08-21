@@ -1,5 +1,15 @@
 [
   {
+    "version": "7.69",
+    "date": "2026-08-20",
+    "changes": [
+      "The outline bar's scale slider is a light grey again, mixed from whichever theme you're on — so it picks up Gruvbox's warmth and Nord's coolness without being a colour of its own. Last version made it blue, which was my misreading of “fit the theme”.",
+      "Fix: “Save Changes to this Workspace” wasn't slow to notice a change — it couldn't see some changes at all. Popping a tool out into its own window, the panel item scale, the spacing between bars and the context-menu order were missing from what a workspace stores, so nothing noticed them and no workspace ever saved them. Workspaces now carry every customization the Customize window can make, so they save more than they used to as well.",
+      "The Production menu is hidden for now. Three of its four items weren't built yet; the fourth, Lock Scene Numbers, is still available as a ribbon button you can add in Customize.",
+      "Ribbon sections have a grip along their top edge in edit mode, so there's something to actually grab when moving one. The top strip used to be the title field, which has to take the click to let you type in it."
+    ]
+  },
+  {
     "version": "7.68",
     "date": "2026-08-20",
     "changes": [

@@ -9,8 +9,9 @@
 // guards the round-trip).
 import type { StateCreator } from 'zustand';
 import { _vs, saveViewState } from '../viewState';
-import type { EditorState, WorkspaceSnapshot, ToolId } from '../editorStore';
+import type { EditorState, WorkspaceSnapshot, ToolId, ToolConfig } from '../editorStore';
 import { migrateToolConfig, migrateToolOrder, migrateToolId } from '../editorStore';
+import { CUSTOMIZATION_FIELDS } from '../customizationFields';
 
 export interface WorkspacesSlice {
   /** Named saved layouts (View → Workspaces) */
@@ -38,18 +39,31 @@ export interface WorkspacesSlice {
    compare live state against the saved snapshot, and a third copy is how the
    v4.24 bug happens again. So capture is a function now, and the comparison
    is built from its output rather than from its own list. */
+/** Customizations a workspace deliberately does NOT carry. Both are about how
+ *  the app CHECKS YOUR WRITING, not how it is arranged — switching workspace
+ *  should not change your grammar rules. Named rather than omitted, so the
+ *  check below can tell a decision from an oversight. */
+export const WORKSPACE_EXCLUDES = ['suggestionRules', 'suggestionMode'] as const;
+
+/** The arrangement, on top of the customizations: what is open, how big, and
+ *  in what mode. These are view state rather than customizations, which is why
+ *  CUSTOMIZATION_FIELDS does not have them. */
+export const WORKSPACE_VIEW_FIELDS = [
+  'navigatorOpen', 'shelfOpen', 'toolSizes', 'toolMode',
+  'activeTool', 'activeToolRight',
+  'theme',                              // v0.78: the theme is part of a workspace
+  'contextMenuOrder',                   // its sibling contextMenuHidden is a customization
+] as const;
+
+export const WORKSPACE_FIELDS: string[] = [
+  ...CUSTOMIZATION_FIELDS.filter((f) => !(WORKSPACE_EXCLUDES as readonly string[]).includes(f)),
+  ...WORKSPACE_VIEW_FIELDS,
+];
+
 export function captureWorkspace(s: EditorState): WorkspaceSnapshot {
-  return {
-    toolConfig: s.toolConfig, toolOrder: s.toolOrder,
-    toolbarHiddenItems: s.toolbarHiddenItems, toolbarPinnedTools: s.toolbarPinnedTools,
-    navigatorOpen: s.navigatorOpen, shelfOpen: s.shelfOpen, toolSizes: s.toolSizes,
-    toolbarMode: s.toolbarMode, activeTool: s.activeTool, activeToolRight: s.activeToolRight,
-    toolbarLeft: s.toolbarLeft, toolbarRight: s.toolbarRight,
-    menuBarOrder: s.menuBarOrder, menuBarHidden: s.menuBarHidden, menuMode: s.menuMode,
-    panelDividers: s.panelDividers,
-    panelSizeMode: s.panelSizeMode, chromeCustomPx: s.chromeCustomPx,
-    theme: s.theme,                       // v0.78: the theme is part of a workspace
-  };
+  const snap: WorkspaceSnapshot = {};
+  for (const f of WORKSPACE_FIELDS) snap[f] = (s as unknown as Record<string, unknown>)[f];
+  return snap;
 }
 
 /** The migrations applyWorkspace runs before restoring. The comparison has to
@@ -58,11 +72,12 @@ export function captureWorkspace(s: EditorState): WorkspaceSnapshot {
 export function normalizeWorkspace(raw: WorkspaceSnapshot): WorkspaceSnapshot {
   return {
     ...raw,
-    toolConfig: migrateToolConfig(raw.toolConfig),
-    toolOrder: migrateToolOrder(raw.toolOrder),
+    toolConfig: migrateToolConfig(raw.toolConfig as Record<string, ToolConfig>),
+    toolOrder: migrateToolOrder((raw.toolOrder as string[]) ?? []),
     toolbarPinnedTools: migrateToolOrder((raw.toolbarPinnedTools as string[]) ?? []) as ToolId[],
-    ...(raw.activeTool ? { activeTool: migrateToolId(raw.activeTool) as ToolId | null } : {}),
-    ...(raw.activeToolRight ? { activeToolRight: migrateToolId(raw.activeToolRight) as ToolId | null } : {}),
+    ...(raw.activeTool ? { activeTool: migrateToolId(raw.activeTool as string) as ToolId | null } : {}),
+    ...(raw.activeToolRight
+      ? { activeToolRight: migrateToolId(raw.activeToolRight as string) as ToolId | null } : {}),
   };
 }
 
@@ -143,68 +158,50 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     // (null heir) empties the slot rather than being left in it — the old
     // truthiness test skipped null and handed the dead id straight back.
     const snap = normalizeWorkspace(raw);
-    // v0.12 fields are optional (older snapshots): only restore when captured.
-    const extras: Partial<EditorState> = {};
+
+    /* v7.69 — APPLY IS DERIVED FROM THE SNAPSHOT, not from a second list.
+       It used to restore a hand-written copy of capture's field names, and
+       those two drifted twice: v4.24 (save captured panelSizeMode,
+       chromeCustomPx and theme; apply restored none of them, so the most
+       visible parts of a workspace silently stayed put) and again by v7.69,
+       where four fields were in neither list and a workspace could not see
+       them change at all. Every captured field is now copied across, and the
+       handful that need more than a copy are named right here. */
+    const patch: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(snap)) {
+      if (v === undefined) continue;
+      patch[k] = v;
+    }
+    /* Popping a tool out is a MODE, and the takeover belongs to the layout
+       being replaced — restoring a tool into a slot with the takeover still up
+       would show the same window twice (v4.37). */
+    patch.fullscreenTool = null;
+    // A temp float belongs to the layout being replaced too.
+    if (snap.activeTool !== undefined) patch.tempTool = null;
+    // v0.44: zones restored means the user's zones are in force.
+    if (snap.toolbarLeft !== undefined && snap.toolbarRight !== undefined) patch.toolbarZonesSet = true;
     // A workspace that had Index Cards showing reopens Scenes in Cards view.
     if (raw.activeTool === 'indexcards' || raw.activeToolRight === 'indexcards') {
-      extras.scenesViewMode = 'cards';
+      patch.scenesViewMode = 'cards';
     }
     // v5.67: one that had the Title Page window reopens Pages on its tab.
     if (raw.activeTool === 'titlepage' || raw.activeToolRight === 'titlepage') {
-      extras.pagesTab = 'title';
+      patch.pagesTab = 'title';
     }
-    if (snap.toolbarMode !== undefined) extras.toolbarMode = snap.toolbarMode;
-    if (snap.activeTool !== undefined) { extras.activeTool = snap.activeTool; extras.tempTool = null; }
-    if (snap.activeToolRight !== undefined) extras.activeToolRight = snap.activeToolRight;
-    // v0.44 Customize capture (older workspaces leave these untouched)
-    if (snap.toolbarLeft !== undefined && snap.toolbarRight !== undefined) {
-      extras.toolbarLeft = snap.toolbarLeft; extras.toolbarRight = snap.toolbarRight;
-      extras.toolbarZonesSet = true;
-    }
-    if (snap.menuBarOrder !== undefined) extras.menuBarOrder = snap.menuBarOrder;
-    if (snap.menuBarHidden !== undefined) extras.menuBarHidden = snap.menuBarHidden;
-    if (snap.menuMode !== undefined) extras.menuMode = snap.menuMode;
-    if (snap.panelDividers !== undefined) extras.panelDividers = snap.panelDividers;
-    // THE "apply doesn't take" bug: save captured panelSizeMode, chromeCustomPx
-    // and theme (v0.78: the theme is part of a workspace) but apply never
-    // restored them — the two hand-maintained field lists had drifted, and the
-    // most VISIBLE parts of a workspace stayed put on apply.
-    if (snap.panelSizeMode !== undefined) extras.panelSizeMode = snap.panelSizeMode;
-    if (snap.chromeCustomPx !== undefined) extras.chromeCustomPx = snap.chromeCustomPx;
+    /* The theme is applied through setTheme below, never patched: it persists
+       to its own localStorage key and runs applyThemeToDom (which also clears
+       custom-theme overrides), so patching the value alone changes nothing on
+       screen. */
+    const theme = patch.theme as EditorState['theme'] | undefined;
+    delete patch.theme;
+
     saveViewState({
-      workspaces: s.workspaces, activeWorkspace: name,
-      toolConfig: snap.toolConfig, toolOrder: snap.toolOrder,
-      toolbarHiddenItems: snap.toolbarHiddenItems, toolbarPinnedTools: snap.toolbarPinnedTools as string[],
-      navigatorOpen: snap.navigatorOpen, shelfOpen: snap.shelfOpen, toolSizes: snap.toolSizes,
-      ...(snap.toolbarLeft !== undefined && snap.toolbarRight !== undefined
-        ? { toolbarLeft: snap.toolbarLeft, toolbarRight: snap.toolbarRight, toolbarZonesSet: true } : {}),
-      ...(snap.menuBarOrder !== undefined ? { menuBarOrder: snap.menuBarOrder } : {}),
-      ...(snap.menuBarHidden !== undefined ? { menuBarHidden: snap.menuBarHidden } : {}),
-      ...(snap.menuMode !== undefined ? { menuMode: snap.menuMode } : {}),
-      ...(snap.panelDividers !== undefined ? { panelDividers: snap.panelDividers } : {}),
-      ...(snap.toolbarMode !== undefined ? { toolbarMode: snap.toolbarMode } : {}),
-      ...(snap.activeTool !== undefined ? { activeTool: snap.activeTool } : {}),
-      ...(snap.activeToolRight !== undefined ? { activeToolRight: snap.activeToolRight } : {}),
-      ...(snap.panelSizeMode !== undefined ? { panelSizeMode: snap.panelSizeMode } : {}),
-      ...(snap.chromeCustomPx !== undefined ? { chromeCustomPx: snap.chromeCustomPx } : {}),
-      ...(extras.scenesViewMode !== undefined ? { scenesViewMode: extras.scenesViewMode } : {}),
-    });
-    set({
+      ...(patch as Partial<Parameters<typeof saveViewState>[0]>),
+      workspaces: s.workspaces,
       activeWorkspace: name,
-      // v4.37: a workspace is a whole layout — any fullscreen takeover belongs
-      // to the layout being replaced, and restoring that tool into a slot with
-      // the takeover still up would show the same window twice.
-      fullscreenTool: null,
-      toolConfig: snap.toolConfig, toolOrder: snap.toolOrder,
-      toolbarHiddenItems: snap.toolbarHiddenItems,
-      toolbarPinnedTools: snap.toolbarPinnedTools as ToolId[],
-      navigatorOpen: snap.navigatorOpen, shelfOpen: snap.shelfOpen, toolSizes: snap.toolSizes,
-      ...extras,
     });
-    // Theme goes through setTheme, not a bare patch: it persists to its own
-    // localStorage key and runs applyThemeToDom (which also clears custom-theme
-    // overrides) — patching the value alone changes nothing on screen.
-    if (snap.theme !== undefined && snap.theme !== get().theme) get().setTheme(snap.theme);
+    set({ ...(patch as Partial<EditorState>), activeWorkspace: name });
+    if (theme !== undefined && theme !== get().theme) get().setTheme(theme);
   },
   deleteWorkspace: (name) => set((s) => {
     const workspaces = { ...s.workspaces };

@@ -3,6 +3,8 @@ import { DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOLBAR_RIGHT } from '../components/toolb
 
 // ── View-state persistence helpers ──
 import { _vs, saveViewState, clamp, type ViewState } from './viewState';
+import { CUSTOMIZATION_FIELDS } from './customizationFields';
+export { CUSTOMIZATION_FIELDS } from './customizationFields';
 import { useNotebookStore } from './notebookStore';
 import { createDesignSlice, type DesignSlice } from './slices/designSlice';
 import { createChromeSlice, type ChromeSlice } from './slices/chromeSlice';
@@ -282,32 +284,16 @@ export interface ToolConfig { side: ToolSide; enabled: boolean; }
 
 /** A saved layout: the full Window/tool arrangement (Premiere-style workspace). */
 export interface WorkspaceSnapshot {
-  toolConfig: Record<string, ToolConfig>;
-  toolOrder: string[];
-  toolbarHiddenItems: string[];
-  toolbarPinnedTools: string[];
-  navigatorOpen: boolean;
-  shelfOpen: boolean;
-  toolSizes: Record<string, { w: number; h: number }>;
-  /** v0.12: full-layout capture so Reset to Saved Layout rolls back EVERYTHING.
-   *  Optional for back-compat — workspaces saved before v0.12 simply leave
-   *  these aspects untouched when applied. */
-  toolbarMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
-  activeTool?: ToolId | null;
-  /** v0.44: capture the Customize state too — toolbar zones, menu bar, and
-   *  panel dividers — so Reset to Saved Layout actually rolls those back.
-   *  Optional for back-compat with older workspaces. */
-  toolbarLeft?: string[];
-  toolbarRight?: string[];
-  menuBarOrder?: string[];
-  menuBarHidden?: string[];
-  menuMode?: 'compact' | 'comfortable' | 'custom' | 'hidden';
-  panelSizeMode?: { left: 'compact' | 'comfortable' | 'custom' | 'icons'; right: 'compact' | 'comfortable' | 'custom' | 'icons' };
-  chromeCustomPx?: { menu: number; toolbar: number; panelLeft: number; panelRight: number };
-  panelDividers?: { id: string; label: string; side: 'left' | 'right'; spacer?: boolean; size?: number }[];
-  /** v0.78: the active theme is part of a workspace. */
-  theme?: ThemeId;
-  activeToolRight?: ToolId | null;
+  /* v7.69 — THE FIELD LIST IS NO LONGER WRITTEN OUT HERE.
+     A snapshot is whatever captureWorkspace() collects, which is
+     CUSTOMIZATION_FIELDS (minus the few that are not about arrangement) plus
+     the view state that describes it. Writing the names a third time is what
+     made this list incomplete: Derek reported that "Save changes to workspace"
+     took a long time to notice a change, and the truth was that four kinds of
+     change — popping a tool out, panel item scale, the gap between bars,
+     context-menu order — were not in the snapshot at all, so nothing noticed
+     them and no workspace ever saved them. */
+  [field: string]: unknown;
 }
 
 /** Default layout: script-structure tools left, everything else right. */
@@ -1400,26 +1386,6 @@ export interface EditorState extends DesignSlice, CharacterSlice, TagSlice, Type
   setImportedSource: (src: { name: string; format: string } | null) => void;
 }
 
-/** v3.49: every persistent field the Customize dialog can change. The one
- *  list captureCustomizations / restoreCustomizations both read — so a
- *  Cancel reverts ALL of it, with nothing quietly left behind. Panel
- *  open/close and the active tool are view state, not customizations, so
- *  they're deliberately excluded (Cancel shouldn't slam panels shut). */
-const CUSTOMIZATION_FIELDS = [
-  'toolbarLeft', 'toolbarRight', 'toolbarMode',
-  'toolConfig', 'toolOrder', 'toolbarHiddenItems', 'toolbarPinnedTools',
-  'menuBarOrder', 'menuBarHidden', 'menuMode',
-  'panelDividers', 'panelSizeMode',
-  'qatItems', 'toolbarDdWidths',
-  'chromeCustomPx', 'chromeGapPx',
-  'outlineBarRows', 'outlineBarZoom', 'outlineBarLabels', 'outlineBarRowScale',
-  'outlineUnsortedWidth',
-  'uiResizeLocked',
-  // v4.79: fields Customize grew since v3.49 that had DRIFTED out of this
-  // list — Cancel wasn't reverting them, and the customize export needs them.
-  'contextMenuHidden', 'suggestionRules', 'suggestionMode',
-  'panelItemScale', 'panelNameCase',
-] as const;
 
 export const useEditorStore = create<EditorState>((set, get, api) => ({
   ...createDesignSlice(set, get, api),
