@@ -2982,6 +2982,18 @@
   "icon": "FaFileExport"
  },
  {
+  "text": "Ships with ScriptCraft — you can rearrange it and save your changes, but it can't be renamed or deleted",
+  "kind": "tooltip",
+  "sites": 2,
+  "area": "Workspaces",
+  "where": [
+   "components/WorkspaceDialogs.tsx",
+   "components/WorkspacesTool.tsx"
+  ],
+  "icon": "FaCheck",
+  "label": "default"
+ },
+ {
   "text": "Show annotations on the script",
   "kind": "tooltip",
   "sites": 1,

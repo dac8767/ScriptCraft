@@ -170,15 +170,75 @@ export async function openTool(page, label) {
   const row = await page.$(`.tool-dock-item:has-text("${label}")`);
   if (!row) throw new Error(`no dock row labelled ${label}`);
   await row.click();
-  await page.waitForSelector('.tool-inline-header, .tool-window', { timeout: 8000 });
+  /* .fs-tool-takeover too (v7.70): a tool reopens in the mode it was last used
+     in, and the shipped defaults remember four of Derek's tools as fullscreen —
+     which is neither an inline header nor a window. */
+  await page.waitForSelector('.tool-inline-header, .tool-window, .fs-tool-takeover', { timeout: 8000 });
   return row;
 }
 
+/** Back to 100% zoom.
+ *
+ *  v7.70 made Derek's own preset the app's defaults, and he writes at 140%.
+ *  Every check that measures the editor in pixels was measuring his zoom from
+ *  that version on — a 30px gap read 42, a 6.3in column read 866px. A check
+ *  about a size in px says so by calling this first; one about behaviour does
+ *  not need it. */
+export async function zoom100(page) {
+  await page.evaluate(() => window.__scStore.getState().setZoomLevel(100));
+  await settle(page);
+}
+
+/** Nothing hidden from the Helper Text window.
+ *
+ *  v7.70 made Derek's preset the app's defaults, and he has hidden ~200 helper
+ *  strings. The window filters those out, so a check that counts rows, opens
+ *  the Hidden view, or looks for one particular tooltip was suddenly reading
+ *  his housekeeping. A check about the WINDOW says so by calling this; one
+ *  about what ships by default does not. */
+export async function showAllHelperText(page) {
+  await page.evaluate(() => window.__scStore.setState({ helperTextHidden: [], helperTextOverrides: {} }));
+  await settle(page);
+}
+
 export async function fullscreen(page) {
+  /* IDEMPOTENT (v7.70). A tool reopens in its remembered mode, and the shipped
+     defaults remember Locations, Scenes, Characters and the Beat Board as
+     fullscreen — so the takeover was ALREADY up and this click was toggling
+     out of it. The waitForSelector below then timed out on a takeover the
+     check had just closed itself. */
+  if (await page.$('.fs-tool-takeover')) return;
   await page.click('button[title="Fullscreen"]');
   // .fs-tool-takeover is the generic takeover root (ToolFullscreenTakeover) —
   // the first cut waited on a Scenes-only class and timed out on every other tool.
   await page.waitForSelector('.fs-tool-takeover', { timeout: 8000 });
+}
+
+/** A tool that is enabled and present in the dock, whatever the profile says.
+ *
+ *  v7.70: the shipped defaults are Derek's preset, and his dock leaves six
+ *  tools out — Script History, Helper Text, AI Writer, Tags, Workspaces and
+ *  Design. A check that drives one of those found no dock row at all. Turn it
+ *  on and put it in the order; where it sits by default is not what those
+ *  checks are about. */
+export async function placeTool(page, id, side = 'right') {
+  await page.evaluate(([toolId, toolSide]) => {
+    const s = window.__scStore.getState();
+    s.setToolConfig({ ...s.toolConfig, [toolId]: { side: toolSide, enabled: true } });
+    if (!s.toolOrder.includes(toolId)) s.setToolOrder([...s.toolOrder, toolId]);
+  }, [id, side]);
+  await settle(page);
+}
+
+/** The Scenes tool showing its LIST, not its cards.
+ *
+ *  v7.70: Scenes remembers which view it was in, and the shipped defaults
+ *  (Derek's preset) remember Cards — so `.navigator-scene` rows, which every
+ *  scene-list check waits for, were simply not on the page. Call this before
+ *  waitScenes when the LIST is the subject. */
+export async function useSceneList(page) {
+  await page.evaluate(() => window.__scStore.getState().setScenesViewMode('list'));
+  await settle(page);
 }
 
 /** Wait until the Scenes list has n rows (rescans are debounced). */

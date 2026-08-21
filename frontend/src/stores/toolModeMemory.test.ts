@@ -12,7 +12,20 @@ const st = () => useEditorStore.getState();
 
 describe('remembered window shape', () => {
   beforeEach(() => {
+    /* v7.70: the SIDES are pinned here too. These tests are about the
+       one-window rule, but they read it off activeToolRight — which means they
+       were quietly depending on every tool they drive being docked right by
+       default. The shipped defaults are Derek's preset now and Fragments is on
+       his LEFT, so two of them started failing for a reason that has nothing to
+       do with windows. Say what the fixture needs instead of inheriting it. */
+    const st = useEditorStore.getState();
+    const toolConfig = { ...st.toolConfig };
+    for (const id of ['analytics', 'design', 'fragments', 'notebook', 'sticky', 'titlepage'] as const) {
+      toolConfig[id] = { side: 'right', enabled: true };
+    }
+    toolConfig.scenes = { side: 'left', enabled: true };   // the one these tests dock LEFT
     useEditorStore.setState({
+      toolConfig,
       toolMode: {},
       activeTool: null,
       activeToolRight: null,

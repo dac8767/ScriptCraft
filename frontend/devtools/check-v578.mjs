@@ -1,5 +1,5 @@
 // check-v578 — Derek's six follow-ups on the Locations map.
-import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss, fullscreen } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 /* Switch the Locations window's View dropdown. */
@@ -34,7 +34,7 @@ try {
   // v6.04: rows merge by place only while GROUPED — this check's flows
   // (the count badge, shared-place rows) are written for that state.
   await page.evaluate(() => window.__scStore.getState().setLocationsGrouped(true));
-  await page.click('button[title="Fullscreen"]');
+  await fullscreen(page);
   await page.waitForSelector('.fs-tool-takeover', { timeout: 8000 });
   if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]');
   await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")');

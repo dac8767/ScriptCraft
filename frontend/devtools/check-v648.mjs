@@ -7,7 +7,7 @@
    6 the per-tab ◉ is gone; "Show in Outline Bar" checkbox in the header
    7 the outline variation tabs live in the WINDOW HEADER (shared strip),
      with + / double-click-rename / × riding along */
-import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, SCENES_4, settle, showAllHelperText } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
 let pass = 0, fail = 0;
@@ -26,6 +26,10 @@ async function openMenu(name) {
 
 try {
   await boot(page);
+  /* v7.70: the shipped defaults are Derek's preset, and he has ~200 helper
+     strings hidden. This window filters those out, so every count and lookup
+     below was reading his housekeeping instead of the app's. */
+  await showAllHelperText(page);
   await seedScript(page, SCENES_4);
 
   // ── 1: View ▸ Themes ──
@@ -56,6 +60,29 @@ try {
   ok(!flyout.some((t) => /auto.?save/i.test(t)), 'no "Auto Save" left in the flyout');
   await page.keyboard.press('Escape');
   await settle(page);
+
+  /* Every menu really shut, verified — not "an Escape was pressed".
+     ESCAPE DOES NOT CLOSE THE IN-APP MENU. Measured both ways in v7.70, with
+     menuSystem native and app, flyout hovered or not: the dropdown stays up.
+     A click away closes it. That is a real gap and it is NOT new — this check
+     has been pressing Escape and leaving the File menu open since it was
+     written; it only started failing when the shipped defaults moved the
+     preferences window under where the dropdown lands, so the leftover menu
+     began swallowing the click below. Reported to Derek as its own item;
+     fixing the menu is not this version's job, but a check that believes it
+     closed something it did not is worth nothing either way. */
+  for (let i = 0; i < 6; i++) {
+    if (!await page.evaluate(() => !!document.querySelector('.menu-dropdown'))) break;
+    await page.keyboard.press('Escape');
+    await settle(page);
+    if (await page.evaluate(() => !!document.querySelector('.menu-dropdown'))) {
+      await page.mouse.click(1200, 700);      // away from the bar and the dropdown
+      await settle(page);
+    }
+  }
+  if (await page.evaluate(() => !!document.querySelector('.menu-dropdown'))) {
+    throw new Error('a menu dropdown is still open — it would swallow the clicks below');
+  }
 
   // ── 2: clicking a theme row applies it (Settings ▸ Themes = same tab) ──
   await page.evaluate(() => window.__scStore.getState().openPreferences('cz-themes'));

@@ -7,13 +7,23 @@
  * must start at ONE x. That is what a fixed-track grid buys and what `auto`
  * tracks would quietly lose.
  */
-import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, fullscreen } from './driver.mjs';
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓', m); } else { fail++; console.log('  ✗ FAIL', m); } };
 const { browser, page } = await launch({ width: 1400, height: 900, dpr: 2 });
 try {
   await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
-  await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
+  /* v7.70: Locations reopens on the tab it was last on, and the shipped
+     defaults (Derek's preset) remember the Map — so the list this check reads
+     was not the panel on screen. Start on the list; which tab it reopens on is
+     not what this is about. */
+  await page.evaluate(() => window.__scStore.getState().setLocationsTab('list'));
+  await settle(page);
+  /* …and ungrouped. v7.70: the shipped defaults keep Derek's grouped view,
+     and the rows this reads are the ungrouped ones. */
+  await page.evaluate(() => window.__scStore.getState().setLocationsGrouped(false));
+  await settle(page);
+  await fullscreen(page);
   await page.waitForTimeout(400);
   ok(await page.$('.location-list-header') !== null, '#5 the list has a column header, like Scenes');
   const heads = await page.$$eval('.location-list-header > *', (e) => e.map((x) => x.textContent.trim()).filter(Boolean));

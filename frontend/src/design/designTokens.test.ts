@@ -291,6 +291,13 @@ describe('characters group', () => {
   it('window tokens read the store and write through setToolSize', () => {
     const winW = designToken('charWinW')!;
     const winH = designToken('charWinH')!;
+    /* v7.70: start from NO stored size, don't assume it. That is the first
+       half of what this test pins — a token with nothing stored reads its
+       built-in default — and the shipped defaults now carry Derek's own
+       Characters window size, so the assumption stopped holding. */
+    const sizes = { ...useEditorStore.getState().toolSizes };
+    delete sizes.characters;
+    useEditorStore.setState({ toolSizes: sizes });
     expect(useEditorStore.getState().toolSizes.characters).toBeUndefined();
     expect(winW.store!.get(useEditorStore.getState())).toBe(winW.def);
     expect(winH.store!.get(useEditorStore.getState())).toBe(winH.def);

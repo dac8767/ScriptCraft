@@ -104,8 +104,10 @@ try {
     const cols = [...document.querySelectorAll(`${w} .beat-board-columns > .beat-column`)];
     const un = cols.find((c) => c.classList.contains('beat-column-unsorted'));
     const sec = cols.find((c) => !c.classList.contains('beat-column-unsorted'));
+    const board = document.querySelector(`${w} .beat-board-columns`);
     return {
       cols: cols.length,
+      boardW: Math.round(board?.getBoundingClientRect().width ?? -1),
       unW: Math.round(un?.getBoundingClientRect().width ?? -1),
       secW: Math.round(sec?.getBoundingClientRect().width ?? -1),
       wrapped: !!sec?.querySelector('.beat-column-cards-wrap'),
@@ -113,8 +115,15 @@ try {
       inUnsorted: un?.querySelectorAll('.beat-card').length ?? -1,
     };
   }, W);
-  ok(oneLeft.cols === 2 && oneLeft.secW === oneLeft.unW,
-    `the last section stays a normal column beside Unsorted (${oneLeft.secW} vs ${oneLeft.unW})`);
+  /* Against the SPACE IT COULD TAKE, not against Unsorted's width.
+     v7.70: Unsorted is user-resizable and remembers that width, and the
+     shipped defaults now carry Derek's 331px — so "as wide as Unsorted"
+     started failing on a column that had not stretched at all. What
+     "stays a normal column" means is that it did not take the free space:
+     a flex:1 section would fill nearly all of it. */
+  const free = oneLeft.boardW - oneLeft.unW;
+  ok(oneLeft.cols === 2 && free > oneLeft.secW * 1.5 && oneLeft.secW < free * 0.7,
+    `the last section stays a normal column beside Unsorted (${oneLeft.secW} of ${free}px free)`);
   ok(!oneLeft.wrapped, 'its cards stay a single list — no grid that reads as "they all landed here"');
   ok(oneLeft.inSection === 1 && oneLeft.inUnsorted === 2,
     `and the cards are where the store says: 1 in the section, 2 unsorted (${oneLeft.inSection}/${oneLeft.inUnsorted})`);

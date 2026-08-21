@@ -71,12 +71,22 @@ try {
   ok(outlineRow.disabled && !outlineRow.checked,
     'an item the writer has none of is disabled and unticked, not quietly exported');
   // v6.70: annotation presets always exist (six ship by default), so that
-  // row is always available; shortcuts/design/helper text start empty.
+  // row is always available.
   const annRow = list.find((r) => r.label === 'Annotation Presets');
   ok(!annRow.disabled && annRow.checked, 'Annotation Presets is always available — six ship by default');
-  const emptyOnes = ['Keyboard Shortcuts', 'Design', 'Helper Text']
-    .filter((n) => list.find((r) => r.label === n)?.disabled);
-  ok(emptyOnes.length === 3, `the untouched ones are disabled until you change something (${emptyOnes.join(', ')})`);
+  /* v7.70: Design and Helper Text ship with content now — Derek's 81 design
+     values and his hidden helper strings are the app's defaults — so they are
+     available from the first launch, the way Annotation Presets already was.
+     Keyboard Shortcuts is the one that still starts empty, and it is what
+     keeps this line meaning something: a row with nothing behind it is
+     disabled rather than quietly exporting an empty file. */
+  for (const n of ['Design', 'Helper Text']) {
+    const row = list.find((r) => r.label === n);
+    ok(row && !row.disabled, `${n} ships with content, so its row is available`);
+  }
+  const shortcutRow = list.find((r) => r.label === 'Keyboard Shortcuts');
+  ok(shortcutRow?.disabled === true && !shortcutRow.checked,
+    'Keyboard Shortcuts starts empty, so it is disabled until you rebind something');
 
   /* ── 4: select all / none ── */
   await page.click('.fs-presets-all');

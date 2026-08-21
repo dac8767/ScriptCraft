@@ -1,7 +1,7 @@
 // devtools/check-scene-narrow.mjs — v5.09: docked (narrow) the synopsis field
 // and figures fold behind a per-scene caret; fullscreen (wide) keeps the full
 // five-column table. Plus the card view's always-on 0:00 time estimate.
-import { launch, boot, seedScript, openTool, fullscreen, waitScenes, shot, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, openTool, fullscreen, waitScenes, shot, SCENES_4, settle, useSceneList } from './driver.mjs';
 
 const results = [];
 const check = (name, got, want) => {
@@ -13,7 +13,12 @@ const check = (name, got, want) => {
 const { browser, page } = await launch();
 await boot(page);
 await seedScript(page, SCENES_4);
+/* v7.70: the shipped defaults remember Scenes as fullscreen; the panel below
+   is the docked one. */
+await page.evaluate(() => window.__scStore.getState().setToolMode('scenes', 'docked'));
+await settle(page);
 await openTool(page, 'Scenes');
+await useSceneList(page);
 await waitScenes(page, 4);
 
 // ── DOCKED: the side panel is ~277px — narrow mode ──
@@ -39,8 +44,17 @@ await rowHead.click();
 await settle(page);
 check('row click does NOT open the fold', await page.$$eval('.scene-sub-item', (e) => e.length), 0);
 const caretBox = await (await page.$('.scene-caret-btn')).boundingBox();
+/* Against the ROW, not against 36. v7.70: "spans the row" was written as an
+   absolute px figure taken from the row height of the day, and the shipped
+   defaults carry Derek's Design values, which make a narrow scene row 22px.
+   The caret still covers it end to end — the assertion was measuring the row
+   height by proxy and calling it a hit area. */
+const rowH = await page.$eval('.scene-caret-btn', (c) => {
+  const row = c.closest('.scene-row-narrow') ?? c.closest('.navigator-scene');
+  return row.getBoundingClientRect().height;
+});
 check('caret hit area ≥ 24px wide', caretBox.width >= 24, true);
-check('caret hit area spans the row (≥ 36px tall)', caretBox.height >= 36, true);
+check('caret hit area spans the row', caretBox.height >= rowH - 0.5, true);
 const before = await page.evaluate(() => Math.round(document.querySelector('.editor-main')?.scrollTop ?? -1));
 await rowHead.dblclick();
 await page.waitForTimeout(900);

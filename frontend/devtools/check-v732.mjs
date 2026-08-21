@@ -23,7 +23,7 @@
  *    mask resolves to a real file rather than a 404 that renders as nothing.
  */
 import { readFileSync } from 'node:fs';
-import { launch, boot, settle } from './driver.mjs';
+import { launch, boot, settle, zoom100 } from './driver.mjs';
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra = '') => {
@@ -59,8 +59,21 @@ const gap = () => page.evaluate(() => {
 
 console.log('\nA. the gap above the first page');
 
+/* 100% first — every number below is in px, and the shipped defaults (v7.70)
+   carry Derek's 140% zoom. */
+await zoom100(page);
+
+/* v7.70: the app SHIPS with a value for this token — 42px, from Derek's own
+   Design settings, which are the defaults now. So there are two claims here,
+   and the second is the one this check was written for: the shipped app paints
+   his number, and clearing the override returns the built-in 30. A profile
+   with nothing overriding it is what "default" means to everything below. */
+const shipped = await gap();
+ok('the shipped default carries his 42px', shipped === 42, `got ${shipped}`);
+await page.evaluate(() => window.__scStore.getState().resetDesignVar('editorMainPadTop'));
+await settle(page);
 const base = await gap();
-ok('a default profile sits at the 30px default', base === 30, `got ${base}`);
+ok('…and with no override it is the built-in 30px', base === 30, `got ${base}`);
 
 /* The failure exactly as it reached Derek: a persisted number outside the
    slider's range. setDesignVar is the store door every import ends up at. */

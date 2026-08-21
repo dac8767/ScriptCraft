@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom';
 import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { workspaceIsDirty } from '../stores/slices/workspacesSlice';
+import { isBuiltinWorkspace } from '../stores/seedDefaults';
 import { EditWorkspacesDialog } from './WorkspaceDialogs';
 import { importWorkspacesFromFile } from '../utils/workspaceImport';
 import { promptDialog, confirmDialog } from './ConfirmDialog';
@@ -78,6 +79,13 @@ export default function WorkspacesTool() {
         ) : (
           names.map((name) => {
             const isActive = name === activeWorkspace;
+            /* v7.70, Derek: the five that ship with the app are "non
+               deletable". No Delete button, and no Rename either — the name is
+               a built-in's identity, so renaming one would orphan it and the
+               original would reappear beside it on the next launch. The tag
+               says which rows those are, so the missing buttons read as a rule
+               rather than as something broken. */
+            const builtin = isBuiltinWorkspace(name);
             if (editing === name) {
               return (
                 <div key={name} className="ws-item ws-item-editing">
@@ -99,7 +107,9 @@ export default function WorkspacesTool() {
                   <FaColumns className="ws-apply-icon" />
                   <span className="ws-apply-name">{name}</span>
                 </button>
-                {confirmDelete === name ? (
+                {builtin ? (
+                  <span className="ws-builtin-badge" title="Ships with ScriptCraft — you can rearrange it and save your changes, but it can't be renamed or deleted">default</span>
+                ) : confirmDelete === name ? (
                   <>
                     <button className="ws-icon-btn ws-danger" title="Confirm delete" onClick={() => { deleteWorkspace(name); setConfirmDelete(null); }}><FaCheck /></button>
                     <button className="ws-icon-btn" title="Cancel" onClick={() => setConfirmDelete(null)}>×</button>

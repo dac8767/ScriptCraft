@@ -7,7 +7,7 @@
    3 the applier follows a dynamic title to its OTHER arm instead of
      painting the stale arm's override over it (the v6.51 applier fix)
    4 the Outline ? popover body now rides ht() and is editable too */
-import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, SCENES_4, settle, showAllHelperText } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
 let pass = 0, fail = 0;
@@ -18,6 +18,10 @@ const UNCHECKED_ARM = 'Show this tab in the Outline Bar';
 
 try {
   await boot(page);
+  /* v7.70: the shipped defaults are Derek's preset, and he has ~200 helper
+     strings hidden. This window filters those out, so every count and lookup
+     below was reading his housekeeping instead of the app's. */
+  await showAllHelperText(page);
   await seedScript(page, SCENES_4);
   await page.evaluate(() => {
     window.__scStore.setState((s) => ({ toolSizes: { ...s.toolSizes, beatboard: { w: 1300, h: 700 } } }));

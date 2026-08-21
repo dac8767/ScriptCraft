@@ -3,7 +3,7 @@
 // Options menu, any time — the import-time rotation pass is gone) → click
 // to pin → pick a location → merge two locations onto one pin → sidebar
 // display name + custom field. Every step goes through the real UI.
-import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss, fullscreen } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 const MAP_PATH = writeMapFixture('/tmp/check-v577-map.png');
@@ -42,7 +42,7 @@ try {
   await boot(page);
   await seedScript(page, SCENES_4);
   await openTool(page, 'Locations');
-  await page.click('button[title="Fullscreen"]');
+  await fullscreen(page);
   await page.waitForSelector('.fs-tool-takeover', { timeout: 8000 });
 
   // ── 1. List / Map is a VIEW dropdown in the header, not a tab strip ──

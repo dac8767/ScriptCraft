@@ -8,7 +8,7 @@
 //  4. Title Page tab hosts the real editor; a narrow host stacks its columns,
 //     a wide one keeps two; Cancel returns to Script
 //  5. Project ▸ Title Page opens Pages on the Title Page tab
-import { launch, boot, seedScript, openTool, fullscreen, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, fullscreen, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch();
 let pass = 0, fail = 0;
@@ -33,6 +33,17 @@ try {
 
   // ── 1. the tab set exists (measure strip carries the full labels) ──
   await openTool(page, 'Pages');
+  /* v7.70: Pages reopens on the tab it was last on, and the shipped defaults
+     (Derek's preset) remember Title — so the thumbnail grid this check
+     measures was never on screen. Start on Script; which tab it reopens on is
+     not what any of this is about. */
+  /* …docked, in the side panel. v7.70: a tool reopens in its remembered mode
+     and the shipped defaults float Pages, so the "narrow dock" measured below
+     was a wide floating window. */
+  await page.evaluate(() => window.__scStore.getState().setToolMode('pages', 'docked'));
+  await settle(page);
+  await page.evaluate(() => window.__scStore.getState().setPagesTab('script'));
+  await settle(page);
   await page.waitForSelector('.page-thumbnails-grid', { timeout: 8000 });
   const tabTexts = await page.$$eval('.tool-chrome-tabs-measure .tool-chrome-tab',
     (els) => els.map((e) => e.textContent?.trim()));

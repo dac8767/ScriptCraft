@@ -4,7 +4,7 @@
    back; (c) rows are GROUPED by where they're found (Ribbon Toolbar, Menus,
    windows, …); (d) a go-there button opens the surface the text lives in
    WITHOUT closing the Helper Text window. */
-import { launch, boot, settle } from './driver.mjs';
+import { launch, boot, settle, showAllHelperText } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
 let pass = 0, fail = 0;
@@ -12,6 +12,10 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓', m); } else { fail++
 
 try {
   await boot(page);
+  /* v7.70: the shipped defaults are Derek's preset, and he has ~200 helper
+     strings hidden. This window filters those out, so every count and lookup
+     below was reading his housekeeping instead of the app's. */
+  await showAllHelperText(page);
   await page.evaluate(() => window.__scStore.getState().setHelperTextWindowOpen(true));
   await page.waitForSelector('.htw-panel .ht-row');
   await settle(page);

@@ -44,11 +44,18 @@ const after = await page.evaluate(() => {
   const sub = getComputedStyle(document.querySelector('.fs-typewriter-subgroup'));
   return { pad: tw.paddingLeft, secTop: sub.marginTop, indent: sub.paddingLeft };
 });
-ok(before.pad === '12px' && after.pad === '24px',
+/* The claim is that the knob is LIVE — turn it and the DOM moves. So it is
+   the AFTER value that has to be exact, and BEFORE only has to be different.
+   v7.70: these three named the built-in defaults (12/6/14px), which stopped
+   being what the app starts on the moment Derek's own Design values became the
+   shipped defaults — 29px of side padding, not 12. Requiring "before" to be a
+   particular number was asking about the default, which is not what this
+   check is for, and it hid the real question behind an unrelated one. */
+ok(before.pad !== after.pad && after.pad === '24px',
   `Side padding knob drives the panel (${before.pad} → ${after.pad})`);
-ok(before.secTop === '6px' && after.secTop === '30px',
+ok(before.secTop !== after.secTop && after.secTop === '30px',
   `Section spacing knob drives the subgroups (${before.secTop} → ${after.secTop})`);
-ok(before.indent === '14px' && after.indent === '36px',
+ok(before.indent !== after.indent && after.indent === '36px',
   `Sub-option indent knob drives the nesting (${before.indent} → ${after.indent})`);
 await page.screenshot({ path: `${SHOTS}/v566-focus.png` });
 await page.evaluate(() => {

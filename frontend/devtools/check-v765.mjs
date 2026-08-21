@@ -92,6 +92,13 @@ const wsState = () => page.evaluate(() => {
 
 const fresh = await page.evaluate(async () => {
   const st = window.__scStore.getState();
+  /* v7.70: PLACE the tool, don't assume it. The shipped defaults are Derek's
+     preset now and his Workspaces tool is disabled, so openTool had nothing to
+     open and every button below measured null — a check that reads "not
+     enabled" off a control that is not on screen is not testing anything. It
+     goes in the RIGHT panel because the probe below toggles the left one. */
+  st.setToolConfig({ ...st.toolConfig, workspaces: { side: 'right', enabled: true } });
+  await new Promise((r) => setTimeout(r, 200));
   st.openTool('workspaces');
   await new Promise((r) => setTimeout(r, 700));
   st.saveWorkspace('Probe WS');          // saving makes it active AND clean

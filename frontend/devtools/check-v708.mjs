@@ -38,6 +38,14 @@ const ed = await page.evaluate(() => [...document.querySelectorAll('.ProseMirror
 ok('editor: FADE IN: left', ed.find((x) => x.t === 'FADE IN:')?.a === 'left', JSON.stringify(ed));
 ok('editor: CUT TO: right', ed.find((x) => x.t === 'CUT TO:')?.a === 'right', JSON.stringify(ed));
 
+/* v7.70: Pages reopens on the tab it was last on and in the mode it was last
+   used in; the shipped defaults (Derek's preset) remember the Title tab in a
+   floating window. Neither is what this check is about. */
+await page.evaluate(() => {
+  window.__scStore.getState().setToolMode('pages', 'docked');
+  window.__scStore.getState().setPagesTab('script');
+});
+await settle(page);
 await openTool(page, 'Pages');
 await settle(page);
 await page.waitForSelector('.page-thumb-el', { timeout: 8000 });

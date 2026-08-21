@@ -49,9 +49,23 @@ ok((await state()).right === null, 'floating window closed by the script click (
 await page.evaluate(() => window.__scStore.getState().openTool('analytics'));
 await settle(page);
 ok((await state()).temp === 'analytics', 'Analytics opened as a temp window');
-// the temp window overlays the editor's middle — click an uncovered spot
-const ec = await (await page.$('.editor-center')).boundingBox();
-await page.mouse.click(ec.x + 30, ec.y + 160);
+/* The temp window overlays the editor's middle — click a spot the window is
+   provably NOT over. v7.70: this used to be a fixed offset into .editor-center,
+   which stopped being uncovered once the shipped defaults changed the layout
+   around it. Measure the window and aim beside it. */
+const spot = await page.evaluate(() => {
+  const ec = document.querySelector('.editor-center').getBoundingClientRect();
+  const w = document.querySelector('.tool-window')?.getBoundingClientRect();
+  const clear = (x, y) => !w || x < w.left - 8 || x > w.right + 8 || y < w.top - 8 || y > w.bottom + 8;
+  for (const y of [ec.bottom - 20, ec.top + 12, ec.top + ec.height / 2]) {
+    for (const x of [ec.left + 30, ec.right - 30, ec.left + ec.width / 2]) {
+      if (clear(x, y)) return { x, y };
+    }
+  }
+  return null;
+});
+if (!spot) throw new Error('the temp window covers the whole editor — nowhere to click');
+await page.mouse.click(spot.x, spot.y);
 await settle(page);
 ok((await state()).temp === null, 'temp window closed by the script click (unchanged rule)');
 

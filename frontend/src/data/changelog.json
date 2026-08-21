@@ -1,5 +1,15 @@
 [
   {
+    "version": "7.70",
+    "date": "2026-08-21",
+    "changes": [
+      "The app now ships with your setup as its defaults. A fresh install opens with your ribbon, your menus, your panel layout, your annotation presets, your design values and your five workspaces — instead of the assorted starting values it used to fall back on. Nothing you have already set is touched: this only fills in what has never been chosen, so your own app is exactly as you left it.",
+      "Workspaces: Default, Editing, Outlining, Focus and Minimalist ship with the app and can't be deleted or renamed. You can still rearrange any of them and save your changes over them, and you can still make, rename and delete your own. Renaming a built-in is off because the name is how the app knows which one it is — rename it and the original would come back beside your copy at the next launch.",
+      "Fix: all five would have shown “Save Changes to this Workspace” lit permanently. Your workspaces were saved before last version taught them to store fourteen more things, so the app compared what's on screen against a snapshot that had never heard of half of it and concluded something had changed. They're completed on the way in now, and each one reads as saved the moment you apply it.",
+      "A handful of things in the preset file are yours rather than the app's, and they were left out: your name and email, your folder locations, your Scrapbook, your bookmarks, and the window position — that last one is on a monitor to the left of your main screen, which on any other machine would open the app off-screen and look like it never launched."
+    ]
+  },
+  {
     "version": "7.69",
     "date": "2026-08-20",
     "changes": [

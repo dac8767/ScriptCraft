@@ -14,6 +14,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
 import ElementPicker from './ElementPicker';
 import { useEditorStore } from '../stores/editorStore';
+import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 
 let host: HTMLElement;
 let root: Root;
@@ -21,6 +22,13 @@ let root: Root;
 // jsdom has no scrollIntoView; the picker calls it on the selected item.
 beforeEach(() => {
   (Element.prototype as { scrollIntoView?: () => void }).scrollIntoView ??= () => {};
+  /* v7.70: nothing hidden. These tests are about ORDER and the grammar filter,
+     and they name elements the picker must show — but the picker also drops
+     whatever Customize ▸ Formatting has hidden, which the shipped defaults
+     (Derek's preset) now use: he hides General, Shot, Lyrics and Show/Episode.
+     Two tests asserted on General and Shot and started failing over a setting
+     they are not testing. */
+  useFormattingTemplateStore.setState({ elementHidden: [] });
 });
 
 beforeEach(() => {

@@ -876,6 +876,21 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 1px 7px;
   flex-shrink: 0;
 }
+/* v7.70: the five that ship with the app. Deliberately quieter than
+   .ws-active-badge — "active" is a state you changed and want to spot, this is
+   a standing fact about the row, and both can be on the same line. Muted text,
+   no border, so it reads as a label rather than a second badge competing with
+   the first. */
+.ws-builtin-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fd-text-muted);
+  padding: 1px 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 .ws-rename-input {
   flex: 1;
   min-width: 0;

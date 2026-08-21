@@ -1,7 +1,7 @@
 // devtools/check-v545.mjs — AI Writer: the footer button exists ONLY in the
 // side panel (new text), never popped out; the tool is gone from the Tools
 // menu. Pages header: + Add Page left, Go to page + Pages per row RIGHT.
-import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, placeTool } from './driver.mjs';
 const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
@@ -13,6 +13,14 @@ await boot(page);
 await seedScript(page, SCENES_4);
 
 // ── Pages header: left button, right pair ────────────────────────────────
+/* v7.70: Pages reopens on the tab it was last on and in the mode it was last
+   used in; the shipped defaults (Derek's preset) remember the Title tab in a
+   floating window. Neither is what this check is about. */
+await page.evaluate(() => {
+  window.__scStore.getState().setToolMode('pages', 'docked');
+  window.__scStore.getState().setPagesTab('script');
+});
+await settle(page);
 await openTool(page, 'Pages');
 await page.waitForSelector('.fs-pages-actions', { timeout: 8000 });
 const head = await page.evaluate(() => {
@@ -42,6 +50,9 @@ ok(toolsMenu.includes('Analytics') && toolsMenu.includes('Scrapbook'),
 await page.keyboard.press('Escape');
 
 // ── docked in the panel: the button, with the new text ───────────────────
+/* v7.70: the shipped defaults leave this tool out of the dock — enable it
+   and place it, so there is a row to open. */
+await placeTool(page, 'aiwriter');
 await openTool(page, 'AI Writer');
 await page.waitForSelector('.fs-aiwriter', { timeout: 6000 });
 const docked = await page.evaluate(() => ({

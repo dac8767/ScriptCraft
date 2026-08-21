@@ -365,6 +365,64 @@ Durable bits kept live here:
 > file is read at the start of every fresh session — its length is a
 > per-session tax. It was allowed to reach 2,559 lines; don't let it again.
 
+### v7.70 — the app ships with Derek's setup as its defaults
+
+Derek sent a full preset export: *"everything in this file should be made the
+default setting. the workspaces should have 5 options, all of which should be
+included as default, non deletable options."* The export already carried all
+five, so nothing about the preset EXPORT changed.
+
+**How it works.** `src/data/defaultPreset.json` is the sanitised bundle, built
+from his export by `devtools/build-default-preset.mjs` — which drops sixteen
+keys BY NAME with the reason attached (his email, his folder paths, his
+Scrapbook, a window x of −1730 on a monitor left of his main one, and the
+`workspaces`/`workspaceOrder` copies that ride inside the viewState blob).
+`src/stores/seedDefaults.ts` writes it into localStorage, ONCE, only for keys
+that are absent — an existing profile keeps everything it has.
+
+**Import order is the whole trick.** `seedDefaultSettings()` is called at the
+TOP of `viewState.ts`, before `export const _vs = loadViewState()`. Every store
+slice reads `_vs` for its initial values, so a seed that lands after that line
+is a seed nobody sees. Do not move it to `main.tsx`.
+
+**The five workspaces** are merged back on EVERY load (`withBuiltinWorkspaces`),
+not just the first — seeding skips a key that exists, so anyone with a prior
+viewState would never receive them. The merge adds only what is missing, never
+replaces an edited built-in, and never rewrites the ORDER (forcing them to the
+top would undo Edit Workspaces' arrows at the next restart).
+`isBuiltinWorkspace` is read by the store's delete/rename guards AND by both
+lists that draw the buttons, so what the UI offers and what the store permits
+cannot drift.
+
+**`WORKSPACE_FIELDS` moved again**, to `src/stores/workspaceFields.ts` — third
+time in three versions that a constant shared by two modules had to go and live
+in neither (menuLabel.ts, customizationFields.ts, now this). seedDefaults needs
+it and is imported by viewState, which the slice imports.
+
+**THE PART THAT COSTS TIME.** Changing the app's defaults changed what every
+browser check boots into: 52 assertions across 16 files went red, none of them
+because the feature was broken. Two were REAL bugs the new defaults exposed:
+
+- the ribbon EDITOR never set `rib-kind-titled`/`rib-kind-untitled`, so in edit
+  mode a section lost its per-kind padding, scale and gaps — 26px narrower per
+  section on a titled ribbon. Invisible for two versions because the stock
+  ribbon was untitled with zero padding knobs. One `ribKindClass()` helper now
+  feeds all three render sites, and check-v716 asks for the class by name.
+- check-v547's Design section had been dead since v7.05 (dev-only tools lost
+  their dock rail row); it fails at HEAD on factory defaults too.
+
+The rest were fixtures assuming a stock profile. The driver grew four helpers
+that each say WHY once instead of in sixteen places: `zoom100`,
+`showAllHelperText`, `useSceneList`, `placeTool` — plus `fullscreen()` is now
+idempotent and `openTool()` accepts a takeover, because the shipped defaults
+remember four tools as fullscreen. **If you change a default again, expect
+this: a check that measures px, counts rows, or opens a tool is describing a
+profile, and the shipped profile is now somebody's real one.**
+
+**Two things reported to Derek, not fixed here:** Escape does not close the
+in-app menu (pre-existing, both menu systems); and a dev-only tool dropped into
+a panel renders nothing and cannot be got back out.
+
 ### v7.23 — five from a feedback row, and the gear was never his
 
 Derek's row against v7.22. Item 1 was "the settings gear icon is slightly too

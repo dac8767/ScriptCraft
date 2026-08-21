@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
+import { isBuiltinWorkspace } from '../stores/seedDefaults';
 import { Modal } from './Modal';
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -195,7 +196,16 @@ export function EditWorkspacesDialog({ open, onClose }: { open: boolean; onClose
                           {n}
                           {isActive && <span className="ws-active-badge">active</span>}
                         </span>
-                        {isConfirming ? (
+                        {/* v7.70, Derek: the five that ship with the app are
+                            "non deletable" — and not renameable either, since
+                            the name is a built-in's identity and the original
+                            would reappear beside the renamed copy on the next
+                            launch. Same rule as the Workspaces panel, read
+                            from the same isBuiltinWorkspace, so the two lists
+                            cannot come to disagree about which rows those are. */}
+                        {isBuiltinWorkspace(n) ? (
+                          <span className="ws-builtin-badge" title="Ships with ScriptCraft — you can rearrange it and save your changes, but it can't be renamed or deleted">default</span>
+                        ) : isConfirming ? (
                           <>
                             <span className="ws-confirm-label">Delete?</span>
                             <button

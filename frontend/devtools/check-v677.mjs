@@ -12,7 +12,7 @@
    Ctrl+Z back → Ctrl+Shift+Z forward), the Hidden view's bulk toggle, the
    Design window's Reset all, a Customize tab reset, and Reset All
    Shortcuts. Every warning must also SAY the way back (the undo key). */
-import { launch, boot, seedScript, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, SCENES_4, settle, showAllHelperText } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
 let pass = 0, fail = 0;
@@ -31,6 +31,10 @@ const bodyHas = (s) => page.evaluate((x) => document.body.textContent.includes(x
 
 try {
   await boot(page);
+  /* v7.70: the shipped defaults are Derek's preset, and he has ~200 helper
+     strings hidden. This window filters those out, so every count and lookup
+     below was reading his housekeeping instead of the app's. */
+  await showAllHelperText(page);
   await seedScript(page, SCENES_4);
   await settle(page);
 

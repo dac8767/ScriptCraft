@@ -6,6 +6,13 @@
 // NO runtime dependency on editorStore and always evaluates first. `_vs` is
 // therefore ready before editorStore's module-level migrations and create() run.
 import type { ToolConfig, WorkspaceSnapshot, WritingGoal, OutlineBarRow, SpellingSettings } from './editorStore';
+// v7.70: a VALUE import, and deliberately the first one. seedDefaultSettings()
+// has to have written the shipped defaults into localStorage before `_vs` is
+// read at the bottom of this file — every slice's initial value comes from
+// that object, so a seed that lands afterwards is a seed nobody sees.
+// seedDefaults imports two leaves (workspaceFields, settingsBackup) and this
+// module imports no values at all, so there is no cycle to lose the race to.
+import { seedDefaultSettings } from './seedDefaults';
 
 const VIEW_STATE_KEY = 'opendraft:viewState';
 
@@ -173,6 +180,10 @@ export function saveViewState(patch: Partial<ViewState>) {
     localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ ...current, ...patch }));
   } catch { /* localStorage unavailable */ }
 }
+
+/** v7.70: the shipped defaults go in FIRST, for keys nobody has set. Runs
+ *  before the line below, which is the whole point — see seedDefaults.ts. */
+export const _seeded = seedDefaultSettings();
 
 /** Loaded once at module init; slices read it for their initial defaults. */
 export const _vs = loadViewState();

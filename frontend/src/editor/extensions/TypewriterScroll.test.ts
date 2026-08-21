@@ -68,6 +68,13 @@ describe('dim-others decorations (v1.72)', () => {
   let host: HTMLElement;
 
   beforeEach(() => {
+    /* v7.70: SET the master switch, don't inherit it. Every dim decoration is
+       gated on typewriterMasterEnabled, which these tests used to get for free
+       from a hardcoded default. The shipped defaults are Derek's preset now and
+       his master switch is off, so three of these went silently green-to-red
+       the moment that landed — for a reason that had nothing to do with what
+       they test. */
+    useEditorStore.getState().setTypewriterMasterEnabled(true);
     host = document.createElement('div');
     document.body.appendChild(host);
     editor = new Editor({
@@ -78,6 +85,7 @@ describe('dim-others decorations (v1.72)', () => {
   });
 
   afterEach(() => {
+    useEditorStore.getState().setTypewriterMasterEnabled(false);
     useEditorStore.getState().setTypewriterDimOthers(false);
     useEditorStore.getState().setTypewriterDimMode('elements');
     editor.destroy();

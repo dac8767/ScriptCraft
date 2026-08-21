@@ -3,7 +3,7 @@
 // wears `dialog-btn dialog-btn-primary` now, so the proof is computed-style
 // EQUALITY against a real dialog-primary probe — not hardcoded colors.
 // Active state must STAY amber (unapplied order ≠ available action).
-import { launch, boot, seedScript, openTool, waitScenes, shot, SCENES_4, settle } from './driver.mjs';
+import { launch, boot, seedScript, openTool, waitScenes, shot, SCENES_4, settle, useSceneList } from './driver.mjs';
 
 const results = [];
 const check = (n, got, want) => {
@@ -15,7 +15,12 @@ const check = (n, got, want) => {
 const { browser, page } = await launch({ width: 1500, height: 950 });
 await boot(page);
 await seedScript(page, SCENES_4);
+/* v7.70: the shipped defaults remember Scenes as fullscreen; the panel below
+   is the docked one. */
+await page.evaluate(() => window.__scStore.getState().setToolMode('scenes', 'docked'));
+await settle(page);
 await openTool(page, 'Scenes');
+await useSceneList(page);
 await waitScenes(page, 4);
 await page.waitForSelector('.scene-reorder-btn');
 
@@ -30,7 +35,18 @@ const cmp = await page.evaluate(() => {
   const props = ['backgroundColor', 'color', 'height', 'borderRadius',
     'fontSize', 'fontWeight', 'paddingLeft', 'paddingRight', 'borderTopColor'];
   const a = getComputedStyle(btn), b = getComputedStyle(probe);
-  const diff = props.filter((p) => a[p] !== b[p]).map((p) => `${p}: ${a[p]} vs ${b[p]}`);
+  /* Lengths within half a pixel are the same length. v7.70: the shipped
+     defaults carry Derek's panel scale, so the button in the panel computes
+     to 33.9911px where a probe appended to <body> gets a flat 34px — a
+     rounding artefact of a scale factor, not a difference in format, which is
+     what this compares. Everything that is not a length still has to match
+     exactly. */
+  const near = (x, y) => {
+    const nx = parseFloat(x), ny = parseFloat(y);
+    return Number.isFinite(nx) && Number.isFinite(ny) && /px$/.test(x) && /px$/.test(y)
+      ? Math.abs(nx - ny) < 0.5 : x === y;
+  };
+  const diff = props.filter((p) => !near(a[p], b[p])).map((p) => `${p}: ${a[p]} vs ${b[p]}`);
   const out = { diff, bg: a.backgroundColor, fg: a.color, h: a.height };
   probe.remove();
   return out;

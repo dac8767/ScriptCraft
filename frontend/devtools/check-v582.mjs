@@ -7,7 +7,7 @@
  * two agree: the MENU's corner and the pin's marker must describe the same
  * point, across map shapes and window sizes.
  */
-import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss, fullscreen as goFullscreen } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 const MAPS = {
@@ -22,7 +22,7 @@ async function run(label, { map, w, h, fullscreen = true, rotate = false }) {
   const { browser, page } = await launch({ width: w, height: h });
   try {
     await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
-    if (fullscreen) { await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover'); }
+    if (fullscreen) { await goFullscreen(page); }
     await settle(page);
     if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
@@ -94,7 +94,7 @@ console.log(`\ncheck-v582: ${pass} passed, ${fail} failed`);
   const { browser, page } = await launch({ width: 1440, height: 900 });
   try {
     await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
-    await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
+    await goFullscreen(page);
     await settle(page);
     if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
@@ -145,7 +145,7 @@ console.log(`\ncheck-v582 total: ${pass} passed, ${fail} failed`);
   const { browser, page } = await launch({ width: 1731, height: 1113 });
   try {
     await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
-    await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
+    await goFullscreen(page);
     await settle(page);
     if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});
@@ -192,7 +192,7 @@ console.log(`\ncheck-v582 with the v5.83 guard: ${pass} passed, ${fail} failed`)
   const { browser, page } = await launch({ width: 1731, height: 1113 });
   try {
     await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
-    await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
+    await goFullscreen(page);
     await settle(page);
     if (!(await page.$('.tool-ctl-menu'))) await page.click('.tool-ctl[title="View"]').catch(() => {});
     await page.click('.tool-ctl-menu .tool-ctl-menu-item:text-is("Map")').catch(() => {});

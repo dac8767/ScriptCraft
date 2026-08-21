@@ -51,7 +51,13 @@ describe('scenes / index-cards merge migration', () => {
     // the sub-state flip is deferred a tick (same pattern as 'scriptnotes')
     await new Promise((r) => setTimeout(r, 10));
     expect(S().scenesViewMode).toBe('cards');
-    expect(S().activeTool === 'scenes' || S().activeToolRight === 'scenes' || S().tempTool === 'scenes').toBe(true);
+    /* Any of the FOUR shapes a tool can open in — the fullscreen slot included.
+       It was left out, and the shipped defaults (v7.70, Derek's preset) remember
+       Scenes as fullscreen, so the tool opened exactly as asked and the
+       assertion called it closed. What this test is about is the migration:
+       'indexcards' opens Scenes, in Cards view. Not which slot it lands in. */
+    expect(S().activeTool === 'scenes' || S().activeToolRight === 'scenes'
+      || S().tempTool === 'scenes' || S().fullscreenTool === 'scenes').toBe(true);
   });
 
   it('scenesViewMode persists through viewState', () => {

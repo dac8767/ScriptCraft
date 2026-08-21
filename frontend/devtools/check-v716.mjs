@@ -85,9 +85,21 @@ console.log('\n2. ribbon edit mode is the same size as the live bar');
 const snap = () => page.evaluate(() => {
   const bar = document.querySelector('.toolbar-ribbon');
   const r = (e) => { const b = e.getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), x: Math.round(b.left) }; };
+  /* v7.70: an EMPTY section renders only in the editor. The live bar has
+     nothing to draw for it; the editor has to show it or there would be
+     nowhere to drop the first button. Derek's ribbon — the shipped default
+     since v7.70 — has two, so comparing the two bars section-for-section by
+     index lined up the wrong pairs from that point on. Compare the ones that
+     exist in both. */
+  const filled = (sec) => sec.querySelector('.toolbar-btn, select, .toolbar-group, .rib-edit-item');
+  const secs = [...bar.querySelectorAll('.rib-section')].filter(filled);
   return {
-    secs: [...bar.querySelectorAll('.rib-section')].map(r),
-    rows: [...bar.querySelectorAll('.rib-row')].map(r),
+    secs: secs.map(r),
+    rows: secs.flatMap((sec) => [...sec.querySelectorAll('.rib-row')]).map(r),
+    /* Every section carries its KIND in both modes (v7.70). Without it the
+       editor's sections lose the per-kind padding, scale and gaps — 26px
+       narrower each, on a titled ribbon with a side inset. */
+    kinds: secs.map((sec) => (sec.className.match(/rib-kind-\w+/) ?? [''])[0]),
     btns: [...bar.querySelectorAll('.toolbar-btn')].map((e) => ({
       key: e.getAttribute('title') || e.textContent.trim().slice(0, 12), ...r(e),
     })),
@@ -107,17 +119,36 @@ ok('edit mode really is on', await page.evaluate(() =>
 ok('the bar has sections to compare', live.secs.length >= 3 && live.btns.length >= 8,
   `${live.secs.length} sections / ${live.btns.length} buttons`);
 
-const same = (a, b) => a.length === b.length && a.every((x, i) => x.w === b[i].w && x.h === b[i].h && x.x === b[i].x);
+/* ±1px. Section widths are fractional (a ribbon scaled by --rib-k is
+   271.469px wide), and two different accumulations of the same fractions
+   round apart at the edges. The bug this check exists for was 26px per
+   section — 1px of rounding is not it, and demanding exactness would make
+   the check fail on arithmetic instead of on drift. */
+const near = (a, b) => Math.abs(a - b) <= 1;
+const same = (a, b) => a.length === b.length
+  && a.every((x, i) => near(x.w, b[i].w) && near(x.h, b[i].h) && near(x.x, b[i].x));
 ok('every SECTION keeps its box and its position',
   same(live.secs, edit.secs),
-  JSON.stringify(live.secs.map((s, i) => [s.w, s.x, edit.secs[i]?.w, edit.secs[i]?.x]).filter((p) => p[0] !== p[2] || p[1] !== p[3])));
-ok('every ROW keeps its height', same(live.rows, edit.rows), '');
+  JSON.stringify(live.secs.map((s, i) => [s.w, s.x, edit.secs[i]?.w, edit.secs[i]?.x]).filter((p) => !near(p[0], p[2]) || !near(p[1], p[3]))));
+ok('every ROW keeps its height', same(live.rows, edit.rows),
+  JSON.stringify(live.rows.map((s, i) => [s.h, s.x, edit.rows[i]?.h, edit.rows[i]?.x]).filter((p) => !near(p[0], p[2]) || !near(p[1], p[3]))));
+/* THE ONE THAT WOULD HAVE CAUGHT IT. Sizes can agree by luck when both
+   ribbons are untitled and every padding knob is zero — which is what the
+   stock ribbon was, and why this check watched a 26px error for two versions
+   without seeing it. The class is what the per-kind padding, scale and gaps
+   all hang off, so ask for the class by name. */
+ok('…and every section carries its kind in BOTH modes',
+  live.kinds.length === edit.kinds.length
+  && live.kinds.every((k, i) => k && k === edit.kinds[i]),
+  JSON.stringify({ live: live.kinds, edit: edit.kinds }));
 
 const byKey = new Map(live.btns.map((b) => [b.key, b]));
 const grown = edit.btns.filter((b) => { const l = byKey.get(b.key); return l && (l.w !== b.w || l.h !== b.h); });
 ok('every BUTTON keeps its size', grown.length === 0,
   JSON.stringify(grown.slice(0, 4).map((b) => `${b.key} ${byKey.get(b.key).w}x${byKey.get(b.key).h}→${b.w}x${b.h}`)));
-ok('…and its position', edit.btns.every((b) => { const l = byKey.get(b.key); return !l || l.x === b.x; }), '');
+ok('…and its position', edit.btns.every((b) => { const l = byKey.get(b.key); return !l || near(l.x, b.x); }),
+  JSON.stringify(edit.btns.filter((b) => { const l = byKey.get(b.key); return l && !near(l.x, b.x); })
+    .slice(0, 4).map((b) => `${b.key} ${byKey.get(b.key).x}→${b.x}`)));
 
 /* The chrome must still be visible — parity is worthless if it bought itself
    by drawing nothing. */

@@ -5,7 +5,7 @@
 //  3. All Pages compiles the other tabs: title page + script pages + custom
 //     pages in document order (title thumb labeled, custom unlabeled-pos)
 //  4. Script Pages still excludes both title and custom pages
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch();
 let pass = 0, fail = 0;
@@ -36,12 +36,28 @@ try {
 
   // ── 1. the caret on collapsed tab dropdowns — Characters first (it and
   // Pages share the LEFT slot; ending on Pages lets the rest run there) ──
+  /* Docked, in the narrow side panel — v7.70: the shipped defaults remember
+     Characters as fullscreen, and a takeover has no collapsed tab dropdown to
+     carry a caret. */
+  await page.evaluate(() => window.__scStore.getState().setToolMode('characters', 'docked'));
+  await settle(page);
   await openTool(page, 'Characters');
   await page.waitForSelector('.tool-chrome-tabs-dd, .tool-chrome-tabs:not(.tool-chrome-tabs-measure) .tool-chrome-tab', { timeout: 8000 });
   const charCaret = await page.$$eval('.tool-chrome-tabs-dd .tool-ctl-caret svg', (els) => els.length);
   ok(charCaret >= 1, `Characters' collapsed tab dropdown carries the ▾ (${charCaret} visible)`);
 
   await openTool(page, 'Pages');
+  /* v7.70: Pages reopens on the tab it was last on, and the shipped defaults
+     (Derek's preset) remember Title — so the thumbnail grid this check
+     measures was never on screen. Start on Script; which tab it reopens on is
+     not what any of this is about. */
+  /* …docked, in the side panel. v7.70: a tool reopens in its remembered mode
+     and the shipped defaults float Pages, so the "narrow dock" measured below
+     was a wide floating window. */
+  await page.evaluate(() => window.__scStore.getState().setToolMode('pages', 'docked'));
+  await settle(page);
+  await page.evaluate(() => window.__scStore.getState().setPagesTab('script'));
+  await settle(page);
   await page.waitForSelector('.page-thumbnails-grid', { timeout: 8000 });
   const pagesCollapsed = await page.$('.tool-chrome-tabs-dd');
   ok(!!pagesCollapsed, 'narrow dock: the Pages tabs collapse to the dropdown');

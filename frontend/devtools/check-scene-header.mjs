@@ -2,13 +2,14 @@
 // screenshot: titles centred over their REGIONS (Scene = badge+heading,
 // Length = metrics+icon), resize bars halfway between adjacent regions.
 // One run prints every number. ~5s on the kit.
-import { launch, boot, seedScript, openTool, fullscreen, waitScenes, shot, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, fullscreen, waitScenes, shot, SCENES_4, useSceneList } from './driver.mjs';
 
 const { browser, page } = await launch();
 await boot(page);
 await seedScript(page, SCENES_4);
 await openTool(page, 'Scenes');
 await fullscreen(page);
+await useSceneList(page);
 await waitScenes(page, 4);
 
 const r = await page.evaluate(() => {

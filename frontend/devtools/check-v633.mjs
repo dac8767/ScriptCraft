@@ -7,7 +7,7 @@
    the PDF EXPORTER (trailing-space fit fix + columnFor). This check drives
    the editor DOM and parses the exported PDF bytes; the pure wrap math lives
    in screenplayMetrics.test.ts. */
-import { launch, boot, settle } from './driver.mjs';
+import { launch, boot, settle, zoom100 } from './driver.mjs';
 
 const SAMPLE = 'A TALL MAN in coveralls mops in an empty cafeteria. He hears a DISTANT CHOIR and looks up, revealing the eerily blank face of';
 const JESSICA = 'JESSICA (17), a devout honor student, wearing a cross necklace. Standing beside her is her best friend,';
@@ -29,6 +29,9 @@ try {
     ] });
   }, [SAMPLE, JESSICA]);
   await settle(page); await settle(page);
+  /* 100% first — the wrap measurements below are in px, and the shipped
+     defaults (v7.70) carry Derek's 140% zoom. */
+  await zoom100(page);
 
   // ── the default page layout carries the measured 0.7" right margin ──
   const layout = await page.evaluate(() => window.__scStore.getState().pageLayout);

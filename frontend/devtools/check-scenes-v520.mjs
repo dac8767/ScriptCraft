@@ -3,7 +3,7 @@
 //  2. "Cards per row:" stepper left + Reorder right-aligned on the action row,
 //  3. Filter and View menus are mutually exclusive,
 //  4. cards wear the lighter surface (--fd-toolbar-bg, #353535 dark).
-import { launch, boot, seedScript, openTool, waitScenes, shot, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, waitScenes, shot, SCENES_4, useSceneList, settle } from './driver.mjs';
 
 const results = [];
 const check = (n, got, want) => {
@@ -15,7 +15,12 @@ const check = (n, got, want) => {
 const { browser, page } = await launch({ width: 1500, height: 950 });
 await boot(page);
 await seedScript(page, SCENES_4);
+/* v7.70: the shipped defaults remember Scenes as fullscreen; the panel below
+   is the docked one. */
+await page.evaluate(() => window.__scStore.getState().setToolMode('scenes', 'docked'));
+await settle(page);
 await openTool(page, 'Scenes');
+await useSceneList(page);
 await waitScenes(page, 4);
 
 // ── 1. Filter popover contained in the docked window ────────────────────────

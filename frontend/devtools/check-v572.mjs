@@ -1,6 +1,6 @@
 // check-v572 — the Pages tabs read Script / Title / Custom / All, in that
 // order, and each still lands on its view.
-import { launch, boot, seedScript, openTool, SCENES_4 } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
 
 const { browser, page } = await launch();
 let pass = 0, fail = 0;
@@ -20,6 +20,12 @@ try {
   await boot(page);
   await seedScript(page, SCENES_4);
   await openTool(page, 'Pages');
+  /* v7.70: Pages reopens on the tab it was last on, and the shipped defaults
+     (Derek's preset) remember Title — so the thumbnail grid this check
+     measures was never on screen. Start on Script; which tab it reopens on is
+     not what any of this is about. */
+  await page.evaluate(() => window.__scStore.getState().setPagesTab('script'));
+  await settle(page);
   await page.waitForSelector('.page-thumbnails-grid', { timeout: 8000 });
 
   const tabTexts = await page.$$eval('.tool-chrome-tabs-measure .tool-chrome-tab',

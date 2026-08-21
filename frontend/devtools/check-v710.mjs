@@ -66,7 +66,12 @@ const leftovers = await page.evaluate(async () => {
   const s = window.__scStore.getState();
   return {
     inDefaultOrder: store.DEFAULT_TOOL_ORDER.includes('rewrite'),
-    inToolConfig: Object.prototype.hasOwnProperty.call(s.toolConfig || {}, 'rewrite'),
+    /* v7.70: the DEFAULT config, which is what this line has always claimed to
+       read. It read the LIVE one and got away with it for as long as a fresh
+       profile and the defaults were the same object — until the shipped
+       defaults became Derek's preset, whose toolConfig has an entry for every
+       tool he has ever placed. */
+    inToolConfig: Object.prototype.hasOwnProperty.call(store.DEFAULT_TOOL_CONFIG || {}, 'rewrite'),
     settingsKeys: Object.keys(window.localStorage).filter((k) => /rewrite/i.test(k)),
   };
 });

@@ -66,6 +66,12 @@ try {
       icon: 'hashtag', color: '#4a9eff', highlight: null, anchor: 'point', done: false, createdAt: new Date().toISOString(),
     });
   });
+  /* v7.70: annotations are HIDDEN in the shipped defaults (Derek writes with
+     them off), so the icon this whole check measures never rendered. Turn the
+     layer on — where an icon sits at each zoom is the subject; whether the
+     layer starts visible is not. */
+  await page.evaluate(() => window.__scStore.getState().setMarkupsVisible(true));
+  await settle(page);
   await page.waitForSelector('.markup-margin-icon', { timeout: 5000 });
   await settle(page);
 

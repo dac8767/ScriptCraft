@@ -1188,6 +1188,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
      bands. A single-section group is the ordinary case and looks exactly as
      it did — the band still gets reserved so button rows stay aligned (the
      v4.5 rule). */
+  /* v7.70 — ONE place decides a section's KIND. The live bar has always set
+     rib-kind-titled / rib-kind-untitled; the editor set neither, so in edit
+     mode a section lost the per-kind scale factor, the per-kind button and row
+     gaps, and the per-kind side padding along with them.
+
+     It hid for two versions because a section with no title and both padding
+     knobs at zero measures the same either way — which is what the stock
+     ribbon was. The moment v7.70 shipped Derek's own ribbon as the default,
+     titled sections with a 13px inset, every section in the editor drew 26px
+     narrower than the live one it is supposed to be showing you. check-v716
+     was written for exactly this and could not see it: it had no titled
+     ribbon to look at. */
+  const ribKindClass = (title?: string) => (title ? 'rib-kind-titled' : 'rib-kind-untitled');
+
   type LiveSec = { s: typeof sections[number]; orig: number };
   const groupSections = (list: LiveSec[]): LiveSec[][] => {
     const groups: LiveSec[][] = [];
@@ -1201,7 +1215,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     if (group.length === 1) {
       const { s } = group[0];
       return (
-        <div key={key} className={`rib-section${s.hasBreak ? '' : ' rib-single'} ${s.title ? 'rib-kind-titled' : 'rib-kind-untitled'}`}>
+        <div key={key} className={`rib-section${s.hasBreak ? '' : ' rib-single'} ${ribKindClass(s.title)}`}>
           {liveSectionInner(s)}
         </div>
       );
@@ -1210,7 +1224,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     // A grouped block is single-row only if EVERY section in it is.
     const anyBreak = group.some((g) => g.s.hasBreak);
     return (
-      <div key={key} className={`rib-group${anyBreak ? '' : ' rib-single'} ${title ? 'rib-kind-titled' : 'rib-kind-untitled'}`}>
+      <div key={key} className={`rib-group${anyBreak ? '' : ' rib-single'} ${ribKindClass(title)}`}>
         <div className={`rib-sec-title${title ? '' : ' rib-sec-title-empty'}`}>{title}</div>
         <div className="rib-group-body">
           {group.map(({ s, orig }) => (
@@ -1425,7 +1439,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
               />
             ))}
           <div
-            className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'}`}
+            className={`rib-section rib-edit-section${s.hasBreak ? '' : ' rib-single'} ${ribKindClass(s.title)}`}
             data-sec={i}
             /* v6.82, Derek: no "Drag to move this section" tooltip — it
                collided with the edit mode's other helper bubbles. The

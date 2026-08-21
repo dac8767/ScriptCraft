@@ -82,21 +82,31 @@ ok('…and every one of these changes is noticed', blind.length === 0,
 ok('a change still registers before applying', dirty.wentDirty === true, '');
 ok('…and applying the workspace puts it back', dirty.cleanAfterApply === true, '');
 
-/* The three lists that describe the same thing must stay one list. */
+/* The three lists that describe the same thing must stay one list.
+   v7.70: WORKSPACE_FIELDS moved again, from workspacesSlice into its own leaf
+   (stores/workspaceFields.ts) — seedDefaults needs it too, and it is imported
+   by viewState, which the slice imports. Same shape of answer, one module
+   further out. */
 const slice = src('stores/slices/workspacesSlice.ts');
+const fields = src('stores/workspaceFields.ts');
 ok('capture is built from CUSTOMIZATION_FIELDS, not a copy of the names',
-  /WORKSPACE_FIELDS[\s\S]{0,200}CUSTOMIZATION_FIELDS/.test(slice), '');
+  /WORKSPACE_FIELDS[\s\S]{0,200}CUSTOMIZATION_FIELDS/.test(fields)
+  && /for \(const f of WORKSPACE_FIELDS\)/.test(slice), '');
 ok('…and apply is derived from the snapshot, not a second list',
   /for \(const \[k, v\] of Object\.entries\(snap\)\)/.test(slice), '');
 /* An exclusion has to be a DECISION. Naming them is what tells the next
    reader that suggestionRules is missing on purpose. */
 ok('…with anything left out named as excluded',
-  /WORKSPACE_EXCLUDES/.test(slice), '');
+  /WORKSPACE_EXCLUDES/.test(fields), '');
 /* The shared list lives outside editorStore: the slice needs it at module-init
    and editorStore imports the slice, so keeping it there was a circular import
-   that left the array undefined and stopped two test files collecting. */
+   that left the array undefined and stopped two test files collecting. The
+   same is now true one level up — workspaceFields imports one leaf and holds
+   no store of its own. */
 ok('the shared list is in a module neither side owns',
-  /from '\.\.\/customizationFields'/.test(slice), '');
+  /from '\.\.\/workspaceFields'/.test(slice)
+  && /from '\.\/customizationFields'/.test(fields)
+  && !/from '\.\/editorStore'|from '\.\/viewState'/.test(fields), '');
 
 /* ── the Production menu is hidden ───────────────────────────────────────── */
 console.log('\nthe Production menu is out of the way');

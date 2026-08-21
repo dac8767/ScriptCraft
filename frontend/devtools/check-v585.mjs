@@ -8,7 +8,7 @@
  * Hiding must never be a one-way door, so the Filter menu's way back is
  * asserted too.
  */
-import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss } from './driver.mjs';
+import { launch, boot, seedScript, openTool, SCENES_4, settle, dismiss, fullscreen } from './driver.mjs';
 import { writeMapFixture } from './mapFixture.mjs';
 
 /* v5.96: the option buttons live in the expanded row's BODY (v6.01: named
@@ -38,7 +38,17 @@ const { browser, page } = await launch({ width: 1500, height: 950 });
 
 try {
   await boot(page); await seedScript(page, SCENES_4); await openTool(page, 'Locations');
-  await page.click('button[title="Fullscreen"]'); await page.waitForSelector('.fs-tool-takeover');
+  /* v7.70: Locations reopens on the tab it was last on, and the shipped
+     defaults (Derek's preset) remember the Map — so the list this check reads
+     was not the panel on screen. Start on the list; which tab it reopens on is
+     not what this is about. */
+  await page.evaluate(() => window.__scStore.getState().setLocationsTab('list'));
+  await settle(page);
+  /* …and ungrouped. v7.70: the shipped defaults keep Derek's grouped view,
+     and the rows this reads are the ungrouped ones. */
+  await page.evaluate(() => window.__scStore.getState().setLocationsGrouped(false));
+  await settle(page);
+  await fullscreen(page);
   await settle(page);
 
   // ── the List view ───────────────────────────────────────────────────
@@ -186,7 +196,14 @@ await browser.close();
   const { browser: b2, page: p2 } = await launch({ width: 1500, height: 950 });
   try {
     await boot(p2); await seedScript(p2, SCENES_4); await openTool(p2, 'Locations');
-    await p2.click('button[title="Fullscreen"]'); await p2.waitForSelector('.fs-tool-takeover');
+    await fullscreen(p2);
+    /* The list, ungrouped — same fixture as the main flow above. v7.70: the
+       shipped defaults reopen Locations on the Map, grouped, and the rows this
+       half clicks are the ungrouped list's. */
+    await p2.evaluate(() => {
+      window.__scStore.getState().setLocationsTab('list');
+      window.__scStore.getState().setLocationsGrouped(false);
+    });
     await settle(p2);
 
     // item 1: the scenes list is gone from the expanded row

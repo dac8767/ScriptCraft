@@ -11,7 +11,10 @@ import type { StateCreator } from 'zustand';
 import { _vs, saveViewState } from '../viewState';
 import type { EditorState, WorkspaceSnapshot, ToolId, ToolConfig } from '../editorStore';
 import { migrateToolConfig, migrateToolOrder, migrateToolId } from '../editorStore';
-import { CUSTOMIZATION_FIELDS } from '../customizationFields';
+import { WORKSPACE_EXCLUDES, WORKSPACE_VIEW_FIELDS, WORKSPACE_FIELDS } from '../workspaceFields';
+import { isBuiltinWorkspace, withBuiltinWorkspaces } from '../seedDefaults';
+
+export { WORKSPACE_EXCLUDES, WORKSPACE_VIEW_FIELDS, WORKSPACE_FIELDS };
 
 export interface WorkspacesSlice {
   /** Named saved layouts (View → Workspaces) */
@@ -38,27 +41,10 @@ export interface WorkspacesSlice {
    "Reset" when nothing has changed — needs a THIRD reading of that list to
    compare live state against the saved snapshot, and a third copy is how the
    v4.24 bug happens again. So capture is a function now, and the comparison
-   is built from its output rather than from its own list. */
-/** Customizations a workspace deliberately does NOT carry. Both are about how
- *  the app CHECKS YOUR WRITING, not how it is arranged — switching workspace
- *  should not change your grammar rules. Named rather than omitted, so the
- *  check below can tell a decision from an oversight. */
-export const WORKSPACE_EXCLUDES = ['suggestionRules', 'suggestionMode'] as const;
-
-/** The arrangement, on top of the customizations: what is open, how big, and
- *  in what mode. These are view state rather than customizations, which is why
- *  CUSTOMIZATION_FIELDS does not have them. */
-export const WORKSPACE_VIEW_FIELDS = [
-  'navigatorOpen', 'shelfOpen', 'toolSizes', 'toolMode',
-  'activeTool', 'activeToolRight',
-  'theme',                              // v0.78: the theme is part of a workspace
-  'contextMenuOrder',                   // its sibling contextMenuHidden is a customization
-] as const;
-
-export const WORKSPACE_FIELDS: string[] = [
-  ...CUSTOMIZATION_FIELDS.filter((f) => !(WORKSPACE_EXCLUDES as readonly string[]).includes(f)),
-  ...WORKSPACE_VIEW_FIELDS,
-];
+   is built from its output rather than from its own list.
+   v7.70: that list now lives in ../workspaceFields — seedDefaults needs it too,
+   and it is imported by viewState, which this file imports. Re-exported above
+   so every existing importer still reads it from here. */
 
 export function captureWorkspace(s: EditorState): WorkspaceSnapshot {
   const snap: WorkspaceSnapshot = {};
@@ -110,9 +96,16 @@ export function workspaceIsDirty(s: EditorState): boolean {
   return stable(captureWorkspace(s)) !== stable(normalizeWorkspace(saved));
 }
 
+/* v7.70, Derek: "the workspaces should have 5 options, all of which should be
+   included as default, non deletable options." The merge runs on EVERY load,
+   not just the first: seeding writes localStorage keys that are absent, and
+   anyone who already had a viewState — Derek above all — would otherwise never
+   receive them. It adds only what is missing and never reorders. */
+const _seed = withBuiltinWorkspaces<WorkspaceSnapshot>(_vs.workspaces, _vs.workspaceOrder);
+
 export const createWorkspacesSlice: StateCreator<EditorState, [], [], WorkspacesSlice> = (set, get) => ({
-  workspaces: _vs.workspaces ?? {},
-  workspaceOrder: _vs.workspaceOrder ?? Object.keys(_vs.workspaces ?? {}).sort(),
+  workspaces: _seed.workspaces,
+  workspaceOrder: _seed.workspaceOrder,
   setWorkspaceOrder: (order) => {
     saveViewState({ workspaceOrder: order });
     set({ workspaceOrder: order });
@@ -203,7 +196,16 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     set({ ...(patch as Partial<EditorState>), activeWorkspace: name });
     if (theme !== undefined && theme !== get().theme) get().setTheme(theme);
   },
+  /* v7.70: the five that ship with the app cannot be deleted or renamed.
+     Neither list draws those buttons for a built-in (both read the same
+     isBuiltinWorkspace), so this is a backstop rather than a control that
+     looks live and writes into the void — it exists because the store, not
+     the two components, is where "can this go" has to be true.
+     Rename is locked for a reason of its own: the name is the identity, so
+     renaming one orphans it and the merge above puts the original straight
+     back on the next load — you would end up with both. */
   deleteWorkspace: (name) => set((s) => {
+    if (isBuiltinWorkspace(name)) return {};
     const workspaces = { ...s.workspaces };
     delete workspaces[name];
     const workspaceOrder = s.workspaceOrder.filter((n) => n !== name);
@@ -213,6 +215,7 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
   }),
   renameWorkspace: (oldName, newName) => set((s) => {
     const trimmed = newName.trim();
+    if (isBuiltinWorkspace(oldName)) return {};
     if (!trimmed || trimmed === oldName || !s.workspaces[oldName]) return {};
     const workspaces = { ...s.workspaces, [trimmed]: s.workspaces[oldName] };
     delete workspaces[oldName];

@@ -1,0 +1,118 @@
+/* build-default-preset.mjs (v7.70) — turn one of Derek's preset exports into
+ * the app's shipped defaults.
+ *
+ *   node devtools/build-default-preset.mjs <exported-preset.json>
+ *
+ * Derek: "this is the the full presets file. everything in this file should be
+ * made the default setting."
+ *
+ * ALMOST everything. A preset export is a snapshot of ONE person's app on ONE
+ * machine, and a handful of its keys are his rather than the product's. Baked
+ * in as defaults they would each do real damage on a stranger's computer, so
+ * they are dropped HERE, by name, with the reason attached — not quietly
+ * skipped somewhere in the app.
+ *
+ * Re-run this whenever he sends a newer export; the exclusions travel with it.
+ */
+import { readFileSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+
+const OUT = new URL('../src/data/defaultPreset.json', import.meta.url);
+
+/** localStorage keys that describe the MACHINE or the PERSON, not the product. */
+export const EXCLUDED_SETTINGS = {
+  'opendraft:feedbackProfile':
+    "Derek's name and email — every tester would file feedback as him",
+  'opendraft:feedbackQueue': 'his unsent feedback',
+  'opendraft:bookmarks': 'bookmarks pointing into script ids that exist on his disk',
+  'opendraft:lastOpenedScript': 'a project/script uuid nobody else has',
+  'opendraft:lastWindowTabs': 'which tab he last had open in three windows',
+  'opendraft:notebook': 'the contents of his Scrapbook',
+  'opendraft:windowBounds':
+    'x:-1730 — a second monitor to the LEFT of his main one. On any other machine the app opens off-screen, which reads as "it did not launch"',
+  'opendraft:saveloc:localFolder': '/Users/dcarl/Downloads',
+  'opendraft:saveloc:backupFolder': '/Volumes/Home/10 - Writing/…',
+  'opendraft:saveloc:screenshotFolder': '/Users/dcarl/Documents/…',
+  'opendraft:saveloc:snapLocalFolder': '/Users/dcarl/Documents/…',
+  /* The toggles go with the folders they point at. Left on with the path
+     dropped, every save would try to write to a folder that was never set. */
+  'opendraft:saveloc:saveToBackupFolder': 'points at the backup folder above',
+  'opendraft:saveloc:snapToLocalFolder': 'points at the snapshot folder above',
+};
+
+/** Fields inside the viewState blob, same rule. */
+export const EXCLUDED_VIEWSTATE = {
+  showUnreleasedTools:
+    'the Developer toggle. On by default it un-hides the Production menu that v7.69 hid, and Lock Pages with it',
+  goalsCompleted: 'his running count of finished writing goals',
+  windowShape:
+    'remembered x/y for each tool window — positions from his display, on someone else\'s',
+  /* NOT privacy — SINGLE SOURCE OF TRUTH. The export carries the same five
+     workspaces twice: once as parts.workspaces (the part the checklist means)
+     and once inside this blob, because that is where the store persists them.
+     Seeded, the viewState copy wins — it is written before anything reads it —
+     and the copy the app then shows is the raw one, missing the 14 fields a
+     snapshot grew in v7.69, so all five read as "changed" the moment they were
+     applied. parts.workspaces is the source; stores/seedDefaults completes it
+     and merges it on every load. */
+  workspaces: 'a second copy of parts.workspaces, and the stale one',
+  workspaceOrder: 'ditto — the order lives with the workspaces it orders',
+};
+
+/** The transform, as a function — check-v770 imports the two lists above to
+ *  verify the shipped bundle really is missing every key they name, so this
+ *  file must be importable without running. */
+export function buildDefaultPreset(bundle) {
+  const dropped = [];
+  const settings = { ...(bundle.parts.settings ?? {}) };
+  for (const key of Object.keys(EXCLUDED_SETTINGS)) {
+    if (key in settings) { delete settings[key]; dropped.push(key); }
+  }
+
+  /* viewState rides inside settings as a JSON string. */
+  if (typeof settings['opendraft:viewState'] === 'string') {
+    const vs = JSON.parse(settings['opendraft:viewState']);
+    for (const key of Object.keys(EXCLUDED_VIEWSTATE)) {
+      if (key in vs) { delete vs[key]; dropped.push(`viewState.${key}`); }
+    }
+    settings['opendraft:viewState'] = JSON.stringify(vs);
+  }
+
+  return {
+    doc: {
+      ...bundle,
+      /* Stamped so a future reader knows which export this came from and that
+         it went through here rather than being pasted in whole. */
+      sourceExportedAt: bundle.exportedAt,
+      builtBy: 'devtools/build-default-preset.mjs',
+      parts: { ...bundle.parts, settings },
+    },
+    dropped,
+  };
+}
+
+function main() {
+  const srcPath = process.argv[2];
+  if (!srcPath) {
+    console.error('usage: node devtools/build-default-preset.mjs <exported-preset.json>');
+    process.exit(1);
+  }
+
+  const bundle = JSON.parse(readFileSync(srcPath, 'utf8'));
+  if (bundle.kind !== 'preset-bundle') {
+    console.error(`not a preset bundle (kind: ${bundle.kind})`);
+    process.exit(1);
+  }
+
+  const { doc, dropped } = buildDefaultPreset(bundle);
+  writeFileSync(OUT, `${JSON.stringify(doc, null, 2)}\n`);
+
+  const ws = Object.keys(bundle.parts.workspaces?.workspaces ?? {});
+  console.log('wrote src/data/defaultPreset.json');
+  console.log(`  parts:      ${bundle.includes.join(', ')}`);
+  console.log(`  settings:   ${Object.keys(doc.parts.settings).length} kept, ${dropped.length} dropped`);
+  console.log(`  workspaces: ${ws.length} — ${ws.join(', ')}`);
+  for (const d of dropped) console.log(`    dropped ${d}`);
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main();

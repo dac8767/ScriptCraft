@@ -7,7 +7,7 @@
    end to end: open from the menu, edit → a live tooltip, a live field
    placeholder, and the script's own element hint all change — and reset
    restores them. */
-import { launch, boot, seedScript, settle } from './driver.mjs';
+import { launch, boot, seedScript, settle, showAllHelperText } from './driver.mjs';
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
 let pass = 0, fail = 0;
@@ -25,6 +25,10 @@ async function overrideRow(dflt, value) {
 
 try {
   await boot(page);
+  /* v7.70: the shipped defaults are Derek's preset, and he has ~200 helper
+     strings hidden. This window filters those out, so every count and lookup
+     below was reading his housekeeping instead of the app's. */
+  await showAllHelperText(page);
   await seedScript(page, [{ heading: 'INT. BRIDGE - NIGHT', actions: ['A line.'] }]);
 
   // A tool window whose chrome carries the Fullscreen tooltip.

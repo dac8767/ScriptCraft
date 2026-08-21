@@ -134,6 +134,16 @@ blocked in plain sight, and nobody noticed, because `tauri dev` doesn't run tsc.
 They are fixed. Typecheck is clean at zero. **Keep it there.** An unused import is not a
 lint nit in this repo; it breaks the release build.
 
+**Changing a DEFAULT is a suite-wide event** (v7.70, learned the hard way). The
+app's defaults are Derek's own preset now — his 140% zoom, his Design values,
+his hidden helper text, his tool modes. Fifty-two assertions across sixteen
+check files went red the moment that landed, almost all of them fixtures that
+had quietly assumed a stock profile. The driver has helpers that state the
+reason once (`zoom100`, `showAllHelperText`, `useSceneList`, `placeTool`); use
+them rather than writing the same explanation sixteen times. And read the
+failures before "fixing" them — two of those fifty-two were real bugs that only
+a real person's configuration could expose.
+
 **Write real tests for anything with logic in it.** `vitest` is wired for jsdom, so
 components can be rendered and inspected (`src/**/*.test.tsx`). Two of the worst bugs in
 this project's history were found by rendering the thing in a test and reading back what
@@ -302,6 +312,9 @@ all three.
 |---|---|
 | `stores/editorStore.ts` | `ToolId`, tool config/order, `SHELF_COLORS`/`NOTE_COLORS`, script-visibility flags, `ALWAYS_FLOAT`, `DEV_TOOLS`, view-state persistence |
 | `stores/formattingTemplateStore.ts` | `getPickableElements()` — the canonical element list |
+| `stores/seedDefaults.ts` | **The app's shipped defaults** (v7.70) — writes `data/defaultPreset.json` into localStorage once, for absent keys only, and merges the five built-in workspaces on every load. Called from the TOP of `viewState.ts`, before `_vs` is read: move it and the defaults reach nothing. |
+| `stores/workspaceFields.ts` | `WORKSPACE_FIELDS` — what a workspace snapshot holds. A leaf, because the slice and seedDefaults both need it |
+| `devtools/build-default-preset.mjs` | Turns one of Derek's preset exports into that bundle; the keys it drops are named there, with reasons |
 | `components/ToolDock.tsx` | `ALL_TOOLS` (the tool registry), `WINDOW_IDS`, docking, drag-to-resize panel edge |
 | `components/StickyCard.tsx` | **THE** card. Notes and To-Do both render it. Do not fork it. |
 | `components/ListControls.tsx` | Filter / sort / manual-order shared by Notes and To-Do |
