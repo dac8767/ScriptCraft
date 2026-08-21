@@ -15,7 +15,12 @@ import { createNotesSlice, type NotesSlice } from './slices/notesSlice';
 import { createMarkupsSlice, DEFAULT_MARKUP_PRESETS, type MarkupsSlice } from './slices/markupsSlice';
 import { createSceneNavSlice, type SceneNavSlice } from './slices/sceneNavSlice';
 import { createLocationMapSlice, type LocationMapSlice } from './slices/locationMapSlice';
-import { createWorkspacesSlice, type WorkspacesSlice } from './slices/workspacesSlice';
+import { createWorkspacesSlice, activeSnapshot, type WorkspacesSlice } from './slices/workspacesSlice';
+import { resetValue } from './seedDefaults';
+
+/** The four panel width modes — named so the reset paths can type their
+ *  lookup without repeating the union. */
+type PanelMode = 'compact' | 'comfortable' | 'custom' | 'icons';
 import { createViewPrefsSlice, type ViewPrefsSlice } from './slices/viewPrefsSlice';
 import { createSpellGrammarSlice, type SpellGrammarSlice } from './slices/spellGrammarSlice';
 import { createBeatsOutlineSlice, type BeatsOutlineSlice } from './slices/beatsOutlineSlice';
@@ -1653,21 +1658,31 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
     saveViewState({ uiResizeLocked: v });
     set({ uiResizeLocked: v });
   },
+  /* v7.71, Derek: "resetting anything should set it to the default of the
+     current workspace." These two put back the workspace you are standing in,
+     falling through to what the app ships and only then to the built-in
+     numbers below — resetValue is the one place that order is decided, and
+     activeSnapshot is the same snapshot "Reset to Saved Layout" restores, so
+     the two can no longer mean different things. */
   resetChromeSizes: () => {
     const st = get();
-    st.setMenuMode('compact');
-    st.setToolbarMode('compact');
-    st.setChromeGap('menu', 0);
-    st.setChromeGap('toolbar', 2);
-    st.setChromeGap('bigbtn', 0);
-    st.setChromeGap('scrapbook', 12);
-    st.setPanelSizeMode('left', 'comfortable');
-    st.setPanelSizeMode('right', 'comfortable');
-    st.setOutlineBarRowScale(1);
-    st.setScrapbookTreeScale(1);
-    st.setBigBtnInset(16);
-    st.setPanelItemScale('left', 1);
-    st.setPanelItemScale('right', 1);
+    const ws = activeSnapshot(st);
+    const gap = resetValue<Record<string, number>>(ws, 'chromeGapPx', {});
+    const mode = resetValue<{ left?: PanelMode; right?: PanelMode }>(ws, 'panelSizeMode', {});
+    const scale = resetValue<{ left?: number; right?: number }>(ws, 'panelItemScale', {});
+    st.setMenuMode(resetValue(ws, 'menuMode', 'compact'));
+    st.setToolbarMode(resetValue(ws, 'toolbarMode', 'compact'));
+    st.setChromeGap('menu', gap.menu ?? 0);
+    st.setChromeGap('toolbar', gap.toolbar ?? 2);
+    st.setChromeGap('bigbtn', gap.bigbtn ?? 0);
+    st.setChromeGap('scrapbook', gap.scrapbook ?? 12);
+    st.setOutlineBarRowScale(resetValue(ws, 'outlineBarRowScale', 1));
+    st.setScrapbookTreeScale(resetValue(ws, 'scrapbookTreeScale', 1));
+    st.setBigBtnInset(resetValue(ws, 'bigBtnInsetPx', 16));
+    for (const side of ['left', 'right'] as const) {
+      st.setPanelSizeMode(side, mode[side] ?? 'comfortable');
+      st.setPanelItemScale(side, scale[side] ?? 1);
+    }
   },
   /** v3.34, Derek: "Reset All Customizations" — everything Customize can
    *  change goes back to factory: sizes AND layouts (ribbon, QAT, dropdown
@@ -1676,16 +1691,21 @@ export const useEditorStore = create<EditorState>((set, get, api) => ({
    *  not layout. */
   resetAllCustomizations: () => {
     const st = get();
+    const ws = activeSnapshot(st);
     st.resetChromeSizes();
-    st.setToolbarZones([...DEFAULT_TOOLBAR_LEFT], []);
-    st.setQatItems(['save', 'undo', 'redo']);
-    saveViewState({ toolbarDdWidths: {} });
-    set({ toolbarDdWidths: {} });
-    st.setMenuBarOrder([...MENU_BAR_LABELS]);
-    st.setToolConfig({ ...DEFAULT_TOOL_CONFIG });
-    st.setToolOrder([...DEFAULT_TOOL_ORDER]);
-    st.setOutlineBarRows([...DEFAULT_OUTLINE_BAR_ROWS]);
-    st.setOutlineBarZoom(0);
+    st.setToolbarZones(
+      resetValue(ws, 'toolbarLeft', [...DEFAULT_TOOLBAR_LEFT]),
+      resetValue(ws, 'toolbarRight', []),
+    );
+    st.setQatItems(resetValue(ws, 'qatItems', ['save', 'undo', 'redo']));
+    const toolbarDdWidths = resetValue(ws, 'toolbarDdWidths', {});
+    saveViewState({ toolbarDdWidths });
+    set({ toolbarDdWidths });
+    st.setMenuBarOrder(resetValue(ws, 'menuBarOrder', [...MENU_BAR_LABELS]));
+    st.setToolConfig(resetValue(ws, 'toolConfig', { ...DEFAULT_TOOL_CONFIG }));
+    st.setToolOrder(resetValue(ws, 'toolOrder', [...DEFAULT_TOOL_ORDER]));
+    st.setOutlineBarRows(resetValue(ws, 'outlineBarRows', [...DEFAULT_OUTLINE_BAR_ROWS]));
+    st.setOutlineBarZoom(resetValue(ws, 'outlineBarZoom', 0));
   },
   // v3.49: capture reads the current value of every persistent-customization
   // field; restore writes them straight back (state + persisted view state).

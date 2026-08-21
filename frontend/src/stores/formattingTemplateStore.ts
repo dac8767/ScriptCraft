@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { uuid } from '../utils/uuid';
 import { DEFAULT_PAGE_LAYOUT } from './editorStore';
+import { shippedSetting } from './seedDefaults';
 import type { PageLayout } from './editorStore';
 
 /** Element visibility/order overrides — persisted separately from templates,
@@ -276,9 +277,16 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
     saveElementOverrides({ hidden: get().elementHidden, order: ids });
     set({ elementOrder: ids });
   },
+  /* v7.71, Derek: reset puts back what the app SHIPS, not an empty list. The
+     element and transition lists are not part of a workspace — they are what
+     the app can write, not how it is arranged — so unlike the layout resets
+     these read the shipped bundle directly. Before v7.70 shipped a bundle the
+     two answers were the same (nothing hidden, no order); they are not any
+     more: the defaults hide General, Shot, Lyrics and Show/Episode. */
   resetElementOverrides: () => {
-    saveElementOverrides({ hidden: [], order: [] });
-    set({ elementHidden: [], elementOrder: [] });
+    const shipped = shippedSetting('opendraft:elementOverrides', { hidden: [], order: [] });
+    saveElementOverrides(shipped);
+    set({ elementHidden: shipped.hidden ?? [], elementOrder: shipped.order ?? [] });
   },
 
   customTransitions: loadTransitionOverrides().custom,
@@ -329,8 +337,14 @@ export const useFormattingTemplateStore = create<FormattingTemplateState>((set, 
     set({ transitionOrder: order });
   },
   resetTransitions: () => {
-    saveTransitionOverrides({ custom: [], hidden: [], order: [] });
-    set({ customTransitions: [], hiddenTransitions: [], transitionOrder: [] });
+    const shipped = shippedSetting('opendraft:transitionOverrides',
+      { custom: [], hidden: [], order: [] });
+    saveTransitionOverrides(shipped);
+    set({
+      customTransitions: shipped.custom ?? [],
+      hiddenTransitions: shipped.hidden ?? [],
+      transitionOrder: shipped.order ?? [],
+    });
   },
   restoreTransitions: (snap) => {
     saveTransitionOverrides(snap);

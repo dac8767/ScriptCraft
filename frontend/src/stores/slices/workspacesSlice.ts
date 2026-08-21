@@ -67,6 +67,21 @@ export function normalizeWorkspace(raw: WorkspaceSnapshot): WorkspaceSnapshot {
   };
 }
 
+/**
+ * The workspace you are standing in, as apply would restore it.
+ *
+ * v7.71, Derek: "resetting anything should set it to the default of the
+ * current workspace." Every Reset button asks this first, so Reset and "Reset
+ * to Saved Layout" cannot disagree about what the layout is. Normalized for
+ * the same reason apply normalizes — a snapshot holding a retired tool id must
+ * not put that id back.
+ */
+export function activeSnapshot(s: EditorState): WorkspaceSnapshot | undefined {
+  const name = s.activeWorkspace;
+  const raw = name ? s.workspaces[name] : undefined;
+  return raw ? normalizeWorkspace(raw) : undefined;
+}
+
 /** Key order is not meaningful — a snapshot that has been through localStorage
  *  and one built just now can carry the same values in a different order. */
 function stable(v: unknown): string {

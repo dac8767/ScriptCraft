@@ -93,6 +93,74 @@ export function isBuiltinWorkspace(name: string): boolean {
   return Object.prototype.hasOwnProperty.call(BUILTIN_WORKSPACES, name);
 }
 
+/** The workspace the app opens on, and the backstop for "default" when no
+ *  workspace is applied (Derek, v7.71: "the default workspace is 'Default'"). */
+export const DEFAULT_WORKSPACE = 'Default';
+
+/**
+ * What the app ships each field as.
+ *
+ * v7.71, Derek, on v7.70: "you were supposed to make all of the settings i sent
+ * the defaults, but when I clicked 'reset' on the customize > toolbar window,
+ * it changed the toolbar to a setting nothing like the default it should have
+ * been."
+ *
+ * He was right, and seeding could never have fixed it: seeding writes
+ * localStorage on first run, while every Reset button called a hardcoded
+ * constant — DEFAULT_TOOLBAR_LEFT, DEFAULT_TOOL_CONFIG, `1`, `'compact'` — so
+ * "reset to default" meant the pre-v7.70 factory layout no matter what shipped.
+ * Two definitions of "default", and Reset held the wrong one.
+ */
+const SHIPPED: Record<string, unknown> = {
+  ...presetViewState,
+  ...((BUILTIN_WORKSPACES[DEFAULT_WORKSPACE] as Record<string, unknown> | undefined) ?? {}),
+};
+
+/** A COPY, always. These values go straight into the store, and handing out
+ *  the shared object would let a later edit rewrite the default itself. */
+const copy = <T,>(v: unknown): T => JSON.parse(JSON.stringify(v)) as T;
+
+/** The shipped value of a view-state field, or `fallback` when the bundle
+ *  carries no answer — an empty bundle still has to leave the app working. */
+export function shippedDefault<T>(field: string, fallback: T): T {
+  return SHIPPED[field] === undefined ? fallback : copy<T>(SHIPPED[field]);
+}
+
+/**
+ * WHAT A RESET PUTS BACK.
+ *
+ * Derek, v7.71: *"resetting anything should set it to the default of the
+ * current workspace. so resetting the ribbon toolbar returns it to the initial
+ * state of the current workspace, whether it is the default workspace,
+ * minimalist, etc."*
+ *
+ * So the baseline is the workspace you are standing in — Reset and "Reset to
+ * Saved Layout" now agree about what the layout is, per field. `snap` is that
+ * workspace's snapshot; pass undefined when none is applied.
+ *
+ * A workspace does not carry everything. Design values, annotation presets,
+ * helper text, the element and transition lists and the keyboard shortcuts are
+ * not part of a layout, and those fall through to what the app ships, then to
+ * the built-in constant — three steps, most specific first, in one place so no
+ * button can answer the question differently.
+ */
+export function resetValue<T>(
+  snap: Record<string, unknown> | undefined,
+  field: string,
+  fallback: T,
+): T {
+  if (snap && snap[field] !== undefined) return copy<T>(snap[field]);
+  return shippedDefault(field, fallback);
+}
+
+/** The same, for state that does NOT ride in viewState and is in no workspace:
+ *  the element and transition overrides keep their own localStorage keys. */
+export function shippedSetting<T>(key: string, fallback: T): T {
+  const raw = presetSettings[key];
+  if (typeof raw !== 'string') return fallback;
+  try { return JSON.parse(raw) as T; } catch { return fallback; }
+}
+
 /**
  * Write the preset's settings into localStorage, once, for keys nobody has set.
  *

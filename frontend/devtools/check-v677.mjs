@@ -12,7 +12,16 @@
    Ctrl+Z back → Ctrl+Shift+Z forward), the Hidden view's bulk toggle, the
    Design window's Reset all, a Customize tab reset, and Reset All
    Shortcuts. Every warning must also SAY the way back (the undo key). */
+import { readFileSync } from 'node:fs';
 import { launch, boot, seedScript, SCENES_4, settle, showAllHelperText } from './driver.mjs';
+
+/* v7.71: what a reset puts back is the workspace you are standing in, and
+   below that what the app ships — not a constant. So the expectation comes
+   from the shipped bundle, the same file the app seeds from. Hardcoding
+   'save,undo,redo' here was hardcoding the pre-v7.70 factory answer. */
+const SHIPPED_QAT = JSON.parse(JSON.parse(
+  readFileSync(new URL('../src/data/defaultPreset.json', import.meta.url), 'utf8'),
+).parts.settings['opendraft:viewState']).qatItems;
 
 const { browser, page } = await launch({ width: 1500, height: 950 });
 let pass = 0, fail = 0;
@@ -198,8 +207,9 @@ try {
     ok(/Quick Access Toolbar/i.test(await confirmBox()), 'a Customize reset warns, naming what it resets');
     await page.click('.fs-confirm-ok');
     await settle(page);
-    ok(await page.evaluate(() => window.__scStore.getState().qatItems.join(',')) === 'save,undo,redo',
-      'confirming resets the Quick Access buttons');
+    const qat = await page.evaluate(() => window.__scStore.getState().qatItems.join(','));
+    ok(qat === SHIPPED_QAT.join(',') && qat !== 'save,print',
+      `confirming resets the Quick Access buttons (${qat})`);
     await pressUndo();
     ok(await page.evaluate(() => window.__scStore.getState().qatItems.join(',')) === 'save,print',
       'Ctrl+Z restores the writer’s arrangement');

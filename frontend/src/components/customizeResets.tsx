@@ -13,6 +13,8 @@ import { useWindowUndoStore } from '../stores/windowUndoStore';
 import { useShortcutStore } from '../stores/shortcutStore';
 import { runMajorChange } from '../utils/majorChange';
 import { DEFAULT_TOOLBAR_LEFT } from './toolbarBuiltins';
+import { resetValue } from '../stores/seedDefaults';
+import { activeSnapshot } from '../stores/slices/workspacesSlice';
 import { saveViewState } from '../stores/viewState';
 import { confirmDialog } from './ConfirmDialog';
 
@@ -43,6 +45,21 @@ export interface ResetAction {
   capture?: () => () => void;
 }
 
+/**
+ * What every Reset below puts back, asked in ONE place.
+ *
+ * v7.71, Derek: "resetting anything should set it to the default of the
+ * current workspace. so resetting the ribbon toolbar returns it to the initial
+ * state of the current workspace, whether it is the default workspace,
+ * minimalist, etc." So the workspace you are standing in is the baseline, and
+ * what a workspace does not carry — design values, annotation presets, helper
+ * text, the element lists — falls through to what the app ships (resetValue).
+ *
+ * Read fresh on every run, never captured at module load: the answer depends
+ * on which workspace is applied when the button is pressed.
+ */
+const ws = () => activeSnapshot(useEditorStore.getState());
+
 /** The default capture: the same full-customize snapshot Customize's own
  *  Save/Cancel rests on (v3.49) — one list, nothing quietly left behind. */
 const captureCustomizeState = (): (() => void) => {
@@ -60,7 +77,8 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
   {
     id: 'markupPresets', label: 'Reset Annotation Presets', tab: 'markups',
     what: 'your annotation presets — the icon and colour combinations',
-    run: () => useEditorStore.getState().setMarkupPresets(DEFAULT_MARKUP_PRESETS),
+    run: () => useEditorStore.getState()
+      .setMarkupPresets(resetValue(ws(), 'markupPresets', DEFAULT_MARKUP_PRESETS)),
     capture: () => {
       const prev = useEditorStore.getState().markupPresets.map((m) => ({ ...m }));
       return () => useEditorStore.getState().setMarkupPresets(prev);
@@ -107,8 +125,8 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
     what: 'the element suggestion rules',
     run: () => {
       const st = useEditorStore.getState();
-      st.setSuggestionRules(null);
-      st.setSuggestionMode('smart');
+      st.setSuggestionRules(resetValue(ws(), 'suggestionRules', null));
+      st.setSuggestionMode(resetValue(ws(), 'suggestionMode', 'smart'));
     },
   },
   // ── Toolbar ──
@@ -117,8 +135,8 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
     what: 'the toolbar’s size and spacing',
     run: () => {
       const st = useEditorStore.getState();
-      st.setToolbarMode('compact');
-      st.setChromeGap('toolbar', 2);
+      st.setToolbarMode(resetValue(ws(), 'toolbarMode', 'compact'));
+      st.setChromeGap('toolbar', resetValue<Record<string, number>>(ws(), 'chromeGapPx', {}).toolbar ?? 2);
     },
   },
   {
@@ -126,9 +144,13 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
     what: 'the ribbon toolbar’s layout',
     run: () => {
       const st = useEditorStore.getState();
-      st.setToolbarZones([...DEFAULT_TOOLBAR_LEFT], []);
-      saveViewState({ toolbarDdWidths: {} });
-      useEditorStore.setState({ toolbarDdWidths: {} });
+      st.setToolbarZones(
+        resetValue(ws(), 'toolbarLeft', [...DEFAULT_TOOLBAR_LEFT]),
+        resetValue(ws(), 'toolbarRight', []),
+      );
+      const toolbarDdWidths = resetValue(ws(), 'toolbarDdWidths', {});
+      saveViewState({ toolbarDdWidths });
+      useEditorStore.setState({ toolbarDdWidths });
     },
   },
   // ── Side Panels ──
@@ -140,10 +162,12 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
       // "not working" whenever only the vertical tool scaling had been
       // dragged — the size reset covers BOTH width and the tool scale now.
       const st = useEditorStore.getState();
-      st.setPanelSizeMode('left', 'comfortable');
-      st.setPanelSizeMode('right', 'comfortable');
-      st.setPanelItemScale('left', 1);
-      st.setPanelItemScale('right', 1);
+      const mode = resetValue<{ left?: string; right?: string }>(ws(), 'panelSizeMode', {});
+      const scale = resetValue<{ left?: number; right?: number }>(ws(), 'panelItemScale', {});
+      for (const side of ['left', 'right'] as const) {
+        st.setPanelSizeMode(side, (mode[side] ?? 'comfortable') as Parameters<typeof st.setPanelSizeMode>[1]);
+        st.setPanelItemScale(side, scale[side] ?? 1);
+      }
     },
   },
   {
@@ -153,16 +177,17 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
       // Mirrors the old in-tab reset: every tool back to its default side,
       // dividers cleared, default order.
       const st = useEditorStore.getState();
-      st.setToolConfig({ ...DEFAULT_TOOL_CONFIG });
-      st.setPanelDividers([]);
-      st.setToolOrder([...DEFAULT_TOOL_ORDER]);
+      st.setToolConfig(resetValue(ws(), 'toolConfig', { ...DEFAULT_TOOL_CONFIG }));
+      st.setPanelDividers(resetValue(ws(), 'panelDividers', []));
+      st.setToolOrder(resetValue(ws(), 'toolOrder', [...DEFAULT_TOOL_ORDER]));
     },
   },
   // ── Quick Access ──
   {
     id: 'qatItems', label: 'Reset Items', tab: 'qat',
     what: 'the Quick Access Toolbar’s buttons',
-    run: () => useEditorStore.getState().setQatItems(['save', 'undo', 'redo']),
+    run: () => useEditorStore.getState()
+      .setQatItems(resetValue(ws(), 'qatItems', ['save', 'undo', 'redo'])),
   },
   // ── Context Menu ──
   {
@@ -170,8 +195,8 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
     what: 'the right-click menu’s items and order',
     run: () => {
       const st = useEditorStore.getState();
-      st.setContextMenuHidden([]);
-      st.setContextMenuOrder([]);
+      st.setContextMenuHidden(resetValue(ws(), 'contextMenuHidden', []));
+      st.setContextMenuOrder(resetValue(ws(), 'contextMenuOrder', []));
     },
   },
   /* v7.00, Derek (via the feedback form): the WINDOW resets join the
@@ -184,7 +209,7 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
       const prev = { ...useEditorStore.getState().designVars };
       return () => useEditorStore.getState().setDesignVars(prev);
     },
-    run: () => useEditorStore.getState().setDesignVars({}),
+    run: () => useEditorStore.getState().setDesignVars(resetValue(ws(), 'designVars', {})),
   },
   {
     id: 'helperText', label: 'Reset Helper Text', tab: 'helper',
@@ -201,8 +226,8 @@ export const CUSTOMIZE_RESETS: ResetAction[] = [
     },
     run: () => {
       const s = useEditorStore.getState();
-      s.setHelperTextOverrides({});
-      s.setHelperTextHidden([]);
+      s.setHelperTextOverrides(resetValue(ws(), 'helperTextOverrides', {}));
+      s.setHelperTextHidden(resetValue(ws(), 'helperTextHidden', []));
     },
   },
   {

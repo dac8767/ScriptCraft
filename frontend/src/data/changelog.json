@@ -1,5 +1,15 @@
 [
   {
+    "version": "7.71",
+    "date": "2026-08-21",
+    "changes": [
+      "Fix: every Reset button was still putting back the old factory layout, not the settings you sent. Last version made your preset the defaults by writing them in at first launch — but the Reset buttons never read that; each one called a value written into the code years ago. So \"reset to default\" meant a default the app hadn't used since you sent me the file. That's why Customize ▸ Toolbar ▸ Reset gave you a bare strip of buttons.",
+      "Reset now puts things back to the workspace you're standing in. Reset the ribbon while Minimalist is applied and you get Minimalist's ribbon; do it in Outlining and you get Outlining's. Reset and \"Reset to Saved Layout\" can no longer disagree about what your layout is. This covers the toolbar, its size, the side panels, Quick Access, the right-click menu, and Reset All.",
+      "Things a workspace doesn't carry — your Design values, annotation presets, helper text, and the element and transition lists — reset to what the app ships instead. Resetting the element list used to un-hide everything; now it puts back the four you keep hidden.",
+      "With no workspace applied at all, reset falls back to what ships, and never to the old factory layout."
+    ]
+  },
+  {
     "version": "7.70",
     "date": "2026-08-21",
     "changes": [
