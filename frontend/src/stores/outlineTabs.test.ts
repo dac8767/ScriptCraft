@@ -239,21 +239,52 @@ describe('per-tab arrangement binding (v2.47)', () => {
     expect(S().beatArrangeMode).toBe('custom');
   });
 
-  it('goToArrangement jumps to an existing tab of that mode', () => {
-    const tab1 = S().viewedOutlineTab;                 // auto
+  /* v7.75, Derek: "freeform and sections are just two ways to look at the same
+     outline tab info. it should not create a new tab." The toggle used to
+     NAVIGATE — jump to a tab already in that mode, and make one if there was
+     none (v2.47) — so pressing Freeform on a board of Sections tabs quietly
+     produced an empty second tab. */
+  it('goToArrangement changes the CURRENT tab, and makes no new one', () => {
+    const tab1 = S().viewedOutlineTab;
+    S().goToArrangement('custom');
+    expect(S().outlineTabs).toHaveLength(1);
+    expect(S().viewedOutlineTab).toBe(tab1);
+    expect(S().beatArrangeMode).toBe('custom');
+  });
+
+  it('…even when another tab already has that arrangement — it stays put', () => {
+    const tab1 = S().viewedOutlineTab;
     S().addOutlineTab('custom');
     S().switchOutlineTab(tab1);
     S().goToArrangement('custom');
-    expect(S().viewedOutlineTab).not.toBe(tab1);
+    expect(S().viewedOutlineTab).toBe(tab1);            // no jump
+    expect(S().outlineTabs).toHaveLength(2);            // and no new tab
     expect(S().beatArrangeMode).toBe('custom');
-    expect(S().outlineTabs).toHaveLength(2);           // no new tab created
   });
 
-  it('goToArrangement creates a tab when none has that mode', () => {
+  /* The tab REMEMBERS it, which is what makes each tab reopen the way you left
+     it — that half of v2.47 was right. */
+  it('…and the tab remembers the arrangement across a switch away and back', () => {
+    const tab1 = S().viewedOutlineTab;
     S().goToArrangement('custom');
-    expect(S().outlineTabs).toHaveLength(2);
+    const tab2 = S().addOutlineTab('auto');
+    expect(S().beatArrangeMode).toBe('auto');
+    S().switchOutlineTab(tab1);
     expect(S().beatArrangeMode).toBe('custom');
-    expect(S().outlineTabs[1].arrangeMode).toBe('custom');
+    S().switchOutlineTab(tab2);
+    expect(S().beatArrangeMode).toBe('auto');
+  });
+
+  /* The beats are the SAME beats — two views of one tab, not two tabs. */
+  it('…and switching view keeps every card', () => {
+    const col = S().addBeatColumn('Act I');
+    S().addBeat('Opening', col);
+    S().addBeat('Catalyst', col);
+    const before = S().beats.map((b) => b.id).sort();
+    S().goToArrangement('custom');
+    expect(S().beats.map((b) => b.id).sort()).toEqual(before);
+    S().goToArrangement('auto');
+    expect(S().beats.map((b) => b.id).sort()).toEqual(before);
   });
 
   it('a legacy tab (no stored mode) is stamped with the mode it is shown in', () => {

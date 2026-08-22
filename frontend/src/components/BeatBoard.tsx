@@ -133,19 +133,6 @@ export function resolveOutlinePreset(presetId: string): { name: string; columns:
   return OUTLINE_PRESETS.find((p) => p.id === presetId);
 }
 
-/* ─── v6.57, Derek: "the preset for the [3] act structure should include 20
-   beats in each act, each of which is 2 pages estimated length. determine
-   the proper beats per section for all other presets, and make sure the
-   total estimated pages for the beats in a section equal the estimated
-   pages for that section." ───
-   His own numbers set the ratio — a 40-page act filled by 20 beats is TWO
-   PAGES A BEAT — so that ratio decides the count everywhere, and the pages
-   are then dealt out so they add up EXACTLY: with an odd budget the
-   remainder is spread one page at a time instead of leaving a rounding
-   error. Every preset (and any the writer saves) is filled by this one
-   function, so the invariant can't drift between them. */
-export const PRESET_PAGES_PER_BEAT = 2;
-
 /** Deal `pages` pages across `count` beats, biggest shares first. The sum is
  *  exactly `pages` — unless there are more beats than pages, where a beat
  *  still can't be shorter than one page and the section runs over. */
@@ -157,13 +144,6 @@ export function splitPages(pages: number, count: number): number[] {
   const base = Math.floor(total / n);
   const extra = total - base * n;                     // 0..n-1 leftovers
   return Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0));
-}
-
-/** The page estimate for each beat filling a section of `pages` pages, at the
- *  preset's two-pages-a-beat ratio. Length = how many beats. */
-export function presetBeatSpans(pages: number): number[] {
-  const total = Math.max(1, Math.round(pages));
-  return splitPages(total, Math.max(1, Math.round(total / PRESET_PAGES_PER_BEAT)));
 }
 
 /* ─── v6.59, Derek: "when a preset is used but beats already exist, it should
@@ -238,12 +218,17 @@ export function applyOutlinePreset(presetId: string, mode: 'append' | 'override'
   const st = useEditorStore.getState();
   st.renameOutlineTab(st.viewedOutlineTab, preset.name);
   const pages = preset.columns.map((_, i) => Math.max(1, Math.round(preset.pages[i] ?? 1)));
-  /* v6.59: beats already on the board are re-homed into the preset's
-     sections and re-fitted; only a board with none gets starter beats. */
+  /* v6.59: beats already on the board are re-homed into the preset's sections
+     and re-fitted.
+     v7.75, Derek: "the outline presets should just be sections, not beats." A
+     board with none now gets the sections and NOTHING in them — the starter
+     cards a preset used to deal out were blank placeholders the writer had to
+     clear before they could write their own. Re-homing stays: moving beats you
+     already wrote into the new structure is not creating beats. */
   const reuse = presetReuseOrder(st.beats, st.beatColumns, mode);
   const counts = reuse.length > 0
     ? distributeBeats(pages, reuse.length)
-    : pages.map((p) => presetBeatSpans(p).length);
+    : pages.map(() => 0);
   st.applyPresetSections(
     preset.columns.map((title, i) => ({ title, pages: pages[i], spans: splitPages(pages[i], counts[i]) })),
     mode,

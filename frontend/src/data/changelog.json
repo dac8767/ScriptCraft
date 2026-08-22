@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.75",
+    "date": "2026-08-22",
+    "changes": [
+      "Fix: a popped-out window now sits on top of the side panels. It was drawing behind them — the Pages window in your screenshot — because a window lives inside the panel it was popped out of, and that panel was walling it in. The wall is gone; the window still covers the ruler, which is what the wall was originally for.",
+      "Outline presets lay down their sections and nothing else. Applying 3-Act Structure used to deal out sixty blank beat cards you had to clear before writing your own. The page budgets stay, and beats you've already written are still moved into the new sections and re-fitted — that part was working and hasn't changed.",
+      "Fix: clicking Freeform no longer makes a new outline tab. Freeform and Sections are two ways of looking at the same tab now, with the same cards either way, and each tab still remembers which view you left it in."
+    ]
+  },
+  {
     "version": "7.74",
     "date": "2026-08-22",
     "changes": [

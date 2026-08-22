@@ -56,8 +56,18 @@ try {
   await settle(page);
   await page.selectOption(`${W} .beat-board-preset`, '3act');
   await settle(page);
+  /* v7.75: the beats are WRITTEN here. Presets lay down sections only now
+     (Derek: "the outline presets should just be sections, not beats"), so a
+     preset can no longer manufacture the board this check needs — sixty cards
+     across three acts, which is what v6.57's 3-Act used to produce. */
+  await page.evaluate(() => {
+    const st = window.__scStore.getState();
+    const cols = [...st.beatColumns].sort((a, b) => a.position - b.position);
+    for (const c of cols) for (let i = 0; i < 20; i++) st.addBeat('', c.id);
+  });
+  await settle(page);
   const seeded = await board();
-  ok(seeded.ids.length === 60 && seeded.cols.length === 3, `3-Act seeds 60 beats in 3 acts (${seeded.ids.length}/${seeded.cols.length})`);
+  ok(seeded.ids.length === 60 && seeded.cols.length === 3, `3-Act gives 3 acts to fill with 60 beats (${seeded.ids.length}/${seeded.cols.length})`);
 
   // put real writing on the first card, so re-homing can be shown to keep it
   await page.evaluate(() => {

@@ -43,9 +43,16 @@ export interface BeatsOutlineSlice {
   renameOutlineTab: (id: string, name: string) => void;
   deleteOutlineTab: (id: string) => void;
   setOutlineBarTab: (id: string) => void;
-  /** v2.47: the Arrangement toggle NAVIGATES — it jumps to a tab of the
-   *  asked-for arrangement (creating one if none exists) instead of
-   *  changing the current tab, which keeps its arrangement for life. */
+  /** Switch how the CURRENT tab is arranged (v7.75, Derek: "freeform and
+   *  sections are just two ways to look at the same outline tab info. it should
+   *  not create a new tab").
+   *
+   *  It used to NAVIGATE — jump to a tab already in that arrangement, and make
+   *  a new one if there was none (v2.47, "a tab keeps its arrangement for
+   *  life"). So pressing Freeform on a board with only Sections tabs silently
+   *  produced an empty second tab, which is not what pressing a view toggle
+   *  means. The tab still REMEMBERS its arrangement — that part was right, and
+   *  it is what makes each tab reopen the way you left it. */
   goToArrangement: (mode: BeatArrangeMode) => void;
   /** Reset to a single empty tab — new script / import. */
   resetOutlineTabs: () => void;
@@ -262,15 +269,14 @@ export const createBeatsOutlineSlice: StateCreator<EditorState, [], [], BeatsOut
     setOutlineBarTab: (id) => set((s) => (s.outlineTabs.some((t) => t.id === id) ? { outlineBarTab: id } : {})),
     goToArrangement: (mode) => {
       const s = get();
-      // Lazy-migrate a legacy active tab: it keeps the mode it's shown in.
-      const active = s.outlineTabs.find((t) => t.id === s.viewedOutlineTab);
-      if (active && active.arrangeMode === undefined) {
-        set({ outlineTabs: s.outlineTabs.map((t) => (t.id === active.id ? { ...t, arrangeMode: s.beatArrangeMode } : t)) });
-      }
       if (s.beatArrangeMode === mode) return;
-      const target = get().outlineTabs.find((t) => t.arrangeMode === mode);
-      if (target) get().switchOutlineTab(target.id);
-      else get().addOutlineTab(mode);
+      /* The SAME tab, looked at the other way. The tab records the mode so it
+         reopens as you left it, and the beats are untouched: both views read
+         the one set of cards, Sections by column and Freeform by x/y. */
+      set({
+        beatArrangeMode: mode,
+        outlineTabs: s.outlineTabs.map((t) => (t.id === s.viewedOutlineTab ? { ...t, arrangeMode: mode } : t)),
+      });
     },
     resetOutlineTabs: () => set({
       outlineTabs: [{ id: 'tab-1', name: 'Outline 1', arrangeMode: 'auto' }],

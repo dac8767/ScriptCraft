@@ -176,15 +176,21 @@ try {
       };
     });
   });
-  ok(preset.length === 3 && preset.every((c) => c.beats === 20),
-    `3-Act fills each act with 20 beats (${preset.map((c) => c.beats).join('/')})`);
-  ok(preset.every((c) => c.spans.length === 1 && c.spans[0] === 2),
-    'every one of them is a 2-page beat');
-  ok(preset.every((c) => c.pages === c.budget),
-    `each act's beats add up to its page budget (${preset.map((c) => `${c.pages}/${c.budget}`).join(' ')})`);
-  // the cards really are on the board, not just in the store
-  const cards = await page.evaluate((w) => document.querySelectorAll(`${w} .beat-column-cards .beat-card`).length, W);
-  ok(cards === 60, `all 60 cards render (${cards})`);
+  /* v7.75, Derek: "the outline presets should just be sections, not beats."
+     v6.57's rule — three acts of twenty two-page cards — is overturned: the
+     sixty cards were blank and had to be cleared before you could write your
+     own. The BUDGETS are the structure and they stay. */
+  ok(preset.length === 3 && preset.every((c) => c.beats === 0),
+    `3-Act lays down three empty acts (${preset.map((c) => c.beats).join('/')})`);
+  ok(preset.every((c) => c.budget === 40),
+    `…each with its 40-page budget (${preset.map((c) => c.budget).join('/')})`);
+  // and the board shows the sections, with nothing in them
+  const rendered = await page.evaluate((w) => ({
+    cols: document.querySelectorAll(`${w} .beat-board-columns > .beat-column:not(.beat-column-unsorted)`).length,
+    cards: document.querySelectorAll(`${w} .beat-column-cards .beat-card`).length,
+  }), W);
+  ok(rendered.cols === 3 && rendered.cards === 0,
+    `the three columns render, empty (${JSON.stringify(rendered)})`);
   // ONE undo step takes the whole preset back (not 60)
   await page.evaluate(() => window.__scStore.getState().beatUndo());
   await settle(page);
@@ -193,6 +199,18 @@ try {
     cols: window.__scStore.getState().beatColumns.length,
   }));
   ok(undone.beats === 0 && undone.cols === 0, `one undo removes the whole preset (${JSON.stringify(undone)})`);
+  /* NON-VACUITY for the empty board above: cards still land on it when you make
+     them, so "0 beats" is a preset that deals none, not a board that lost the
+     ability to hold any. */
+  await page.evaluate(() => {
+    const st = window.__scStore.getState();
+    const col = st.addBeatColumn('Act I');
+    st.addBeat('Opening Image', col);
+  });
+  await settle(page);
+  const madeOne = await page.evaluate((w) =>
+    document.querySelectorAll(`${w} .beat-column-cards .beat-card`).length, W);
+  ok(madeOne === 1, `a card you make yourself still renders (${madeOne})`);
 
   // v6.58, Derek: closing a tab DELETES that arrangement — say delete
   const tabX = await page.evaluate((w) => {
