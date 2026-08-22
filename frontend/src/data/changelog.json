@@ -1,5 +1,13 @@
 [
   {
+    "version": "7.73",
+    "date": "2026-08-21",
+    "changes": [
+      "Fix: opening a tool in a side panel no longer counts as a change to your workspace. “Save Changes to this Workspace” and “Reset to Saved Layout” stay greyed out for it. The workspace still saves and restores which tools you had open — that hasn't changed — it just doesn't treat looking at one as an edit. Closing a whole panel still counts, since that resizes the page and is something you'd arrange a workspace around.",
+      "You can now hide a workspace. There's an eye on every row in Edit Workspaces…; hiding one takes it out of the View ▸ Workspaces menu and out of the Workspaces panel, and Edit Workspaces keeps listing it (dimmed) so you can always bring it back. This is how you clear one of the five built-in workspaces out of your way, since those can't be deleted."
+    ]
+  },
+  {
     "version": "7.72",
     "date": "2026-08-21",
     "changes": [

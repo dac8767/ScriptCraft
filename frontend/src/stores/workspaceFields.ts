@@ -34,3 +34,29 @@ export const WORKSPACE_FIELDS: string[] = [
   ...CUSTOMIZATION_FIELDS.filter((f) => !(WORKSPACE_EXCLUDES as readonly string[]).includes(f)),
   ...WORKSPACE_VIEW_FIELDS,
 ];
+
+/**
+ * Saved and restored, but NOT counted as a change (v7.73).
+ *
+ * Derek: "simply opening a side panel item is considered a change that can be
+ * saved to a workspace. this should not be the case."
+ *
+ * These two are which tool each side panel is currently showing. A workspace
+ * still stores them and still puts them back — reopening the tools you had
+ * open is a large part of what a workspace is for — but glancing at Goals is
+ * not an edit to your layout, and lighting "Save Changes to this Workspace"
+ * for it turns a real signal into noise.
+ *
+ * Deliberately just these two. Closing a whole PANEL still counts: it resizes
+ * the editor and it is a thing you would arrange a workspace around, which is
+ * a different act from swapping which tool sits in a panel that was open
+ * either way. That is the line his sentence draws, and it is the line here.
+ */
+export const WORKSPACE_DIRTY_IGNORES = ['activeTool', 'activeToolRight'] as const;
+
+/** A snapshot with the not-a-change fields removed, for comparison only. */
+export function comparable(snap: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...snap };
+  for (const f of WORKSPACE_DIRTY_IGNORES) delete out[f];
+  return out;
+}

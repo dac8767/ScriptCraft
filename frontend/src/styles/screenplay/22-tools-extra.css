@@ -876,6 +876,13 @@ input.fs-switch:checked::after { left: 15px; }
   padding: 1px 7px;
   flex-shrink: 0;
 }
+/* v7.73: a workspace hidden from the menu and the Workspaces panel. Edit
+   Workspaces still lists it — dimmed, so the row reads as "still here, just not
+   offered" rather than as a disabled control you cannot use. Every control on
+   it stays live: the eye that brings it back is one of them. */
+.ws-row.ws-row-hidden .ws-name { opacity: .5; }
+.ws-icon-btn.ws-hidden-on { color: var(--fd-accent); }
+
 /* v7.70: the five that ship with the app. Deliberately quieter than
    .ws-active-badge — "active" is a state you changed and want to spot, this is
    a standing fact about the row, and both can be on the same line. Muted text,

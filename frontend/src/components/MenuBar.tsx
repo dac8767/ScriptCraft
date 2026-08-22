@@ -263,6 +263,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
     setTheme,
     workspaces,
     workspaceOrder,
+    workspacesHidden,
     activeWorkspace,
     saveWorkspace,
     applyWorkspace,
@@ -1180,7 +1181,10 @@ const MenuBar: React.FC<MenuBarProps> = ({ editor }) => {
         {
           icon: <FaColumns />, label: 'Workspaces',
           children: [
-            ...workspaceOrder.filter((n) => workspaces[n]).map((name) => ({
+            /* v7.73, Derek: "add an option to hide workspaces from the menu."
+               The eye lives in Edit Workspaces…, which still lists every one —
+               so this filter can never leave a workspace unreachable. */
+            ...workspaceOrder.filter((n) => workspaces[n] && !workspacesHidden.includes(n)).map((name) => ({
               icon: <FaColumns />,
               label: activeWorkspace === name ? `\u2713 ${name}` : name,
               action: () => applyWorkspace(name),

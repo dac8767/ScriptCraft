@@ -170,7 +170,15 @@ ok('the snapshot has no hand-written field list left',
   !/toolbarHiddenItems:\s*s\.toolbarHiddenItems/.test(wsSlice), '');
 ok('…and both save and the dirty test read one capture',
   /saveWorkspace: \(name\) => set\(\(s\) => \{\s*const snap = captureWorkspace\(s\)/.test(wsSlice)
-  && /stable\(captureWorkspace\(s\)\)/.test(wsSlice), '');
+  && /stable\(comparable\(captureWorkspace\(s\)\)\)/.test(wsSlice), '');
+/* v7.73: the dirty test now drops the two open-tool fields before comparing
+   (Derek: "simply opening a side panel item is considered a change... this
+   should not be the case"). It must drop them from BOTH sides — stripping the
+   live capture alone would make every workspace permanently dirty against its
+   own snapshot, which is the v7.65 complaint with the sign flipped. */
+ok('…and the not-a-change fields are dropped from BOTH sides',
+  (wsSlice.match(/comparable\(/g) ?? []).length === 2
+  && /comparable\(normalizeWorkspace\(saved\)\)/.test(wsSlice), '');
 
 /* ── the outline bar's scale bar ─────────────────────────────────────────
    MOVED to check-v766. Derek corrected this one the next day ("make sure the

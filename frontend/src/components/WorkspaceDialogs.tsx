@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck, FaChevronUp, FaChevronDown } from 'react-icons/fa';
+import { FaColumns, FaEdit, FaRegTrashAlt, FaCheck, FaChevronUp, FaChevronDown, FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
 import { isBuiltinWorkspace } from '../stores/seedDefaults';
 import { Modal } from './Modal';
@@ -79,7 +79,8 @@ export function SaveWorkspaceDialog({ open, onClose }: { open: boolean; onClose:
 }
 
 export function EditWorkspacesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { workspaces, workspaceOrder, setWorkspaceOrder, activeWorkspace, renameWorkspace, deleteWorkspace } = useEditorStore();
+  const { workspaces, workspaceOrder, setWorkspaceOrder, activeWorkspace, renameWorkspace, deleteWorkspace,
+    workspacesHidden, setWorkspaceHidden } = useEditorStore();
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -151,8 +152,9 @@ export function EditWorkspacesDialog({ open, onClose }: { open: boolean; onClose
                 const isActive = activeWorkspace === n;
                 const isRenaming = renaming === n;
                 const isConfirming = confirmDelete === n;
+                const hidden = workspacesHidden.includes(n);
                 return (
-                  <div key={n} className={`ws-row${isActive ? ' active' : ''}`}>
+                  <div key={n} className={`ws-row${isActive ? ' active' : ''}${hidden ? ' ws-row-hidden' : ''}`}>
                     {/* v7.02 (style audit remaining #8): the shared spinner —
                         one bordered frame around both arrows — instead of this
                         window's own pair of 7px bordered buttons. */}
@@ -203,6 +205,21 @@ export function EditWorkspacesDialog({ open, onClose }: { open: boolean; onClose
                             launch. Same rule as the Workspaces panel, read
                             from the same isBuiltinWorkspace, so the two lists
                             cannot come to disagree about which rows those are. */}
+                        {/* v7.73, Derek: "add an option to hide workspaces from
+                            the menu." THIS dialog is the one surface that keeps
+                            showing a hidden workspace — it is where the eye
+                            lives, so hiding always leaves a way back. It sits
+                            before the default badge because a built-in is
+                            exactly the case that needs it: the five cannot be
+                            deleted, so hiding is the only way to clear one out
+                            of your way. */}
+                        <button
+                          className={`ws-icon-btn${hidden ? ' ws-hidden-on' : ''}`}
+                          title={hidden ? `Show “${n}” in the menu again` : `Hide “${n}” from the menu and the Workspaces panel`}
+                          onClick={() => setWorkspaceHidden(n, !hidden)}
+                        >
+                          {hidden ? <FaRegEyeSlash /> : <FaRegEye />}
+                        </button>
                         {isBuiltinWorkspace(n) ? (
                           <span className="ws-builtin-badge" title="Ships with ScriptCraft — you can rearrange it and save your changes, but it can't be renamed or deleted">default</span>
                         ) : isConfirming ? (

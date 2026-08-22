@@ -11,10 +11,13 @@ import type { StateCreator } from 'zustand';
 import { _vs, saveViewState } from '../viewState';
 import type { EditorState, WorkspaceSnapshot, ToolId, ToolConfig } from '../editorStore';
 import { migrateToolConfig, migrateToolOrder, migrateToolId } from '../editorStore';
-import { WORKSPACE_EXCLUDES, WORKSPACE_VIEW_FIELDS, WORKSPACE_FIELDS } from '../workspaceFields';
+import {
+  WORKSPACE_EXCLUDES, WORKSPACE_VIEW_FIELDS, WORKSPACE_FIELDS,
+  WORKSPACE_DIRTY_IGNORES, comparable,
+} from '../workspaceFields';
 import { isBuiltinWorkspace, withBuiltinWorkspaces } from '../seedDefaults';
 
-export { WORKSPACE_EXCLUDES, WORKSPACE_VIEW_FIELDS, WORKSPACE_FIELDS };
+export { WORKSPACE_EXCLUDES, WORKSPACE_VIEW_FIELDS, WORKSPACE_FIELDS, WORKSPACE_DIRTY_IGNORES };
 
 export interface WorkspacesSlice {
   /** Named saved layouts (View → Workspaces) */
@@ -22,6 +25,13 @@ export interface WorkspacesSlice {
   /** Display order for saved workspaces (menu + Edit Workspaces dialog). */
   workspaceOrder: string[];
   setWorkspaceOrder: (order: string[]) => void;
+  /** v7.73, Derek: "add an option to hide workspaces from the menu." Names
+   *  kept out of View ▸ Workspaces and out of the Workspaces panel's list.
+   *  Edit Workspaces… still shows every one, with the eye to bring it back —
+   *  hide has to leave a door, and that dialog is it. Hiding is the way to get
+   *  a built-in out of your way, since the five cannot be deleted. */
+  workspacesHidden: string[];
+  setWorkspaceHidden: (name: string, hidden: boolean) => void;
   activeWorkspace: string | null;
   saveWorkspace: (name: string) => void;
   applyWorkspace: (name: string) => void;
@@ -108,7 +118,15 @@ export function workspaceIsDirty(s: EditorState): boolean {
   if (!name) return false;
   const saved = s.workspaces[name];
   if (!saved) return false;
-  return stable(captureWorkspace(s)) !== stable(normalizeWorkspace(saved));
+  /* v7.73, Derek: "simply opening a side panel item is considered a change
+     that can be saved to a workspace. this should not be the case." Which tool
+     each panel is showing is still captured and still restored — it is stripped
+     from BOTH sides of the comparison only, which is the difference between
+     "a workspace does not remember this" and "looking at something is not an
+     edit". WORKSPACE_DIRTY_IGNORES names the two, in the same file as the
+     field list, so the pair cannot drift. */
+  return stable(comparable(captureWorkspace(s)))
+    !== stable(comparable(normalizeWorkspace(saved)));
 }
 
 /* v7.70, Derek: "the workspaces should have 5 options, all of which should be
@@ -125,6 +143,14 @@ export const createWorkspacesSlice: StateCreator<EditorState, [], [], Workspaces
     saveViewState({ workspaceOrder: order });
     set({ workspaceOrder: order });
   },
+  workspacesHidden: _vs.workspacesHidden ?? [],
+  setWorkspaceHidden: (name, hidden) => set((st) => {
+    const workspacesHidden = hidden
+      ? (st.workspacesHidden.includes(name) ? st.workspacesHidden : [...st.workspacesHidden, name])
+      : st.workspacesHidden.filter((n) => n !== name);
+    saveViewState({ workspacesHidden });
+    return { workspacesHidden };
+  }),
   activeWorkspace: _vs.activeWorkspace ?? null,
   importWorkspaces: (incoming) => {
     const added: string[] = [];

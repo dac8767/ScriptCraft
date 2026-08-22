@@ -37,6 +37,9 @@ export interface ViewState {
   /** v4.59: the user's edited follows-what table (Customize ▸ Editor ▸
    *  Element Suggestions); null/absent = the built-in default. */
   suggestionRules?: Record<string, string[]> | null;
+  /** v7.73: workspaces kept out of the menu and the Workspaces panel's list —
+   *  still listed (with the eye) in Edit Workspaces…. */
+  workspacesHidden?: string[];
   qatItems?: string[];
   /** v3.34: per-dropdown widths for the ribbon's select fields (px), keyed
    *  by builtin key — set by dragging a dropdown's edge in the visual

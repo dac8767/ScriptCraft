@@ -23,6 +23,7 @@ import { promptDialog, confirmDialog } from './ConfirmDialog';
 export default function WorkspacesTool() {
   const workspaces = useEditorStore((s) => s.workspaces);
   const workspaceOrder = useEditorStore((s) => s.workspaceOrder);
+  const workspacesHidden = useEditorStore((s) => s.workspacesHidden);
   const activeWorkspace = useEditorStore((s) => s.activeWorkspace);
   const saveWorkspace = useEditorStore((s) => s.saveWorkspace);
   const applyWorkspace = useEditorStore((s) => s.applyWorkspace);
@@ -38,7 +39,10 @@ export default function WorkspacesTool() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  const names = workspaceOrder.filter((n) => workspaces[n]);
+  /* v7.73: hidden workspaces leave this list too — it is the same offer the
+     menu makes, and "hidden" that only half-hides is not hidden. Edit
+     Workspaces… lists every one with the eye, and its button is right below. */
+  const names = workspaceOrder.filter((n) => workspaces[n] && !workspacesHidden.includes(n));
 
   /* v7.64, Derek: a BUTTON that asks for the name, under the list and above
      "Save Changes to this Workspace" — the shape Photoshop uses, and the one
@@ -75,7 +79,11 @@ export default function WorkspacesTool() {
     <div className="ws-tool">
       <div className="ws-list">
         {names.length === 0 ? (
-          <div className="ws-empty">No saved workspaces yet. Arrange your panels, then use “Save as New Workspace” below.</div>
+          <div className="ws-empty">
+            {workspaceOrder.some((n) => workspaces[n])
+              ? 'Every workspace is hidden. Use “Edit Workspaces…” below to bring one back.'
+              : 'No saved workspaces yet. Arrange your panels, then use “Save as New Workspace” below.'}
+          </div>
         ) : (
           names.map((name) => {
             const isActive = name === activeWorkspace;
