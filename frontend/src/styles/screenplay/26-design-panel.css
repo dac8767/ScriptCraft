@@ -165,6 +165,12 @@
   flex-wrap: wrap;
 }
 .ht-kinds { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+/* v7.74: the window's housekeeping group — Export beside Reset, so .ht-tools
+   keeps its two children and stays a filters-left / actions-right bar. The
+   buttons wear .dz-foot-btn, which stretches inside .dz-footer; in here they
+   size to their labels instead. */
+.ht-tools-right { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.ht-tools-right .dz-foot-btn { flex: 0 0 auto; }
 .ht-reset-all { flex: 0 0 auto; }
 .ht-row { padding-top: 5px; padding-bottom: 7px; }
 .ht-row-head {

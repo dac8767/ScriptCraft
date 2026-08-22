@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom';
 import { LuRotateCcw, LuSearch } from 'react-icons/lu';
 import { FaCopy, FaCheck, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
+import ExportPartButton from './ExportPartButton';
 import { runMajorChange } from '../utils/majorChange';
 import { pushWindowAction } from '../stores/windowUndoStore';
 import { DESIGN_GROUPS, buildOverrideCss, clampTokenValue, type DesignToken } from '../design/designTokens';
@@ -258,6 +259,13 @@ export function DesignPanelBody() {
         <button className="dz-foot-btn" onClick={copyCss} disabled={overrideCount === 0}>
           {copied ? <><FaCheck /> Copied</> : <><FaCopy /> Copy CSS</>}
         </button>
+        {/* v7.74, Derek: "make it so I can export design and helper text info…
+            I will export a file from each for you to integrate into the code
+            directly." Copy CSS beside it writes the OVERRIDES as CSS for a
+            stylesheet; this writes the values themselves, as a file that also
+            imports back into the app. Same button as the Helper Text window's,
+            because it is the same act. */}
+        <ExportPartButton part="design" />
       </div>
     </>
   );

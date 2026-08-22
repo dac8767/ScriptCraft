@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react';
 import { LuRotateCcw } from 'react-icons/lu';
 import { FaRegEye, FaRegEyeSlash, FaExternalLinkAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import { useEditorStore } from '../stores/editorStore';
+import ExportPartButton from './ExportPartButton';
 import { helperDestination } from '../utils/helperTextDestinations';
 import { runMajorChange } from '../utils/majorChange';
 import { pushWindowAction } from '../stores/windowUndoStore';
@@ -265,11 +266,20 @@ export function HelperTextSection({ entries }: { entries: HelperEntry[] }) {
             >{hiddenList.length > 0 ? `Show all (${hiddenList.length})` : 'Hide all'}</button>
           )}
         </div>
-        {editedCount > 0 && (
-          <button className="dz-foot-btn ht-reset-all" onClick={handleResetAll}>
-            <LuRotateCcw /> Reset helper text ({editedCount})
-          </button>
-        )}
+        {/* The window's housekeeping, grouped. v7.74: .ht-tools is
+            space-between with two children — a third would push the reset
+            button into the middle of the bar. */}
+        <div className="ht-tools-right">
+          {/* v7.74, Derek: "make it so I can export design and helper text
+              info… I will export a file from each for you to integrate into
+              the code directly." The SAME button the Design window renders. */}
+          <ExportPartButton part="helpertext" className="ht-tools-btn" />
+          {editedCount > 0 && (
+            <button className="dz-foot-btn ht-reset-all" onClick={handleResetAll}>
+              <LuRotateCcw /> Reset helper text ({editedCount})
+            </button>
+          )}
+        </div>
       </div>
       {groups.map(([area, rows]) => {
         const open = !folded.has(area);

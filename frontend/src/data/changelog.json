@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.74",
+    "date": "2026-08-22",
+    "changes": [
+      "The Design window and the Helper Text window each have an Export… button now — Design's is in its footer beside Copy CSS, Helper Text's is at the top beside Reset. Each writes its own file, named so you can tell what's in it: scriptcraft-2026-08-22_design.json and …_helpertext.json.",
+      "Both files are ordinary preset files with one item in them, so they also import straight back through Settings ▸ Backup & Restore. Nothing new to read them with.",
+      "The button greys out when there's nothing to export yet, and says so on hover, rather than writing you an empty file."
+    ]
+  },
+  {
     "version": "7.73",
     "date": "2026-08-21",
     "changes": [
