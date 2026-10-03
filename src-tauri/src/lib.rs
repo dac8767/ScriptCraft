@@ -1427,6 +1427,88 @@ async fn open_new_window(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// The origins the app's own pages are served from: `tauri://localhost` on
+/// macOS/iOS/Linux, `http(s)://tauri.localhost` on Windows/Android, and the
+/// Vite dev server under `tauri dev` (debug builds only).
+fn is_app_origin(scheme: &str, host: &str, port: Option<u16>) -> bool {
+    (scheme == "tauri" && host == "localhost")
+        || ((scheme == "http" || scheme == "https") && host == "tauri.localhost")
+        || (cfg!(debug_assertions)
+            && scheme == "http"
+            && (host == "127.0.0.1" || host == "localhost")
+            && port == Some(5173))
+}
+
+/// v7.95 (app-health L4): `asset:` responses used to carry
+/// `Access-Control-Allow-Origin: *`, so ANY origin inside the webview — the
+/// YouTube/Vimeo embeds included — could fetch() files out of the app data
+/// folder, where the script database lives. Only the app's own pages get the
+/// header now; <img>/<video> loads never needed it.
+fn asset_cors_origin(origin: Option<&str>) -> Option<String> {
+    let o = origin?;
+    let u = reqwest::Url::parse(o).ok()?;
+    if is_app_origin(u.scheme(), u.host_str().unwrap_or(""), u.port()) {
+        Some(o.to_string())
+    } else {
+        None
+    }
+}
+
+/// Hosts the YouTube/Vimeo players load inside their own frames. On macOS
+/// wry reports every frame's navigation, not just the main window's, so the
+/// guard below has to let the embeds the CSP already permits keep working.
+const EMBED_HOST_SUFFIXES: &[&str] = &[
+    "youtube-nocookie.com", "youtube.com", "ytimg.com", "googlevideo.com",
+    "google.com", "gstatic.com", "vimeo.com", "vimeocdn.com",
+];
+
+/// v7.95 (app-health L2): an app window may only navigate to the app itself
+/// (plus about:/blob: frames and the embed players). Before, anything that
+/// managed to navigate the window — injected `<meta http-equiv=refresh>`, a
+/// stray link — replaced ScriptCraft with a remote page inside its own chrome.
+fn app_window_may_navigate(url: &reqwest::Url) -> bool {
+    let host = url.host_str().unwrap_or("").trim_end_matches('.').to_ascii_lowercase();
+    if is_app_origin(url.scheme(), &host, url.port()) {
+        return true;
+    }
+    match url.scheme() {
+        "about" | "blob" => true,
+        "https" => EMBED_HOST_SUFFIXES
+            .iter()
+            .any(|s| host == *s || host.ends_with(&format!(".{s}"))),
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+mod app_origin_tests {
+    use super::{app_window_may_navigate, asset_cors_origin};
+    fn u(s: &str) -> reqwest::Url { reqwest::Url::parse(s).unwrap() }
+
+    #[test]
+    fn asset_cors_only_for_app_pages() {
+        assert_eq!(asset_cors_origin(Some("tauri://localhost")).as_deref(), Some("tauri://localhost"));
+        assert_eq!(asset_cors_origin(Some("https://tauri.localhost")).as_deref(), Some("https://tauri.localhost"));
+        assert_eq!(asset_cors_origin(Some("https://www.youtube-nocookie.com")), None);
+        assert_eq!(asset_cors_origin(Some("null")), None);
+        assert_eq!(asset_cors_origin(None), None);
+    }
+
+    #[test]
+    fn app_windows_stay_on_the_app() {
+        for ok in ["tauri://localhost/", "http://tauri.localhost/x", "about:blank", "about:srcdoc",
+                   "https://www.youtube-nocookie.com/embed/abc", "https://player.vimeo.com/video/1",
+                   "https://i.ytimg.com/vi/a.jpg"] {
+            assert!(app_window_may_navigate(&u(ok)), "{ok} should be allowed");
+        }
+        for no in ["https://evil.example/", "http://evil.example/", "https://notyoutube.com/",
+                   "https://youtube.com.evil.example/", "file:///etc/passwd", "data:text/html,x",
+                   "javascript:alert(1)"] {
+            assert!(!app_window_may_navigate(&u(no)), "{no} should be refused");
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -1441,6 +1523,24 @@ pub fn run() {
         // opens it in the OS PDF viewer, one ⌘P from the real print dialog
         // (WKWebView has no in-webview road to printing a generated PDF).
         .plugin(tauri_plugin_opener::init())
+        // v7.95 (app-health L2): app windows ("main", "main-N") stay on the
+        // app. Other webviews — an OAuth sign-in popup — are not restricted.
+        .plugin(
+            tauri::plugin::Builder::<tauri::Wry, ()>::new("nav-guard")
+                .on_navigation(|webview, url| {
+                    let label = webview.label();
+                    if label == "main" || label.starts_with("main-") {
+                        let ok = app_window_may_navigate(url);
+                        if !ok {
+                            eprintln!("[nav-guard] refused navigation of {label} to {url}");
+                        }
+                        ok
+                    } else {
+                        true
+                    }
+                })
+                .build(),
+        )
         // ── Asset protocol: serve local files for convertFileSrc() URLs ──
         // (the updater/process plugins are registered further down — they are
         //  desktop-only and go on behind a cfg, see `builder` below)
@@ -1450,15 +1550,18 @@ pub fn run() {
 
             // Build a Response without unwrapping — a panic here aborts the
             // whole process because [profile.release] panic = "abort".
+            let cors = asset_cors_origin(
+                request.headers().get("Origin").and_then(|v| v.to_str().ok()),
+            );
             let build_response = |status: u16, mime: &str, body: Vec<u8>| {
-                tauri::http::Response::builder()
+                let mut rb = tauri::http::Response::builder()
                     .status(status)
                     .header("Content-Type", mime)
-                    .header("Access-Control-Allow-Origin", "*")
-                    .body(body)
-                    .unwrap_or_else(|_| {
-                        tauri::http::Response::new(Vec::new())
-                    })
+                    .header("Vary", "Origin");
+                if let Some(o) = &cors {
+                    rb = rb.header("Access-Control-Allow-Origin", o.as_str());
+                }
+                rb.body(body).unwrap_or_else(|_| tauri::http::Response::new(Vec::new()))
             };
 
             /* v6.33, Derek ("the images are still broken in the asset

@@ -1,5 +1,14 @@
 [
   {
+    "version": "7.95",
+    "date": "2026-10-02",
+    "changes": [
+      "Security: the app's windows can no longer be navigated away to an outside web page — they stay on ScriptCraft. Video embeds (YouTube, Vimeo) and sign-in windows are unaffected.",
+      "Security: embedded videos and other web content inside the app can no longer read files from ScriptCraft's data folder; only the app itself can.",
+      "Security: tightened the app's content rules — it no longer allows scripts or frames from Google's sign-in site (sign-in opens its own window and never needed them), and plugins, base-URL changes and form posts are refused outright."
+    ]
+  },
+  {
     "version": "7.94",
     "date": "2026-10-02",
     "changes": [
