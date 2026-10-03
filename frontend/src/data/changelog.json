@@ -1,5 +1,17 @@
 [
   {
+    "version": "7.94",
+    "date": "2026-10-02",
+    "changes": [
+      "Security: importing a preset or settings backup can no longer change where ScriptCraft saves copies of your scripts. Save, backup, snapshot, screenshot and download folders, the cloud sign-in app IDs and the cloud server address now stay with this machine — before, a shared preset could quietly redirect a copy of every save to a folder its author chose.",
+      "Security: link previews now check every redirect, not just the first address, so a web page can no longer bounce a preview to your own computer or local network. Previews also stop reading after 1 MB.",
+      "Security: Scrapbook text is cleaned before it is shown, so HTML arriving in an imported preset cannot add scripts, frames, page redirects or styles that restyle the app. Your own formatting is kept.",
+      "Fix: the Reset All and Export Preset buttons in Settings are the standard compact height on macOS (they were 1px taller), and Reset All uses the theme's danger color.",
+      "Tests: the browser checks now run on a Mac (they looked for Chromium in a Linux-only location), and one slow-to-load unit test no longer times out under a full run.",
+      "Tests: the browser-check runner now fails a check that crashes or never reaches an assertion — before, such a check could be counted as passing. That exposed eight older checks that had been silently crashing on controls the app replaced long ago; they are updated to today's Notes, Pages, Annotations and Design windows and run in full again."
+    ]
+  },
+  {
     "version": "7.93",
     "date": "2026-10-02",
     "changes": [

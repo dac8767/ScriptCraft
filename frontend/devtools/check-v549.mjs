@@ -3,7 +3,7 @@
 // cycle); the annotation previews stack left-aligned with Save pinned to
 // the section's bottom-right (the foot row is gone).
 import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
-const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
+const SHOTS = new URL('.', import.meta.url).pathname;  // devtools/ — *.png is gitignored there
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -100,6 +100,7 @@ ok(true, 'the × closes the picker');
 await page.click('.markup-save');
 
 // ── Pages stepper: one frame, tight arrows, number snug ──────────────────
+await page.evaluate(() => window.__scStore.getState().setPagesTab('script'));
 await openTool(page, 'Pages');
 await page.waitForSelector('.fs-updown', { timeout: 6000 });
 /* v7.05: this block measured `.fs-pages-actions .tool-action-count`, which

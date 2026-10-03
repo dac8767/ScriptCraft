@@ -6,6 +6,7 @@ import { settle, placeTool, tokenDefault } from './driver.mjs';
 // and only ever held while the two kinds' paddings matched — see the note at
 // the assertions.
 import { chromium } from 'playwright-core';
+import { browserPath } from './driver.mjs';
 
 const results = [];
 const check = (n, got, want) => {
@@ -14,7 +15,7 @@ const check = (n, got, want) => {
   console.log(`${ok ? 'OK  ' : 'FAIL'} ${n.padEnd(40)} got ${JSON.stringify(got)}${ok ? '' : `  want ${JSON.stringify(want)}`}`);
 };
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+const browser = await chromium.launch({ executablePath: browserPath(), args: ['--no-sandbox'] });
 const page = await browser.newPage({ viewport: { width: 1500, height: 900 } });
 page.on('pageerror', (e) => console.log('PAGEERROR:', e.message));
 // Seed BEFORE any app code runs (addInitScript). Seeding after a first goto

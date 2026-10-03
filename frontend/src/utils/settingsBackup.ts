@@ -29,6 +29,20 @@ export const BACKUP_EXCLUDED = new Set<string>([
   'opendraft:quota',
   'opendraft:demo',
   'opendraft:fallback',
+  /* v7.94 (app-health S1): where this machine WRITES and CONNECTS. A preset
+     carrying these silently re-pointed every save's mirror copy (and the
+     snapshot / screenshot / download folders, the cloud sign-in app and the
+     cloud API server) at a place the file's author chose. They are per-device
+     anyway — a folder on one Mac means nothing on another. The on/off toggles
+     still travel: without a folder they write nowhere. */
+  'opendraft:saveloc:localFolder',
+  'opendraft:saveloc:backupFolder',
+  'opendraft:saveloc:snapLocalFolder',
+  'opendraft:saveloc:screenshotFolder',
+  'opendraft:saveloc:downloadFolder',
+  'opendraft:saveloc:gdriveClientId',
+  'opendraft:saveloc:onedriveClientId',
+  'opendraft:cloudApiUrl',
 ]);
 
 /** Key prefixes that never travel either (v7.72).

@@ -359,7 +359,11 @@ label.fs-presets-row { cursor: pointer; }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
+  /* v7.94: the COMPACT size by token. Padding + line-height gave 26px on
+     Linux and 27px on macOS, off the size scale on Derek's own machine. */
+  box-sizing: border-box;
+  height: var(--dz-dialog-btn-h-sm, 26px);
+  padding: 0 10px;
   font-size: 12px;
   border: 1px solid var(--fd-border);
   border-radius: 5px;
@@ -389,12 +393,14 @@ label.fs-presets-row { cursor: pointer; }
 /* The hairline that separated resets from Export/Import went with the transfer
    pair in v7.56 — a rule between a group and nothing is just a rule. */
 .fs-reset-all-btn {
-  border: 1px solid #c0564f;
+  border: 1px solid var(--fd-danger);
   border-radius: 5px;
-  background: color-mix(in srgb, #c0564f 12%, transparent);
+  background: color-mix(in srgb, var(--fd-danger) 12%, transparent);
   color: var(--fd-text);
   font-size: 12px;
-  padding: 5px 14px;
+  box-sizing: border-box;
+  height: var(--dz-dialog-btn-h-sm, 26px);
+  padding: 0 14px;
   cursor: pointer;
 }
 .fs-sugg-reset {

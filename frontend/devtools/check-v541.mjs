@@ -3,7 +3,7 @@
 // formatting drives the annotation editor, no nav icon for lists, and the
 // shape-limit toast at the attempted move (panel foot text gone).
 import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
-const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
+const SHOTS = new URL('./', import.meta.url).pathname;
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -36,7 +36,7 @@ const usedRow = await page.evaluate(() => {
   const group = document.querySelector('.markup-pop-icon-group');
   const kids = [...group.children].map((el) =>
     el.classList?.contains('markup-used-label') ? 'LABEL'
-      : el.classList?.contains('markup-combo-plus') ? 'PLUS'
+      : el.classList?.contains('markup-combo-current') ? 'ACTIVE'
         : el.classList?.contains('active') ? 'ACTIVE'
           : el.tagName === 'BUTTON' ? 'used' : el.className);
   return kids;
@@ -89,7 +89,8 @@ ok(fmt.miniBold, 'ribbon Bold bolds the annotation text');
 ok(!fmt.scriptBold, 'and the script itself is untouched');
 
 // ── 3+4: the combo picker is draggable and compact ───────────────────────
-await page.click('.markup-combo-plus');
+// v5.47: the current combo became the picker trigger; the trailing + is gone.
+await page.click('.markup-combo-current');
 await page.waitForSelector('.markup-icon-pop', { timeout: 4000 });
 const shape = await page.evaluate(() => {
   const box = document.querySelector('.markup-icon-pop').getBoundingClientRect();
@@ -98,26 +99,33 @@ const shape = await page.evaluate(() => {
   return { w: Math.round(box.width), h: Math.round(box.height), sideBySide: left && right && right.left > left.right - 2 && Math.abs(left.top - right.top) < 30 };
 });
 ok(shape.sideBySide, `icons and color sit SIDE BY SIDE (${shape.w}×${shape.h})`);
-// the embedded color column is the height floor (~430px); the old stack
-// was 560px CAPPED with ~700px of scrolled content
-ok(shape.h <= 470, `and the window is compact (${shape.h}px tall)`);
+// v5.52 added the explicit Cancel / OK footer, so the v5.41 compact
+// side-by-side picker is taller than the original ~430px color-column floor
+// but still below the old 560px capped stack.
+ok(shape.h <= 520, `and the window is compact (${shape.h}px tall)`);
 const before = await page.evaluate(() => {
   const r = document.querySelector('.markup-icon-pop').getBoundingClientRect();
   return { top: Math.round(r.top), left: Math.round(r.left) };
 });
+/* v7.94: drag toward whichever side has room. The picker seats above OR
+   below its trigger, and a drag is clamped to 8px from the top — so when it
+   opened near the top, "up 60" stopped at the clamp and this read as a broken
+   drag (it failed under full-suite load that way, Δ -90,0). The assertion is
+   unchanged: the picker follows the pointer exactly, on both axes. */
+const DX = -90, DY = before.top - 60 >= 8 ? -60 : 60;
 const bar = await (await page.$('.markup-icon-pop-drag')).boundingBox();
 await page.mouse.move(bar.x + bar.width / 2, bar.y + bar.height / 2);
 await page.mouse.down();
-await page.mouse.move(bar.x + bar.width / 2 - 90, bar.y + bar.height / 2 - 60, { steps: 4 });
+await page.mouse.move(bar.x + bar.width / 2 + DX, bar.y + bar.height / 2 + DY, { steps: 4 });
 await page.mouse.up();
 await settle(page);
 const after = await page.evaluate(() => {
   const r = document.querySelector('.markup-icon-pop').getBoundingClientRect();
   return { top: Math.round(r.top), left: Math.round(r.left) };
 });
-ok(Math.abs(after.left - (before.left - 90)) <= 3 && Math.abs(after.top - (before.top - 60)) <= 3,
-  `the picker DRAGS to reposition (Δ ${after.left - before.left},${after.top - before.top})`);
-await page.screenshot({ path: `${SHOTS}/v541-picker.png` });
+ok(Math.abs(after.left - (before.left + DX)) <= 3 && Math.abs(after.top - (before.top + DY)) <= 3,
+  `the picker DRAGS to reposition (Δ ${after.left - before.left},${after.top - before.top}; wanted ${DX},${DY} from ${before.left},${before.top})`);
+await page.screenshot({ path: `${SHOTS}v541-picker.png` });
 await page.keyboard.press('Escape');
 
 // close the annotation window (saves) — the ribbon returns to the script
@@ -162,7 +170,7 @@ const toast = await page.evaluate(() => ({
 }));
 ok(toast.toasted, 'the attempt TOASTS the limit');
 ok(toast.mode !== 'floating', `and the tool stays put (mode: ${toast.mode})`);
-await page.screenshot({ path: `${SHOTS}/v541-toast.png` });
+await page.screenshot({ path: `${SHOTS}v541-toast.png` });
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await browser.close();

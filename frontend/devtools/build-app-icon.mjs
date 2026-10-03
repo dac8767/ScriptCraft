@@ -20,6 +20,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright-core';
+import { browserPath } from './driver.mjs';
 
 const SRC = new URL('../../images/logo_FINAL.png', import.meta.url);
 const OUT = new URL('../../images/app-icon.png', import.meta.url);
@@ -29,7 +30,7 @@ export const CANVAS = 1024;
 export const BODY = 824;
 
 const b64 = readFileSync(SRC).toString('base64');
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const browser = await chromium.launch({ executablePath: browserPath() });
 const page = await browser.newPage();
 
 const dataUrl = await page.evaluate(async ({ src, canvasPx, bodyPx }) => {

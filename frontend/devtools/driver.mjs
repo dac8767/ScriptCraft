@@ -25,7 +25,7 @@
 //   ... assertions ...
 //   await browser.close();
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { chromium } from 'playwright-core';
 
 export const VITE_URL = 'http://localhost:5199/';
@@ -63,9 +63,27 @@ export const SCENES_4 = [
   { heading: 'INT. CARRIER - HANGER BAY', lines: 20 },
 ];
 
+/** The browser every check launches (v7.94). These were written in a Linux
+ *  container where Chromium lived at /opt/pw-browsers/chromium, and that path
+ *  was hardcoded in six places — so on Derek's Mac `check-all` could not start
+ *  a single browser. PW_CHROMIUM overrides; otherwise the first that exists. */
+export function browserPath() {
+  const candidates = [
+    process.env.PW_CHROMIUM,
+    '/opt/pw-browsers/chromium',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    '/usr/bin/chromium',
+    '/usr/bin/google-chrome',
+  ].filter(Boolean);
+  const found = candidates.find((c) => existsSync(c));
+  if (!found) throw new Error(`No Chromium found. Set PW_CHROMIUM to a Chrome/Chromium binary (tried: ${candidates.join(', ')})`);
+  return found;
+}
+
 export async function launch(opts = {}) {
   const browser = await chromium.launch({
-    executablePath: '/opt/pw-browsers/chromium',
+    executablePath: browserPath(),
     args: ['--no-sandbox'],
   });
   const page = await browser.newPage({

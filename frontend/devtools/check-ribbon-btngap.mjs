@@ -10,6 +10,7 @@ import { settle, tokenDefault } from './driver.mjs';
 //   B. four values — each knob moves ONLY its own row (8 / 0 / -6 overlap / 12).
 //   C. legacy key  — a saved ribBtnGapUntitled: 9 seeds BOTH untitled rows.
 import { chromium } from 'playwright-core';
+import { browserPath } from './driver.mjs';
 
 const results = [];
 const check = (n, got, want) => {
@@ -18,7 +19,7 @@ const check = (n, got, want) => {
   console.log(`${ok ? 'OK  ' : 'FAIL'} ${n.padEnd(46)} got ${JSON.stringify(got)}${ok ? '' : `  want ${JSON.stringify(want)}`}`);
 };
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+const browser = await chromium.launch({ executablePath: browserPath(), args: ['--no-sandbox'] });
 
 const SEED = (opts) => {
   if (localStorage.getItem('__ribbtngap_seeded')) return;

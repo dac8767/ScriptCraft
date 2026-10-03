@@ -134,11 +134,15 @@ describe('a dropped tool has no heir and does not come back', () => {
 });
 
 describe('v7.68: AI Writer is back, and stays back', () => {
+  /* v7.94: a COLD import of ToolDock pulls in most of the app, and under a
+     full parallel run it has taken longer than vitest's 5s default — once it
+     timed out with the assertion never reached. The wait is the import's; the
+     assertions are unchanged. */
   it('is in the registry the panel list is built from', async () => {
     const { ALL_TOOLS } = await import('../components/ToolDock');
     expect(ALL_TOOLS.some((t) => t.id === 'aiwriter')).toBe(true);
     expect(ALL_TOOLS.some((t) => /AI Writer/i.test(t.label))).toBe(true);
-  });
+  }, 30_000);
 
   /* THE ONE THAT MATTERS. A tool can be in the registry and still be
      un-keepable: the panel list is rebuilt from PERSISTED state, so a leftover

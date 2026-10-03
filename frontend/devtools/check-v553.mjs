@@ -5,7 +5,7 @@
 // script word in place with case kept, fallbacks and misses speak up, and
 // the Tools menu lists it.
 import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
-const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
+const SHOTS = new URL('.', import.meta.url).pathname;  // devtools/ — *.png is gitignored there
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }

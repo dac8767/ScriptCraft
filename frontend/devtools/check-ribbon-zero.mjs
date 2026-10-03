@@ -4,6 +4,7 @@ import { settle } from './driver.mjs';
 // asserts the computed layout carries ZERO of each — no hidden +3s, no hard
 // 2px insets, bar height exactly the content height.
 import { chromium } from 'playwright-core';
+import { browserPath } from './driver.mjs';
 
 const results = [];
 const check = (n, got, want) => {
@@ -12,7 +13,7 @@ const check = (n, got, want) => {
   console.log(`${ok ? 'OK  ' : 'FAIL'} ${n.padEnd(42)} got ${JSON.stringify(got)}${ok ? '' : `  want ${JSON.stringify(want)}`}`);
 };
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+const browser = await chromium.launch({ executablePath: browserPath(), args: ['--no-sandbox'] });
 const page = await browser.newPage({ viewport: { width: 1500, height: 900 } });
 page.on('pageerror', (e) => console.log('PAGEERROR:', e.message));
 await page.addInitScript(() => {

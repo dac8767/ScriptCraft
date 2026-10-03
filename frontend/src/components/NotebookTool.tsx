@@ -25,6 +25,7 @@ import {
 } from '../stores/notebookStore';
 import { useEditorStore } from '../stores/editorStore';
 import { CloseIcon } from './uiIcons';
+import { sanitizeNotebookHtml } from '../utils/notebookHtml';
 import {
   FaRegFileAlt, FaRegFolder, FaRegFolderOpen,
   FaFolderPlus, FaRegEdit, FaRegTrashAlt, FaRegEye, FaRegEyeSlash,
@@ -315,7 +316,7 @@ function TextBox({ box, focused, onChange, onFocusBox, onDelete, zoom = 1 }: {
   const startDrag = useBoxDrag(box, onChange, () => onFocusBox(box.id), zoom);
   useEffect(() => {
     if (ref.current && !loaded.current) {
-      ref.current.innerHTML = box.html || '';
+      ref.current.innerHTML = sanitizeNotebookHtml(box.html || '');
       loaded.current = true;
     }
   }, [box.html]);

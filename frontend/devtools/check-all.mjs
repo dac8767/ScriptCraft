@@ -84,7 +84,7 @@ const run = (file) => new Promise((resolve) => {
   let out = '';
   child.stdout.on('data', (d) => { out += d; });
   child.stderr.on('data', (d) => { out += d; });
-  child.on('close', () => {
+  child.on('close', (code) => {
     /* Two reporting conventions grew up in here: the newer checks print a
        "N passed, M failed" summary, the older ones only print OK/FAIL (or
        ✓/✗) per assertion. Reading both is a two-line job; rewriting twelve
@@ -101,8 +101,15 @@ const run = (file) => new Promise((resolve) => {
       const crashed = /Error:|SCRIPT ERROR/.test(out) && !passed && !failed;
       if (crashed) failed = 1;
       line = passed + failed ? `${passed} passed, ${failed} failed` : 'NO ASSERTIONS';
-      if (!passed && !failed) failed = 1;
     }
+    /* v7.94: "0 passed, 0 failed" is a check that never reached an assertion
+       — usually a PROBE ERROR before the first one (dead dev server, a
+       selector that never matched). The summary branch above took that at
+       its word and printed ✓; eleven checks went green that way during the
+       app-health run while testing nothing. Zero assertions is a failure in
+       BOTH reporting conventions, and so is a nonzero exit. */
+    if (!passed && !failed) { failed = 1; line = `${line} — NO ASSERTIONS RAN`; }
+    if (code && !failed) { failed = 1; line = `${line} — exited ${code}`; }
     resolve({ file, out, secs: ((Date.now() - started) / 1000).toFixed(1), passed, failed, line });
   });
 });

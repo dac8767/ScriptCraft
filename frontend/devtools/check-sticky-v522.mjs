@@ -1,13 +1,12 @@
 // devtools/check-sticky-v522.mjs — Derek's Sticky Notes refinement:
-//  1. ONE interleaved list — Type sort default (notes before checklists),
-//     Date Created interleaves both kinds newest-first
+//  1. ONE interleaved list — Manual sort default (the array order),
+//     Date Created interleaves legacy kinds newest-first
 //  2. blue add buttons (computed equal to a dialog-primary probe)
-//  3. "+ Add Note" / "+ Add Checklist" wording (checked in v521 driver too)
-//  4. Checklists wording on the tabs
-//  5. the blank check row adds items (no dashed .swn-todo-new field)
-//  6. All · Notes · Checklists tabs — click narrows, DRAG reorders, order
-//     persists and its [0] seeds the view the tool opens on
-import { launch, boot, seedScript, openTool, shot, SCENES_4 } from './driver.mjs';
+//  3. one "+ Add Note" button
+//  4. no kind tabs
+//  5. legacy checklists render as rich checklist notes and can add items
+//  6. v5.36 removed the kind tabs when checklists became note content
+import { launch, boot, seedScript, shot, SCENES_4, settle } from './driver.mjs';
 
 const results = [];
 const check = (n, got, want) => {
@@ -40,12 +39,16 @@ const cardOrder = () => page.evaluate(() =>
       : c.textContent.includes('harbor') ? 'n1' : 'n2'));
 
 // ── 1. sorts ────────────────────────────────────────────────────────────────
-check('Type sort default: notes first, array order', await cardOrder(), ['todo', 'n1', 'n2']   /* v5.36: Type sort gone; this is array order */);
+check('Manual sort default: array order', await cardOrder(), ['todo', 'n1', 'n2']   /* v5.36: Type sort gone; this is Manual/array order */);
 await page.click('.fs-tool-takeover-sticky .tool-ctl:has-text("Sort")');
 await page.click('.tool-ctl-menu-item:has-text("Date Created")');
 check('Date Created interleaves both kinds newest-first', await cardOrder(), ['n2', 'todo', 'n1']);
 await page.click('.fs-tool-takeover-sticky .tool-ctl:has-text("Sort")');
-await page.click('.tool-ctl-menu-item:has-text("Type")');
+const sortItems = await page.evaluate(() =>
+  [...document.querySelectorAll('.tool-ctl-menu .tool-ctl-menu-item')].map((i) => i.textContent));
+check('Sort offers Manual · Date Created (no Type)', sortItems, ['Manual', 'Date Created'] /* v5.36: the Type sort was removed */);
+await page.click('.tool-ctl-menu-item:has-text("Manual")');
+check('Manual restores the array order', await cardOrder(), ['todo', 'n1', 'n2']);
 
 // ── 2. blue buttons — computed equality against a dialog-primary probe ──────
 const blue = await page.evaluate(() => {
@@ -62,40 +65,56 @@ const blue = await page.evaluate(() => {
 });
 check('add buttons wear the dialog-primary colors', blue, []);
 
-// ── 4+6. tabs: wording, click narrows, drag reorders, persistence ───────────
-const tabLabels = () => page.evaluate(() =>
-  [...document.querySelectorAll('.fs-tool-takeover-sticky .tool-chrome-tabs:not(.tool-chrome-tabs-measure) .tool-chrome-tab')]
-    .map((t) => t.textContent));
-check('tabs read All · Notes · Checklists', await tabLabels(), ['All', 'Notes', 'Checklists']);
-
-await page.click('.fs-tool-takeover-sticky .tool-chrome-tab:has-text("Checklists")');
-check('the Checklists tab narrows the list', await cardOrder(), ['todo']);
-await page.click('.fs-tool-takeover-sticky .tool-chrome-tab:has-text("All")');
-
-await page.dragAndDrop(
-  '.fs-tool-takeover-sticky .tool-chrome-tabs:not(.tool-chrome-tabs-measure) .tool-chrome-tab:has-text("Checklists")',
-  '.fs-tool-takeover-sticky .tool-chrome-tabs:not(.tool-chrome-tabs-measure) .tool-chrome-tab:has-text("All")',
-);
-check('dragging a tab reorders the strip', await tabLabels(), ['Checklists', 'All', 'Notes']);
-const persisted = await page.evaluate(() => ({
-  store: window.__scStore.getState().stickyTabOrder,
-  vs: JSON.parse(localStorage.getItem('opendraft:viewState') ?? '{}').stickyTabOrder,
+// ── 4+6. tabs: v5.36 retired note/checklist kinds ─────────────────────────
+const chrome = await page.evaluate(() => ({
+  buttons: [...document.querySelectorAll('.fs-tool-takeover-sticky .tool-action-row button.sticky-add-btn')].map((b) => b.textContent),
+  tabs: [...document.querySelectorAll('.fs-tool-takeover-sticky .tool-chrome-tabs:not(.tool-chrome-tabs-measure) .tool-chrome-tab')].map((t) => t.textContent),
 }));
-check('the order persists (store + viewState)', persisted, { store: ['todo', 'all', 'note'], vs: ['todo', 'all', 'note'] });
+check('v5.36 Notes has one add button and no kind tabs', chrome, { buttons: ['+ Add Note'], tabs: [] });
+/* v5.36: the Notes/Checklists tab strip, tab narrowing, tab drag order, and
+   stickyTabOrder persistence were removed with the separate checklist kind. */
 
-// ── 5. the blank check row ──────────────────────────────────────────────────
-const blank = await page.evaluate(() => ({
-  blankRow: !!document.querySelector('.fs-tool-takeover-sticky .swn-todo-blank'),
-  dashedField: !!document.querySelector('.fs-tool-takeover-sticky .swn-todo-new'),
-}));
-check('checklist card ends in a blank check row', blank, { blankRow: true, dashedField: false });
-await page.fill('.fs-tool-takeover-sticky .swn-todo-blank-input', 'call the studio');
+// ── 5. the legacy checklist is rich note content now ───────────────────────
+const migrated = await page.evaluate(() => {
+  const card = [...document.querySelectorAll('.fs-tool-takeover-sticky .swn-card')]
+    .find((c) => c.textContent.includes('email agent'));
+  return {
+    blankRow: !!card?.querySelector('.swn-todo-blank'),
+    dashedField: !!card?.querySelector('.swn-todo-new'),
+    richEditor: !!card?.querySelector('.swn-note-editor .ProseMirror'),
+    checks: card?.querySelectorAll('.swn-note-editor input[type="checkbox"]').length ?? 0,
+  };
+});
+check('legacy checklist renders as a rich checklist note', migrated, { blankRow: false, dashedField: false, richEditor: true, checks: 1 } /* v5.36: blank checklist rows were removed */);
+const checklistEnd = await page.evaluate(() => {
+  const pm = [...document.querySelectorAll('.fs-tool-takeover-sticky .swn-card')]
+    .find((c) => c.textContent.includes('email agent'))
+    ?.querySelector('.swn-note-editor .ProseMirror');
+  const walker = document.createTreeWalker(pm, NodeFilter.SHOW_TEXT);
+  let node = null;
+  while ((node = walker.nextNode())) {
+    if (node.nodeValue?.includes('email agent')) {
+      const r = document.createRange();
+      r.setStart(node, Math.max(0, node.nodeValue.length - 1));
+      r.setEnd(node, node.nodeValue.length);
+      const box = r.getBoundingClientRect();
+      return { x: box.right + 2, y: box.top + box.height / 2 };
+    }
+  }
+  return null;
+});
+await page.mouse.click(checklistEnd.x, checklistEnd.y);
+for (let i = 0; i < 20; i++) await page.keyboard.press('ArrowRight');
 await page.keyboard.press('Enter');
+await page.keyboard.type('call the studio');
+await settle(page);
 const afterAdd = await page.evaluate(() => ({
-  items: window.__scStore.getState().shelfCards.find((c) => c.id === 't1').items.map((i) => i.text),
-  inputCleared: document.querySelector('.fs-tool-takeover-sticky .swn-todo-blank-input').value,
+  items: window.__scStore.getState().shelfCards.find((c) => c.id === 't1').text.split(/\n+/).filter(Boolean),
+  checks: [...document.querySelectorAll('.fs-tool-takeover-sticky .swn-card')]
+    .find((c) => c.textContent.includes('email agent'))
+    ?.querySelectorAll('.swn-note-editor input[type="checkbox"]').length ?? 0,
 }));
-check('typing + Enter commits the item and blanks the row', afterAdd, { items: ['email agent', 'call the studio'], inputCleared: '' });
+check('Enter in the rich checklist adds another item', afterAdd, { items: ['email agent', 'call the studio'], checks: 2 });
 
 await shot(page, '.fs-tool-takeover-sticky', new URL('./last-sticky-v522.png', import.meta.url).pathname, 620);
 await browser.close();

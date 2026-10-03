@@ -3,7 +3,7 @@
 // (headers stay consecutive), the Pages tool shows and adds them, and the
 // Fountain export never carries their text.
 import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
-const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
+const SHOTS = new URL('.', import.meta.url).pathname;  // devtools/ — *.png is gitignored there
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -69,13 +69,15 @@ ok(fountain.includes('Action line 0'), '(and still exports the script itself)');
 
 // Pages tool: labeled thumb + the + Custom Page door
 await openTool(page, 'Pages');
+await page.evaluate(() => window.__scStore.getState().setPagesTab('custom'));
 await page.waitForSelector('.page-thumb-wrapper', { timeout: 8000 });
 const pagesTool = await page.evaluate(() => ({
-  customThumbs: [...document.querySelectorAll('.page-thumb-number')].filter((el) => el.textContent === 'Custom Page').length,
-  addBtn: !!document.querySelector('.fs-pages-addcustom'),
+  customThumbs: [...document.querySelectorAll('.page-thumb-number')]
+    .filter((el) => (el.textContent ?? '').trim().startsWith('Custom Page')).length,
+  addBtn: !!document.querySelector('.fs-pages-addpage'),
 }));
-/* retired: custom pages were reworked in v5.44 */
-/* retired: renamed "+ Add Page" in v5.44 */
+ok(pagesTool.customThumbs === 1, `Pages ▸ Custom shows the custom page thumb (${pagesTool.customThumbs})`);
+ok(pagesTool.addBtn, 'Pages ▸ Custom carries the + Add Custom Page door');
 await page.screenshot({ path: `${SHOTS}/v540-custom-pages.png` });
 
 console.log(`\n${pass} passed, ${fail} failed`);

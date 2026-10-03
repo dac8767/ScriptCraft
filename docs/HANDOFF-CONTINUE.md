@@ -1526,8 +1526,11 @@ live in `docs/SPEED-AUDIT-2026-07-28.md` §3; the short form:
   rollback wiped the scratchpad copies mid-audit.
 
 Environment facts that still hold:
-- Chromium at `executablePath: '/opt/pw-browsers/chromium'`; dev server
-  `npx vite --port 5199` (curl-poll for 200). Don't run `playwright install`.
+- Browser: `browserPath()` in `devtools/driver.mjs` (v7.94) — `PW_CHROMIUM`
+  if set, else `/opt/pw-browsers/chromium` (the Linux container), else the
+  Mac's Google Chrome. Every check launches through it; never hardcode a path
+  again. Dev server `npx vite --port 5199` (curl-poll for 200). Don't run
+  `playwright install`.
 - Startup dialogs block the UI — `boot()` Escapes them; clicking **Create** on
   the New Script dialog also works if you drive by hand.
 - Open Customize via `window.dispatchEvent(new CustomEvent('scriptcraft:command', { detail: 'customize' }))`.

@@ -28,6 +28,7 @@
  *   node devtools/build-app-icons.mjs [source.png]
  */
 import { chromium } from 'playwright-core';
+import { browserPath } from './driver.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
@@ -64,7 +65,7 @@ const srcBuf = readFileSync(SRC);
 const srcW = srcBuf.readUInt32BE(16), srcH = srcBuf.readUInt32BE(20);
 console.log(`source: ${SRC.replace(ROOT + '/', '')}  ${srcW}x${srcH}`);
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+const browser = await chromium.launch({ executablePath: browserPath(), args: ['--no-sandbox'] });
 const page = await browser.newPage({ viewport: { width: 64, height: 64 } });
 await page.goto('about:blank');
 

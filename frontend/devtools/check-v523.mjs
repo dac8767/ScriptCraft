@@ -1,12 +1,12 @@
 // devtools/check-v523.mjs — Derek's batch:
 //  1. compact blue add buttons (26px)
-//  2. Sort menu order: Type · Date Created · Manual (manual LAST)
+//  2. Sort menu order: Manual · Date Created
 //  3. the bottom-left resize grip moves the LEFT edge of a dragged window
 //     (the right edge stays put — the reported bug was the inverse)
-//  4. "Items per row:" stepper in the popped-out shape, right-aligned,
+//  4. "Notes per row:" stepper in the popped-out shape, right-aligned,
 //     driving the grid; absent when docked
 //  5. Pages: Go-to leads left, the per-row stepper holds the right edge
-import { launch, boot, seedScript, openTool, SCENES_4, shot } from './driver.mjs';
+import { launch, boot, seedScript, openTool, placeTool, SCENES_4, shot } from './driver.mjs';
 
 const results = [];
 const check = (n, got, want) => {
@@ -49,7 +49,7 @@ check('Sort lists Manual · Date Created', sortItems, ['Manual', 'Date Created']
 await page.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
 await page.waitForSelector('.tool-ctl-menu', { state: 'detached' });
 
-// 4. Items per row — present in the popped shape, right-aligned, drives grid
+// 4. Notes per row — present in the popped shape, right-aligned, drives grid
 const stepper = await page.evaluate(() => {
   const row = document.querySelector('.tool-window[data-tool="sticky"] .tool-action-row');
   const grp = row.querySelector('.tool-action-group.tool-action-right');
@@ -59,11 +59,13 @@ const stepper = await page.evaluate(() => {
     rightGap: grp ? Math.round(rr.right - grp.getBoundingClientRect().right) : null,
   };
 });
-check('popped shape shows "# of Columns:" right-aligned', { l: stepper.label, ok: stepper.rightGap <= 12 }, { l: 'Notes per row:'   /* renamed in v5.50 */, ok: true });
-await page.click('.tool-window[data-tool="sticky"] button[title="More columns (smaller cards)"]');
-const cols = await page.$eval('.tool-window[data-tool="sticky"] .swn-scroll', (el) =>
-  getComputedStyle(el).columnCount);
-check('+ makes it a 2-column masonry', cols, '2');
+check('popped shape shows "Notes per row:" right-aligned', { l: stepper.label, ok: stepper.rightGap <= 12 }, { l: 'Notes per row:'   /* v5.36: one rich note kind, stepper renamed back */, ok: true });
+await page.click('.tool-window[data-tool="sticky"] button[title="More notes per row"]');
+const grid = await page.$eval('.tool-window[data-tool="sticky"] .swn-scroll', (el) => {
+  const cs = getComputedStyle(el);
+  return { display: cs.display, cols: cs.gridTemplateColumns.split(' ').length };
+});
+check('+ makes it a 2-column grid', grid, { display: 'grid', cols: 2 } /* v5.36: row grid replaced column masonry */);
 
 // 3. THE RESIZE BUG — drag the window (it becomes left-anchored), then pull
 // the bottom-left grip leftward: the LEFT edge must move, the RIGHT stay.
@@ -77,7 +79,7 @@ const before = await page.$eval('.tool-window[data-tool="sticky"]', (el) => {
   const r = el.getBoundingClientRect();
   return { left: Math.round(r.left), right: Math.round(r.right) };
 });
-const grip = await page.$('.tool-window[data-tool="sticky"] .tool-window-resize');
+const grip = await page.$('.tool-window[data-tool="sticky"] .fs-edge-sw'); // v5.46: any-edge zones replaced the hash grip
 const gb = await grip.boundingBox();
 await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
 await page.mouse.down();
@@ -104,20 +106,35 @@ const dockedStepper = await page.evaluate(() =>
 check('docked shape has NO per-row stepper', dockedStepper, false);
 
 // ── 5. Pages swap: Go-to left, stepper right ────────────────────────────────
+await placeTool(page, 'pages', 'right');
+await page.evaluate(() => {
+  const st = window.__scStore.getState();
+  st.closeTool('sticky');
+  st.setToolMode('pages', 'docked');
+  st.setPagesTab('script');
+});
 await openTool(page, 'Pages');
 await page.waitForSelector('.tool-inline[data-tool="pages"] .tool-action-row');
 const pages = await page.evaluate(() => {
-  const row = document.querySelector('.tool-inline[data-tool="pages"] .tool-action-row');
+  const frame = document.querySelector('.tool-inline[data-tool="pages"]');
+  const header = frame.querySelector('.tool-inline-header .tool-chrome-controls');
+  const goto = header.querySelector('.fs-pages-goto-btn');
+  const search = header.querySelector('[data-ctl="search"]');
+  const row = frame.querySelector('.tool-action-row');
   const rr = row.getBoundingClientRect();
-  const form = row.querySelector('form');
-  const grp = row.querySelector('.tool-action-group.tool-action-right');
+  const hr = header.getBoundingClientRect();
+  const gr = goto.getBoundingClientRect();
+  const sr = search.getBoundingClientRect();
+  const grp = row.querySelector('.fs-pages-right .tool-action-group');
   return {
-    gotoLeft: Math.round(form.getBoundingClientRect().left - rr.left),
+    gotoLeft: Math.round(gr.left - hr.left),
+    gotoBeforeSearch: gr.right <= sr.left,
+    gotoSearchGap: Math.round(sr.left - gr.right),
     stepperRight: Math.round(rr.right - grp.getBoundingClientRect().right),
     stepperLabel: grp.querySelector('.tool-action-label')?.textContent,
   };
 });
-check('Pages: Go-to leads the row', pages.gotoLeft <= 14, true);
+check('Pages: Go-to leads the header controls', { beforeSearch: pages.gotoBeforeSearch, gapOk: pages.gotoSearchGap <= 8 }, { beforeSearch: true, gapOk: true } /* v5.47: Go-to moved from the body row to the header */);
 check('Pages: per-row stepper hugs the right edge', { ok: pages.stepperRight <= 12, l: pages.stepperLabel }, { ok: true, l: 'Pages per row:' });
 
 await browser.close();

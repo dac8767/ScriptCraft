@@ -2,7 +2,7 @@
 // tool renamed "Notes", no checklist button, "Notes per row:" over an
 // equal-height row grid (the misalignment fix), and drag-reorder that works.
 import { launch, boot, seedScript, openTool, fullscreen, SCENES_4, settle } from './driver.mjs';
-const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
+const SHOTS = new URL('./', import.meta.url).pathname;
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -53,7 +53,7 @@ await settle(page);
 const stepLabel = await page.evaluate(() =>
   document.querySelector('.fs-tool-takeover .tool-action-label')?.textContent);
 ok(stepLabel === 'Notes per row:', `the stepper says "Notes per row:" (${stepLabel})`);
-await page.click('.fs-tool-takeover button[title="More notes per row (smaller cards)"]');
+await page.click('.fs-tool-takeover button[title="More notes per row"]');
 await settle(page);
 const grid = await page.evaluate(() => {
   const scroll = document.querySelector('.fs-tool-takeover .swn-scroll');
@@ -70,7 +70,7 @@ ok(Math.abs(row1[0].top - row1[1].top) <= 1, `row 1 tops align (${row1.map((c) =
 ok(Math.abs(row2[0].top - row2[1].top) <= 1, `row 2 tops align (${row2.map((c) => c.top)})`);
 ok(row1[0].h === row1[1].h, `row 1 cards SAME height despite different content (${row1.map((c) => c.h)})`);
 ok(row2[0].h === row2[1].h, `row 2 cards SAME height (${row2.map((c) => c.h)})`);
-await page.screenshot({ path: `${SHOTS}/v536-notes-grid.png` });
+await page.screenshot({ path: `${SHOTS}v536-notes-grid.png` });
 
 // ── drag-reorder: pull card D onto card A ────────────────────────────────
 // (synthetic DragEvents — Playwright's native dragAndDrop hangs on HTML5

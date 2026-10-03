@@ -3,7 +3,7 @@
 // edge-resize on every window (grips gone), File-menu moves, live checklist
 // mirroring with icon-sized checkboxes, working in-window Insert Link/Image.
 import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
-const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
+const SHOTS = new URL('.', import.meta.url).pathname;  // devtools/ — *.png is gitignored there
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -165,8 +165,10 @@ ok(annoWin.zones === 8 && annoWin.nativeResize === 'none' && annoWin.scroller,
   `the annotation window has 8 edge zones, no native corner, and the frame/scroll split (${annoWin.zones}/${annoWin.nativeResize})`);
 ok(Math.abs(annoW2 - annoWin.w - 70) < 8, `east-edge drag widens it (${Math.round(annoWin.w)} → ${Math.round(annoW2)})`);
 
-// ── Design coexists with the annotation window (dock-row click) ──────────
-await openTool(page, 'Design');
+// ── Design coexists with the annotation window ──────────────────────────
+// v7.33: Design is devOnly and opens from Help ▸ Developer, not a dock row.
+// The coexist/resize behaviour is still the same single Design window.
+await page.evaluate(() => window.__scStore.getState().openTool('design'));
 await page.waitForSelector('.dz-panel', { timeout: 4000 });
 const coexist = await page.evaluate(() => {
   const st = window.__scStore.getState();

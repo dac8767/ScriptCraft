@@ -266,21 +266,29 @@ try {
   });
   await page.keyboard.press('Control+Shift+F9');       // F-key: no shift-transform
   await settle(page);
-  ok(await findKey() === 'Ctrl+Shift+F9', `rebinding through the window sticks (${await findKey()})`);
+  /* v7.94: the labels come from the app's own formatter, so the check passes
+     on a Mac (⇧⌘F9 / ⌘F) as well as in the Linux container (Ctrl+…) it was
+     written in — what it tests is the rebind/undo/redo/reset, not the glyphs. */
+  const label = (c) => page.evaluate(async (combo) =>
+    (await window.__scImport('/src/components/shortcuts.ts')).formatCombo(combo), c);
+  const REBOUND = await findKey();
+  const FIND_DEFAULT = await label('Mod+F');
+  ok(REBOUND !== FIND_DEFAULT && /F9$/.test(REBOUND), `the new key is recorded (${REBOUND})`);
+  ok(await findKey() === REBOUND, `rebinding through the window sticks (${await findKey()})`);
   /* v6.78: a single rebinding is itself undoable. */
   await pressUndo();
-  ok(await findKey() === 'Ctrl+F', `Ctrl+Z undoes the single rebinding (${await findKey()})`);
+  ok(await findKey() === FIND_DEFAULT, `Ctrl+Z undoes the single rebinding (${await findKey()})`);
   await pressUndo(true);
-  ok(await findKey() === 'Ctrl+Shift+F9', `and Ctrl+Shift+Z re-applies it (${await findKey()})`);
+  ok(await findKey() === REBOUND, `and Ctrl+Shift+Z re-applies it (${await findKey()})`);
   await page.evaluate(() => [...document.querySelectorAll('button')]
     .find((b) => b.textContent === 'Reset All Shortcuts')?.click());
   await page.waitForSelector('.fs-confirm-overlay', { timeout: 5000 });
   ok(/Reset All Shortcuts/.test(await confirmBox()), 'Reset All Shortcuts warns first');
   await page.click('.fs-confirm-ok');
   await settle(page);
-  ok(await findKey() === 'Ctrl+F', `confirming restores the default keys (${await findKey()})`);
+  ok(await findKey() === FIND_DEFAULT, `confirming restores the default keys (${await findKey()})`);
   await pressUndo();
-  ok(await findKey() === 'Ctrl+Shift+F9', `Ctrl+Z brings the rebinding back (${await findKey()})`);
+  ok(await findKey() === REBOUND, `Ctrl+Z brings the rebinding back (${await findKey()})`);
 
 } catch (e) {
   console.log('PROBE ERROR:', e.message);

@@ -4,7 +4,7 @@
 // bar carries STATUS + DELETE (warned) instead of the ⋮; preview icons
 // center on their labels; the Design pop-out re-seats on screen.
 import { launch, boot, seedScript, openTool, SCENES_4, settle } from './driver.mjs';
-const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
+const SHOTS = new URL('.', import.meta.url).pathname;  // devtools/ — *.png is gitignored there
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }
@@ -120,34 +120,25 @@ ok(direct.n === 1 && direct.anchor === 'range', 'a selected add creates the rang
 await page.click('.markup-save');
 await settle(page);
 
-// ── Design pop-out lands ON screen after a dock cycle ────────────────────
-await page.click('[data-tool-row="design"]');
+// ── Design pop-out lands ON screen ──────────────────────────────────────
+/* v7.33: Design is devOnly and no longer has a side-panel dock row; the menu
+   door (Help ▸ Developer ▸ Design…) opens the same single pop-out that the old
+   dock-cycle check was really guarding. Reopen it to prove the seating path is
+   repeatable without relying on a retired row. */
+await page.evaluate(() => window.__scStore.getState().openTool('design'));
 await page.waitForSelector('.dz-panel', { timeout: 4000 });
-const dzH = await page.evaluate(() => {
-  const r = document.querySelector('.dz-header').getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+await settle(page);
+const firstSeat = await page.evaluate(() => {
+  const r = document.querySelector('.dz-panel').getBoundingClientRect();
+  return {
+    onScreen: r.left >= 0 && r.top >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight,
+    rect: `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}×${Math.round(r.height)}`,
+  };
 });
-const dock = await page.evaluate(() => {
-  const r = document.querySelector('.tool-dock-wrap.tool-dock-right .tool-dock').getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-});
-await page.mouse.move(dzH.x, dzH.y);
-await page.mouse.down();
-await page.mouse.move(dock.x, dock.y, { steps: 8 });
-await page.mouse.up();
-await page.waitForTimeout(400);
-const rowC = await page.evaluate(() => {
-  const r = document.querySelector('[data-tool-row="design"]').getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-});
-const edC = await page.evaluate(() => {
-  const r = document.querySelector('.editor-center').getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-});
-await page.mouse.move(rowC.x, rowC.y);
-await page.mouse.down();
-await page.mouse.move(edC.x, edC.y, { steps: 8 });
-await page.mouse.up();
+ok(firstSeat.onScreen, `Design opens fully ON screen (${firstSeat.rect})`);
+await page.click('.dz-close');
+await page.waitForSelector('.dz-panel', { state: 'detached', timeout: 4000 });
+await page.evaluate(() => window.__scStore.getState().openTool('design'));
 await page.waitForSelector('.dz-panel', { timeout: 4000 });
 const seat = await page.evaluate(() => {
   const r = document.querySelector('.dz-panel').getBoundingClientRect();
@@ -156,7 +147,7 @@ const seat = await page.evaluate(() => {
     rect: `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}×${Math.round(r.height)}`,
   };
 });
-ok(seat.onScreen, `after a dock cycle the pop-out seats fully ON screen (${seat.rect})`);
+ok(seat.onScreen, `after close/reopen the pop-out seats fully ON screen (${seat.rect})`);
 await page.screenshot({ path: `${SHOTS}/v548-design-seat.png` });
 
 console.log(`\n${pass} passed, ${fail} failed`);

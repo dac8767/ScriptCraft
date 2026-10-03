@@ -116,3 +116,38 @@ describe('the shipped-defaults seed mark never travels', () => {
     expect(localStorage.getItem('opendraft:theme')).toBe('dark');
   });
 });
+
+/**
+ * v7.94 (app-health S1): a preset or backup must not be able to choose where
+ * this machine writes or connects. Before, importing one set the save-mirror
+ * folder, so every later save silently copied the whole script to a path the
+ * file's author picked.
+ */
+describe('where this machine writes and connects never travels', () => {
+  const DEVICE_KEYS = [
+    'opendraft:saveloc:localFolder',
+    'opendraft:saveloc:backupFolder',
+    'opendraft:saveloc:snapLocalFolder',
+    'opendraft:saveloc:screenshotFolder',
+    'opendraft:saveloc:downloadFolder',
+    'opendraft:saveloc:gdriveClientId',
+    'opendraft:saveloc:onedriveClientId',
+    'opendraft:cloudApiUrl',
+  ];
+
+  it('an import refuses every one of them and keeps the folder already set', () => {
+    localStorage.setItem('opendraft:saveloc:localFolder', '/Users/me/Scripts');
+    const data: Record<string, string> = { 'opendraft:theme': 'dark' };
+    for (const k of DEVICE_KEYS) data[k] = '\\\\attacker.example@SSL\\DavWWWRoot\\x';
+    const res = applyBackup(JSON.stringify({ kind: 'settings-backup', data }));
+    expect(res).toEqual({ imported: 1, skipped: DEVICE_KEYS.length });
+    expect(localStorage.getItem('opendraft:saveloc:localFolder')).toBe('/Users/me/Scripts');
+    for (const k of DEVICE_KEYS.slice(1)) expect(localStorage.getItem(k)).toBeNull();
+  });
+
+  it('an export leaves them behind', () => {
+    for (const k of DEVICE_KEYS) localStorage.setItem(k, '/somewhere');
+    localStorage.setItem('opendraft:saveloc:saveToBackupFolder', '1');
+    expect(gatherSettings()).toEqual({ 'opendraft:saveloc:saveToBackupFolder': '1' });
+  });
+});

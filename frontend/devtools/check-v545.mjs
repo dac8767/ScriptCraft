@@ -2,7 +2,7 @@
 // side panel (new text), never popped out; the tool is gone from the Tools
 // menu. Pages header: + Add Page left, Go to page + Pages per row RIGHT.
 import { launch, boot, seedScript, openTool, SCENES_4, settle, placeTool } from './driver.mjs';
-const SHOTS = '/tmp/claude-0/-home-user-ScriptCraft/e4449e3e-5198-5997-9e57-bd93d663743c/scratchpad';
+const SHOTS = new URL('.', import.meta.url).pathname;  // devtools/ — *.png is gitignored there
 let pass = 0, fail = 0;
 const ok = (cond, label) => {
   if (cond) { pass++; console.log(`  ✓ ${label}`); }

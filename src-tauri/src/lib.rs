@@ -936,11 +936,9 @@ fn is_blocked_ip(ip: std::net::IpAddr) -> bool {
 }
 
 /// Resolve `host` off the async runtime and refuse it unless it resolves to at
-/// least one address and EVERY address is public. Blocks the SSRF/beacon in
-/// `fetch_url_body`. Note: this screens the hostname's current DNS answer; a
-/// name that resolves public here and private on the real connection (DNS
-/// rebinding) is the residual a desktop link-preview accepts.
-async fn screen_host(host: &str, port: u16) -> Result<(), String> {
+/// least one address and EVERY address is public. Returns the screened
+/// addresses so the connection can use exactly what was checked.
+async fn resolve_public(host: &str, port: u16) -> Result<Vec<std::net::IpAddr>, String> {
     let host_port = format!("{host}:{port}");
     let ips = tauri::async_runtime::spawn_blocking(move || {
         use std::net::ToSocketAddrs;
@@ -955,19 +953,63 @@ async fn screen_host(host: &str, port: u16) -> Result<(), String> {
     if ips.is_empty() {
         return Err("host did not resolve".to_string());
     }
-    if ips.into_iter().any(is_blocked_ip) {
+    if ips.iter().copied().any(is_blocked_ip) {
         return Err("refusing to fetch a private, loopback, or link-local address".to_string());
     }
-    Ok(())
+    Ok(ips)
 }
+
+/// Screen the URL's own host up front, IP literals included (reqwest never
+/// hands a literal to the resolver below), for a clear error before connecting.
+async fn screen_host(host: &str, port: u16) -> Result<(), String> {
+    resolve_public(host, port).await.map(|_| ())
+}
+
+/// v7.94 (app-health S2) — every hostname a link-preview connection uses goes
+/// through this resolver: the first request, EVERY redirect hop, and the
+/// address actually connected to. v7.85 only screened the first host and
+/// compared redirect hosts as strings, so a public page could 302 to
+/// `localhost.`, `127.0.0.1.nip.io` or an intranet name and be followed.
+/// Connecting to the screened answer also closes the DNS-rebinding window
+/// that screen-then-connect left open.
+struct ScreeningResolver;
+
+impl reqwest::dns::Resolve for ScreeningResolver {
+    fn resolve(&self, name: reqwest::dns::Name) -> reqwest::dns::Resolving {
+        let host = name.as_str().to_string();
+        Box::pin(async move {
+            // Port 0: the connector substitutes the URL's port.
+            let ips = resolve_public(&host, 0).await?;
+            let addrs: reqwest::dns::Addrs =
+                Box::new(ips.into_iter().map(|ip| std::net::SocketAddr::new(ip, 0)));
+            Ok(addrs)
+        })
+    }
+}
+
+/// Is a redirect target's host an internal one by its literal form? Names are
+/// left to `ScreeningResolver`; this catches what never reaches a resolver —
+/// IP literals (IPv6 arrives bracketed from `host_str`, which v7.85 failed to
+/// parse and therefore let through) and the `localhost` family, including its
+/// trailing-dot spelling.
+fn is_internal_literal_host(host: &str) -> bool {
+    let bare = host.trim_start_matches('[').trim_end_matches(']');
+    if let Ok(ip) = bare.parse::<std::net::IpAddr>() {
+        return is_blocked_ip(ip);
+    }
+    let name = bare.trim_end_matches('.').to_ascii_lowercase();
+    name == "localhost" || name.ends_with(".localhost")
+}
+
+/// Link previews only need the page's <head>; a body past this is never read.
+const MAX_PREVIEW_BYTES: usize = 1024 * 1024;
 
 /// Fetch URL body using reqwest (works on all platforms including iOS/Android).
 /// Times out after 5 seconds.
 ///
-/// v7.85 (security review D4): only http/https, the host is screened against
-/// internal address ranges before the request, and redirects are capped and
-/// refused when they point at a literal internal host — so a public URL cannot
-/// bounce the fetch to `localhost` or the metadata endpoint.
+/// v7.85 (security review D4): only http/https and internal addresses are
+/// refused. v7.94: enforced on every hop by `ScreeningResolver`, and the body
+/// is capped at `MAX_PREVIEW_BYTES`.
 async fn fetch_url_body(url: &str) -> Result<String, Box<dyn std::error::Error>> {
     let parsed = reqwest::Url::parse(url)?;
     match parsed.scheme() {
@@ -980,23 +1022,12 @@ async fn fetch_url_body(url: &str) -> Result<String, Box<dyn std::error::Error>>
         .unwrap_or(if parsed.scheme() == "https" { 443 } else { 80 });
     screen_host(host, port).await?;
 
-    // Cap redirects, and refuse any hop whose target is a literal internal host
-    // (a public hostname that DNS-resolves internally is the rebinding residual
-    // noted on screen_host).
     let redirect_policy = reqwest::redirect::Policy::custom(|attempt| {
         if attempt.previous().len() >= 5 {
             return attempt.stop();
         }
-        if let Some(h) = attempt.url().host_str() {
-            let lower = h.to_ascii_lowercase();
-            let internal = lower == "localhost"
-                || lower
-                    .parse::<std::net::IpAddr>()
-                    .map(is_blocked_ip)
-                    .unwrap_or(false);
-            if internal {
-                return attempt.error("refusing to follow a redirect to an internal host");
-            }
+        if attempt.url().host_str().map(is_internal_literal_host).unwrap_or(true) {
+            return attempt.error("refusing to follow a redirect to an internal host");
         }
         attempt.follow()
     });
@@ -1005,11 +1036,39 @@ async fn fetch_url_body(url: &str) -> Result<String, Box<dyn std::error::Error>>
         .timeout(std::time::Duration::from_secs(5))
         .user_agent("Mozilla/5.0 (compatible; ScriptCraft/1.0)")
         .redirect(redirect_policy)
+        .dns_resolver(std::sync::Arc::new(ScreeningResolver))
         .build()?;
 
-    let resp = client.get(url).send().await?;
-    let body = resp.text().await?;
-    Ok(body)
+    let mut resp = client.get(url).send().await?;
+    let mut body: Vec<u8> = Vec::new();
+    while let Some(chunk) = resp.chunk().await? {
+        let room = MAX_PREVIEW_BYTES - body.len();
+        body.extend_from_slice(&chunk[..chunk.len().min(room)]);
+        if body.len() >= MAX_PREVIEW_BYTES {
+            break;
+        }
+    }
+    Ok(String::from_utf8_lossy(&body).into_owned())
+}
+
+#[cfg(test)]
+mod link_preview_screen_tests {
+    use super::is_internal_literal_host;
+
+    #[test]
+    fn literal_internal_hosts_are_refused() {
+        for h in ["localhost", "LOCALHOST", "localhost.", "api.localhost", "127.0.0.1",
+                  "10.1.2.3", "169.254.169.254", "[::1]", "[::ffff:127.0.0.1]", "[fe80::1]"] {
+            assert!(is_internal_literal_host(h), "{h} should be refused");
+        }
+    }
+
+    #[test]
+    fn public_hosts_are_left_to_the_resolver() {
+        for h in ["example.com", "8.8.8.8", "[2606:4700::1111]", "notlocalhost.com"] {
+            assert!(!is_internal_literal_host(h), "{h} should pass the literal check");
+        }
+    }
 }
 
 /// Extract an Open Graph meta tag value from HTML.
