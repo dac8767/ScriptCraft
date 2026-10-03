@@ -1,5 +1,12 @@
 [
   {
+    "version": "7.93",
+    "date": "2026-10-02",
+    "changes": [
+      "Fix: the app could fail to open with \"Failed to resolve import react-is\". A library the statistics charts rely on was never listed as a dependency, so newer versions of npm left it out when installing. It is now listed explicitly."
+    ]
+  },
+  {
     "version": "7.92",
     "date": "2026-08-24",
     "changes": [
