@@ -25,6 +25,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { useFormattingTemplateStore } from '../stores/formattingTemplateStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
+import { useNotebookStore, NOTEBOOK_STORAGE_KEY } from '../stores/notebookStore';
 
 const ed = () => useEditorStore.getState();
 
@@ -277,6 +278,7 @@ describe('the v6.70 preset parts', () => {
     expect(PRESET_PARTS.map((p) => p.id)).toEqual([
       'settings', 'customize', 'themes', 'workspaces',
       'annotations', 'shortcuts', 'design', 'helpertext', 'outline',
+      'scrapbook',                       // v7.96
     ]);
     expect(presetPart('annotations')!.label).toBe('Annotation Presets');
     expect(presetPart('shortcuts')!.label).toBe('Keyboard Shortcuts');
@@ -346,5 +348,55 @@ describe('the v6.70 preset parts', () => {
     const ids = PRESET_PARTS.map((p) => p.id);
     const json = buildPresetBundle(ids, '2026-08-09T00:00:00.000Z');
     expect(readPresetFile(json).ids).toEqual(ids);
+  });
+});
+
+/* v7.96, Derek: the Scrapbook gets its own checkbox instead of riding,
+   unseen, inside Settings. */
+describe('the Scrapbook part (v7.96)', () => {
+  const page = (id: string, title: string) => ({ id, title, mode: 'canvas', html: '', tables: [], boxes: [], createdAt: 1 });
+  const tree = (ids: string[]) => [{ type: 'section', id: 's', name: 'S', collapsed: false, children: ids.map((id) => ({ type: 'page', id })) }];
+  const setNotebook = (ids: string[]) => useNotebookStore.setState({
+    pages: Object.fromEntries(ids.map((id) => [id, page(id, `Page ${id}`)])) as never,
+    tree: tree(ids) as never,
+    selectedPageId: ids[0] ?? null,
+  });
+
+  beforeEach(() => localStorage.clear());
+
+  it('is a row of its own, counted by pages', () => {
+    setNotebook(['a', 'b']);
+    expect(presetPart('scrapbook')?.label).toBe('Scrapbook');
+    expect(presetPart('scrapbook')?.count()).toBe(2);
+  });
+
+  it('round-trips through a bundle, and Settings no longer carries it', () => {
+    setNotebook(['a', 'b']);
+    localStorage.setItem(NOTEBOOK_STORAGE_KEY, JSON.stringify({ pages: {}, tree: [], selectedPageId: null }));
+    const json = buildPresetBundle(['settings', 'scrapbook'], '2026-10-02T00:00:00.000Z');
+    const doc = JSON.parse(json) as PresetBundle;
+    expect((doc.parts.settings as Record<string, unknown>)[NOTEBOOK_STORAGE_KEY]).toBeUndefined();
+
+    setNotebook(['z']);
+    const { applied, failed } = applyPresetFile(json, ['scrapbook']);
+    expect(failed).toEqual([]);
+    expect(applied).toEqual(['2 Scrapbook pages']);
+    expect(Object.keys(useNotebookStore.getState().pages).sort()).toEqual(['a', 'b']);
+  });
+
+  it('an older file that hid it inside Settings now NAMES it, and still restores it', () => {
+    const nb = { pages: { old: page('old', 'From an old backup') }, tree: tree(['old']), selectedPageId: 'old' };
+    const legacy = JSON.stringify({ kind: 'settings-backup', data: { 'opendraft:theme': 'dark', [NOTEBOOK_STORAGE_KEY]: JSON.stringify(nb) } });
+    expect(readPresetFile(legacy).ids).toEqual(['settings', 'scrapbook']);
+    setNotebook(['z']);
+    applyPresetFile(legacy);
+    expect(Object.keys(useNotebookStore.getState().pages)).toEqual(['old']);
+  });
+
+  it('refuses something that is not a Scrapbook, and leaves yours alone', () => {
+    setNotebook(['keep']);
+    const bad = JSON.stringify({ kind: 'preset-bundle', parts: { scrapbook: 'nope' } });
+    expect(applyPresetFile(bad)).toEqual({ applied: [], failed: ['Scrapbook'] });
+    expect(Object.keys(useNotebookStore.getState().pages)).toEqual(['keep']);
   });
 });

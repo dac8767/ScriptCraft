@@ -78,6 +78,8 @@ const PART_DESC: Record<PresetPartId, (n: number | null) => string> = {
   shortcuts: (n) => (n ? `Your ${n} rebound keyboard shortcut${n === 1 ? '' : 's'}.` : 'Your keyboard shortcuts. None rebound yet — change one in Settings ▸ Shortcuts.'),
   design: (n) => (n ? `Your ${n} adjusted design value${n === 1 ? '' : 's'} — sizes, spacing and padding from the Design window.` : 'Sizes, spacing and padding from the Design window. Nothing adjusted yet.'),
   helpertext: (n) => (n ? `Your ${n} helper text change${n === 1 ? '' : 's'} — tooltips you have rewritten or hidden.` : 'Tooltips you have rewritten or hidden. None changed yet — edit one in the Helper Text window.'),
+  /* v7.96, Derek: the Scrapbook used to ride inside Settings, unseen. */
+  scrapbook: (n) => (n ? `Your Scrapbook — all ${n} page${n === 1 ? '' : 's'}, with their text, images and tables. Importing replaces the Scrapbook you have.` : 'Your Scrapbook pages. Nothing in it yet.'),
 };
 
 export default function PresetsPanel({ showImports = true, preCheck }: {

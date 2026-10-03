@@ -108,8 +108,8 @@ jobs:
       - name: Upload legacy DMG to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag }}
         run: |
-          TAG="${{ github.event.inputs.tag }}"
           VERSION="${TAG#v}"
           DMG=$(find src-tauri/target/x86_64-apple-darwin/release/bundle/dmg -name "*.dmg" | head -1)
           if [ -z "$DMG" ]; then

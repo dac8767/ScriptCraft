@@ -35,9 +35,15 @@ function legacyTranspile(): Plugin | null {
 export default defineConfig({
   plugins: [react(), legacyTranspile()].filter(Boolean),
 
-  // Allow Tauri dev server to connect
+  /* v7.96 (app-health hardening): this machine only. `host: true` served the
+     whole source tree — and Vite's file-serving surface — to anyone on the
+     same Wi-Fi during every `npm run desktop`. `tauri ios dev` on a physical
+     device sets TAURI_DEV_HOST to this Mac's LAN address, which is the one
+     case that needs the network; 127.0.0.1 (not "localhost", which can bind
+     ::1 only) is what tauri.conf.json's devUrl points at. For a one-off LAN
+     test from a browser: `npx vite --host`. */
   server: {
-    host: true,
+    host: process.env.TAURI_DEV_HOST || '127.0.0.1',
     strictPort: true,
   },
 

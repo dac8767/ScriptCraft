@@ -33,8 +33,7 @@ export const BACKUP_EXCLUDED = new Set<string>([
      carrying these silently re-pointed every save's mirror copy (and the
      snapshot / screenshot / download folders, the cloud sign-in app and the
      cloud API server) at a place the file's author chose. They are per-device
-     anyway — a folder on one Mac means nothing on another. The on/off toggles
-     still travel: without a folder they write nowhere. */
+     anyway — a folder on one Mac means nothing on another. */
   'opendraft:saveloc:localFolder',
   'opendraft:saveloc:backupFolder',
   'opendraft:saveloc:snapLocalFolder',
@@ -43,6 +42,27 @@ export const BACKUP_EXCLUDED = new Set<string>([
   'opendraft:saveloc:gdriveClientId',
   'opendraft:saveloc:onedriveClientId',
   'opendraft:cloudApiUrl',
+  /* v7.96: the toggles go with their folders after all — imported without
+     one, Settings shows a ticked box pointing nowhere. */
+  'opendraft:saveloc:saveToBackupFolder',
+  'opendraft:saveloc:snapToLocalFolder',
+  /* v7.96 (app-health hardening): the PERSON and the MACHINE, which a preset
+     handed to someone else must not carry. Your name and email (they would
+     file feedback as you), unsent feedback, where your window sat (another
+     screen opens it off-screen), and per-script "last edit" positions and
+     last-open tabs that mean nothing on another disk. This is the same list
+     devtools/build-default-preset.mjs keeps out of the shipped defaults, and
+     settingsBackup.test.ts fails if the two drift apart. */
+  'opendraft:feedbackProfile',
+  'opendraft:feedbackQueue',
+  'opendraft:windowBounds',
+  'opendraft:bookmarks',
+  'opendraft:lastOpenedScript',
+  'opendraft:lastWindowTabs',
+  /* The Scrapbook is content, not a setting: it travels as its OWN preset
+     part (utils/presets.ts, "Scrapbook"), so it is a visible, optional
+     checkbox instead of riding silently inside "Settings". */
+  'opendraft:notebook',
 ]);
 
 /** Key prefixes that never travel either (v7.72).

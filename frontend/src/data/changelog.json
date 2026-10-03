@@ -1,5 +1,17 @@
 [
   {
+    "version": "7.96",
+    "date": "2026-10-03",
+    "changes": [
+      "The Scrapbook has its own checkbox in the preset window. It used to travel silently inside \"Settings\", so sharing a settings preset handed over your Scrapbook and importing someone else's replaced yours. Older backup files still restore it — the import now names it.",
+      "Presets no longer carry things that belong to you or this computer rather than to your setup: your feedback name and email, unsent feedback, the window's position, per-script last-edit positions, last-open tabs, and the save-to-folder on/off switches.",
+      "Security: the app no longer contains a general-purpose web relay (the old route to a local cloud server that no longer exists), so nothing inside it can send requests that bypass its own network rules.",
+      "Security: embedded YouTube and Vimeo videos run in a sandbox — they can play, go fullscreen and open YouTube in your browser, but cannot navigate the app or show forms and dialogs.",
+      "Spell-check dictionaries are downloaded from fixed, verified versions instead of whatever was published most recently.",
+      "Developer: the dev server only listens on this computer (it was visible to anyone on the same Wi-Fi), and the release workflows no longer paste their inputs into shell scripts."
+    ]
+  },
+  {
     "version": "7.95",
     "date": "2026-10-02",
     "changes": [

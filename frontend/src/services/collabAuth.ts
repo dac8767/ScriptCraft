@@ -43,9 +43,7 @@ async function backendAuthRequest<T>(path: string, options?: RequestInit): Promi
   const url = `${base}/auth${path}`;
   let res: Response;
   try {
-    // platformFetch tunnels through Tauri's http_fetch invoke when running
-    // inside a WebView, sidestepping the WKWebView/Android-WebView mixed-
-    // content block on plain HTTP backends.
+    // platformFetch is plain fetch() since v7.96 — see services/platform.ts.
     res = await platformFetch(url, {
       ...options,
       headers: {

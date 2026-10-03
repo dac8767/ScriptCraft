@@ -808,70 +808,12 @@ fn keychain_delete(_key: String) -> Result<(), String> {
     Ok(())
 }
 
-// ── Generic HTTP fetch command ────────────────────────────────────────────
-// Makes HTTP requests from Rust, bypassing WebView mixed-content restrictions.
-// The Tauri WebView loads from https://tauri.localhost, so browser fetch() to
-// plain http:// addresses (collab server, local backends) is blocked.
+// v7.96 (app-health hardening): the generic `http_fetch` command is GONE. It
+// let the webview send any method, body and Authorization header to any URL,
+// outside the CSP — a full proxy for anything that ever ran in the page. It
+// existed to reach a plain-http sidecar backend on localhost:18321 that no
+// longer ships; a real cloud server will be https and is reached with fetch().
 
-#[derive(serde::Serialize)]
-struct HttpFetchResponse {
-    status: u16,
-    body: String,
-}
-
-#[tauri::command]
-async fn http_fetch(
-    url: String,
-    method: Option<String>,
-    body: Option<String>,
-    content_type: Option<String>,
-    authorization: Option<String>,
-) -> Result<HttpFetchResponse, String> {
-    let method_str = method.as_deref().unwrap_or("GET");
-    eprintln!("[http_fetch] {} {}", method_str, url);
-
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .map_err(|e| {
-            eprintln!("[http_fetch] Client build error: {}", e);
-            format!("HTTP client error: {}", e)
-        })?;
-
-    let req_method = method_str.parse::<reqwest::Method>()
-        .map_err(|e| format!("Invalid method '{}': {}", method_str, e))?;
-
-    let mut req = client.request(req_method, &url);
-
-    if let Some(ct) = &content_type {
-        req = req.header("Content-Type", ct.as_str());
-    }
-
-    if let Some(auth) = &authorization {
-        req = req.header("Authorization", auth.as_str());
-    }
-
-    if let Some(b) = &body {
-        req = req.body(b.clone());
-    }
-
-    let resp = req.send().await
-        .map_err(|e| {
-            eprintln!("[http_fetch] {} {} → FAILED: {}", method_str, url, e);
-            format!("Request to {} failed: {}", url, e)
-        })?;
-
-    let status = resp.status().as_u16();
-    let body_text = resp.text().await
-        .map_err(|e| format!("Failed to read response body: {}", e))?;
-
-    eprintln!("[http_fetch] {} {} → {} ({} bytes)", method_str, url, status, body_text.len());
-
-    Ok(HttpFetchResponse {
-        status,
-        body: body_text,
-    })
-}
 
 // ── Link preview command ───────────────────────────────────────────────────
 // Fetches a URL and extracts Open Graph metadata. Used by the editor's link
@@ -1619,7 +1561,6 @@ pub fn run() {
             keychain_set,
             keychain_get,
             keychain_delete,
-            http_fetch,
             fetch_link_preview,
             get_opened_file,
             read_content_uri,

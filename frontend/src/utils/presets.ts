@@ -28,6 +28,7 @@ import { resolveMoresContds, DEFAULT_MORES_CONTDS, type MoresContds, type ThemeI
 import { gatherSettings, applyBackup } from './settingsBackup';
 import { useOutlinePresetStore } from '../stores/outlinePresetStore';
 import { useShortcutStore } from '../stores/shortcutStore';
+import { useNotebookStore, loadNotebook, NOTEBOOK_STORAGE_KEY } from '../stores/notebookStore';
 
 /** `base` + `_<type>.json` — the one place the suffix convention lives. */
 export const typedExportName = (base: string, type: string): string => `${base}_${type}.json`;
@@ -286,7 +287,7 @@ export function applySettingsFromScriptFile(json: string): ScriptSettingsApplied
    the HTTP backend, which the desktop app doesn't run — see v6.69). */
 export type PresetPartId =
   | 'settings' | 'customize' | 'themes' | 'workspaces' | 'outline'
-  | 'annotations' | 'shortcuts' | 'design' | 'helpertext';
+  | 'annotations' | 'shortcuts' | 'design' | 'helpertext' | 'scrapbook';
 
 export interface PresetBundle {
   app: 'ScriptCraft';
@@ -450,6 +451,29 @@ export const PRESET_PARTS: PresetPart[] = [
       return `${res.added} outline preset${res.added === 1 ? '' : 's'}`;
     },
   },
+  /* v7.96, Derek: the Scrapbook gets its own checkbox. It used to ride
+     inside "Settings" (every opendraft:* key did), so sharing a settings
+     preset handed over your Scrapbook, and importing someone else's
+     replaced yours while the confirmation said only "Settings". */
+  {
+    id: 'scrapbook',
+    label: 'Scrapbook',
+    count: () => Object.keys(useNotebookStore.getState().pages).length,
+    collect: () => {
+      const { pages, tree, selectedPageId } = useNotebookStore.getState();
+      return { pages, tree, selectedPageId };
+    },
+    apply: (p) => {
+      const nb = p as { pages?: unknown } | null;
+      if (!nb || typeof nb !== 'object' || !nb.pages || typeof nb.pages !== 'object') {
+        throw new Error('not a Scrapbook');
+      }
+      localStorage.setItem(NOTEBOOK_STORAGE_KEY, JSON.stringify(p));
+      useNotebookStore.setState(loadNotebook());   // validated + migrated on the way in
+      const n = Object.keys(useNotebookStore.getState().pages).length;
+      return `${n} Scrapbook page${n === 1 ? '' : 's'}`;
+    },
+  },
 ];
 
 export const presetPart = (id: PresetPartId): PresetPart | undefined => PRESET_PARTS.find((p) => p.id === id);
@@ -490,6 +514,14 @@ export function readPresetFile(json: string): { parts: Partial<Record<PresetPart
     parts.outline = doc;                       // outlinePresetStore.exportJson()
   } else {
     throw new Error('That file is not a ScriptCraft preset.');
+  }
+
+  /* v7.96: a file written before the Scrapbook had its own part carries it
+     inside Settings. Lift it out, so the confirmation names it and it is
+     applied as the Scrapbook — Settings no longer accepts that key. */
+  const legacyNb = (parts.settings as Record<string, unknown> | undefined)?.[NOTEBOOK_STORAGE_KEY];
+  if (parts.scrapbook === undefined && typeof legacyNb === 'string') {
+    try { parts.scrapbook = JSON.parse(legacyNb); } catch { /* unreadable — leave it out */ }
   }
 
   const ids = PRESET_PARTS.filter((p) => parts[p.id] !== undefined).map((p) => p.id);

@@ -52,8 +52,10 @@ try {
      Seven rows now. The two part ids stay REGISTERED (a file he exported from
      either window still imports through Restore) — they are only unlisted,
      and the absence is asserted by name below. */
+  /* v7.96, Derek: the Scrapbook gets its own row — it used to ride, unseen,
+     inside Settings. Eight rows. */
   const WANT = ['Settings', 'Customizations', 'Themes', 'Workspaces',
-    'Annotation Presets', 'Keyboard Shortcuts', 'Outline Presets'];
+    'Annotation Presets', 'Keyboard Shortcuts', 'Outline Presets', 'Scrapbook'];
   ok(list.length === WANT.length && list.map((r) => r.label).join(' · ') === WANT.join(' · '),
     `one row per preset item, all ${WANT.length} of them (${list.map((r) => r.label).join(', ')})`);
   const checks = await page.evaluate((p) => document.querySelectorAll(`${p} .fs-presets-check`).length, P);

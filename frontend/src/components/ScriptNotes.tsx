@@ -149,7 +149,16 @@ export const NoteContentDisplay: React.FC<{
         } else {
           elements.push(
             <div key={i} className="note-media-embed note-media-video">
-              <iframe src={embedUrl} allowFullScreen title="video" />
+              {/* v7.96 (app-health hardening): the players need scripts and
+                  their own origin to play, and "Watch on YouTube" opens a
+                  popup — nothing else. No top-window navigation, forms,
+                  downloads or dialogs from inside a note. */}
+              <iframe
+                src={embedUrl}
+                allowFullScreen
+                title="video"
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox"
+              />
             </div>,
           );
         }

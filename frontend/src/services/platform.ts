@@ -49,60 +49,16 @@ export function getOS(): 'macos' | 'windows' | 'linux' | 'android' | 'ios' | 'un
 }
 
 /**
- * Platform-aware fetch that works around Tauri's mixed-content restriction.
+ * fetch(), under the name every caller already uses.
  *
- * The Tauri WebView loads from https://tauri.localhost, so browser fetch()
- * to plain http:// addresses (collab server, local backends) is blocked by
- * WKWebView as mixed content.  On Tauri we route through a Rust command
- * that uses curl; on web we use standard fetch().
+ * v7.96 (app-health hardening): this used to tunnel Tauri requests through a
+ * Rust `http_fetch` command so the webview could reach a plain-http backend
+ * (the old sidecar on localhost:18321) despite mixed-content rules. That
+ * command was a proxy to anywhere, outside the CSP, and the backend it served
+ * no longer ships — so requests now go through the webview like any other,
+ * and the CSP's connect-src decides where they may go. A future cloud server
+ * must be https, send CORS headers, and be added to connect-src.
  */
-/**
- * Read a header value from any of the three shapes RequestInit.headers can
- * take: Headers, Record<string,string>, or [name,value][]. The previous
- * implementation only handled the plain-object form, which silently dropped
- * the Authorization header that authedFetch attaches via `new Headers()` —
- * resulting in a 401 storm on every authed request from Tauri.
- */
-function pickHeader(headers: HeadersInit | undefined, name: string): string | undefined {
-  if (!headers) return undefined;
-  const lower = name.toLowerCase();
-  if (typeof Headers !== 'undefined' && headers instanceof Headers) {
-    return headers.get(name) ?? undefined;
-  }
-  if (Array.isArray(headers)) {
-    const hit = headers.find(([k]) => String(k).toLowerCase() === lower);
-    return hit ? hit[1] : undefined;
-  }
-  for (const [k, v] of Object.entries(headers as Record<string, string>)) {
-    if (k.toLowerCase() === lower) return v;
-  }
-  return undefined;
-}
-
-export async function platformFetch(url: string, options?: RequestInit): Promise<Response> {
-  if (!isTauri()) return fetch(url, options);
-
-  const method = options?.method || 'GET';
-  console.log(`[platformFetch] ${method} ${url} (via Tauri invoke)`);
-
-  try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    const result = await invoke<{ status: number; body: string }>('http_fetch', {
-      url,
-      method,
-      body: typeof options?.body === 'string' ? options.body : undefined,
-      contentType: pickHeader(options?.headers, 'Content-Type'),
-      authorization: pickHeader(options?.headers, 'Authorization'),
-    });
-
-    console.log(`[platformFetch] ${method} ${url} → ${result.status} (${result.body.length} bytes)`);
-
-    return new Response(result.body, {
-      status: result.status,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (err) {
-    console.error(`[platformFetch] ${method} ${url} → invoke FAILED:`, err);
-    throw err;
-  }
+export function platformFetch(url: string, options?: RequestInit): Promise<Response> {
+  return fetch(url, options);
 }

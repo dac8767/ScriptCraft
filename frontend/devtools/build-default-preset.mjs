@@ -19,7 +19,10 @@ import { pathToFileURL } from 'node:url';
 
 const OUT = new URL('../src/data/defaultPreset.json', import.meta.url);
 
-/** localStorage keys that describe the MACHINE or the PERSON, not the product. */
+/** localStorage keys that describe the MACHINE or the PERSON, not the product.
+ *  v7.96: the app's own preset export refuses every one of these too
+ *  (isBackupExcluded, utils/settingsBackup.ts) — settingsBackup.test.ts fails
+ *  if a key is added here and not there. */
 export const EXCLUDED_SETTINGS = {
   'opendraft:feedbackProfile':
     "Derek's name and email — every tester would file feedback as him",

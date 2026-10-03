@@ -66,7 +66,8 @@ export type NbDropTarget =
   | { kind: 'top' }
   | { kind: 'into' | 'before' | 'after'; id: string };
 
-const STORAGE_KEY = 'opendraft:notebook';
+export const NOTEBOOK_STORAGE_KEY = 'opendraft:notebook';
+const STORAGE_KEY = NOTEBOOK_STORAGE_KEY;
 
 export function nbUid(): string {
   return 'n' + Math.random().toString(36).slice(2, 9);

@@ -78,9 +78,12 @@ jobs:
         # browser or a build.
         run: node frontend/devtools/check-updater-config.mjs --release
       - name: The tag matches the version in the tree
+        # v7.96: inputs reach the shell through env, never ${{ }} inside run: —
+        # an interpolated value is pasted into the script as CODE before bash runs.
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          TAG="${{ inputs.tag }}"
           # Read APP_VERSION straight out of the source of truth. The first cut
           # here called require() on sync-version.mjs — an ES module, so it
           # always threw, and the answer only ever came from the `||` fallback.
@@ -264,11 +267,13 @@ jobs:
       # <name> carries the target triple — which is exactly what the generator
       # reads to tell an Apple Silicon build from an Intel one.
       - name: Build latest.json from what was actually built
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
           node frontend/devtools/build-release-manifest.mjs \
             --artifacts artifacts \
-            --base-url "https://github.com/dac8767/ScriptCraft-releases/releases/download/${{ inputs.tag }}" \
-            --url "https://github.com/dac8767/ScriptCraft-releases/releases/tag/${{ inputs.tag }}" \
+            --base-url "https://github.com/dac8767/ScriptCraft-releases/releases/download/${TAG}" \
+            --url "https://github.com/dac8767/ScriptCraft-releases/releases/tag/${TAG}" \
             -o latest.json
           cat latest.json
 
@@ -277,10 +282,11 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
           REPO: dac8767/ScriptCraft-releases
           TAG: ${{ inputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
         run: |
           set -euo pipefail
           FLAGS=""
-          if [ "${{ inputs.prerelease }}" = "true" ]; then FLAGS="--prerelease"; fi
+          if [ "$PRERELEASE" = "true" ]; then FLAGS="--prerelease"; fi
 
           # The RELEASE first: latest.json points at these urls, so a manifest
           # published before the files it names would send every running copy
@@ -288,9 +294,9 @@ jobs:
           gh release create "$TAG" --repo "$REPO" --title "ScriptCraft $TAG" \
             --notes "$(node -e "
               const l=require('./frontend/src/data/changelog.json');
-              const v='$TAG'.replace(/^v/,'');
+              const v=process.env.TAG.replace(/^v/,'');
               const e=l.find(x=>x.version===v);
-              process.stdout.write((e?.changes||[]).map(c=>'- '+c).join('\n')||'ScriptCraft $TAG');
+              process.stdout.write((e?.changes||[]).map(c=>'- '+c).join('\n')||'ScriptCraft '+process.env.TAG);
             ")" $FLAGS || echo "release already exists — adding assets to it"
           find artifacts -type f -print0 \
             | xargs -0 gh release upload "$TAG" --repo "$REPO" --clobber

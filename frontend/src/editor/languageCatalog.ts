@@ -15,7 +15,7 @@ export interface CatalogLanguage {
   sample?: string;
   /** Where to download from. */
   source:
-    | { kind: 'jsdelivr'; npm: string }
+    | { kind: 'jsdelivr'; npm: string; version: string }
     | { kind: 'libreoffice'; folder: string; baseName?: string }
     /** Hunspell files committed to this repo under `dictionaries-extra/<path>/`
      *  and served via jsDelivr's GitHub CDN. Used for languages where the
@@ -29,16 +29,16 @@ export interface CatalogLanguage {
 export const BUILTIN: CatalogLanguage = {
   code: 'en_US',
   label: 'English (US)',
-  source: { kind: 'jsdelivr', npm: 'dictionary-en-us' },
+  source: { kind: 'jsdelivr', npm: 'dictionary-en-us', version: '2.2.1' },
   sample: 'Aa',
 };
 
 /** Languages the user can install. */
 export const CATALOG: CatalogLanguage[] = [
   // English variants (wooorm)
-  { code: 'en_GB', label: 'English (UK)', source: { kind: 'jsdelivr', npm: 'dictionary-en-gb' }, sample: 'Aa' },
-  { code: 'en_AU', label: 'English (Australia)', source: { kind: 'jsdelivr', npm: 'dictionary-en-au' }, sample: 'Aa' },
-  { code: 'en_CA', label: 'English (Canada)', source: { kind: 'jsdelivr', npm: 'dictionary-en-ca' }, sample: 'Aa' },
+  { code: 'en_GB', label: 'English (UK)', source: { kind: 'jsdelivr', npm: 'dictionary-en-gb', version: '3.0.0' }, sample: 'Aa' },
+  { code: 'en_AU', label: 'English (Australia)', source: { kind: 'jsdelivr', npm: 'dictionary-en-au', version: '3.0.0' }, sample: 'Aa' },
+  { code: 'en_CA', label: 'English (Canada)', source: { kind: 'jsdelivr', npm: 'dictionary-en-ca', version: '3.0.0' }, sample: 'Aa' },
 
   // Indic languages (LibreOffice)
   { code: 'hi_IN', label: 'Hindi (हिन्दी)', source: { kind: 'libreoffice', folder: 'hi_IN' }, sample: 'क ख' },
@@ -58,22 +58,22 @@ export const CATALOG: CatalogLanguage[] = [
   { code: 'si_LK', label: 'Sinhala (සිංහල)', source: { kind: 'libreoffice', folder: 'si_LK' }, sample: 'අ ආ' },
 
   // European (wooorm)
-  { code: 'fr', label: 'French (Français)', source: { kind: 'jsdelivr', npm: 'dictionary-fr' }, sample: 'Àà' },
-  { code: 'de', label: 'German (Deutsch)', source: { kind: 'jsdelivr', npm: 'dictionary-de' }, sample: 'Ää' },
-  { code: 'es', label: 'Spanish (Español)', source: { kind: 'jsdelivr', npm: 'dictionary-es' }, sample: 'Ññ' },
-  { code: 'it', label: 'Italian (Italiano)', source: { kind: 'jsdelivr', npm: 'dictionary-it' }, sample: 'Èè' },
-  { code: 'pt', label: 'Portuguese', source: { kind: 'jsdelivr', npm: 'dictionary-pt' }, sample: 'Ãã' },
-  { code: 'pt_BR', label: 'Portuguese (Brazil)', source: { kind: 'jsdelivr', npm: 'dictionary-pt-br' }, sample: 'Ãã' },
-  { code: 'pt_PT', label: 'Portuguese (Portugal)', source: { kind: 'jsdelivr', npm: 'dictionary-pt-pt' }, sample: 'Ãã' },
-  { code: 'nl', label: 'Dutch (Nederlands)', source: { kind: 'jsdelivr', npm: 'dictionary-nl' }, sample: 'Ïï' },
-  { code: 'ru', label: 'Russian (Русский)', source: { kind: 'jsdelivr', npm: 'dictionary-ru' }, sample: 'Аа' },
-  { code: 'pl', label: 'Polish (Polski)', source: { kind: 'jsdelivr', npm: 'dictionary-pl' }, sample: 'Łł' },
-  { code: 'tr', label: 'Turkish (Türkçe)', source: { kind: 'jsdelivr', npm: 'dictionary-tr' }, sample: 'Şş' },
+  { code: 'fr', label: 'French (Français)', source: { kind: 'jsdelivr', npm: 'dictionary-fr', version: '3.0.0' }, sample: 'Àà' },
+  { code: 'de', label: 'German (Deutsch)', source: { kind: 'jsdelivr', npm: 'dictionary-de', version: '3.0.0' }, sample: 'Ää' },
+  { code: 'es', label: 'Spanish (Español)', source: { kind: 'jsdelivr', npm: 'dictionary-es', version: '4.0.0' }, sample: 'Ññ' },
+  { code: 'it', label: 'Italian (Italiano)', source: { kind: 'jsdelivr', npm: 'dictionary-it', version: '2.0.0' }, sample: 'Èè' },
+  { code: 'pt', label: 'Portuguese', source: { kind: 'jsdelivr', npm: 'dictionary-pt', version: '4.0.0' }, sample: 'Ãã' },
+  { code: 'pt_BR', label: 'Portuguese (Brazil)', source: { kind: 'jsdelivr', npm: 'dictionary-pt-br', version: '2.0.1' }, sample: 'Ãã' },
+  { code: 'pt_PT', label: 'Portuguese (Portugal)', source: { kind: 'jsdelivr', npm: 'dictionary-pt-pt', version: '2.0.0' }, sample: 'Ãã' },
+  { code: 'nl', label: 'Dutch (Nederlands)', source: { kind: 'jsdelivr', npm: 'dictionary-nl', version: '2.0.0' }, sample: 'Ïï' },
+  { code: 'ru', label: 'Russian (Русский)', source: { kind: 'jsdelivr', npm: 'dictionary-ru', version: '3.0.0' }, sample: 'Аа' },
+  { code: 'pl', label: 'Polish (Polski)', source: { kind: 'jsdelivr', npm: 'dictionary-pl', version: '2.0.0' }, sample: 'Łł' },
+  { code: 'tr', label: 'Turkish (Türkçe)', source: { kind: 'jsdelivr', npm: 'dictionary-tr', version: '2.0.0' }, sample: 'Şş' },
 
   // Other (LibreOffice for Arabic; wooorm for the rest)
   { code: 'ar', label: 'Arabic (العربية)', source: { kind: 'libreoffice', folder: 'ar' }, sample: 'ا ب' },
-  { code: 'fa', label: 'Persian (فارسی)', source: { kind: 'jsdelivr', npm: 'dictionary-fa' }, sample: 'ا ب' },
-  { code: 'he', label: 'Hebrew (עברית)', source: { kind: 'jsdelivr', npm: 'dictionary-he' }, sample: 'א ב' },
+  { code: 'fa', label: 'Persian (فارسی)', source: { kind: 'jsdelivr', npm: 'dictionary-fa', version: '2.0.0' }, sample: 'ا ب' },
+  { code: 'he', label: 'Hebrew (עברית)', source: { kind: 'jsdelivr', npm: 'dictionary-he', version: '2.0.0' }, sample: 'א ב' },
 ];
 
 const ALL_BY_CODE = new Map<string, CatalogLanguage>(
@@ -111,12 +111,22 @@ export function findLanguage(code: string): CatalogLanguage | undefined {
  *  check-v767 fails if the two drift apart. */
 const OPENDRAFT_EXTRA_BASE = '/dictionaries-extra';
 
+/** v7.96 (app-health hardening): every downloaded dictionary is PINNED.
+ *  Unpinned, `npm/<pkg>` and LibreOffice `master` meant whatever was published
+ *  next is what a user downloaded — a changed or hijacked upstream would reach
+ *  every new install with no change here. Pinned to exactly what was being
+ *  served on 2026-10-02 (byte-identical, checked per file). Note jsDelivr's
+ *  unpinned URL is NOT npm "latest" for deprecated packages — dictionary-en-us
+ *  and dictionary-pt-br resolve to 2.2.1 / 2.0.1, and their 3.0.0 has no
+ *  index.aff at all. Bump deliberately, and re-check the files exist. */
+const LIBREOFFICE_REF = '32b006a2c22a4ac7e8ed3f03346f7b3d85a970a4'; // master, 2026-08-22
+
 /** Build .aff/.dic download URLs for a catalog entry. */
 export function urlsFor(lang: CatalogLanguage): { aff: string; dic: string } {
   if (lang.source.kind === 'jsdelivr') {
     return {
-      aff: `https://cdn.jsdelivr.net/npm/${lang.source.npm}/index.aff`,
-      dic: `https://cdn.jsdelivr.net/npm/${lang.source.npm}/index.dic`,
+      aff: `https://cdn.jsdelivr.net/npm/${lang.source.npm}@${lang.source.version}/index.aff`,
+      dic: `https://cdn.jsdelivr.net/npm/${lang.source.npm}@${lang.source.version}/index.dic`,
     };
   }
   if (lang.source.kind === 'opendraft-extra') {
@@ -129,7 +139,7 @@ export function urlsFor(lang: CatalogLanguage): { aff: string; dic: string } {
   }
   const { folder, baseName } = lang.source;
   const name = baseName || folder;
-  const base = `https://raw.githubusercontent.com/LibreOffice/dictionaries/master/${folder}/${name}`;
+  const base = `https://raw.githubusercontent.com/LibreOffice/dictionaries/${LIBREOFFICE_REF}/${folder}/${name}`;
   return { aff: `${base}.aff`, dic: `${base}.dic` };
 }
 

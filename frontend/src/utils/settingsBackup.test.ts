@@ -145,9 +145,45 @@ describe('where this machine writes and connects never travels', () => {
     for (const k of DEVICE_KEYS.slice(1)) expect(localStorage.getItem(k)).toBeNull();
   });
 
-  it('an export leaves them behind', () => {
+  it('an export leaves them behind — the on/off toggles too (v7.96)', () => {
     for (const k of DEVICE_KEYS) localStorage.setItem(k, '/somewhere');
     localStorage.setItem('opendraft:saveloc:saveToBackupFolder', '1');
-    expect(gatherSettings()).toEqual({ 'opendraft:saveloc:saveToBackupFolder': '1' });
+    localStorage.setItem('opendraft:saveloc:snapToLocalFolder', '1');
+    localStorage.setItem('opendraft:theme', 'dark');
+    expect(gatherSettings()).toEqual({ 'opendraft:theme': 'dark' });
+  });
+});
+
+/**
+ * v7.96 (app-health hardening): a "Settings" preset is something people
+ * share. It must not carry the person (name, email, unsent feedback) or the
+ * machine (window position, per-script positions, last-open tabs) — nor the
+ * Scrapbook, which is content and travels as its own visible preset part.
+ */
+describe('the person, the machine and the Scrapbook stay out of Settings', () => {
+  const PERSONAL = [
+    'opendraft:feedbackProfile', 'opendraft:feedbackQueue', 'opendraft:windowBounds',
+    'opendraft:bookmarks', 'opendraft:lastOpenedScript', 'opendraft:lastWindowTabs',
+    'opendraft:notebook',
+  ];
+
+  it('an export leaves them behind and an import refuses them', () => {
+    for (const k of PERSONAL) localStorage.setItem(k, '{"mine":true}');
+    localStorage.setItem('opendraft:theme', 'dark');
+    expect(gatherSettings()).toEqual({ 'opendraft:theme': 'dark' });
+
+    localStorage.clear();
+    const data: Record<string, string> = { 'opendraft:theme': 'light' };
+    for (const k of PERSONAL) data[k] = '{"theirs":true}';
+    expect(applyBackup(JSON.stringify({ kind: 'settings-backup', data }))).toEqual({ imported: 1, skipped: PERSONAL.length });
+    for (const k of PERSONAL) expect(localStorage.getItem(k)).toBeNull();
+  });
+
+  /* ONE list. The shipped-defaults builder keeps the same keys out of the
+     bundle, for the same reasons; if it learns a new one, the app must too. */
+  it('excludes every key the shipped-defaults builder excludes', async () => {
+    const { EXCLUDED_SETTINGS, EXCLUDED_PREFIXES } = await import('../../devtools/build-default-preset.mjs');
+    for (const k of Object.keys(EXCLUDED_SETTINGS)) expect(isBackupExcluded(k), k).toBe(true);
+    for (const p of EXCLUDED_PREFIXES) expect(isBackupExcluded(`${p}7`), p).toBe(true);
   });
 });
