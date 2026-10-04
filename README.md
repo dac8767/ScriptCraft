@@ -178,8 +178,8 @@ Contributions are welcome — a typo fix, a bug report and a new feature all cou
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, TypeScript, Vite, TipTap editor |
-| Backend | Python 3.12, FastAPI, Uvicorn |
-| Desktop | Tauri 2 (Rust) with bundled Python backend |
+| Backend (browser build only) | Python 3.12, FastAPI, Uvicorn |
+| Desktop | Tauri 2 (Rust) — self-contained: local SQLite, no Python, no server |
 | State Management | Zustand |
 | Version Control | Git (per-script, built-in, via dulwich) |
 
@@ -188,7 +188,7 @@ Contributions are welcome — a typo fix, a bug report and a new feature all cou
 ```
 ScriptCraft/
 ├── frontend/          # React + TypeScript web UI
-├── backend/           # FastAPI Python API server
+├── backend/           # FastAPI server for the browser build (the desktop app doesn't use it)
 ├── src-tauri/         # Tauri 2 desktop app shell (Rust)
 ├── docs/              # Documentation
 ├── images/            # Logos and assets
@@ -206,7 +206,7 @@ ScriptCraft/
 git clone https://github.com/dac8767/ScriptCraft.git
 cd ScriptCraft
 
-# Backend
+# Backend — only needed for the browser build; `npm run desktop` doesn't use it
 python3.12 -m venv venv
 source venv/bin/activate
 pip install -r backend/requirements.txt
@@ -215,7 +215,7 @@ pip install -r backend/requirements.txt
 cd frontend && npm install && cd ..
 
 # Start development servers (in separate terminals)
-./start_backend.sh    # API server on http://localhost:8000
+./start_backend.sh    # API server on http://localhost:8008 (the dev frontend calls it there)
 ./start_frontend.sh   # Dev server on http://localhost:5173
 ```
 

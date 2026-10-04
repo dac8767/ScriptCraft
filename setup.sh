@@ -149,7 +149,9 @@ build_for_browser() {
 }
 
 open_browser() {
-    local url="http://localhost:8008"
+    # The server below listens on 8000 — this opened 8008 since April 2026,
+    # so a fresh setup launched the browser at a page with nothing behind it.
+    local url="http://localhost:8000"
     sleep 2
 
     if command -v xdg-open &>/dev/null; then
@@ -167,7 +169,7 @@ start_server() {
     echo -e "${GREEN}${BOLD}  ScriptCraft is ready!${NC}"
     echo -e "${GREEN}${BOLD}════════════════════════════════════════════${NC}"
     echo ""
-    echo -e "  Open your browser to: ${BOLD}http://localhost:8008${NC}"
+    echo -e "  Open your browser to: ${BOLD}http://localhost:8000${NC}"
     echo ""
     echo -e "  Press ${BOLD}Ctrl+C${NC} to stop the server."
     echo ""

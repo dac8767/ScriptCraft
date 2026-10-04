@@ -18,7 +18,7 @@ most of it is the kind of thing you only learn by getting it wrong first.
 
 ---
 
-> **Fresh chat? Read `docs/HANDOFF-CONTINUE.md` first** — the current state (v3.54),
+> **Fresh chat? Read `docs/HANDOFF-CONTINUE.md` first** — the current state,
 > the dual-branch push workflow this environment uses, what shipped recently, and the
 > live architecture. Then **`docs/HANDOFF.md`** for the working process and history
 > (v1.9–v1.21: projects removed, Save/Save As rebuilt, the Tauri fs scope, the Dev
@@ -108,7 +108,10 @@ A professional screenwriting desktop app, forked from Proteus's OpenDraft.
 | **Repo** | `dac8767/ScriptCraft` (renamed from FreeScript in v3.14; old URLs redirect), branch **`claude/v0_32`** |
 | **Derek's clone** | `/Users/dcarl/ScriptCraft` |
 
-**`main` is a stale v0.6 baseline. Never commit to it.** All work is on `claude/v0_32`.
+**All work is on `claude/v0_32`; never commit to `main` directly.** Since v7.96
+(2026-10-04) `main` is kept FAST-FORWARDED to `claude/v0_32` — it is no longer the
+stale v0.6 baseline it was. Update it with `git push origin claude/v0_32:main`, and
+only when Derek asks.
 
 Derek is the product owner and the only tester. He gives direction, tests each build on
 his Mac, and reports back. Claude writes all the code.
@@ -120,7 +123,8 @@ his Mac, and reports back. Claude writes all the code.
 ```bash
 cd frontend
 npx tsc -b     # MUST be 0 errors. Not "baseline", not "pre-existing". Zero.
-npm test       # currently 61 tests, all must pass
+npm test       # ~1,420 tests (v7.96), all must pass
+node devtools/check-all.mjs   # ~2,200 browser assertions; needs Vite on :5199
 npm run build  # tsc -b && vite build — must succeed
 ```
 
@@ -340,7 +344,8 @@ wants it back.
 
 ## 6. Open items
 
-> Re-verified v7.66 against the tree, one item at a time. Half of what this
+> Re-verified v7.66 against the tree, one item at a time — and again at
+> v7.96 (2026-10-04), which found three more lines already done. Half of what this
 > list used to say was already done — it named the brand art as "the biggest
 > release blocker" months after that art shipped, and it nearly sent this
 > session chasing a PAT that is not there. **Check before you act on a line
@@ -349,28 +354,22 @@ wants it back.
 ### Actually still open
 
 - **Apple Developer Program ($99/yr), and your own signing identity.**
-  `build-desktop.sh:51` still exports
-  `Developer ID Application: Base Information Management Pvt. Ltd. (335RGMFDB6)`
-  — Proteus's certificate, whose private key we do not have. Unsigned means
-  Gatekeeper's "cannot be opened because the developer cannot be verified".
-  Nothing else on this list matters until the app opens.
-- **Courier Prime ships with no licence file.** Four `.ttf` in
-  `frontend/public/fonts/` and no OFL text anywhere. SIL OFL 1.1 permits
-  commercial bundling but REQUIRES the licence travel with the font. One file.
+  Since v7.79 `build-desktop.sh` reads `APPLE_SIGNING_IDENTITY` from `.env`
+  (Proteus's hardcoded certificate is gone) — but there is still no identity
+  to put there. Unsigned means Gatekeeper's "cannot be opened because the
+  developer cannot be verified". Nothing else on this list matters until the
+  app opens.
 - **Trademark clearance on "ScriptCraft".** Not searched. The name is in use
   elsewhere (there is a well-known open-source ScriptCraft for Minecraft), and
   screenwriting software is a dense category. USPTO TESS is free.
-- **`docs/PRIVACY.md` is now false, and it is about to carry your name.** It
-  says the app is "developed by Proteus Technologies Private Limited", collects
-  nothing, and that "the only optional network feature is real-time
-  collaboration". The app now talks to Supabase (feedback, INCLUDING uploaded
-  screenshots), raw.githubusercontent.com (the update check), Google Fonts,
-  jsDelivr + LibreOffice (dictionaries), and Google/Microsoft if Drive or
-  OneDrive is configured.
 - **The Supabase feedback key ships to whoever has the app.** Publishable by
-  design, and fine while the readers are testers. Confirm the `feedback` table
-  is insert-only with no select, and that `feedback-shots` has size and rate
-  limits, before it is on the open internet.
+  design. Checked from outside on 2026-10-02 (App Health, L3): anon SELECT on
+  `feedback` returns 0 rows, the `feedback_report` view is denied, and the
+  `feedback-shots` bucket is private and unlistable. STILL OPEN, dashboard
+  only: that anon has no UPDATE/DELETE policy on `feedback`, and that the
+  bucket sets a file-size limit and image MIME types. Also: the free plan
+  PAUSES the project after ~a week idle — the hostname then returns NXDOMAIN
+  and in-app feedback silently queues (max 10) until someone resumes it.
 - **Nothing gates the app.** No licence key, no trial, no activation, no
   payment path anywhere in the tree. If it is to be sold, a merchant of record
   (Paddle / Lemon Squeezy) also solves EU VAT, which applies from the first
@@ -382,6 +381,15 @@ wants it back.
   out the Mac App Store**. Fine for the `.dmg` plan, but know it.
 
 ### Done — do not re-open these
+
+- ~~Courier Prime ships with no licence~~ — `frontend/public/fonts/OFL.txt`
+  (2026-08-23, commit 40b4454).
+- ~~`build-desktop.sh` hardcodes Proteus's signing certificate~~ — v7.79 reads
+  it from `.env`; only the identity itself is still missing (above).
+
+- ~~`docs/PRIVACY.md` is false~~ — rewritten 2026-08-24 for Coalition Studios,
+  LLC; lists every network connection. Re-read it when one is added or removed
+  (v7.96 removed the `http_fetch` relay and pinned the dictionary downloads).
 
 - ~~Rotate the GitHub PAT~~ — the remote is a plain
   `https://github.com/dac8767/ScriptCraft`, no token embedded.
@@ -404,7 +412,7 @@ wants it back.
 ## 7. Summary for the impatient
 
 1. There was never a Codespace connection. **Don't make zips.**
-2. Branch `claude/v0_32`. Never `main`.
+2. Branch `claude/v0_32`. `main` only fast-forwards to it, when Derek asks.
 3. `npx tsc -b` must be **zero** errors — it gates the release build.
 4. `npm test` and `npm run build` must pass before you claim anything works.
 5. One source of truth for anything that appears twice.
